@@ -2,6 +2,8 @@
 
 The site runs on Vercel from John's v0/Vercel account, with the code on Matt's GitHub repo and a Neon Postgres database. Each push to `main` deploys to production; each pull request gets its own preview link.
 
+**Who touches what:** John builds in v0 and owns the Vercel project. Matt builds in Claude and pushes to GitHub. Matt doesn't need a Vercel login: his pushes deploy through the GitHub link, and preview links appear on his pull requests. If Matt wants his own Vercel project (for example for his bake-off version), he can import the same repo into his Vercel account the same way.
+
 ## One-time setup
 
 ### 1. Matt: let Vercel see the repo
@@ -76,8 +78,8 @@ If Vercel won't link a repo owned by another account:
 ## Local Postgres (optional)
 
 ```bash
-DATABASE_URL=postgres://user:pass@localhost:5432/si npm start
+DATABASE_URL="<your local Postgres URL>" npm start
 # or run the full browser test against Postgres:
-DATABASE_URL=postgres://… npm run dev:sample:pg      # resets that database, so use a throwaway one
+DATABASE_URL="<a throwaway database URL>" npm run dev:sample:pg      # resets that database, so use a throwaway one
 BASE=http://localhost:3300 npm test
 ```

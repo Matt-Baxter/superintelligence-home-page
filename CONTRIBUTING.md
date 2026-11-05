@@ -1,6 +1,6 @@
 # Contributing
 
-How John and Matt get changes into `main`. It follows our [working agreement](docs/WORKING_AGREEMENT.md): `main` is always deployable, and every change goes through a pull request the other person reviews.
+How John and Matt get changes into `main`, built for speed. `main` is always deployable, every change goes through a pull request so there's a record and a preview link, and **you may merge your own pull request**: no review is required. Cheap automatic checks (preflight) stand in for a reviewer.
 
 ## Branches
 
@@ -27,34 +27,45 @@ git add -A && git commit -m "Say what changed and why"
 git push -u origin feature/short-name
 ```
 
-Then open a pull request on GitHub (the push prints a link). The template asks the questions below; answer them in the PR.
+The push runs `npm run preflight` first (installed as a git hook by `npm install`). Then open a pull request on GitHub (the push prints a link), wait for the green **Preflight** check and the Vercel preview, and merge it yourself.
 
-## Before you ask for review
+## Preflight (automatic, about 3 seconds)
 
-- [ ] `npm test` passes. Paste the "N passed, 0 failed" line in the PR.
-- [ ] It works for **two different signed-in users** (the test does this; check by hand if you changed the UI).
+`npm run preflight` checks:
+
+- JavaScript syntax
+- JSON files
+- the json-render bundle build
+- secrets in tracked files
+- the no-Twitter rule
+- a contract reminder
+- an API smoke test on synthetic data (sign-up, feed, grouping, voting, the brief, the agent log, access control)
+
+It runs on `git push` locally, and in GitHub Actions on every push and pull request, so commits made from v0 get checked too. To skip it once, use `git push --no-verify`.
+
+## Before you merge your own PR
+
+- [ ] Preflight is green.
+- [ ] For bigger changes, `npm test` (the full two-user browser test) passes too.
+- [ ] You clicked through the Vercel preview.
 - [ ] No secrets in the diff: no `.env`, keys, database URLs or passwords.
 - [ ] If you changed a table, an API route, a request or a response shape: [docs/CONTRACT.md](docs/CONTRACT.md) has a new change-log row, and the PR says "contract change".
 - [ ] If an AI agent got something wrong while you worked: you wrote it up **yourself, in your own words** in the app's Agent log page. Don't have an agent write it.
 - [ ] Synthetic test data only. Sample records say "Sample" / "test data".
 
-## Reviewing
+## Merging
 
-- Pull the branch and run `npm test` yourself, or at least open the Vercel preview link the PR gets.
-- Check the contract: does the change match the API and data models in [docs/CONTRACT.md](docs/CONTRACT.md)?
-- Approve, or leave specific comments. The lead for that area (see the roles table) has the final say.
-- **Squash and merge.** Delete the branch afterwards.
-
-A contract change needs **both** of us to approve and tick our boxes in the change log, even when one person leads the area.
+- **Squash and merge**, then delete the branch.
+- Reviews are welcome but never required. Ask for one when you want a second pair of eyes.
+- The one exception: a **contract change** (tables, API shapes, auth) needs both of us to tick our boxes in the change log, because it changes what the other person builds against. A quick "ok" in chat is enough.
 
 ## Merging rules
 
-| Change | Who approves | Merge when |
+| Change | Who merges | Merge when |
 | --- | --- | --- |
-| Feature or fix in your own area | The other person reviews | Tests pass and the review is approved |
-| Contract change (tables, API shapes, auth) | Both of us | Both boxes in the change log are ticked |
-| Bake-off result | Both of us, after the decision model's recommendation | Scores and our reason are logged in the contract |
-| Docs only | Either of us | Anytime; a heads-up is enough |
+| Feature, fix or docs | Whoever made it | Preflight is green |
+| Contract change (tables, API shapes, auth) | Whoever made it | Both boxes in the change log are ticked |
+| Bake-off result | Either of us | After the decision model's recommendation and both sign-offs are logged in the contract |
 
 ## Commit messages
 

@@ -11,15 +11,14 @@
 
 ## Checks
 
-- [ ] `npm test` passes: <!-- paste the "N passed, 0 failed" line -->
-- [ ] Works for two different signed-in users
-- [ ] No secrets in the diff
-- [ ] Contract updated if shapes changed
+- [ ] Preflight is green (runs automatically)
+- [ ] Clicked through the Vercel preview
+- [ ] Contract updated if shapes changed (then both of us tick the change log)
 - [ ] Any agent mistakes from this work are in the Agent log page, written by me in my own words
 
 ## How to try it
 
-<!-- Steps for the reviewer, or "open the Vercel preview link below". -->
+<!-- Optional. Self-merge is fine once preflight is green. -->
 
 ## Agent use
 

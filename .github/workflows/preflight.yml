@@ -1,0 +1,16 @@
+# Runs the same cheap checks as `npm run preflight` on every push and pull request,
+# so commits made from v0 or the GitHub web editor get checked too. About a minute; no browser tests.
+name: Preflight
+on:
+  push:
+  pull_request:
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run preflight

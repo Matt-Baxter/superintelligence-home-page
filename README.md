@@ -44,6 +44,8 @@ The same queries run on SQLite (local, tests) and Postgres (production) through 
 
 - [CONTRIBUTING.md](CONTRIBUTING.md): branches, the pull request checklist, review and merge rules.
 - [docs/DEPLOY.md](docs/DEPLOY.md): Vercel + Neon setup, cron, troubleshooting and the fork fallback.
+- [docs/V0.md](docs/V0.md): John's v0 workflow for his bake-off version.
+- `npm run preflight`: about 3 seconds of checks (syntax, build, secrets, no-Twitter, contract reminder, API smoke test). It runs on `git push` and in GitHub Actions.
 - [CLAUDE.md](CLAUDE.md) / [AGENTS.md](AGENTS.md): rules for AI agents working in this repo.
 - `.claude/skills/`: Claude Code skills:
   - `open-pull-request`
