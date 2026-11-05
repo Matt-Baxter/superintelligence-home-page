@@ -1,0 +1,17 @@
+{
+  "title": "Sample bake-off (test data)",
+  "criteria": [
+    { "id": "tests", "label": "Passes the shared tests", "weight": 30 },
+    { "id": "contract", "label": "Fits the contract", "weight": 25 },
+    { "id": "ux", "label": "Clear to classmates", "weight": 25 },
+    { "id": "size", "label": "Small, readable code", "weight": 20 }
+  ],
+  "entries": [
+    { "id": "version-a", "label": "Sample version A" },
+    { "id": "version-b", "label": "Sample version B" }
+  ],
+  "scores": {
+    "version-a": { "tests": { "score": 9, "evidence": "Sample: 100 of 103 checks" }, "contract": { "score": 8, "evidence": "Sample: one extra field" }, "ux": { "score": 6, "evidence": "Sample: two users got lost" }, "size": { "score": 7, "evidence": "Sample: 1,900 lines" } },
+    "version-b": { "tests": { "score": 7, "evidence": "Sample: 94 of 103 checks" }, "contract": { "score": 9, "evidence": "Sample: matches exactly" }, "ux": { "score": 8, "evidence": "Sample: fastest task times" }, "size": { "score": 8, "evidence": "Sample: 1,400 lines" } }
+  }
+}

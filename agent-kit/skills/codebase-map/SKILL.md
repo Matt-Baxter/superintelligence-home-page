@@ -5,7 +5,7 @@ description: Map of the Superintelligence Homepage code and how a feed item beco
 
 # Codebase map
 
-One Express app (`server.js`) serves JSON under `/api` and static pages from `public/`. On Vercel it runs as one function (`api/index.js`).
+A modular monolith: one Express app (`server.js`, the core) plus plug-in modules (`modules/<id>/`) loaded by `kernel/kernel.js` through extension points. On Vercel it is one function (`api/index.js`) plus static pages from `public/` (module pages are copied to `public/m/` by the build).
 
 | Area | Files | Skill for changing it |
 | --- | --- | --- |
@@ -13,8 +13,10 @@ One Express app (`server.js`) serves JSON under `/api` and static pages from `pu
 | Meaning | `lib/tagger.js` + `lib/ontology.json` (topics, orgs, benchmarks, people) | tune-ontology |
 | Judging | `lib/analysis.js` (type, evidence, benchmarks, significance) | tune-significance |
 | Data | `lib/db.js` (one API over SQLite and Postgres, schema, migrations) | write-portable-sql |
-| Admin | `lib/admin.js`, `lib/audit.js`, `lib/project.js` | write-portable-sql, build-a-page |
-| Pages | `public/*.html`, `public/js/api.js`, `public/css/app.css`; json-render in `views/` + `client/` | build-a-page |
+| Modules | `kernel/kernel.js`, `modules/modules.json`, `modules/<id>/` (blocks-core, generative-ui, decision, capabilities, admin, project) | add-a-module |
+| Generative UI | `views/catalog.mjs` (blocks from modules), `views/specs.mjs`, `client/jr.jsx`, `modules/generative-ui` | generative-ui |
+| Decisions | `modules/decision` (judges: weighted-criteria, JEV, CLEF) | run-a-judge |
+| Pages | core pages in `public/*.html`; module pages in `modules/<id>/pages/` (served at `/m/<page>`); `public/js/api.js`, `public/css/app.css` | build-a-page |
 | Checks | `scripts/preflight.js`, `test/` | run-tests |
 
 ## The pipeline in one line

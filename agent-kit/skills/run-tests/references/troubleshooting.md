@@ -16,3 +16,7 @@ Problems already hit in this repo, and the fix.
 | The test catalog shows real sources | `SOURCE_CATALOG` not set | The sample-data servers point it at `test/fixtures/sample-catalog.json` |
 | Test counts change after adding a fixture source | Feed and filter checks count stories | Add new fixture sources through the admin API late in `e2e.js`, not in `serve-fixtures.js` |
 | Live feeds fail in the sandbox | The sandbox can't reach most sites | Use fixtures; say plainly that live fetching is unverified |
+| `waitForSelector('select option')` times out | Options inside a `<select>` are never "visible" | Pass `{ state: 'attached' }` |
+| "registered twice" when a test boots a second kernel | A module kept registry state at file level | Create registries inside `register(env)` |
+| A module page 404s on Vercel but works locally | `public/m/` wasn't generated | `npm run build` runs `scripts/modules.js gen`; check the build log |
+| New block doesn't render (blank) | Browser registry not regenerated | `npm run build`; `npm run modules:check` reports a stale `client/blocks.gen.jsx` |

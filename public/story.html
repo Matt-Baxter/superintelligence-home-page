@@ -47,7 +47,7 @@ async function load() {
     ${(an.benchmarks || []).length ? `<p class="small">Benchmarks: ${an.benchmarks.map((b) => `<a class="tag bench" href="/?benchmark=${esc(b.id)}">${esc(b.label)}${b.score ? ` <b>${esc(fmtScore(b.score))}</b>` : ""}</a>`).join(" ")}
       <span class="muted">Scores are read from the text next to the benchmark's name; check the source before quoting them.</span></p>` : ""}
     ${(an.people || []).length ? `<p class="small">People: ${an.people.map((p) => `<a class="tag" href="/?person=${esc(p.id)}">${esc(p.label)}</a>`).join(" ")}</p>` : ""}
-    <p class="small muted">The score is rule-based and explainable: stronger evidence, more independent sources, reported benchmark results and frontier claims raise it. <a href="/capabilities">Capability tracker</a></p>`;
+    <p class="small muted">The score is rule-based and explainable: stronger evidence, more independent sources, reported benchmark results and frontier claims raise it. <a href="/m/capabilities">Capability tracker</a></p>`;
   $("#covered").innerHTML = s.sources.map((x) => `<tr><td>${esc(x.name)}</td><td>${esc(KIND[x.kind] || x.kind)}</td><td><a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.title)}</a></td></tr>`).join("");
   $("#notes").innerHTML = d.notes.length ? d.notes.map((n) => `<div class="note"><div class="who">${esc(n.name)} · ${ago(n.created_at)} · ${n.private ? "only you" : "shared"}${n.mine ? ` · <button class="linkish" data-del="${n.id}" type="button">Delete</button>` : ""}</div>${esc(n.text)}</div>`).join("") : `<p class="muted small">No notes yet.</p>`;
   $$("[data-del]").forEach((b) => b.onclick = async () => { await api(`/api/notes/${b.dataset.del}`, { method: "DELETE" }); load(); });
