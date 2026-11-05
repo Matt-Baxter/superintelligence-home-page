@@ -40,12 +40,17 @@ npm test               # two-user browser test against dev:sample (needs Playwri
 
 The same queries run on SQLite (local, tests) and Postgres (production) through `lib/db.js`. To run the test against Postgres, start `DATABASE_URL=… npm run dev:sample:pg`, then run `BASE=http://localhost:3300 npm test`.
 
-## Deploy on Vercel
+## Working on it
 
-1. In John's Vercel account, import `Matt-Baxter/superintelligence-home-page`. `vercel.json` handles the build, the API function and clean URLs.
-2. Add a Postgres database from the Vercel Marketplace (Neon or Supabase). It sets `DATABASE_URL`/`POSTGRES_URL`, and the tables are created on the first request.
-3. Add `CRON_SECRET` (a long random value) in Project Settings → Environment Variables. Vercel Cron then calls `/api/cron/fetch` daily at 12:00 UTC. On the Hobby plan, cron runs at most once a day, so the admin can also press **Fetch all now** on the Sources page.
-4. Deploy, open the site, and create the first account. That account becomes the admin.
+- [CONTRIBUTING.md](CONTRIBUTING.md): branches, the pull request checklist, review and merge rules.
+- [docs/DEPLOY.md](docs/DEPLOY.md): Vercel + Neon setup, cron, troubleshooting and the fork fallback.
+- [CLAUDE.md](CLAUDE.md) / [AGENTS.md](AGENTS.md): rules for AI agents working in this repo.
+- `.claude/skills/`: Claude Code skills:
+  - `open-pull-request`
+  - `change-the-contract`
+  - `run-tests`
+  - `add-feed-source`
+  - `bakeoff-entry`
 
 ## Tests
 
