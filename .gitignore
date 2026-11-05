@@ -3,3 +3,5 @@ data/
 *.db
 .env
 dist/
+client/blocks.gen.jsx
+public/m/

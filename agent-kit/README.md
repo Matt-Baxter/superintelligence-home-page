@@ -4,10 +4,10 @@ Everything an agent needs to work on this repo, in one folder, usable from many 
 
 | Part | What it is |
 | --- | --- |
-| `skills/<name>/SKILL.md` + `references/` | 10 skills, written for progressive disclosure: index → steps → details |
+| `skills/<name>/SKILL.md` + `references/` | 13 skills, written for progressive disclosure: index → steps → details |
 | `agents/*.md` | 3 subagents: source-scout, significance-reviewer, verifier |
 | `hooks/` | Guard that blocks pushes to main, merges, deploys and Twitter/X sources |
-| `mcp/server.js` | MCP server (no dependencies): skills as tools, resources and prompts, plus `tag_text`, `analyze_text`, `parse_feed` |
+| `mcp/server.js` | MCP server (no dependencies): skills as tools, resources and prompts, plus app tools: `tag_text`, `analyze_text`, `parse_feed`, `list_modules`, `ui_catalog`, `validate_spec`, `list_judges`, `run_judge` |
 | `.claude-plugin/plugin.json`, `.mcp.json` | Claude Code plugin manifest |
 
 How it fits together: [ARCHITECTURE.md](ARCHITECTURE.md).

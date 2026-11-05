@@ -8,7 +8,7 @@
 //   level 3  load_reference       one reference file, only when the skill says to read it
 // Skills are also exposed as MCP resources (skill://<name>/...) and prompts (one per skill).
 //
-// App tools (tag_text, analyze_text, parse_feed) run the repo's own lib/ code. They need the repo:
+// App tools (tag_text, analyze_text, parse_feed, list_modules, ui_catalog, validate_spec, list_judges, run_judge) run the repo's own code. They need the repo:
 // set SI_REPO, or start the client inside a clone. Without it, only the skill tools are offered.
 const fs = require("node:fs"), path = require("node:path");
 
@@ -68,7 +68,27 @@ if (REPO) TOOLS.push(
   { name: "parse_feed", description: "Parse feed text (RSS/Atom, arXiv, JSON Feed, HF daily, HN Algolia, Semantic Scholar) into normalized items, without saving anything. Pass the body you fetched yourself.",
     inputSchema: S({ format: { type: "string", enum: ["rss", "arxiv", "jsonfeed", "hf-daily", "hn-algolia", "semantic-scholar"] }, body: { type: "string" }, limit: { type: "integer", minimum: 1, maximum: 50 } }, ["format", "body"]),
     run: ({ format, body, limit = 10 }) => { const items = app("feeds").parse(format, body); return JSON.stringify({ count: items.length, items: items.slice(0, limit) }, null, 1); } },
+  { name: "list_modules", description: "List the app's plug-in modules, the extension points they declare or contribute to, and their views (the modular monolith's map).", inputSchema: S({}),
+    run: () => JSON.stringify(kernel().describe(), null, 1) },
+  { name: "ui_catalog", description: "Generative UI: the json-render catalog (every block from every enabled module, the actions) and the system prompt to give an LLM that should produce a view spec.", inputSchema: S({}),
+    run: async () => { const { blocks, catalog } = await esm("views/catalog.mjs"); return JSON.stringify({ blocks: blocks.map(({ def, module }) => ({ name: def.name, module, description: def.description })), prompt: catalog.prompt() }, null, 1); } },
+  { name: "validate_spec", description: "Validate a json-render view spec ({root, elements}) against the catalog before anyone renders it. Returns ok and the issues to fix.", inputSchema: S({ spec: { type: "object" } }, ["spec"]),
+    run: async ({ spec }) => {
+      const { catalog } = await esm("views/catalog.mjs"); const r = catalog.validate(spec);
+      const issues = r.success ? [] : (r.error?.issues || []).slice(0, 30).map((i) => `${(i.path || []).join(".") || "spec"}: ${i.message}`);
+      if (r.success) for (const [id, e] of Object.entries(spec.elements || {})) for (const c of e.children || []) if (!spec.elements[c]) issues.push(`elements.${id}.children: "${c}" isn't an element`);
+      if (r.success && !spec.elements?.[spec.root]) issues.push(`root "${spec.root}" isn't an element`);
+      return JSON.stringify({ ok: !issues.length, issues }, null, 1);
+    } },
+  { name: "list_judges", description: "List the decision models plugged into decision.judges (weighted-criteria, JEV, CLEF, …) and a sample input.", inputSchema: S({}),
+    run: () => { const d = decision(); return JSON.stringify({ judges: [...d.judges.values()].map(({ id, name, description, method, inputs, module }) => ({ id, name, description, method, inputs, module })), sample: require(path.join(d.dir, "sample.json")) }, null, 1); } },
+  { name: "run_judge", description: "Run a judge on {title, criteria:[{id,label,weight}], entries:[{id,label}], scores:{entry:{criterion:{score,evidence}}}, external?}. External judges (JEV, CLEF) need the real run's recommendation in external; they never invent one.",
+    inputSchema: S({ judge: { type: "string" }, input: { type: "object" } }, ["judge", "input"]),
+    run: ({ judge, input }) => { const j = decision().judges.get(judge); if (!j) fail(`No judge "${judge}". Call list_judges.`); return JSON.stringify(j.judge(input), null, 1); } },
 );
+function kernel() { return require(path.join(REPO, "kernel", "kernel.js")).createKernel(); }
+function decision() { const m = kernel().modules.find((x) => x.id === "decision"); if (!m) fail("The decision module isn't enabled."); return m; }
+const esm = (rel) => import(require("node:url").pathToFileURL(path.join(REPO, rel)).href);
 
 // ---------- JSON-RPC ----------
 const send = (msg) => process.stdout.write(JSON.stringify({ jsonrpc: "2.0", ...msg }) + "\n");
@@ -77,15 +97,14 @@ const handlers = {
     protocolVersion: p?.protocolVersion || "2025-06-18",
     capabilities: { tools: {}, resources: {}, prompts: {} },
     serverInfo: { name: "si-homepage", version: VERSION },
-    instructions: "Skills for the Superintelligence Homepage repo. Call list_skills first, load_skill for the one that fits the task, and load_reference only when a skill says to." + (REPO ? "" : " App tools are off: set SI_REPO to a clone of the repo to enable tag_text, analyze_text and parse_feed."),
+    instructions: "Skills for the Superintelligence Homepage repo. Call list_skills first, load_skill for the one that fits the task, and load_reference only when a skill says to." + (REPO ? "" : " App tools are off: set SI_REPO to a clone of the repo to enable tagging, analysis, feed parsing, modules, generative UI and judges."),
   }),
   ping: () => ({}),
   "tools/list": () => ({ tools: TOOLS.map(({ run, ...t }) => t) }),
   "tools/call": (p) => {
     const t = TOOLS.find((x) => x.name === p?.name);
     if (!t) return { content: [{ type: "text", text: `Unknown tool ${p?.name}` }], isError: true };
-    try { return { content: [{ type: "text", text: String(t.run(p.arguments || {})) }] }; }
-    catch (e) { return { content: [{ type: "text", text: e.message }], isError: true }; }
+    return Promise.resolve().then(() => t.run(p.arguments || {})).then((text) => ({ content: [{ type: "text", text: String(text) }] }), (e) => ({ content: [{ type: "text", text: e.message }], isError: true }));
   },
   "resources/list": () => ({ resources: skills().flatMap((s) => [
     { uri: `skill://${s.name}/SKILL.md`, name: s.name, description: s.description, mimeType: "text/markdown" },
@@ -109,8 +128,8 @@ process.stdin.on("data", (chunk) => {
     if (msg.id === undefined) continue; // notifications (e.g. notifications/initialized)
     const h = handlers[msg.method];
     if (!h) { send({ id: msg.id, error: { code: -32601, message: `Method not found: ${msg.method}` } }); continue; }
-    try { send({ id: msg.id, result: h(msg.params) }); }
-    catch (e) { send({ id: msg.id, error: { code: e.user ? -32602 : -32603, message: e.message } }); }
+    Promise.resolve().then(() => h(msg.params)).then((result) => send({ id: msg.id, result }), (e) => send({ id: msg.id, error: { code: e.user ? -32602 : -32603, message: e.message } }));
   }
 });
-process.stdin.on("end", () => process.exit(0));
+// Let async replies finish before exiting when stdin closes.
+process.stdin.on("end", () => setTimeout(() => process.exit(0), 1500));

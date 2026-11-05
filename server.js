@@ -8,6 +8,16 @@ const db = require("./lib/db");
 const feeds = require("./lib/feeds");
 const tagger = require("./lib/tagger");
 const audit = require("./lib/audit");
+const analysis = require("./lib/analysis");
+
+/* ---------------------------------------------------------------- modules */
+// Features beyond the core are modules (modules/<id>/module.js, enabled in modules/modules.json) that plug into
+// extension points. Their headless contributions are applied here, before anything reads them.
+const { createKernel } = require("./kernel/kernel");
+const kernel = createKernel();
+for (const f of kernel.store.formats) feeds.FORMATS[f.id] = f.format;
+for (const sig of kernel.store.signals) analysis.registerSignal(sig);
+db.extend({ sql: kernel.store.schema.join("\n"), columns: kernel.store.columns });
 
 const FETCH_MINUTES = Number(process.env.FETCH_MINUTES ?? 30);
 const APP_TZ = process.env.APP_TZ || "America/Chicago";
@@ -35,6 +45,7 @@ const cookie = (req, n) => { const m = (req.headers.cookie || "").split(/;\s*/).
 /* ---------------------------------------------------------------- ingestion */
 const harvester = require("./lib/harvest");
 const { addItem, ingestItems } = harvester;
+for (const fn of kernel.store.prune) harvester.addPrune(fn);
 const fetchAll = (only = null) => harvester.harvest({ trigger: "admin", force: true, sourceId: only });
 async function seedSources() {
   if ((await db.get("SELECT COUNT(*) AS n FROM sources")).n) return;
@@ -42,7 +53,7 @@ async function seedSources() {
   await db.tx(async (t) => { for (const s of sources) await t.run("INSERT OR IGNORE INTO sources (name, kind, format, url, home, created_at) VALUES (?, ?, ?, ?, ?, ?)", s.name, s.kind, s.format, s.url, s.home || "", now()); });
 }
 let bootP;
-const boot = () => (bootP ||= db.ready().then(seedSources).then(() => harvester.backfill()).catch((e) => { bootP = null; throw e; }));
+const boot = () => (bootP ||= db.ready().then(seedSources).then(() => harvester.backfill()).then(() => kernel.start(moduleDeps())).catch((e) => { bootP = null; throw e; }));
 
 /* ------------------------------------------------------------------- app */
 const app = express();
@@ -85,7 +96,7 @@ app.post("/api/login", limit(30, 6e5), wrap(async (req, res) => {
   await startSession(res, u.id); return { user: { id: u.id, username: u.username, name: u.display_name, admin: bool(u.is_admin) } };
 }));
 app.post("/api/logout", wrap(async (req, res) => { const t = cookie(req, "sid"); if (t) await db.run("DELETE FROM sessions WHERE token = ?", t); res.clearCookie("sid"); return { ok: true }; }));
-app.get("/api/me", wrap((req) => ({ user: req.user || null })));
+app.get("/api/me", wrap((req) => ({ user: req.user ? { ...req.user, nav: kernel.nav(req.user) } : null })));
 app.get("/api/ontology", wrap(() => ({ topics: tagger.topicList(), orgs: tagger.orgList(), about: tagger.ontology.about,
   benchmarks: (tagger.ontology.benchmarks || []).map(({ id, label, measures }) => ({ id, label, measures })), people: (tagger.ontology.people || []).map(({ id, label }) => ({ id, label })) })));
 
@@ -255,42 +266,6 @@ app.get("/api/cron/fetch", wrap(async (req, res) => {
   return harvester.harvest({ trigger: "cron" });
 }));
 
-/* ------------------------------------------------------- capability tracker */
-// One read for the Capabilities page: capability areas this week vs last, benchmark mentions with reported scores,
-// watched people and organizations, and the strongest signals. Bounded queries only (free tier).
-app.get("/api/capabilities", auth, wrap(async (req) => {
-  const days = Math.min(90, Math.max(7, Number(req.query.days) || 7));
-  const since = new Date(Date.now() - days * 864e5).toISOString(), before = new Date(Date.now() - 2 * days * 864e5).toISOString();
-  const seen = "COALESCE(s.published_at, s.first_seen)", vis = "COALESCE(s.hidden, 0) = 0";
-  const areas = ["superintelligence", "capabilities", "reasoning", "math", "coding", "agents", "long-horizon", "ai-rnd", "multimodal", "robotics", "science", "safety", "evals", "compute"];
-  const counts = await db.all(`SELECT t.topic, SUM(CASE WHEN ${seen} >= ? THEN 1 ELSE 0 END) AS now, SUM(CASE WHEN ${seen} < ? THEN 1 ELSE 0 END) AS prev,
-      MAX(CASE WHEN ${seen} >= ? THEN s.significance ELSE 0 END) AS top FROM story_topics t JOIN stories s ON s.id = t.story_id
-    WHERE ${vis} AND ${seen} >= ? GROUP BY t.topic`, since, since, since, before);
-  const byTopic = Object.fromEntries(counts.map((r) => [r.topic, r]));
-  const topics = tagger.topicList();
-  const bench = await db.all(`SELECT e.entity, e.value, e.unit, s.id, s.title, s.significance, ${seen} AS t FROM story_entities e JOIN stories s ON s.id = e.story_id
-    WHERE e.kind = 'benchmark' AND ${vis} ORDER BY ${seen} DESC LIMIT 400`);
-  const people = await db.all(`SELECT e.entity, COUNT(*) AS n, MAX(${seen}) AS latest FROM story_entities e JOIN stories s ON s.id = e.story_id
-    WHERE e.kind = 'person' AND ${vis} AND ${seen} >= ? GROUP BY e.entity ORDER BY n DESC LIMIT 20`, before);
-  const orgRows = await db.all(`SELECT s.orgs FROM stories s WHERE ${vis} AND ${seen} >= ? LIMIT 2000`, since);
-  const orgCount = {}; orgRows.forEach((r) => JSON.parse(r.orgs || "[]").forEach((o) => (orgCount[o.id] = (orgCount[o.id] || 0) + 1)));
-  const B = tagger.ontology.benchmarks || [], P = tagger.ontology.people || [];
-  return {
-    days,
-    areas: areas.map((id) => ({ id, label: topics.find((t) => t.id === id)?.label || id, now: byTopic[id]?.now || 0, prev: byTopic[id]?.prev || 0, top: byTopic[id]?.top || 0 })),
-    benchmarks: B.map((b) => {
-      const rows = bench.filter((r) => r.entity === b.id);
-      return { id: b.id, label: b.label, measures: b.measures, mentions: rows.length,
-        latest: rows.slice(0, 5).map((r) => ({ id: r.id, title: r.title, value: r.value, unit: r.unit, t: r.t })),
-        best: rows.filter((r) => r.value != null).sort((x, y) => y.value - x.value)[0] || null };
-    }).filter((b) => b.mentions).sort((a, b) => b.mentions - a.mentions),
-    people: people.map((p) => ({ id: p.entity, label: P.find((x) => x.id === p.entity)?.label || p.entity, n: p.n, latest: p.latest })),
-    orgs: Object.entries(orgCount).map(([id, n]) => ({ id, label: tagger.orgList().find((o) => o.id === id)?.label || id, n })).sort((a, b) => b.n - a.n).slice(0, 15),
-    signals: await storyRows(`${seen} >= ?`, [since], req.user.id, { sort: "signal", limit: 10 }),
-    watchlist: { people: P.map(({ id, label }) => ({ id, label })), benchmarks: B.map(({ id, label, measures }) => ({ id, label, measures })) },
-  };
-}));
-
 /* ---------------------------------------------------------------- agent log */
 // Entries are visible to every signed-in user (so the instructor can read them); only the author can write.
 // Each autosave records how much text changed, how much was typed vs pasted, and active editing time.
@@ -375,8 +350,15 @@ app.get("/api/agent-log-view", auth, wrap(async (req) => {
 app.get("/api/catalog", wrap(async () => { const { catalog } = await views(); return { components: Object.keys(catalog.data?.components ?? {}), prompt: catalog.prompt(), jsonSchema: catalog.jsonSchema() }; }));
 
 /* -------------------------------------------------------------------- admin */
-require("./lib/admin")(app, { auth, admin, wrap, str, bad, notFound, bool, KINDS, FORMAT_IDS, harvester, audit });
-require("./lib/project")(app, { auth, admin, wrap, str, bad, notFound, audit });
+// Everything modules need from the core, passed to their routes and start hooks (never imported directly).
+function moduleDeps() {
+  return { app, db, auth, admin, wrap, str, bad, forbid, notFound, bool, now, KINDS, FORMAT_IDS, harvester, audit, tagger, feeds, analysis, storyRows, views, kernel };
+}
+kernel.mount(app, moduleDeps());
+app.get("/api/modules", auth, admin, wrap(() => kernel.describe()));
+// Module pages live in modules/<id>/pages and are served at /m/<page> (the build copies them into public/m for Vercel).
+for (const m of kernel.modules) { const dir = path.join(m.dir, "pages"); if (require("node:fs").existsSync(dir)) app.use("/m", express.static(dir, { extensions: ["html"] })); }
+for (const [from, to] of [["/capabilities", "/m/capabilities"], ["/admin", "/m/admin"], ["/project", "/m/project"]]) app.get(from, (req, res) => res.redirect(301, to));
 
 /* ------------------------------------------------------------------ static */
 app.use(express.static(path.join(__dirname, "public"), { extensions: ["html"] }));

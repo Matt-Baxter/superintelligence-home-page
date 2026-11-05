@@ -1,0 +1,4 @@
+{
+  "about": "Enabled modules, in any order (the kernel sorts them by their requires). Remove an id to unplug a feature; MODULES_DISABLED=id,id does the same per environment.",
+  "enabled": ["blocks-core", "generative-ui", "decision", "capabilities", "admin", "project"]
+}
