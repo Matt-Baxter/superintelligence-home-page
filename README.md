@@ -26,6 +26,8 @@ The weekly brief and the agent log summary are [json-render](https://github.com/
 
 ## Plan documents
 
+> **To reconcile:** there are two sets of plan docs right now. Matt's templates sit at the repo root ([WORKING_AGREEMENT.md](WORKING_AGREEMENT.md), [CONTRACT.md](CONTRACT.md)) and choose a pure bake-off (Option B). The fuller drafts from the shared Plan doc are in `docs/` and describe a split-plus-bake-off mix. Pick one set and one option together, then delete the other.
+
 - [docs/WORKING_AGREEMENT.md](docs/WORKING_AGREEMENT.md): how we work together, including roles, tools, repo workflow, agent rules and costs.
 - [docs/SPEC.md](docs/SPEC.md): the initial spec and open questions.
 - [docs/CONTRACT.md](docs/CONTRACT.md): the versioned contract (data models, API, auth, rules, milestones) with its change log.
