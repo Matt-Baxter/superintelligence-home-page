@@ -10,7 +10,7 @@
 
 _Split (Option A: contract-first build with mid-point swap) or bake-off (Option B: platform bake-off), and why._
 
-- **Choice:** _Split / Bake-off_
+- **Choice:** Bake-off (Option B)
 - **Why:** _..._
 
 ## Roles
