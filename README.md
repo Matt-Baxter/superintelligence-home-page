@@ -4,7 +4,7 @@ SEIS 606 Vibe Coding · Project 2 · John Affolter and Matthew Baxter
 
 One place to follow progress toward advanced AI, drawn from papers, lab blogs, research organizations, forums, newsletters and academic blogs, with no dependence on any single platform. There's no Twitter/X: as a source, as a suggestion, or as a submitted link.
 
-The plan we build against (working agreement, spec, versioned contract) is in our shared Project 2 Plan doc.
+The plan we build against lives in `docs/` (working agreement, spec, versioned contract), mirrored from our shared Project 2 Plan doc.
 
 ## What it does
 
@@ -22,29 +22,30 @@ The plan we build against (working agreement, spec, versioned contract) is in ou
 
 The weekly brief and the agent log summary are [json-render](https://github.com/vercel-labs/json-render) specs (v0.22.0). The server builds each spec from the data and validates it against the catalog (`views/catalog.mjs`) before sending it. `GET /api/catalog` exposes the catalog's AI prompt and JSON Schema, so a model could generate new views from only the approved parts later.
 
-## Run
+## Plan documents
+
+- [docs/WORKING_AGREEMENT.md](docs/WORKING_AGREEMENT.md): how we work together, including roles, tools, repo workflow, agent rules and costs.
+- [docs/SPEC.md](docs/SPEC.md): the initial spec and open questions.
+- [docs/CONTRACT.md](docs/CONTRACT.md): the versioned contract (data models, API, auth, rules, milestones) with its change log.
+
+## Run locally
 
 ```bash
 npm install
-npm run build        # bundle the json-render renderer
-npm start            # http://localhost:3000, fetches the real feeds
-npm run dev:sample   # http://localhost:3200, a throwaway database with SYNTHETIC sample feeds (no network needed)
-npm test             # two-user browser test; run dev:sample first (needs Playwright)
+npm run build          # bundle the json-render renderer
+npm start              # http://localhost:3000; SQLite in ./data, or Postgres if DATABASE_URL is set
+npm run dev:sample     # http://localhost:3200, a throwaway SQLite database with SYNTHETIC sample feeds
+npm test               # two-user browser test against dev:sample (needs Playwright)
 ```
 
-Environment variables:
+The same queries run on SQLite (local, tests) and Postgres (production) through `lib/db.js`. To run the test against Postgres, start `DATABASE_URL=… npm run dev:sample:pg`, then run `BASE=http://localhost:3300 npm test`.
 
-- `PORT`
-- `DATA_DIR`: where the SQLite file lives; use a persistent volume in production.
-- `FETCH_MINUTES`: default 30; `0` turns fetching off.
-- `APP_TZ`: default `America/Chicago`.
-- `NODE_ENV=production`: makes the session cookie `Secure`.
+## Deploy on Vercel
 
-## Deploy (Railway or any Node 22 container host)
-
-1. Deploy from the repo; the Dockerfile is detected.
-2. Mount a volume at `/data` (the Dockerfile sets `DATA_DIR=/data`). Without it, accounts reset on every deploy.
-3. Generate a public domain. Sign up first so you're the admin, then share the URL with the class.
+1. In John's Vercel account, import `Matt-Baxter/superintelligence-home-page`. `vercel.json` handles the build, the API function and clean URLs.
+2. Add a Postgres database from the Vercel Marketplace (Neon or Supabase). It sets `DATABASE_URL`/`POSTGRES_URL`, and the tables are created on the first request.
+3. Add `CRON_SECRET` (a long random value) in Project Settings → Environment Variables. Vercel Cron then calls `/api/cron/fetch` daily at 12:00 UTC. On the Hobby plan, cron runs at most once a day, so the admin can also press **Fetch all now** on the Sources page.
+4. Deploy, open the site, and create the first account. That account becomes the admin.
 
 ## Tests
 
