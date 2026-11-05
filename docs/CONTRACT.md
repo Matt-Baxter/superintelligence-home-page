@@ -2,7 +2,7 @@
 
 SEIS 606 Project 2 · Superintelligence Homepage · John Affolter and Matthew Baxter
 
-**Version 0.5 · November 5, 2026 · draft, not yet approved by both partners.**
+**Version 0.6 · November 5, 2026 · draft, not yet approved by both partners.**
 
 This contract serves both halves of our **mix**: the split parts must fit together, and both bake-off versions must meet the same API and data models so the comparison is fair. Matt's accounts, data and API layer is the shared base. Each bake-off version writes stories into the shared schema and reads only through the API. If something isn't written here, neither side may depend on it.
 
@@ -17,6 +17,7 @@ Every change is approved by both of us and gets a row here. Breaking changes bum
 | 0.3 | Nov 4, 2026 | Bake-off tools: John on v0, Matt on Claude. Hosting moves to Vercel (John's account) from Matt's GitHub repo, so data moves from SQLite to hosted Postgres and the 30-minute feed fetch becomes a Vercel Cron Job. | John ☐ · Matt ☐ |
 | 0.4 | Nov 4, 2026 | **Proposed by John (built with Claude), needs Matt's approval.** Harvesting and admin layer. Adds tables `fetch_runs` and `admin_audit`; adds columns to `sources` (interval_minutes, max_items, etag, last_modified, failures, next_due_at, verified, from_catalog), `users` (disabled) and `stories` (hidden, hidden_reason); new source kinds `news`, `policy` and formats `jsonfeed`, `hn-algolia`, `semantic-scholar`; new `/api/admin/*` routes. Additive only: existing routes keep their shapes, except that `/api/stories` no longer returns hidden stories and `/api/cron/fetch` now returns a run summary around the same `report`. | John ☐ · Matt ☐ |
 | 0.5 | Nov 5, 2026 | **Proposed by John (built with Claude), needs Matt's approval.** Project workspace for running the project (Linear-style, admins only). Adds tables `project_issues`, `project_milestones`, `project_comments`, `project_activity` and routes under `/api/admin/project/*`. Free-tier tuning: four daily Vercel crons instead of one (`/api/cron/fetch?slot=0..3`, same response), smaller Postgres pool that closes idle connections, log pruning, story summaries capped at 1,500 characters. No existing route or shape changes. | John ☐ · Matt ☐ |
+| 0.6 | Nov 5, 2026 | **Proposed by John (built with Claude), needs Matt's approval.** Capability analysis. `stories` gains `significance` (0–100) and `analysis` (JSON: type, evidence, benchmarks with reported scores, people, frontier claims, and the `why` lines that add up to the score); new table `story_entities`; source kinds `journal` and `people`; ontology v2 (new topics, `benchmarks`, `people`). Story objects in every response gain `significance` and `analysis`; `GET /api/stories` accepts `sort=signal`, `benchmark`, `person`, `min`; `GET /api/ontology` adds `benchmarks` and `people`; new `GET /api/capabilities`. Additive: existing fields unchanged. | John ☐ · Matt ☐ |
 
 **Done means:** a classmate can sign up on the live site, see a grouped, tagged feed from at least 8 sources, and vote on and save stories that are still there the next time they sign in.
 
@@ -58,7 +59,7 @@ Hosted Postgres in production (Vercel functions can't keep a SQLite file between
 | users | id int, username text unique (case-insensitive), display_name text, pass_hash text, is_admin bool, disabled bool | API |
 | sessions | token text, user_id int, expires_at bigint (ms) | API |
 | sources | id, name, kind (papers, lab, research-org, forum, newsletter, academic, community, news, policy), format (rss, arxiv, hf-daily, jsonfeed, hn-algolia, semantic-scholar), url unique, status (active, paused, pending, rejected), last_ok, last_error; harvest settings and state: interval_minutes (default 360), max_items (default 50), etag, last_modified, failures, next_due_at, verified, from_catalog | API (admin); the harvester updates fetch state |
-| stories | id, title, url, summary, authors, published_at ISO, first_seen ISO, topics JSON, orgs JSON, hidden bool, hidden_reason | Ingestion; `hidden` by admins only |
+| stories | id, title, url, summary, authors, published_at ISO, first_seen ISO, topics JSON, orgs JSON, hidden bool, hidden_reason, significance int 0–100, analysis JSON | Ingestion (`lib/analysis.js` computes significance and analysis); `hidden` by admins only |
 | story_keys | key text (arxiv:…, url:…, title:…), story_id | Ingestion |
 | story_links | story_id, source_id, url, title, published_at | Ingestion |
 | votes, saves | user_id, story_id | API |
@@ -69,6 +70,7 @@ Hosted Postgres in production (Vercel functions can't keep a SQLite file between
 | admin_audit | id, admin_id, action, target, detail, at | Admin API |
 | project_issues | id, number unique (shown as SI-n), title, description, status (backlog, todo, in_progress, in_review, done, canceled), priority 0–4 (none, urgent, high, medium, low), assignee_id (admins only), creator_id, milestone_id, labels JSON, due_date YYYY-MM-DD, sort_order, created_at, updated_at, completed_at | Project API |
 | project_milestones, project_comments, project_activity | milestone: name, description, target_date; comment: issue_id, author_id, body; activity: issue_id, actor_id, action, detail, at | Project API |
+| story_entities | story_id, kind (benchmark, person), entity (ontology id), value real (reported score), unit (% or hours) | Ingestion |
 
 All timestamps are ISO 8601 UTC strings (`2026-11-04T19:30:00Z`). A story's `topics` field is a list of `{"id":"reasoning","label":"Reasoning","matched":["chain of thought"]}`, so the UI can always show why a tag was applied.
 
@@ -83,7 +85,7 @@ JSON over HTTPS. Requests send `Content-Type: application/json`.
 | POST /api/signup | `{username, password, displayName}` | `{user:{id, username, name, admin}}` + session cookie |
 | POST /api/login, /api/logout | `{username, password}` | `{user}` / `{ok:true}` |
 | GET /api/me | none | `{user}` or `{user:null}` |
-| GET /api/stories | query: `topic, kind, org, q, days, saved=1, sort=top\|new\|votes, offset` | `{stories:[{id, title, url, summary, topics, orgs, votes, voted, saved, notes, sources:[{name, kind, url}], nsources}]}`, 40 per page |
+| GET /api/stories | query: `topic, kind, org, q, days, saved=1, sort=top\|new\|votes\|signal, benchmark, person, min, offset` | `{stories:[{id, title, url, summary, topics, orgs, votes, voted, saved, notes, sources:[{name, kind, url}], nsources, significance, analysis}]}`, 40 per page |
 | GET /api/stories/:id | none | `{story, notes:[…], lists:[…], inPublicLists:[…]}` |
 | POST /api/stories/:id/vote, /save | none | `{voted, votes}` / `{saved}` (toggles) |
 | POST /api/stories/:id/notes | `{text, private}` | `{ok:true}` |
@@ -92,6 +94,7 @@ JSON over HTTPS. Requests send `Content-Type: application/json`.
 | PUT /api/lists/:id/items/:storyId | `{note}` or `{remove:true}` | `{ok:true}` |
 | GET /api/sources; POST /api/sources/suggest | `{name, url, kind, format}` | `{sources}` / `{ok, status}` |
 | GET /api/brief | query: `week=YYYY-MM-DD` | `{spec, week}`: a json-render spec |
+| GET /api/capabilities | query: `days=7\|30\|90` | `{areas:[{id,label,now,prev,top}], benchmarks:[{id,label,measures,mentions,best,latest}], people, orgs, signals:[story], watchlist}` |
 | GET, POST /api/agent-log; PUT /api/agent-log/:id | `{went_wrong, caught_how, fix, link, typedDelta, pastedDelta, activeDeltaMs, submit?}` | `{entries}` / `{entry}` |
 | GET /api/cron/fetch | header `Authorization: Bearer $CRON_SECRET` (sent by Vercel Cron) | `{trigger, sources, ok, errors, stored, notReached, ms, report:[…]}`; harvests only sources that are due |
 | `/api/admin/*` (admins only, 403 otherwise) | overview; sources (list, test, discover, add, edit, delete, harvest one); harvest (due or all); runs; catalog and catalog/enable; opml export and import; users (admin, disabled); stories (hide, unhide); shared notes (delete); ontology; retag; audit | See `lib/admin.js`. Every change writes an `admin_audit` row. Admins can't read others' agent log drafts. |

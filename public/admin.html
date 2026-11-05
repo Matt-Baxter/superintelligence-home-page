@@ -200,7 +200,12 @@ async function loadAdd() {
   $("#catAbout").textContent = c.about;
   const groups = {}; c.sources.forEach((s) => (groups[s.kind] ||= []).push(s));
   $("#catalog").innerHTML = Object.entries(groups).map(([k, list]) => `<div class="catgroup"><h3>${esc(KIND[k] || k)}</h3>${list.map((s) =>
-    `<label class="${s.added ? "added" : ""}"><input type="checkbox" value="${esc(s.url)}" ${s.added ? "disabled checked" : ""}> <span>${esc(s.name)} <span class="small muted">${esc(fmtLabel(s.format))}${s.added ? " · already added" : ""}</span></span></label>`).join("")}</div>`).join("");
+    `<label class="${s.added ? "added" : ""}"><input type="checkbox" value="${esc(s.url)}" ${s.added ? "disabled checked" : ""}> <span>${esc(s.name)} <span class="small muted">${esc(fmtLabel(s.format))}${s.added ? " · already added" : ""}</span></span></label>`).join("")}</div>`).join("")
+    + ((c.findFeed || []).length ? `<div class="catgroup"><h3>Important sites without a known feed</h3>${c.findFeed.map((s) => `<label class="${s.added ? "added" : ""}"><span>${esc(s.name)} <span class="small muted">${esc(KIND[s.kind] || s.kind)} · ${esc(s.why)}</span></span> ${s.added ? "" : `<button class="btn" type="button" data-find="${esc(s.home)}" data-name="${esc(s.name)}" data-kind="${esc(s.kind)}">Find feed</button>`}</label>`).join("")}</div>` : "");
+  $$("#catalog [data-find]").forEach((b) => (b.onclick = () => {
+    $("#aUrl").value = b.dataset.find; $("#aName").value = b.dataset.name; $("#aKind").value = b.dataset.kind; $("#aHome").value = b.dataset.find;
+    $("#addForm").scrollIntoView({ behavior: "smooth" }); $("#aFind").click();
+  }));
 }
 $("#aFind").onclick = async () => {
   $("#aErr").textContent = ""; $("#aFound").innerHTML = '<p class="small muted">Looking…</p>';

@@ -19,13 +19,13 @@
 
 <main id="feedView" hidden>
   <div class="pagehead">
-    <div><h1 id="feedTitle">Today in AI progress</h1><p class="muted" id="feedSub">Ranked by reader votes, how many independent sources covered a story, and recency.</p></div>
+    <div><h1 id="feedTitle">Today in AI progress</h1><p class="muted" id="feedSub">Ranked by reader votes, how many independent sources covered a story, its significance score, and recency.</p></div>
     <button class="btn" id="submitBtn" type="button">Submit a link</button>
   </div>
   <nav class="topicbar" id="topicbar" aria-label="Topics"></nav>
   <div class="filters">
     <div class="seg-btns" role="group" aria-label="Sort">
-      <button type="button" data-sort="top" aria-pressed="true">Top</button><button type="button" data-sort="new" aria-pressed="false">New</button><button type="button" data-sort="votes" aria-pressed="false">Most voted</button>
+      <button type="button" data-sort="top" aria-pressed="true">Top</button><button type="button" data-sort="new" aria-pressed="false">New</button><button type="button" data-sort="votes" aria-pressed="false">Most voted</button><button type="button" data-sort="signal" aria-pressed="false" title="Ranked by the significance score: evidence, coverage, benchmarks, frontier claims">Significance</button>
     </div>
     <select id="kind" aria-label="Source kind"><option value="">All kinds of source</option></select>
     <select id="days" aria-label="Time window"><option value="">Any time</option><option value="1">Last day</option><option value="7" selected>Last week</option><option value="30">Last month</option></select>
@@ -57,19 +57,20 @@ $("#authForm").onsubmit = async (e) => {
     const next = params.get("next"); location.href = next && next.startsWith("/") ? next : "/"; }
   catch (err) { showErr($("#authErr"), err); } finally { $("#authBtn").disabled = false; }
 };
-function state() { return { topic: params.get("topic") || "", org: params.get("org") || "", kind: $("#kind").value, days: $("#days").value, q: $("#q").value.trim(), saved: $("#savedOnly").checked ? "1" : "" }; }
+function state() { return { topic: params.get("topic") || "", org: params.get("org") || "", benchmark: params.get("benchmark") || "", person: params.get("person") || "", kind: $("#kind").value, days: $("#days").value, q: $("#q").value.trim(), saved: $("#savedOnly").checked ? "1" : "" }; }
 async function load(append = false) {
   if (!append) offset = 0;
   const s = state(), qs = new URLSearchParams({ ...s, sort, offset });
   const { stories } = await api("/api/stories?" + qs);
   const feed = $("#feed"); if (!append) feed.innerHTML = "";
   stories.forEach((st) => feed.append(storyCard(st)));
-  if (!append && !stories.length) feed.innerHTML = `<li class="empty">No stories match. ${s.days ? "Try a longer time window, or " : ""}check the <a href="/sources">Sources</a> page: feeds are fetched every 30 minutes once the site is deployed.</li>`;
+  if (!append && !stories.length) feed.innerHTML = `<li class="empty">No stories match. ${s.days ? "Try a longer time window, or " : ""}check the <a href="/sources">Sources</a> page: feeds are harvested several times a day once the site is deployed.</li>`;
   $("#more").hidden = stories.length < 40; offset += stories.length;
 }
 function header() {
   const s = state(), t = ONT.topics.find((x) => x.id === s.topic), o = ONT.orgs.find((x) => x.id === s.org);
-  $("#feedTitle").textContent = t ? t.label : o ? o.label : s.saved ? "Saved for later" : "Today in AI progress";
+  const bm = (ONT.benchmarks || []).find((x) => x.id === s.benchmark), pp = (ONT.people || []).find((x) => x.id === s.person);
+  $("#feedTitle").textContent = bm ? `Benchmark: ${bm.label}` : pp ? `Mentions of ${pp.label}` : t ? t.label : o ? o.label : s.saved ? "Saved for later" : "Today in AI progress";
   $("#topicbar").innerHTML = `<a href="/" ${!s.topic && !s.org ? 'aria-current="true"' : ""}>All</a>` + ONT.topics.filter((x) => !x.parent).map((x) => `<a href="/?topic=${x.id}" ${x.id === s.topic ? 'aria-current="true"' : ""}>${esc(x.label)}</a>`).join("")
     + (t && t.parent ? `<a href="/?topic=${t.id}" aria-current="true">${esc(t.label)}</a>` : "");
 }
@@ -86,7 +87,8 @@ $("#submitForm").onsubmit = async (e) => { e.preventDefault(); try { const r = a
   topbar(user); $("#feedView").hidden = false;
   ONT = await api("/api/ontology");
   Object.entries(KIND).filter(([k]) => k !== "news" && k !== "policy").forEach(([k, v]) => $("#kind").insertAdjacentHTML("beforeend", `<option value="${k}">${v}</option>`));
-  if (params.get("topic") || params.get("org")) $("#days").value = "";
+  if (params.get("topic") || params.get("org") || params.get("benchmark") || params.get("person")) $("#days").value = "";
+  $$(".seg-btns button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.sort === sort));
   header(); load();
 })();
 </script>
