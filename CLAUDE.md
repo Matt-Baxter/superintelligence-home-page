@@ -27,10 +27,15 @@ Read before changing anything: [docs/CONTRACT.md](docs/CONTRACT.md) (what both h
 | `lib/source-catalog.json` | Candidate sources an admin can enable in bulk (unverified until a test fetch). No Twitter/X. |
 | `lib/harvest.js` | Harvester: per-source intervals, conditional GET, backoff, time budget, `fetch_runs` log. |
 | `lib/admin.js`, `lib/audit.js` | `/api/admin/*` routes (admins only) and the `admin_audit` log. |
+| `lib/project.js`, `lib/project-starter.json` | Project workspace (issues, milestones, comments, activity) under `/api/admin/project/*`, and the starter to-dos. |
 | `views/catalog.mjs`, `views/specs.mjs` | json-render catalog and server-built specs (weekly brief, agent log summary). |
 | `client/jr.jsx` → `public/js/jr.js` | Browser renderer for the catalog (`npm run build`). |
-| `public/` | Pages: feed, story, lists, brief, sources, agent log, admin. |
+| `public/` | Pages: feed, story, lists, brief, sources, agent log, admin, project. |
 | `test/` | Synthetic fixtures, sample-data servers, two-user Playwright test. |
+
+## Free tier
+
+The site runs on Vercel Hobby and Neon Free. Keep it that way: no polling or background loops, no cron more often than daily (Hobby rejects it; add another daily entry instead), keep queries indexed and logs pruned, and close idle database connections so Neon can scale to zero.
 
 ## Portable SQL (SQLite and Postgres)
 

@@ -2,7 +2,7 @@
 
 SEIS 606 Project 2 · Superintelligence Homepage · John Affolter and Matthew Baxter
 
-**Version 0.4 · November 4, 2026 · draft, not yet approved by both partners.**
+**Version 0.5 · November 5, 2026 · draft, not yet approved by both partners.**
 
 This contract serves both halves of our **mix**: the split parts must fit together, and both bake-off versions must meet the same API and data models so the comparison is fair. Matt's accounts, data and API layer is the shared base. Each bake-off version writes stories into the shared schema and reads only through the API. If something isn't written here, neither side may depend on it.
 
@@ -16,6 +16,7 @@ Every change is approved by both of us and gets a row here. Breaking changes bum
 | 0.2 | Nov 4, 2026 | Project choice is now a mix: split base (accounts, data, API, deploy) plus a bake-off on the homepage experience, judged by CLEF or JEV and signed off by both. Roles table to revisit for the bake-off parts. | John ☐ · Matt ☐ |
 | 0.3 | Nov 4, 2026 | Bake-off tools: John on v0, Matt on Claude. Hosting moves to Vercel (John's account) from Matt's GitHub repo, so data moves from SQLite to hosted Postgres and the 30-minute feed fetch becomes a Vercel Cron Job. | John ☐ · Matt ☐ |
 | 0.4 | Nov 4, 2026 | **Proposed by John (built with Claude), needs Matt's approval.** Harvesting and admin layer. Adds tables `fetch_runs` and `admin_audit`; adds columns to `sources` (interval_minutes, max_items, etag, last_modified, failures, next_due_at, verified, from_catalog), `users` (disabled) and `stories` (hidden, hidden_reason); new source kinds `news`, `policy` and formats `jsonfeed`, `hn-algolia`, `semantic-scholar`; new `/api/admin/*` routes. Additive only: existing routes keep their shapes, except that `/api/stories` no longer returns hidden stories and `/api/cron/fetch` now returns a run summary around the same `report`. | John ☐ · Matt ☐ |
+| 0.5 | Nov 5, 2026 | **Proposed by John (built with Claude), needs Matt's approval.** Project workspace for running the project (Linear-style, admins only). Adds tables `project_issues`, `project_milestones`, `project_comments`, `project_activity` and routes under `/api/admin/project/*`. Free-tier tuning: four daily Vercel crons instead of one (`/api/cron/fetch?slot=0..3`, same response), smaller Postgres pool that closes idle connections, log pruning, story summaries capped at 1,500 characters. No existing route or shape changes. | John ☐ · Matt ☐ |
 
 **Done means:** a classmate can sign up on the live site, see a grouped, tagged feed from at least 8 sources, and vote on and save stories that are still there the next time they sign in.
 
@@ -66,6 +67,8 @@ Hosted Postgres in production (Vercel functions can't keep a SQLite file between
 | agent_log, agent_log_saves | entry: author_id, session_date, went_wrong, caught_how, fix, link, status; saves: chars typed, pasted, active ms | API |
 | fetch_runs | id, source_id, trigger (cron, schedule, admin), started_at, finished_at, status (ok, not_modified, error), items, stored, error, duration_ms; newest 2000 kept | Harvester |
 | admin_audit | id, admin_id, action, target, detail, at | Admin API |
+| project_issues | id, number unique (shown as SI-n), title, description, status (backlog, todo, in_progress, in_review, done, canceled), priority 0–4 (none, urgent, high, medium, low), assignee_id (admins only), creator_id, milestone_id, labels JSON, due_date YYYY-MM-DD, sort_order, created_at, updated_at, completed_at | Project API |
+| project_milestones, project_comments, project_activity | milestone: name, description, target_date; comment: issue_id, author_id, body; activity: issue_id, actor_id, action, detail, at | Project API |
 
 All timestamps are ISO 8601 UTC strings (`2026-11-04T19:30:00Z`). A story's `topics` field is a list of `{"id":"reasoning","label":"Reasoning","matched":["chain of thought"]}`, so the UI can always show why a tag was applied.
 
@@ -92,6 +95,7 @@ JSON over HTTPS. Requests send `Content-Type: application/json`.
 | GET, POST /api/agent-log; PUT /api/agent-log/:id | `{went_wrong, caught_how, fix, link, typedDelta, pastedDelta, activeDeltaMs, submit?}` | `{entries}` / `{entry}` |
 | GET /api/cron/fetch | header `Authorization: Bearer $CRON_SECRET` (sent by Vercel Cron) | `{trigger, sources, ok, errors, stored, notReached, ms, report:[…]}`; harvests only sources that are due |
 | `/api/admin/*` (admins only, 403 otherwise) | overview; sources (list, test, discover, add, edit, delete, harvest one); harvest (due or all); runs; catalog and catalog/enable; opml export and import; users (admin, disabled); stories (hide, unhide); shared notes (delete); ontology; retag; audit | See `lib/admin.js`. Every change writes an `admin_audit` row. Admins can't read others' agent log drafts. |
+| `/api/admin/project/*` (admins only) | meta; issues (list with filters `status, assignee=me\|none\|id, priority, label, milestone, q, sort=manual`; create; get by number; update; delete); comments; milestones; activity; starter (loads lib/project-starter.json into an empty tracker) | See `lib/project.js`. Field changes are written to `project_activity`. |
 
 ## Auth
 

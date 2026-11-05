@@ -153,10 +153,44 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   ok(['source.add', 'catalog.enable', 'user.edit', 'story.hide', 'ontology.retag'].every((a) => au.includes(a)), 'audit log records admin actions');
   await john.click('[data-tab="overview"]'); await john.waitForSelector('#kpis .kpi'); await john.screenshot({ path: 'shots/admin.png', fullPage: true });
 
+  console.log('Project workspace');
+  ok((await j(matt, '/api/admin/project/issues')).status === 403, 'project workspace API is admins only');
+  await john.goto(B + '/project'); await john.waitForSelector('#starter');
+  await john.click('#starter'); await john.waitForSelector('#body .irow');
+  const meta = await j(john, '/api/admin/project/meta');
+  ok(meta.milestones.length === 3 && Object.values(meta.counts).reduce((a, b) => a + b, 0) === 15, "starter loads the project's 15 open to-dos in 3 milestones");
+  ok((await john.textContent('#body')).includes('Write the initial spec'), 'Active view lists issues grouped by status');
+  await john.keyboard.press('c'); await john.waitForSelector('#nTitle');
+  await john.fill('#nTitle', 'Sample issue for the browser test (test data)'); await john.selectOption('#nPriority', '1'); await john.fill('#nLabels', 'testing');
+  await john.keyboard.press('Control+Enter'); await john.waitForFunction(() => /Sample issue for the browser test/.test(document.querySelector('#body').textContent));
+  ok(true, 'C opens New issue; Ctrl+Enter creates it');
+  const mine = (await j(john, '/api/admin/project/issues?q=browser test')).issues[0];
+  ok(mine.key === 'SI-16' && mine.priority === 1 && mine.labels[0] === 'testing', 'issue gets the next key with priority and labels');
+  await john.keyboard.press('j'); ok(await john.$('#body .irow.sel') !== null, 'J selects the next issue');
+  await john.click(`#body .irow[data-n="${mine.number}"]`); await john.waitForSelector('.drawer');
+  await john.selectOption('.props [data-p="status"]', 'in_progress'); await john.waitForTimeout(500);
+  await john.fill('#cBody', 'Sample comment (test data)'); await john.click('#cForm button'); await john.waitForSelector('.tl .cm');
+  const det = await j(john, `/api/admin/project/issues/${mine.number}`);
+  ok(det.issue.status === 'in_progress' && det.comments.length === 1 && det.activity.some((a) => a.action === 'set status' && a.detail === 'In progress'), 'drawer edits status, records activity and comments');
+  await john.keyboard.press('Escape'); await john.waitForTimeout(200); ok(await john.$('.drawer') === null, 'Esc closes the issue');
+  await john.keyboard.press('Control+k'); await john.waitForSelector('#pq'); await john.fill('#pq', 'SI-16'); await john.waitForSelector('#pl li:has-text("Sample issue")');
+  await john.click('#pl li:has-text("Sample issue")');
+  await john.waitForSelector('.drawer'); ok((await john.textContent('.drawer .dh')).includes('SI-16'), 'Cmd/Ctrl+K command menu jumps to an issue');
+  await john.keyboard.press('Escape');
+  await john.click('[data-view="board"]'); await john.waitForSelector('.board .card');
+  await john.dragAndDrop(`.card[data-n="${mine.number}"]`, '.col[data-status="done"]'); await john.waitForTimeout(700);
+  ok((await j(john, `/api/admin/project/issues/${mine.number}`)).issue.status === 'done', 'dragging a card on the board changes its status');
+  ok((await j(john, `/api/admin/project/issues/${mine.number}`)).issue.completed_at, 'moving to Done stamps completion');
+  await john.click('[data-view="milestones"]'); await john.waitForSelector('.ms .m'); ok((await john.textContent('#body')).includes('Week 9 homework'), 'milestones view shows progress');
+  ok((await j(john, '/api/admin/project/issues', 'POST', { title: 'x', assignee_id: mattId })).status === 400, 'issues can be assigned to admins only');
+  await john.goto(B + '/admin'); await john.waitForSelector('#freeTier p'); ok(/of the 1 GB Neon free plan/.test(await john.textContent('#freeTier')), 'admin overview shows free-tier storage use');
+  await john.goto(B + '/project#/board'); await john.waitForSelector('.board .card'); await john.screenshot({ path: 'shots/project-board.png' });
+  await john.goto(B + '/project#/active'); await john.waitForSelector('#body .irow'); await john.screenshot({ path: 'shots/project-list.png' });
+
   console.log('Phone width');
   const ph = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })).newPage();
   await ph.goto(B); await ph.fill('#username', 'john'); await ph.fill('#password', 'correct-horse-9'); await ph.click('#authBtn'); await ph.waitForSelector('#feed .story');
-  for (const path of ['/', '/story?id=' + sid, '/brief', '/lists', '/sources', '/agent-log', '/admin']) { await ph.goto(B + path); await ph.waitForTimeout(600); ok(!(await ph.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'no sideways scroll: ' + path.split('?')[0]); }
+  for (const path of ['/', '/story?id=' + sid, '/brief', '/lists', '/sources', '/agent-log', '/admin', '/project']) { await ph.goto(B + path); await ph.waitForTimeout(600); ok(!(await ph.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'no sideways scroll: ' + path.split('?')[0]); }
   await ph.goto(B); await ph.waitForSelector('#feed .story'); await ph.screenshot({ path: 'shots/phone-feed.png' });
   await john.goto(B); await john.waitForSelector('#feed .story'); await john.screenshot({ path: 'shots/feed.png', fullPage: true });
   await john.goto(B + '/brief'); await john.waitForSelector('#brief .jr-metric'); await john.screenshot({ path: 'shots/brief.png', fullPage: true });
