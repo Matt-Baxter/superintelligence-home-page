@@ -1,38 +1,990 @@
 {
-  "version": 1,
-  "about": "Topics for tracking progress toward advanced AI. Each topic lists match terms (case-insensitive, whole-word unless a term ends in *). An item gets a topic when its title or summary matches at least one term; the matched terms are stored so every tag can explain itself.",
+  "version": 2,
+  "about": "Topics for tracking progress toward advanced AI. Each topic lists match terms (case-insensitive, whole-word unless a term ends in *). An item gets a topic when its title or summary matches at least one term; the matched terms are stored so every tag can explain itself. Version 2 adds superintelligence signals, finer capability areas, a benchmark registry (lib/analysis.js reads the reported score next to a benchmark name) and a watchlist of people whose names are matched in titles, summaries and author lists.",
   "topics": [
-    { "id": "capabilities", "label": "Capabilities", "parent": null, "terms": ["state of the art", "sota", "frontier model", "new model", "outperforms", "capabilit*", "general intelligence", "agi", "superintelligen*"] },
-    { "id": "reasoning", "label": "Reasoning", "parent": "capabilities", "terms": ["reasoning", "chain of thought", "chain-of-thought", "test-time compute", "inference-time", "mathematical", "theorem prov*", "planning"] },
-    { "id": "agents", "label": "Agents", "parent": "capabilities", "terms": ["agent", "agents", "agentic", "tool use", "computer use", "autonomous", "multi-agent", "web navigation"] },
-    { "id": "multimodal", "label": "Multimodal", "parent": "capabilities", "terms": ["multimodal", "vision-language", "video generation", "image generation", "speech", "audio"] },
-    { "id": "robotics", "label": "Robotics & embodiment", "parent": "capabilities", "terms": ["robot*", "embodied", "manipulation", "humanoid", "world model"] },
-    { "id": "science", "label": "AI for science", "parent": "capabilities", "terms": ["protein", "drug discovery", "materials", "scientific discovery", "biology", "chemistry", "automated research"] },
-
-    { "id": "safety", "label": "Safety & alignment", "parent": null, "terms": ["alignment", "aligned", "misalign*", "ai safety", "safety", "rlhf", "constitutional", "reward hacking", "deceptive", "scheming", "sycophancy", "jailbreak*", "red team*", "corrigib*"] },
-    { "id": "interpretability", "label": "Interpretability", "parent": "safety", "terms": ["interpretab*", "mechanistic", "sparse autoencoder*", "circuits", "probing", "feature visualization", "explainab*"] },
-    { "id": "evals", "label": "Evals & benchmarks", "parent": null, "terms": ["benchmark*", "evaluation", "evals", "leaderboard", "swe-bench", "gpqa", "arc-agi", "mmlu", "frontiermath", "humanity's last exam", "dangerous capabilit*"] },
-
-    { "id": "compute", "label": "Compute & hardware", "parent": null, "terms": ["compute", "gpu*", "tpu*", "datacenter", "data center", "chips", "semiconductor*", "flops", "training run", "energy", "power grid"] },
-    { "id": "scaling", "label": "Scaling & training", "parent": null, "terms": ["scaling law*", "scaling", "pretraining", "pre-training", "post-training", "fine-tun*", "distillation", "synthetic data", "reinforcement learning", "mixture of experts", "long context"] },
-    { "id": "open-models", "label": "Open models", "parent": null, "terms": ["open-weight*", "open weight*", "open-source model*", "open source model*", "llama", "mistral", "qwen", "deepseek", "gemma", "olmo"] },
-
-    { "id": "policy", "label": "Policy & governance", "parent": null, "terms": ["regulation", "policy", "governance", "legislation", "executive order", "export control*", "eu ai act", "compliance", "standards", "liability", "licensing"] },
-    { "id": "economics", "label": "Economics & labor", "parent": null, "terms": ["labor market", "jobs", "automation", "productivity", "economic*", "investment", "revenue", "valuation"] },
-    { "id": "forecasting", "label": "Forecasting & timelines", "parent": null, "terms": ["forecast*", "timeline*", "trend*", "prediction", "takeoff", "explosion"] },
-    { "id": "security", "label": "Security & misuse", "parent": "safety", "terms": ["cyber*", "bioweapon*", "biosecurity", "misuse", "model weights security", "exfiltrat*", "prompt injection"] }
+    {
+      "id": "capabilities",
+      "label": "Capabilities",
+      "parent": null,
+      "terms": [
+        "state of the art",
+        "sota",
+        "frontier model",
+        "new model",
+        "outperforms",
+        "capabilit*",
+        "general intelligence",
+        "agi",
+        "superintelligen*"
+      ]
+    },
+    {
+      "id": "reasoning",
+      "label": "Reasoning",
+      "parent": "capabilities",
+      "terms": [
+        "reasoning",
+        "chain of thought",
+        "chain-of-thought",
+        "test-time compute",
+        "inference-time",
+        "mathematical",
+        "theorem prov*",
+        "planning"
+      ]
+    },
+    {
+      "id": "agents",
+      "label": "Agents",
+      "parent": "capabilities",
+      "terms": [
+        "agent",
+        "agents",
+        "agentic",
+        "tool use",
+        "computer use",
+        "autonomous",
+        "multi-agent",
+        "web navigation"
+      ]
+    },
+    {
+      "id": "multimodal",
+      "label": "Multimodal",
+      "parent": "capabilities",
+      "terms": [
+        "multimodal",
+        "vision-language",
+        "video generation",
+        "image generation",
+        "speech",
+        "audio"
+      ]
+    },
+    {
+      "id": "robotics",
+      "label": "Robotics & embodiment",
+      "parent": "capabilities",
+      "terms": [
+        "robot*",
+        "embodied",
+        "manipulation",
+        "humanoid",
+        "world model"
+      ]
+    },
+    {
+      "id": "science",
+      "label": "AI for science",
+      "parent": "capabilities",
+      "terms": [
+        "protein",
+        "drug discovery",
+        "materials",
+        "scientific discovery",
+        "biology",
+        "chemistry",
+        "automated research"
+      ]
+    },
+    {
+      "id": "safety",
+      "label": "Safety & alignment",
+      "parent": null,
+      "terms": [
+        "alignment",
+        "aligned",
+        "misalign*",
+        "ai safety",
+        "safety",
+        "rlhf",
+        "constitutional",
+        "reward hacking",
+        "deceptive",
+        "scheming",
+        "sycophancy",
+        "jailbreak*",
+        "red team*",
+        "corrigib*"
+      ]
+    },
+    {
+      "id": "interpretability",
+      "label": "Interpretability",
+      "parent": "safety",
+      "terms": [
+        "interpretab*",
+        "mechanistic",
+        "sparse autoencoder*",
+        "circuits",
+        "probing",
+        "feature visualization",
+        "explainab*"
+      ]
+    },
+    {
+      "id": "evals",
+      "label": "Evals & benchmarks",
+      "parent": null,
+      "terms": [
+        "benchmark*",
+        "evaluation",
+        "evals",
+        "leaderboard",
+        "swe-bench",
+        "gpqa",
+        "arc-agi",
+        "mmlu",
+        "frontiermath",
+        "humanity's last exam",
+        "dangerous capabilit*"
+      ]
+    },
+    {
+      "id": "compute",
+      "label": "Compute & hardware",
+      "parent": null,
+      "terms": [
+        "compute",
+        "gpu*",
+        "tpu*",
+        "datacenter",
+        "data center",
+        "chips",
+        "semiconductor*",
+        "flops",
+        "training run",
+        "energy",
+        "power grid"
+      ]
+    },
+    {
+      "id": "scaling",
+      "label": "Scaling & training",
+      "parent": null,
+      "terms": [
+        "scaling law*",
+        "scaling",
+        "pretraining",
+        "pre-training",
+        "post-training",
+        "fine-tun*",
+        "distillation",
+        "synthetic data",
+        "reinforcement learning",
+        "mixture of experts",
+        "long context"
+      ]
+    },
+    {
+      "id": "open-models",
+      "label": "Open models",
+      "parent": null,
+      "terms": [
+        "open-weight*",
+        "open weight*",
+        "open-source model*",
+        "open source model*",
+        "llama",
+        "mistral",
+        "qwen",
+        "deepseek",
+        "gemma",
+        "olmo"
+      ]
+    },
+    {
+      "id": "policy",
+      "label": "Policy & governance",
+      "parent": null,
+      "terms": [
+        "regulation",
+        "policy",
+        "governance",
+        "legislation",
+        "executive order",
+        "export control*",
+        "eu ai act",
+        "compliance",
+        "standards",
+        "liability",
+        "licensing"
+      ]
+    },
+    {
+      "id": "economics",
+      "label": "Economics & labor",
+      "parent": null,
+      "terms": [
+        "labor market",
+        "jobs",
+        "automation",
+        "productivity",
+        "economic*",
+        "investment",
+        "revenue",
+        "valuation"
+      ]
+    },
+    {
+      "id": "forecasting",
+      "label": "Forecasting & timelines",
+      "parent": null,
+      "terms": [
+        "forecast*",
+        "timeline*",
+        "trend*",
+        "prediction",
+        "takeoff",
+        "explosion"
+      ]
+    },
+    {
+      "id": "security",
+      "label": "Security & misuse",
+      "parent": "safety",
+      "terms": [
+        "cyber*",
+        "bioweapon*",
+        "biosecurity",
+        "misuse",
+        "model weights security",
+        "exfiltrat*",
+        "prompt injection"
+      ]
+    },
+    {
+      "id": "superintelligence",
+      "label": "Superintelligence & AGI",
+      "terms": [
+        "agi",
+        "artificial general intelligence",
+        "superintelligen*",
+        "asi",
+        "transformative ai",
+        "intelligence explosion",
+        "recursive self-improvement",
+        "recursively self-improv*",
+        "human-level ai",
+        "superhuman",
+        "takeoff"
+      ]
+    },
+    {
+      "id": "coding",
+      "label": "Coding",
+      "parent": "capabilities",
+      "terms": [
+        "coding",
+        "code generation",
+        "software engineering",
+        "programming",
+        "swe-bench*",
+        "terminal-bench*",
+        "codeforces",
+        "livecodebench",
+        "codebase*"
+      ]
+    },
+    {
+      "id": "math",
+      "label": "Math",
+      "parent": "reasoning",
+      "terms": [
+        "math",
+        "mathematic*",
+        "theorem prov*",
+        "olympiad",
+        "aime",
+        "frontiermath",
+        "formal proof*",
+        "lean 4",
+        "imo gold",
+        "imo problem*",
+        "international mathematical olympiad"
+      ]
+    },
+    {
+      "id": "long-horizon",
+      "label": "Long-horizon autonomy",
+      "parent": "agents",
+      "terms": [
+        "long-horizon",
+        "time horizon*",
+        "time-horizon*",
+        "autonomous replication",
+        "multi-day",
+        "hours-long",
+        "task length*"
+      ]
+    },
+    {
+      "id": "ai-rnd",
+      "label": "AI R&D automation",
+      "parent": "capabilities",
+      "terms": [
+        "automated ai research",
+        "ai r&d",
+        "self-improv*",
+        "recursive self-improvement",
+        "ai scientist*",
+        "research automation",
+        "re-bench",
+        "mle-bench",
+        "paperbench",
+        "automating ai research"
+      ]
+    }
   ],
   "organizations": [
-    { "id": "anthropic", "label": "Anthropic", "terms": ["anthropic", "claude"] },
-    { "id": "openai", "label": "OpenAI", "terms": ["openai", "chatgpt", "gpt-*", "o1", "o3", "sora"] },
-    { "id": "google-deepmind", "label": "Google DeepMind", "terms": ["deepmind", "gemini", "google research", "alphafold", "alphaproof"] },
-    { "id": "meta", "label": "Meta", "terms": ["meta ai", "llama", "fair"] },
-    { "id": "xai", "label": "xAI", "terms": ["xai", "grok"] },
-    { "id": "mistral", "label": "Mistral", "terms": ["mistral"] },
-    { "id": "deepseek", "label": "DeepSeek", "terms": ["deepseek"] },
-    { "id": "microsoft", "label": "Microsoft", "terms": ["microsoft", "copilot"] },
-    { "id": "nvidia", "label": "NVIDIA", "terms": ["nvidia", "cuda", "blackwell"] },
-    { "id": "epoch", "label": "Epoch AI", "terms": ["epoch ai"] },
-    { "id": "metr", "label": "METR", "terms": ["metr"] }
+    {
+      "id": "anthropic",
+      "label": "Anthropic",
+      "terms": [
+        "anthropic",
+        "claude"
+      ]
+    },
+    {
+      "id": "openai",
+      "label": "OpenAI",
+      "terms": [
+        "openai",
+        "chatgpt",
+        "gpt-*",
+        "o1",
+        "o3",
+        "sora"
+      ]
+    },
+    {
+      "id": "google-deepmind",
+      "label": "Google DeepMind",
+      "terms": [
+        "deepmind",
+        "gemini",
+        "google research",
+        "alphafold",
+        "alphaproof"
+      ]
+    },
+    {
+      "id": "meta",
+      "label": "Meta",
+      "terms": [
+        "meta ai",
+        "llama",
+        "fair"
+      ]
+    },
+    {
+      "id": "xai",
+      "label": "xAI",
+      "terms": [
+        "xai",
+        "grok"
+      ]
+    },
+    {
+      "id": "mistral",
+      "label": "Mistral",
+      "terms": [
+        "mistral"
+      ]
+    },
+    {
+      "id": "deepseek",
+      "label": "DeepSeek",
+      "terms": [
+        "deepseek"
+      ]
+    },
+    {
+      "id": "microsoft",
+      "label": "Microsoft",
+      "terms": [
+        "microsoft",
+        "copilot"
+      ]
+    },
+    {
+      "id": "nvidia",
+      "label": "NVIDIA",
+      "terms": [
+        "nvidia",
+        "cuda",
+        "blackwell"
+      ]
+    },
+    {
+      "id": "epoch",
+      "label": "Epoch AI",
+      "terms": [
+        "epoch ai"
+      ]
+    },
+    {
+      "id": "metr",
+      "label": "METR",
+      "terms": [
+        "metr"
+      ]
+    },
+    {
+      "id": "ssi",
+      "label": "Safe Superintelligence",
+      "terms": [
+        "safe superintelligence",
+        "ssi inc"
+      ]
+    },
+    {
+      "id": "thinking-machines",
+      "label": "Thinking Machines Lab",
+      "terms": [
+        "thinking machines lab"
+      ]
+    },
+    {
+      "id": "alibaba-qwen",
+      "label": "Alibaba / Qwen",
+      "terms": [
+        "qwen*",
+        "alibaba"
+      ]
+    },
+    {
+      "id": "moonshot",
+      "label": "Moonshot AI",
+      "terms": [
+        "moonshot ai",
+        "kimi"
+      ]
+    },
+    {
+      "id": "zhipu",
+      "label": "Zhipu AI",
+      "terms": [
+        "zhipu",
+        "glm-*"
+      ]
+    },
+    {
+      "id": "apollo",
+      "label": "Apollo Research",
+      "terms": [
+        "apollo research"
+      ]
+    },
+    {
+      "id": "aisi",
+      "label": "AI Security Institute (UK)",
+      "terms": [
+        "ai security institute",
+        "uk aisi",
+        "aisi"
+      ]
+    },
+    {
+      "id": "caisi",
+      "label": "CAISI (US)",
+      "terms": [
+        "center for ai standards and innovation",
+        "caisi"
+      ]
+    },
+    {
+      "id": "arc-prize",
+      "label": "ARC Prize",
+      "terms": [
+        "arc prize"
+      ]
+    },
+    {
+      "id": "redwood",
+      "label": "Redwood Research",
+      "terms": [
+        "redwood research"
+      ]
+    },
+    {
+      "id": "far-ai",
+      "label": "FAR.AI",
+      "terms": [
+        "far.ai",
+        "far ai"
+      ]
+    },
+    {
+      "id": "ai-futures",
+      "label": "AI Futures Project",
+      "terms": [
+        "ai futures project",
+        "ai 2027"
+      ]
+    }
+  ],
+  "benchmarks": [
+    {
+      "id": "swe-bench-verified",
+      "label": "SWE-bench Verified",
+      "measures": "coding",
+      "terms": [
+        "swe-bench verified"
+      ]
+    },
+    {
+      "id": "swe-bench-pro",
+      "label": "SWE-bench Pro",
+      "measures": "coding",
+      "terms": [
+        "swe-bench pro"
+      ]
+    },
+    {
+      "id": "swe-bench",
+      "label": "SWE-bench",
+      "measures": "coding",
+      "terms": [
+        "swe-bench"
+      ],
+      "generic": true
+    },
+    {
+      "id": "terminal-bench",
+      "label": "Terminal-Bench",
+      "measures": "coding",
+      "terms": [
+        "terminal-bench*"
+      ]
+    },
+    {
+      "id": "livecodebench",
+      "label": "LiveCodeBench",
+      "measures": "coding",
+      "terms": [
+        "livecodebench"
+      ]
+    },
+    {
+      "id": "frontiermath",
+      "label": "FrontierMath",
+      "measures": "math",
+      "terms": [
+        "frontiermath",
+        "frontier math"
+      ]
+    },
+    {
+      "id": "aime",
+      "label": "AIME",
+      "measures": "math",
+      "terms": [
+        "aime"
+      ]
+    },
+    {
+      "id": "imo",
+      "label": "IMO",
+      "measures": "math",
+      "terms": [
+        "imo gold",
+        "imo 20*",
+        "imo problem*",
+        "international mathematical olympiad"
+      ]
+    },
+    {
+      "id": "hle",
+      "label": "Humanity's Last Exam",
+      "measures": "reasoning",
+      "terms": [
+        "humanity's last exam",
+        "humanitys last exam",
+        "hle"
+      ]
+    },
+    {
+      "id": "arc-agi",
+      "label": "ARC-AGI",
+      "measures": "reasoning",
+      "terms": [
+        "arc-agi*"
+      ]
+    },
+    {
+      "id": "simplebench",
+      "label": "SimpleBench",
+      "measures": "reasoning",
+      "terms": [
+        "simplebench"
+      ]
+    },
+    {
+      "id": "gpqa",
+      "label": "GPQA Diamond",
+      "measures": "science",
+      "terms": [
+        "gpqa*"
+      ]
+    },
+    {
+      "id": "metr-horizon",
+      "label": "METR time horizon",
+      "measures": "long-horizon",
+      "terms": [
+        "time horizon*",
+        "time-horizon*"
+      ],
+      "unit": "time"
+    },
+    {
+      "id": "re-bench",
+      "label": "RE-Bench",
+      "measures": "ai-rnd",
+      "terms": [
+        "re-bench"
+      ]
+    },
+    {
+      "id": "mle-bench",
+      "label": "MLE-bench",
+      "measures": "ai-rnd",
+      "terms": [
+        "mle-bench"
+      ]
+    },
+    {
+      "id": "paperbench",
+      "label": "PaperBench",
+      "measures": "ai-rnd",
+      "terms": [
+        "paperbench"
+      ]
+    },
+    {
+      "id": "osworld",
+      "label": "OSWorld",
+      "measures": "agents",
+      "terms": [
+        "osworld*"
+      ]
+    },
+    {
+      "id": "browsecomp",
+      "label": "BrowseComp",
+      "measures": "agents",
+      "terms": [
+        "browsecomp"
+      ]
+    },
+    {
+      "id": "tau-bench",
+      "label": "τ-bench",
+      "measures": "agents",
+      "terms": [
+        "tau-bench",
+        "tau2-bench",
+        "τ-bench",
+        "τ²-bench"
+      ]
+    },
+    {
+      "id": "gdpval",
+      "label": "GDPval",
+      "measures": "economics",
+      "terms": [
+        "gdpval*"
+      ]
+    },
+    {
+      "id": "mmmu",
+      "label": "MMMU",
+      "measures": "multimodal",
+      "terms": [
+        "mmmu*"
+      ]
+    },
+    {
+      "id": "cybench",
+      "label": "Cybench",
+      "measures": "security",
+      "terms": [
+        "cybench"
+      ]
+    },
+    {
+      "id": "lmarena",
+      "label": "LMArena",
+      "measures": "capabilities",
+      "terms": [
+        "lmarena",
+        "lm arena",
+        "chatbot arena"
+      ]
+    },
+    {
+      "id": "mmlu",
+      "label": "MMLU",
+      "measures": "capabilities",
+      "terms": [
+        "mmlu*"
+      ]
+    }
+  ],
+  "people": [
+    {
+      "id": "andrej-karpathy",
+      "label": "Andrej Karpathy",
+      "terms": [
+        "andrej karpathy"
+      ]
+    },
+    {
+      "id": "lilian-weng",
+      "label": "Lilian Weng",
+      "terms": [
+        "lilian weng"
+      ]
+    },
+    {
+      "id": "dario-amodei",
+      "label": "Dario Amodei",
+      "terms": [
+        "dario amodei"
+      ]
+    },
+    {
+      "id": "sam-altman",
+      "label": "Sam Altman",
+      "terms": [
+        "sam altman"
+      ]
+    },
+    {
+      "id": "demis-hassabis",
+      "label": "Demis Hassabis",
+      "terms": [
+        "demis hassabis"
+      ]
+    },
+    {
+      "id": "ilya-sutskever",
+      "label": "Ilya Sutskever",
+      "terms": [
+        "ilya sutskever"
+      ]
+    },
+    {
+      "id": "yoshua-bengio",
+      "label": "Yoshua Bengio",
+      "terms": [
+        "yoshua bengio"
+      ]
+    },
+    {
+      "id": "geoffrey-hinton",
+      "label": "Geoffrey Hinton",
+      "terms": [
+        "geoffrey hinton"
+      ]
+    },
+    {
+      "id": "yann-lecun",
+      "label": "Yann LeCun",
+      "terms": [
+        "yann lecun"
+      ]
+    },
+    {
+      "id": "jan-leike",
+      "label": "Jan Leike",
+      "terms": [
+        "jan leike"
+      ]
+    },
+    {
+      "id": "chris-olah",
+      "label": "Chris Olah",
+      "terms": [
+        "chris olah"
+      ]
+    },
+    {
+      "id": "paul-christiano",
+      "label": "Paul Christiano",
+      "terms": [
+        "paul christiano"
+      ]
+    },
+    {
+      "id": "ajeya-cotra",
+      "label": "Ajeya Cotra",
+      "terms": [
+        "ajeya cotra"
+      ]
+    },
+    {
+      "id": "jacob-steinhardt",
+      "label": "Jacob Steinhardt",
+      "terms": [
+        "jacob steinhardt"
+      ]
+    },
+    {
+      "id": "helen-toner",
+      "label": "Helen Toner",
+      "terms": [
+        "helen toner"
+      ]
+    },
+    {
+      "id": "miles-brundage",
+      "label": "Miles Brundage",
+      "terms": [
+        "miles brundage"
+      ]
+    },
+    {
+      "id": "daniel-kokotajlo",
+      "label": "Daniel Kokotajlo",
+      "terms": [
+        "daniel kokotajlo"
+      ]
+    },
+    {
+      "id": "nathan-lambert",
+      "label": "Nathan Lambert",
+      "terms": [
+        "nathan lambert"
+      ]
+    },
+    {
+      "id": "ethan-mollick",
+      "label": "Ethan Mollick",
+      "terms": [
+        "ethan mollick"
+      ]
+    },
+    {
+      "id": "jack-clark",
+      "label": "Jack Clark",
+      "terms": [
+        "jack clark"
+      ]
+    },
+    {
+      "id": "dwarkesh-patel",
+      "label": "Dwarkesh Patel",
+      "terms": [
+        "dwarkesh patel"
+      ]
+    },
+    {
+      "id": "gary-marcus",
+      "label": "Gary Marcus",
+      "terms": [
+        "gary marcus"
+      ]
+    },
+    {
+      "id": "francois-chollet",
+      "label": "François Chollet",
+      "terms": [
+        "françois chollet",
+        "francois chollet"
+      ]
+    },
+    {
+      "id": "noam-brown",
+      "label": "Noam Brown",
+      "terms": [
+        "noam brown"
+      ]
+    },
+    {
+      "id": "jared-kaplan",
+      "label": "Jared Kaplan",
+      "terms": [
+        "jared kaplan"
+      ]
+    },
+    {
+      "id": "shane-legg",
+      "label": "Shane Legg",
+      "terms": [
+        "shane legg"
+      ]
+    },
+    {
+      "id": "stuart-russell",
+      "label": "Stuart Russell",
+      "terms": [
+        "stuart russell"
+      ]
+    },
+    {
+      "id": "mustafa-suleyman",
+      "label": "Mustafa Suleyman",
+      "terms": [
+        "mustafa suleyman"
+      ]
+    },
+    {
+      "id": "dean-ball",
+      "label": "Dean Ball",
+      "terms": [
+        "dean ball"
+      ]
+    },
+    {
+      "id": "zvi-mowshowitz",
+      "label": "Zvi Mowshowitz",
+      "terms": [
+        "zvi mowshowitz"
+      ]
+    },
+    {
+      "id": "simon-willison",
+      "label": "Simon Willison",
+      "terms": [
+        "simon willison"
+      ]
+    },
+    {
+      "id": "sebastian-raschka",
+      "label": "Sebastian Raschka",
+      "terms": [
+        "sebastian raschka"
+      ]
+    },
+    {
+      "id": "arvind-narayanan",
+      "label": "Arvind Narayanan",
+      "terms": [
+        "arvind narayanan"
+      ]
+    },
+    {
+      "id": "sayash-kapoor",
+      "label": "Sayash Kapoor",
+      "terms": [
+        "sayash kapoor"
+      ]
+    },
+    {
+      "id": "tamay-besiroglu",
+      "label": "Tamay Besiroglu",
+      "terms": [
+        "tamay besiroglu"
+      ]
+    },
+    {
+      "id": "jaime-sevilla",
+      "label": "Jaime Sevilla",
+      "terms": [
+        "jaime sevilla"
+      ]
+    }
   ]
 }

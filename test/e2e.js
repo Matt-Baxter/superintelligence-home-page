@@ -187,10 +187,31 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   await john.goto(B + '/project#/board'); await john.waitForSelector('.board .card'); await john.screenshot({ path: 'shots/project-board.png' });
   await john.goto(B + '/project#/active'); await john.waitForSelector('#body .irow'); await john.screenshot({ path: 'shots/project-list.png' });
 
+  console.log('Capability analysis');
+  const cl = await j(john, '/api/admin/sources', 'POST', { url: 'fixture://sample-claims.xml', name: 'Sample capability claims (test data)', kind: 'lab', format: 'rss' });
+  ok(cl.run && cl.run.stored === 3, 'a source with capability claims is harvested');
+  const sw = (await j(john, '/api/stories?benchmark=swe-bench-verified&days=0')).stories;
+  ok(sw.length === 1 && sw[0].analysis.benchmarks.find((b) => b.id === 'swe-bench-verified').score.value === 71.7, 'benchmark filter finds the story and the score reported next to the name');
+  ok(sw[0].analysis.type.id === 'release' && sw[0].analysis.evidence.id === 'lab', 'update type and evidence level are classified');
+  const bySig = (await j(john, '/api/stories?sort=signal&days=0')).stories, top = bySig.find((x) => x.title.includes('Sample Model A'));
+  ok(bySig.every((x, i) => i === 0 || bySig[i - 1].significance >= x.significance) && bySig.indexOf(top) < 3 && bySig.every((x) => x.significance === x.analysis.why.reduce((a, w) => a + w.points, 0)),
+    'Significance sort orders by score (a release with benchmark results is in the top 3); every score adds up from its explanation');
+  const sand = (await j(john, '/api/stories?q=sandbagging&days=0')).stories[0]; ok(sand.analysis.type.id === 'safety-finding', 'safety findings are recognised');
+  await john.goto(B + '/?sort=signal'); await john.waitForSelector('#feed .story .sig');
+  const card = story(john, 'Sample Model A'); ok((await card.locator('.meta').textContent()).includes('Release') && (await card.locator('.tag.bench').first().textContent()).includes('71.7%') && (await card.locator('.sig').textContent()) === String(top.significance), 'cards show the score, update type and benchmark result');
+  await john.goto(B + '/story?id=' + top.id); await john.waitForSelector('#analysis .why tr');
+  ok((await john.textContent('#analysis')).includes('Evidence') && (await john.textContent('#analysis')).includes('Benchmarks') && (await john.textContent('#analysis')).includes('71.7%'), 'story page explains the score line by line');
+  await john.goto(B + '/capabilities'); await john.waitForSelector('#areas .cap'); await john.waitForSelector('#bench tr');
+  const capText = await john.textContent('main');
+  ok(capText.includes('SWE-bench Verified') && capText.includes('71.7%') && capText.includes('2.3 h'), 'capability tracker lists benchmarks with the highest reported result (and time horizons in hours)');
+  ok((await john.$$('#signals .story')).length >= 3, 'capability tracker shows the strongest signals');
+  await john.click('[data-days="30"]'); await john.waitForTimeout(400); ok((await john.textContent('#areaNote')).includes('30 days'), 'time window switches');
+  await john.screenshot({ path: 'shots/capabilities.png', fullPage: true });
+
   console.log('Phone width');
   const ph = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })).newPage();
   await ph.goto(B); await ph.fill('#username', 'john'); await ph.fill('#password', 'correct-horse-9'); await ph.click('#authBtn'); await ph.waitForSelector('#feed .story');
-  for (const path of ['/', '/story?id=' + sid, '/brief', '/lists', '/sources', '/agent-log', '/admin', '/project']) { await ph.goto(B + path); await ph.waitForTimeout(600); ok(!(await ph.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'no sideways scroll: ' + path.split('?')[0]); }
+  for (const path of ['/', '/story?id=' + sid, '/brief', '/lists', '/sources', '/agent-log', '/admin', '/project', '/capabilities']) { await ph.goto(B + path); await ph.waitForTimeout(600); ok(!(await ph.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'no sideways scroll: ' + path.split('?')[0]); }
   await ph.goto(B); await ph.waitForSelector('#feed .story'); await ph.screenshot({ path: 'shots/phone-feed.png' });
   await john.goto(B); await john.waitForSelector('#feed .story'); await john.screenshot({ path: 'shots/feed.png', fullPage: true });
   await john.goto(B + '/brief'); await john.waitForSelector('#brief .jr-metric'); await john.screenshot({ path: 'shots/brief.png', fullPage: true });

@@ -43,6 +43,12 @@ leaks.length ? fail("No secrets", "check: " + leaks.join(", ")) : ok("No secrets
 const src = fs.readFileSync(path.join(root, "lib/sources.json"), "utf8");
 /(twitter\.com|x\.com\/|nitter)/i.test(src) ? fail("No Twitter/X sources", "lib/sources.json") : ok("No Twitter/X sources");
 
+// 5b. No Twitter/X in the source catalog either; analysis rules behave
+const cat = fs.readFileSync(path.join(root, "lib/source-catalog.json"), "utf8");
+/(twitter\.com|x\.com\/|nitter)/i.test(cat) ? fail("No Twitter/X in catalog", "lib/source-catalog.json") : ok("No Twitter/X in catalog");
+try { const out = sh("node test/analysis-unit.js").trim(); ok("Analysis rules", out.replace(/^analysis unit checks: /, "")); }
+catch (e) { fail("Analysis rules", String(e.stderr || e.message).split("\n").find((l) => /Assertion|Error/.test(l)) || "failed"); }
+
 // 6. Contract reminder: schema or routes changed without docs/CONTRACT.md changing
 try {
   const base = sh("git merge-base HEAD origin/main 2>/dev/null || git rev-parse HEAD~1 2>/dev/null || echo").trim();

@@ -12,6 +12,7 @@ Read before changing anything: [docs/CONTRACT.md](docs/CONTRACT.md) (what both h
 - **No secrets** in code, commits or messages. Configuration comes from environment variables (`.env.example` lists them).
 - **No Twitter/X** as a source, suggestion or submitted link. It's refused on purpose (Paul's feedback).
 - **Contract changes need both humans.** If a change alters a table, an API route, or a request or response shape, stop and say so. It needs a change-log row in `docs/CONTRACT.md` and both partners' approval.
+- **Real people only as watchlist entries.** The people watchlist in `lib/ontology.json` lists public researchers and writers by name for matching; never write claims, quotes or results attributed to them.
 - **Test data is synthetic** and labelled "Sample" / "test data". Don't invent real-looking papers, people or quotes.
 
 ## Layout
@@ -22,7 +23,8 @@ Read before changing anything: [docs/CONTRACT.md](docs/CONTRACT.md) (what both h
 | `api/index.js` | Vercel function entry (re-exports the app). |
 | `lib/db.js` | One async query API: Postgres when `DATABASE_URL`/`POSTGRES_URL` is set, otherwise SQLite. Write portable SQL with `?` placeholders. |
 | `lib/feeds.js` | RSS/Atom/arXiv/HF parsing and story keys (grouping rules). |
-| `lib/tagger.js`, `lib/ontology.json` | Ontology tagging; every tag stores the words that matched. |
+| `lib/tagger.js`, `lib/ontology.json` | Ontology tagging; every tag stores the words that matched. Ontology v2 also holds the benchmark registry and the people watchlist. |
+| `lib/analysis.js` | Rule-based story analysis: update type, evidence level, benchmarks with reported scores, people, frontier claims, and an explainable 0–100 significance score. No paid model calls. |
 | `lib/sources.json` | Default sources. |
 | `lib/source-catalog.json` | Candidate sources an admin can enable in bulk (unverified until a test fetch). No Twitter/X. |
 | `lib/harvest.js` | Harvester: per-source intervals, conditional GET, backoff, time budget, `fetch_runs` log. |
@@ -30,7 +32,7 @@ Read before changing anything: [docs/CONTRACT.md](docs/CONTRACT.md) (what both h
 | `lib/project.js`, `lib/project-starter.json` | Project workspace (issues, milestones, comments, activity) under `/api/admin/project/*`, and the starter to-dos. |
 | `views/catalog.mjs`, `views/specs.mjs` | json-render catalog and server-built specs (weekly brief, agent log summary). |
 | `client/jr.jsx` → `public/js/jr.js` | Browser renderer for the catalog (`npm run build`). |
-| `public/` | Pages: feed, story, lists, brief, sources, agent log, admin, project. |
+| `public/` | Pages: feed, capabilities, story, lists, brief, sources, agent log, admin, project. |
 | `test/` | Synthetic fixtures, sample-data servers, two-user Playwright test. |
 
 ## Free tier

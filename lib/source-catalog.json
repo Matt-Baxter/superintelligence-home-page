@@ -1,50 +1,469 @@
 {
-  "about": "Candidate sources an admin can enable from the Admin page. None of these feed URLs could be checked from the build sandbox, so each starts as unverified: enabling one runs a test fetch first, and the Admin page shows whether it worked. No Twitter/X. Sources that publish no feed (for example some lab news pages) aren't listed; add their posts with Submit a link, or use Find feed on their homepage.",
+  "about": "Candidate sources an admin can enable from the Admin page. None of these feed URLs could be checked from the build sandbox, so each starts as unverified: enabling one runs a test fetch first, and the Admin page shows whether it worked. No Twitter/X. Sources that publish no feed (for example some lab news pages) aren't listed; add their posts with Submit a link, or use Find feed on their homepage. Kinds: journal means peer-reviewed venues (scored highest for evidence); people means a named researcher's or writer's own blog. 'findFeed' lists important sites without a known feed: the Admin page offers Find feed for each.",
   "sources": [
-    { "name": "arXiv: Computation and Language (cs.CL)", "kind": "papers", "format": "arxiv", "url": "https://export.arxiv.org/api/query?search_query=cat:cs.CL&sortBy=submittedDate&sortOrder=descending&max_results=40", "home": "https://arxiv.org/list/cs.CL/recent" },
-    { "name": "arXiv: Machine Learning (stat.ML)", "kind": "papers", "format": "arxiv", "url": "https://export.arxiv.org/api/query?search_query=cat:stat.ML&sortBy=submittedDate&sortOrder=descending&max_results=40", "home": "https://arxiv.org/list/stat.ML/recent" },
-    { "name": "arXiv: Robotics (cs.RO)", "kind": "papers", "format": "arxiv", "url": "https://export.arxiv.org/api/query?search_query=cat:cs.RO&sortBy=submittedDate&sortOrder=descending&max_results=30", "home": "https://arxiv.org/list/cs.RO/recent" },
-    { "name": "arXiv: Computers and Society (cs.CY)", "kind": "papers", "format": "arxiv", "url": "https://export.arxiv.org/api/query?search_query=cat:cs.CY+AND+all:AI&sortBy=submittedDate&sortOrder=descending&max_results=30", "home": "https://arxiv.org/list/cs.CY/recent" },
-    { "name": "Semantic Scholar: alignment and safety papers", "kind": "papers", "format": "semantic-scholar", "url": "https://api.semanticscholar.org/graph/v1/paper/search/bulk?query=alignment%20%7C%20interpretability%20%7C%20%22AI%20safety%22&fields=title,url,abstract,authors,publicationDate,externalIds,citationCount&sort=publicationDate:desc", "home": "https://www.semanticscholar.org" },
-    { "name": "Semantic Scholar: reasoning and agents papers", "kind": "papers", "format": "semantic-scholar", "url": "https://api.semanticscholar.org/graph/v1/paper/search/bulk?query=%22language%20model%22%20%2B%20(reasoning%20%7C%20agents)&fields=title,url,abstract,authors,publicationDate,externalIds,citationCount&sort=publicationDate:desc", "home": "https://www.semanticscholar.org" },
-
-    { "name": "Microsoft Research Blog", "kind": "lab", "format": "rss", "url": "https://www.microsoft.com/en-us/research/feed/", "home": "https://www.microsoft.com/en-us/research/blog/" },
-    { "name": "NVIDIA Technical Blog", "kind": "lab", "format": "rss", "url": "https://developer.nvidia.com/blog/feed/", "home": "https://developer.nvidia.com/blog/" },
-    { "name": "Apple Machine Learning Research", "kind": "lab", "format": "rss", "url": "https://machinelearning.apple.com/rss.xml", "home": "https://machinelearning.apple.com" },
-    { "name": "Hugging Face Blog", "kind": "lab", "format": "rss", "url": "https://huggingface.co/blog/feed.xml", "home": "https://huggingface.co/blog" },
-    { "name": "AWS Machine Learning Blog", "kind": "lab", "format": "rss", "url": "https://aws.amazon.com/blogs/machine-learning/feed/", "home": "https://aws.amazon.com/blogs/machine-learning/" },
-
-    { "name": "LessWrong (curated)", "kind": "forum", "format": "rss", "url": "https://www.lesswrong.com/feed.xml?view=curated-rss", "home": "https://www.lesswrong.com" },
-    { "name": "Redwood Research blog", "kind": "research-org", "format": "rss", "url": "https://redwoodresearch.substack.com/feed", "home": "https://redwoodresearch.substack.com" },
-    { "name": "AI Safety Newsletter (Center for AI Safety)", "kind": "newsletter", "format": "rss", "url": "https://newsletter.safe.ai/feed", "home": "https://newsletter.safe.ai" },
-    { "name": "AI Impacts blog", "kind": "research-org", "format": "rss", "url": "https://blog.aiimpacts.org/feed", "home": "https://blog.aiimpacts.org" },
-    { "name": "METR", "kind": "research-org", "format": "rss", "url": "https://metr.org/feed.xml", "home": "https://metr.org" },
-
-    { "name": "Stanford AI Lab Blog", "kind": "academic", "format": "rss", "url": "https://ai.stanford.edu/blog/feed.xml", "home": "https://ai.stanford.edu/blog/" },
-    { "name": "CMU Machine Learning Blog", "kind": "academic", "format": "rss", "url": "https://blog.ml.cmu.edu/feed/", "home": "https://blog.ml.cmu.edu" },
-    { "name": "MIT News: Artificial intelligence", "kind": "academic", "format": "rss", "url": "https://news.mit.edu/topic/mitartificial-intelligence2-rss.xml", "home": "https://news.mit.edu/topic/artificial-intelligence2" },
-    { "name": "The Gradient", "kind": "academic", "format": "rss", "url": "https://thegradient.pub/rss/", "home": "https://thegradient.pub" },
-
-    { "name": "Interconnects (Nathan Lambert)", "kind": "newsletter", "format": "rss", "url": "https://www.interconnects.ai/feed", "home": "https://www.interconnects.ai" },
-    { "name": "Simon Willison's Weblog", "kind": "newsletter", "format": "rss", "url": "https://simonwillison.net/atom/everything/", "home": "https://simonwillison.net" },
-    { "name": "Ahead of AI (Sebastian Raschka)", "kind": "newsletter", "format": "rss", "url": "https://magazine.sebastianraschka.com/feed", "home": "https://magazine.sebastianraschka.com" },
-    { "name": "Don't Worry About the Vase (Zvi Mowshowitz)", "kind": "newsletter", "format": "rss", "url": "https://thezvi.substack.com/feed", "home": "https://thezvi.substack.com" },
-    { "name": "Understanding AI (Timothy B. Lee)", "kind": "newsletter", "format": "rss", "url": "https://www.understandingai.org/feed", "home": "https://www.understandingai.org" },
-    { "name": "Last Week in AI", "kind": "newsletter", "format": "rss", "url": "https://lastweekin.ai/feed", "home": "https://lastweekin.ai" },
-    { "name": "AI Snake Oil / AI as Normal Technology", "kind": "newsletter", "format": "rss", "url": "https://www.aisnakeoil.com/feed", "home": "https://www.aisnakeoil.com" },
-    { "name": "One Useful Thing (Ethan Mollick)", "kind": "newsletter", "format": "rss", "url": "https://www.oneusefulthing.org/feed", "home": "https://www.oneusefulthing.org" },
-
-    { "name": "CSET (Georgetown)", "kind": "policy", "format": "rss", "url": "https://cset.georgetown.edu/feed/", "home": "https://cset.georgetown.edu" },
-
-    { "name": "MIT Technology Review: AI", "kind": "news", "format": "rss", "url": "https://www.technologyreview.com/topic/artificial-intelligence/feed", "home": "https://www.technologyreview.com/topic/artificial-intelligence/" },
-    { "name": "The Verge: AI", "kind": "news", "format": "rss", "url": "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml", "home": "https://www.theverge.com/ai-artificial-intelligence" },
-    { "name": "Ars Technica: AI", "kind": "news", "format": "rss", "url": "https://arstechnica.com/ai/feed/", "home": "https://arstechnica.com/ai/" },
-
-    { "name": "Hacker News: AI stories with 100+ points", "kind": "community", "format": "hn-algolia", "url": "https://hn.algolia.com/api/v1/search_by_date?query=AI&tags=story&numericFilters=points%3E100&hitsPerPage=40", "home": "https://news.ycombinator.com" },
-    { "name": "Reddit r/MachineLearning", "kind": "community", "format": "rss", "url": "https://www.reddit.com/r/MachineLearning/top/.rss?t=day", "home": "https://www.reddit.com/r/MachineLearning/" },
-    { "name": "Reddit r/LocalLLaMA", "kind": "community", "format": "rss", "url": "https://www.reddit.com/r/LocalLLaMA/top/.rss?t=day", "home": "https://www.reddit.com/r/LocalLLaMA/" },
-    { "name": "GitHub releases: Hugging Face Transformers", "kind": "community", "format": "rss", "url": "https://github.com/huggingface/transformers/releases.atom", "home": "https://github.com/huggingface/transformers/releases" },
-    { "name": "GitHub releases: vLLM", "kind": "community", "format": "rss", "url": "https://github.com/vllm-project/vllm/releases.atom", "home": "https://github.com/vllm-project/vllm/releases" },
-    { "name": "GitHub releases: llama.cpp", "kind": "community", "format": "rss", "url": "https://github.com/ggml-org/llama.cpp/releases.atom", "home": "https://github.com/ggml-org/llama.cpp/releases" }
+    {
+      "name": "arXiv: Computation and Language (cs.CL)",
+      "kind": "papers",
+      "format": "arxiv",
+      "url": "https://export.arxiv.org/api/query?search_query=cat:cs.CL&sortBy=submittedDate&sortOrder=descending&max_results=40",
+      "home": "https://arxiv.org/list/cs.CL/recent"
+    },
+    {
+      "name": "arXiv: Machine Learning (stat.ML)",
+      "kind": "papers",
+      "format": "arxiv",
+      "url": "https://export.arxiv.org/api/query?search_query=cat:stat.ML&sortBy=submittedDate&sortOrder=descending&max_results=40",
+      "home": "https://arxiv.org/list/stat.ML/recent"
+    },
+    {
+      "name": "arXiv: Robotics (cs.RO)",
+      "kind": "papers",
+      "format": "arxiv",
+      "url": "https://export.arxiv.org/api/query?search_query=cat:cs.RO&sortBy=submittedDate&sortOrder=descending&max_results=30",
+      "home": "https://arxiv.org/list/cs.RO/recent"
+    },
+    {
+      "name": "arXiv: Computers and Society (cs.CY)",
+      "kind": "papers",
+      "format": "arxiv",
+      "url": "https://export.arxiv.org/api/query?search_query=cat:cs.CY+AND+all:AI&sortBy=submittedDate&sortOrder=descending&max_results=30",
+      "home": "https://arxiv.org/list/cs.CY/recent"
+    },
+    {
+      "name": "Semantic Scholar: alignment and safety papers",
+      "kind": "papers",
+      "format": "semantic-scholar",
+      "url": "https://api.semanticscholar.org/graph/v1/paper/search/bulk?query=alignment%20%7C%20interpretability%20%7C%20%22AI%20safety%22&fields=title,url,abstract,authors,publicationDate,externalIds,citationCount&sort=publicationDate:desc",
+      "home": "https://www.semanticscholar.org"
+    },
+    {
+      "name": "Semantic Scholar: reasoning and agents papers",
+      "kind": "papers",
+      "format": "semantic-scholar",
+      "url": "https://api.semanticscholar.org/graph/v1/paper/search/bulk?query=%22language%20model%22%20%2B%20(reasoning%20%7C%20agents)&fields=title,url,abstract,authors,publicationDate,externalIds,citationCount&sort=publicationDate:desc",
+      "home": "https://www.semanticscholar.org"
+    },
+    {
+      "name": "Microsoft Research Blog",
+      "kind": "lab",
+      "format": "rss",
+      "url": "https://www.microsoft.com/en-us/research/feed/",
+      "home": "https://www.microsoft.com/en-us/research/blog/"
+    },
+    {
+      "name": "NVIDIA Technical Blog",
+      "kind": "lab",
+      "format": "rss",
+      "url": "https://developer.nvidia.com/blog/feed/",
+      "home": "https://developer.nvidia.com/blog/"
+    },
+    {
+      "name": "Apple Machine Learning Research",
+      "kind": "lab",
+      "format": "rss",
+      "url": "https://machinelearning.apple.com/rss.xml",
+      "home": "https://machinelearning.apple.com"
+    },
+    {
+      "name": "Hugging Face Blog",
+      "kind": "lab",
+      "format": "rss",
+      "url": "https://huggingface.co/blog/feed.xml",
+      "home": "https://huggingface.co/blog"
+    },
+    {
+      "name": "AWS Machine Learning Blog",
+      "kind": "lab",
+      "format": "rss",
+      "url": "https://aws.amazon.com/blogs/machine-learning/feed/",
+      "home": "https://aws.amazon.com/blogs/machine-learning/"
+    },
+    {
+      "name": "LessWrong (curated)",
+      "kind": "forum",
+      "format": "rss",
+      "url": "https://www.lesswrong.com/feed.xml?view=curated-rss",
+      "home": "https://www.lesswrong.com"
+    },
+    {
+      "name": "Redwood Research blog",
+      "kind": "research-org",
+      "format": "rss",
+      "url": "https://redwoodresearch.substack.com/feed",
+      "home": "https://redwoodresearch.substack.com"
+    },
+    {
+      "name": "AI Safety Newsletter (Center for AI Safety)",
+      "kind": "newsletter",
+      "format": "rss",
+      "url": "https://newsletter.safe.ai/feed",
+      "home": "https://newsletter.safe.ai"
+    },
+    {
+      "name": "AI Impacts blog",
+      "kind": "research-org",
+      "format": "rss",
+      "url": "https://blog.aiimpacts.org/feed",
+      "home": "https://blog.aiimpacts.org"
+    },
+    {
+      "name": "METR",
+      "kind": "research-org",
+      "format": "rss",
+      "url": "https://metr.org/feed.xml",
+      "home": "https://metr.org"
+    },
+    {
+      "name": "Stanford AI Lab Blog",
+      "kind": "academic",
+      "format": "rss",
+      "url": "https://ai.stanford.edu/blog/feed.xml",
+      "home": "https://ai.stanford.edu/blog/"
+    },
+    {
+      "name": "CMU Machine Learning Blog",
+      "kind": "academic",
+      "format": "rss",
+      "url": "https://blog.ml.cmu.edu/feed/",
+      "home": "https://blog.ml.cmu.edu"
+    },
+    {
+      "name": "MIT News: Artificial intelligence",
+      "kind": "academic",
+      "format": "rss",
+      "url": "https://news.mit.edu/topic/mitartificial-intelligence2-rss.xml",
+      "home": "https://news.mit.edu/topic/artificial-intelligence2"
+    },
+    {
+      "name": "The Gradient",
+      "kind": "academic",
+      "format": "rss",
+      "url": "https://thegradient.pub/rss/",
+      "home": "https://thegradient.pub"
+    },
+    {
+      "name": "Interconnects (Nathan Lambert)",
+      "kind": "newsletter",
+      "format": "rss",
+      "url": "https://www.interconnects.ai/feed",
+      "home": "https://www.interconnects.ai"
+    },
+    {
+      "name": "Simon Willison's Weblog",
+      "kind": "newsletter",
+      "format": "rss",
+      "url": "https://simonwillison.net/atom/everything/",
+      "home": "https://simonwillison.net"
+    },
+    {
+      "name": "Ahead of AI (Sebastian Raschka)",
+      "kind": "newsletter",
+      "format": "rss",
+      "url": "https://magazine.sebastianraschka.com/feed",
+      "home": "https://magazine.sebastianraschka.com"
+    },
+    {
+      "name": "Don't Worry About the Vase (Zvi Mowshowitz)",
+      "kind": "newsletter",
+      "format": "rss",
+      "url": "https://thezvi.substack.com/feed",
+      "home": "https://thezvi.substack.com"
+    },
+    {
+      "name": "Understanding AI (Timothy B. Lee)",
+      "kind": "newsletter",
+      "format": "rss",
+      "url": "https://www.understandingai.org/feed",
+      "home": "https://www.understandingai.org"
+    },
+    {
+      "name": "Last Week in AI",
+      "kind": "newsletter",
+      "format": "rss",
+      "url": "https://lastweekin.ai/feed",
+      "home": "https://lastweekin.ai"
+    },
+    {
+      "name": "AI Snake Oil / AI as Normal Technology",
+      "kind": "newsletter",
+      "format": "rss",
+      "url": "https://www.aisnakeoil.com/feed",
+      "home": "https://www.aisnakeoil.com"
+    },
+    {
+      "name": "One Useful Thing (Ethan Mollick)",
+      "kind": "newsletter",
+      "format": "rss",
+      "url": "https://www.oneusefulthing.org/feed",
+      "home": "https://www.oneusefulthing.org"
+    },
+    {
+      "name": "CSET (Georgetown)",
+      "kind": "policy",
+      "format": "rss",
+      "url": "https://cset.georgetown.edu/feed/",
+      "home": "https://cset.georgetown.edu"
+    },
+    {
+      "name": "MIT Technology Review: AI",
+      "kind": "news",
+      "format": "rss",
+      "url": "https://www.technologyreview.com/topic/artificial-intelligence/feed",
+      "home": "https://www.technologyreview.com/topic/artificial-intelligence/"
+    },
+    {
+      "name": "The Verge: AI",
+      "kind": "news",
+      "format": "rss",
+      "url": "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",
+      "home": "https://www.theverge.com/ai-artificial-intelligence"
+    },
+    {
+      "name": "Ars Technica: AI",
+      "kind": "news",
+      "format": "rss",
+      "url": "https://arstechnica.com/ai/feed/",
+      "home": "https://arstechnica.com/ai/"
+    },
+    {
+      "name": "Hacker News: AI stories with 100+ points",
+      "kind": "community",
+      "format": "hn-algolia",
+      "url": "https://hn.algolia.com/api/v1/search_by_date?query=AI&tags=story&numericFilters=points%3E100&hitsPerPage=40",
+      "home": "https://news.ycombinator.com"
+    },
+    {
+      "name": "Reddit r/MachineLearning",
+      "kind": "community",
+      "format": "rss",
+      "url": "https://www.reddit.com/r/MachineLearning/top/.rss?t=day",
+      "home": "https://www.reddit.com/r/MachineLearning/"
+    },
+    {
+      "name": "Reddit r/LocalLLaMA",
+      "kind": "community",
+      "format": "rss",
+      "url": "https://www.reddit.com/r/LocalLLaMA/top/.rss?t=day",
+      "home": "https://www.reddit.com/r/LocalLLaMA/"
+    },
+    {
+      "name": "GitHub releases: Hugging Face Transformers",
+      "kind": "community",
+      "format": "rss",
+      "url": "https://github.com/huggingface/transformers/releases.atom",
+      "home": "https://github.com/huggingface/transformers/releases"
+    },
+    {
+      "name": "GitHub releases: vLLM",
+      "kind": "community",
+      "format": "rss",
+      "url": "https://github.com/vllm-project/vllm/releases.atom",
+      "home": "https://github.com/vllm-project/vllm/releases"
+    },
+    {
+      "name": "GitHub releases: llama.cpp",
+      "kind": "community",
+      "format": "rss",
+      "url": "https://github.com/ggml-org/llama.cpp/releases.atom",
+      "home": "https://github.com/ggml-org/llama.cpp/releases"
+    },
+    {
+      "name": "Nature Machine Intelligence",
+      "kind": "journal",
+      "format": "rss",
+      "url": "https://www.nature.com/natmachintell.rss",
+      "home": "https://www.nature.com/natmachintell/"
+    },
+    {
+      "name": "Journal of Machine Learning Research (JMLR)",
+      "kind": "journal",
+      "format": "rss",
+      "url": "https://www.jmlr.org/jmlr.xml",
+      "home": "https://www.jmlr.org"
+    },
+    {
+      "name": "Journal of Artificial Intelligence Research (JAIR)",
+      "kind": "journal",
+      "format": "rss",
+      "url": "https://www.jair.org/index.php/jair/gateway/plugin/WebFeedGatewayPlugin/rss2",
+      "home": "https://www.jair.org"
+    },
+    {
+      "name": "Proceedings: NeurIPS, ICML, ICLR (via Semantic Scholar)",
+      "kind": "journal",
+      "format": "semantic-scholar",
+      "url": "https://api.semanticscholar.org/graph/v1/paper/search/bulk?query=language+model+%7C+reasoning+%7C+agents+%7C+alignment&venue=NeurIPS%2CICML%2CICLR&year=2025-&fields=title%2Curl%2Cabstract%2Cauthors%2CpublicationDate%2CexternalIds%2CcitationCount%2Cvenue&sort=publicationDate%3Adesc",
+      "home": "https://www.semanticscholar.org"
+    },
+    {
+      "name": "Transactions on Machine Learning Research (via Semantic Scholar)",
+      "kind": "journal",
+      "format": "semantic-scholar",
+      "url": "https://api.semanticscholar.org/graph/v1/paper/search/bulk?query=language+model+%7C+reasoning+%7C+agents+%7C+alignment&venue=Transactions+on+Machine+Learning+Research&year=2025-&fields=title%2Curl%2Cabstract%2Cauthors%2CpublicationDate%2CexternalIds%2CcitationCount%2Cvenue&sort=publicationDate%3Adesc",
+      "home": "https://jmlr.org/tmlr/"
+    },
+    {
+      "name": "Nature and Science: AI papers (via Semantic Scholar)",
+      "kind": "journal",
+      "format": "semantic-scholar",
+      "url": "https://api.semanticscholar.org/graph/v1/paper/search/bulk?query=artificial+intelligence+%7C+language+model+%7C+machine+learning&venue=Nature%2CScience&year=2025-&fields=title%2Curl%2Cabstract%2Cauthors%2CpublicationDate%2CexternalIds%2CcitationCount%2Cvenue&sort=publicationDate%3Adesc",
+      "home": "https://www.semanticscholar.org"
+    },
+    {
+      "name": "Lilian Weng (Lil'Log)",
+      "kind": "people",
+      "format": "rss",
+      "url": "https://lilianweng.github.io/index.xml",
+      "home": "https://lilianweng.github.io"
+    },
+    {
+      "name": "Andrej Karpathy (blog)",
+      "kind": "people",
+      "format": "rss",
+      "url": "https://karpathy.bearblog.dev/feed/",
+      "home": "https://karpathy.bearblog.dev"
+    },
+    {
+      "name": "Dwarkesh Patel (Dwarkesh Podcast)",
+      "kind": "people",
+      "format": "rss",
+      "url": "https://www.dwarkesh.com/feed",
+      "home": "https://www.dwarkesh.com"
+    },
+    {
+      "name": "Ajeya Cotra and Kelsey Piper (Planned Obsolescence)",
+      "kind": "people",
+      "format": "rss",
+      "url": "https://www.planned-obsolescence.org/rss/",
+      "home": "https://www.planned-obsolescence.org"
+    },
+    {
+      "name": "Jacob Steinhardt (Bounded Regret)",
+      "kind": "people",
+      "format": "rss",
+      "url": "https://bounded-regret.ghost.io/rss/",
+      "home": "https://bounded-regret.ghost.io"
+    },
+    {
+      "name": "Helen Toner (Rising Tide)",
+      "kind": "people",
+      "format": "rss",
+      "url": "https://helentoner.substack.com/feed",
+      "home": "https://helentoner.substack.com"
+    },
+    {
+      "name": "Miles Brundage",
+      "kind": "people",
+      "format": "rss",
+      "url": "https://milesbrundage.substack.com/feed",
+      "home": "https://milesbrundage.substack.com"
+    },
+    {
+      "name": "Yoshua Bengio (blog)",
+      "kind": "people",
+      "format": "rss",
+      "url": "https://yoshuabengio.org/feed/",
+      "home": "https://yoshuabengio.org"
+    },
+    {
+      "name": "Sam Altman (blog)",
+      "kind": "people",
+      "format": "rss",
+      "url": "https://blog.samaltman.com/posts.atom",
+      "home": "https://blog.samaltman.com"
+    },
+    {
+      "name": "Gary Marcus (Marcus on AI)",
+      "kind": "people",
+      "format": "rss",
+      "url": "https://garymarcus.substack.com/feed",
+      "home": "https://garymarcus.substack.com"
+    },
+    {
+      "name": "Dean Ball (Hyperdimensional)",
+      "kind": "people",
+      "format": "rss",
+      "url": "https://www.hyperdimensional.co/feed",
+      "home": "https://www.hyperdimensional.co"
+    },
+    {
+      "name": "AI Futures Project (Daniel Kokotajlo and others)",
+      "kind": "research-org",
+      "format": "rss",
+      "url": "https://blog.ai-futures.org/feed",
+      "home": "https://ai-futures.org"
+    },
+    {
+      "name": "Epoch AI: Gradient Updates",
+      "kind": "research-org",
+      "format": "rss",
+      "url": "https://epochai.substack.com/feed",
+      "home": "https://epoch.ai/gradient-updates"
+    },
+    {
+      "name": "Semantic Scholar: AI R&D automation and self-improvement",
+      "kind": "papers",
+      "format": "semantic-scholar",
+      "url": "https://api.semanticscholar.org/graph/v1/paper/search/bulk?query=%22automated+AI+research%22+%7C+%22self-improving%22+%7C+%22AI+scientist%22+%7C+%22recursive+self-improvement%22&fields=title%2Curl%2Cabstract%2Cauthors%2CpublicationDate%2CexternalIds%2CcitationCount%2Cvenue&sort=publicationDate%3Adesc",
+      "home": "https://www.semanticscholar.org"
+    },
+    {
+      "name": "arXiv: long-horizon agents and time horizons",
+      "kind": "papers",
+      "format": "arxiv",
+      "url": "https://export.arxiv.org/api/query?search_query=all:%22time%20horizon%22%20AND%20all:agents&sortBy=submittedDate&sortOrder=descending&max_results=30",
+      "home": "https://arxiv.org"
+    },
+    {
+      "name": "arXiv: dangerous capability and frontier evaluations",
+      "kind": "papers",
+      "format": "arxiv",
+      "url": "https://export.arxiv.org/api/query?search_query=all:%22dangerous%20capabilities%22%20OR%20all:%22frontier%20model%20evaluation%22%20OR%20all:scheming&sortBy=submittedDate&sortOrder=descending&max_results=30",
+      "home": "https://arxiv.org"
+    }
+  ],
+  "findFeed": [
+    {
+      "name": "Anthropic news and research",
+      "kind": "lab",
+      "home": "https://www.anthropic.com/news",
+      "why": "No published feed found; use Find feed or Submit a link."
+    },
+    {
+      "name": "Meta AI blog",
+      "kind": "lab",
+      "home": "https://ai.meta.com/blog/",
+      "why": "No published feed found."
+    },
+    {
+      "name": "Apollo Research",
+      "kind": "research-org",
+      "home": "https://www.apolloresearch.ai/blog",
+      "why": "Evaluations of scheming and deception."
+    },
+    {
+      "name": "UK AI Security Institute",
+      "kind": "research-org",
+      "home": "https://www.aisi.gov.uk",
+      "why": "Government frontier-model evaluations."
+    },
+    {
+      "name": "ARC Prize",
+      "kind": "research-org",
+      "home": "https://arcprize.org/blog",
+      "why": "ARC-AGI results and analysis."
+    },
+    {
+      "name": "Transformer Circuits (Anthropic interpretability)",
+      "kind": "lab",
+      "home": "https://transformer-circuits.pub",
+      "why": "Interpretability research threads."
+    },
+    {
+      "name": "GovAI",
+      "kind": "policy",
+      "home": "https://www.governance.ai",
+      "why": "AI governance research."
+    }
   ]
 }

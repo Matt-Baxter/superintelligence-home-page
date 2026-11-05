@@ -7,7 +7,9 @@
   <ol class="feed" id="card"></ol>
   <div class="cols side">
     <section class="panel">
-      <h2>Why it's tagged this way</h2>
+      <h2>How significant is it?</h2>
+      <div id="analysis"></div>
+      <h2 style="margin-top:8px">Why it's tagged this way</h2>
       <div id="why"></div>
       <h2 style="margin-top:8px">Covered by</h2>
       <div class="tablewrap"><table><thead><tr><th>Source</th><th>Kind</th><th>Their headline</th></tr></thead><tbody id="covered"></tbody></table></div>
@@ -38,6 +40,14 @@ async function load() {
   $("#card").innerHTML = ""; $("#card").append(storyCard(s));
   $("#why").innerHTML = (s.topics.length ? s.topics.map((t) => `<p><a class="tag" href="/?topic=${t.id}">${esc(t.label)}</a> ${t.via ? `<span class="small muted">because it's tagged ${esc(s.topics.find((x) => x.id === t.via)?.label || t.via)}</span>` : `<span class="small muted">matched “${t.matched.map(esc).join("”, “")}”</span>`}</p>`).join("") : `<p class="muted">No topic in the ontology matched this story's title or summary.</p>`)
     + (s.orgs.length ? `<p class="small muted">Organizations: ${s.orgs.map((o) => `${esc(o.label)} (“${o.matched.map(esc).join("”, “")}”)`).join(", ")}</p>` : "");
+  const an = s.analysis || {};
+  $("#analysis").innerHTML = `<p><span class="sig ${s.significance >= 60 ? "hi" : s.significance >= 35 ? "mid" : ""}" style="font-size:15px;height:26px;min-width:36px">${s.significance}</span> out of 100 ·
+      <b>${esc(an.type?.label || "Update")}</b> · ${esc(an.evidence?.label || "")}</p>
+    <table class="why" aria-label="Significance breakdown">${(an.why || []).map((w) => `<tr><td>+${w.points}</td><td>${esc(w.factor)}</td><td>${esc(w.detail || "")}</td></tr>`).join("")}</table>
+    ${(an.benchmarks || []).length ? `<p class="small">Benchmarks: ${an.benchmarks.map((b) => `<a class="tag bench" href="/?benchmark=${esc(b.id)}">${esc(b.label)}${b.score ? ` <b>${esc(fmtScore(b.score))}</b>` : ""}</a>`).join(" ")}
+      <span class="muted">Scores are read from the text next to the benchmark's name; check the source before quoting them.</span></p>` : ""}
+    ${(an.people || []).length ? `<p class="small">People: ${an.people.map((p) => `<a class="tag" href="/?person=${esc(p.id)}">${esc(p.label)}</a>`).join(" ")}</p>` : ""}
+    <p class="small muted">The score is rule-based and explainable: stronger evidence, more independent sources, reported benchmark results and frontier claims raise it. <a href="/capabilities">Capability tracker</a></p>`;
   $("#covered").innerHTML = s.sources.map((x) => `<tr><td>${esc(x.name)}</td><td>${esc(KIND[x.kind] || x.kind)}</td><td><a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.title)}</a></td></tr>`).join("");
   $("#notes").innerHTML = d.notes.length ? d.notes.map((n) => `<div class="note"><div class="who">${esc(n.name)} · ${ago(n.created_at)} · ${n.private ? "only you" : "shared"}${n.mine ? ` · <button class="linkish" data-del="${n.id}" type="button">Delete</button>` : ""}</div>${esc(n.text)}</div>`).join("") : `<p class="muted small">No notes yet.</p>`;
   $$("[data-del]").forEach((b) => b.onclick = async () => { await api(`/api/notes/${b.dataset.del}`, { method: "DELETE" }); load(); });
