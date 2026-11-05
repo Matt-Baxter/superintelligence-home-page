@@ -102,10 +102,61 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   ok((await john.textContent('#summary')).includes('Pasted text'), 'agent log summary (json-render) shows pasted share');
   await john.goto(B + '/agent-log'); await john.waitForSelector('.entry'); await john.screenshot({ path: 'shots/agent-log.png', fullPage: true });
 
+  console.log('Admin: access');
+  const j = (p, url, method = 'GET', body) => p.evaluate(async ([url, method, body]) => { const r = await fetch(url, { method, headers: body ? { 'content-type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined }); let d = {}; try { d = await r.json(); } catch (e) {} return { status: r.status, ...d }; }, [url, method, body]);
+  ok((await j(matt, '/api/admin/overview')).status === 403, 'non-admin gets 403 from the admin API');
+  await matt.goto(B + '/'); await matt.waitForSelector('.topbar'); ok(!(await matt.textContent('.topbar nav')).includes('Admin'), 'non-admin sees no Admin link');
+  await john.goto(B + '/'); await john.waitForSelector('.topbar'); ok((await john.textContent('.topbar nav')).includes('Admin'), 'admin sees the Admin link');
+  await john.goto(B + '/admin'); await john.waitForSelector('#kpis .kpi'); ok((await john.textContent('#kpis')).includes('Active sources'), 'overview shows counts');
+
+  console.log('Admin: harvesting');
+  await john.click('[data-tab="add"]'); await john.waitForSelector('#catalog input');
+  await john.fill('#aUrl', 'fixture://sample-site.html'); await john.click('#aFind'); await john.waitForSelector('#aFound .chip');
+  ok((await john.$$('#aFound .chip')).length === 2, 'Find feed discovers the RSS and JSON feeds a page advertises');
+  await john.fill('#aUrl', 'fixture://sample-s2.json'); await john.selectOption('#aFormat', 'semantic-scholar'); await john.click('#aTest'); await john.waitForSelector('#aPreview .ok, #aPreview .err');
+  ok((await john.textContent('#aPreview')).includes('Works: 2 items'), 'Test previews a Semantic Scholar feed without saving it');
+  await john.fill('#aName', 'Sample paper search (test data)'); await john.selectOption('#aKind', 'papers'); await john.click('#addForm button[type=submit]'); await john.waitForFunction(() => /Added/.test(document.querySelector('#aErr').textContent));
+  ok((await john.textContent('#aErr')).includes('1 new'), 'adding a source harvests it; the paper already seen on arXiv groups instead of duplicating');
+  ok((await j(john, '/api/admin/sources/test', 'POST', { url: 'http://localhost:3200/feed', format: 'rss' })).ok === false, 'test fetch refuses private addresses (SSRF guard)');
+  ok((await j(john, '/api/admin/sources', 'POST', { url: 'https://x.com/someone', name: 'No', kind: 'news' })).status === 400, 'Twitter/X is refused');
+  await john.$$eval('#catalog input:not([disabled])', (xs) => xs.forEach((x) => (x.checked = true))); await john.click('#catEnable'); await john.waitForFunction(() => /Added/.test(document.querySelector('#catMsg').textContent));
+  const cm = await john.textContent('#catMsg'); ok(cm.includes('Added 3') && cm.includes('2 worked') && cm.includes('1 failed'), 'catalog: enable several at once, each test-fetched, failures reported');
+  ok((await john.$$('#catalog label.added')).length === 3, 'catalog marks what is already added');
+  const st = await j(john, '/api/admin/sources'); const broken = st.sources.find((s) => /broken/.test(s.name));
+  ok(broken.failures === 1 && broken.next_due_at > new Date(Date.now() + 6 * 36e5).toISOString(), 'a failing source backs off (next try later than its interval)');
+  await j(john, '/api/admin/harvest', 'POST', { force: false }); const due = await j(john, '/api/admin/harvest', 'POST', { force: false }); ok(due.sources === 0, 'a normal harvest skips sources that are not due yet');
+  const all = await j(john, '/api/admin/harvest', 'POST', { force: true }); ok(all.sources >= 6 && all.errors === 1, 'Harvest all fetches every active source and counts the failure');
+  await john.click('[data-tab="runs"]'); await john.selectOption('#runStatus', 'error'); await john.waitForTimeout(400);
+  ok((await john.textContent('#runRows')).includes('Sample broken feed'), 'harvest log lists failed runs with their error');
+  await john.click('[data-tab="sources"]'); await john.selectOption('#srcFilter', 'failing'); await john.waitForTimeout(400);
+  await john.locator('#srcRows button[data-act="reset"]').first().click(); await john.waitForTimeout(400);
+  ok((await j(john, '/api/admin/sources')).sources.find((s) => s.id === broken.id).failures === 0, 'Reset backoff clears the failure count');
+  const opml = await john.evaluate(async () => (await fetch('/api/admin/opml')).text()); ok(opml.includes('<opml') && opml.includes('fixture://sample-s2.json'), 'OPML export lists active feeds');
+  const imp = await j(john, '/api/admin/opml', 'POST', { opml: '<opml><body><outline text="A" xmlUrl="https://example.org/sample-feed.xml"/><outline text="T" xmlUrl="https://twitter.com/someone"/></body></opml>', kind: 'newsletter' });
+  ok(imp.added === 1 && imp.skipped === 1 && imp.status === 'pending', 'OPML import adds feeds as pending and skips Twitter/X');
+
+  console.log('Admin: users and moderation');
+  const users = (await j(john, '/api/admin/users')).users; const mattId = users.find((u) => u.username === 'matt').id, johnId = users.find((u) => u.username === 'john').id;
+  ok((await j(john, `/api/admin/users/${johnId}`, 'PUT', { admin: false })).status === 400, "an admin can't remove their own admin rights");
+  await j(john, `/api/admin/users/${mattId}`, 'PUT', { admin: true }); ok((await j(matt, '/api/admin/overview')).status === 200, 'promoting a user grants the admin API');
+  await j(john, `/api/admin/users/${mattId}`, 'PUT', { admin: false });
+  await j(john, `/api/admin/users/${mattId}`, 'PUT', { disabled: true }); ok((await j(matt, '/api/me')).user === null, 'disabling a user ends their sessions');
+  await j(john, `/api/admin/users/${mattId}`, 'PUT', { disabled: false });
+  await matt.goto(B); await matt.fill('#username', 'matt'); await matt.fill('#password', 'correct-horse-9'); await matt.click('#authBtn'); await matt.waitForSelector('#feed .story'); ok(true, 're-enabled user can sign in again');
+  const target = (await j(john, '/api/admin/stories?q=robot')).stories[0];
+  await j(john, `/api/admin/stories/${target.id}`, 'PUT', { hidden: true, reason: 'test' });
+  ok(!(await j(matt, '/api/stories?limit=100')).stories.some((s) => s.id === target.id), 'a hidden story leaves everyone’s feed');
+  await john.click('[data-tab="moderation"]'); await john.check('#mHidden'); await john.waitForTimeout(400); ok((await john.textContent('#storyRows')).includes('Hidden: test'), 'moderation tab lists hidden stories with the reason');
+  await john.click('#storyRows button[data-act="unhide"]'); await john.waitForTimeout(400); ok((await j(matt, '/api/stories?limit=100')).stories.some((s) => s.id === target.id), 'unhiding brings it back');
+  const rt = await j(john, '/api/admin/retag', 'POST', {}); ok(rt.stories > 0, 'Re-tag re-applies the ontology to every story');
+  await john.click('[data-tab="audit"]'); await john.waitForTimeout(400); const au = await john.textContent('#auditRows');
+  ok(['source.add', 'catalog.enable', 'user.edit', 'story.hide', 'ontology.retag'].every((a) => au.includes(a)), 'audit log records admin actions');
+  await john.click('[data-tab="overview"]'); await john.waitForSelector('#kpis .kpi'); await john.screenshot({ path: 'shots/admin.png', fullPage: true });
+
   console.log('Phone width');
   const ph = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })).newPage();
   await ph.goto(B); await ph.fill('#username', 'john'); await ph.fill('#password', 'correct-horse-9'); await ph.click('#authBtn'); await ph.waitForSelector('#feed .story');
-  for (const path of ['/', '/story?id=' + sid, '/brief', '/lists', '/sources', '/agent-log']) { await ph.goto(B + path); await ph.waitForTimeout(600); ok(!(await ph.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'no sideways scroll: ' + path.split('?')[0]); }
+  for (const path of ['/', '/story?id=' + sid, '/brief', '/lists', '/sources', '/agent-log', '/admin']) { await ph.goto(B + path); await ph.waitForTimeout(600); ok(!(await ph.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'no sideways scroll: ' + path.split('?')[0]); }
   await ph.goto(B); await ph.waitForSelector('#feed .story'); await ph.screenshot({ path: 'shots/phone-feed.png' });
   await john.goto(B); await john.waitForSelector('#feed .story'); await john.screenshot({ path: 'shots/feed.png', fullPage: true });
   await john.goto(B + '/brief'); await john.waitForSelector('#brief .jr-metric'); await john.screenshot({ path: 'shots/brief.png', fullPage: true });

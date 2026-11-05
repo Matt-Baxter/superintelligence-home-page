@@ -4,6 +4,8 @@ const fs = require("node:fs"), path = require("node:path"), os = require("node:o
 delete process.env.DATABASE_URL; delete process.env.POSTGRES_URL;
 process.env.DATA_DIR = process.env.DATA_DIR || fs.mkdtempSync(path.join(os.tmpdir(), "si-test-"));
 process.env.FETCH_MINUTES = "0";
+process.env.ALLOW_FIXTURE_FEEDS = "1";
+process.env.SOURCE_CATALOG = require("node:path").join(__dirname, "fixtures", "sample-catalog.json");
 const { app, db, ingestItems, boot } = require("../server");
 const feeds = require("../lib/feeds");
 (async () => {

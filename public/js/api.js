@@ -26,7 +26,8 @@ async function requireUser() {
 function topbar(user) {
   const here = location.pathname.replace(/\.html$/, "").replace(/\/index$/, "/") || "/";
   const bar = document.createElement("header"); bar.className = "topbar";
-  bar.innerHTML = `<div class="in"><a class="brand" href="/">Superintelligence Homepage</a><nav class="nav">${NAV.map(([h, t]) => `<a href="${h}"${(h === "/" ? here === "/" : here.startsWith(h)) ? ' aria-current="page"' : ""}>${t}</a>`).join("")}</nav>
+  const links = user?.admin ? [...NAV, ["/admin", "Admin"]] : NAV;
+  bar.innerHTML = `<div class="in"><a class="brand" href="/">Superintelligence Homepage</a><nav class="nav">${links.map(([h, t]) => `<a href="${h}"${(h === "/" ? here === "/" : here.startsWith(h)) ? ' aria-current="page"' : ""}>${t}</a>`).join("")}</nav>
     <div class="who">${user ? `<span>${esc(user.name)}</span><button class="btn" id="logout" type="button">Sign out</button>` : ""}</div></div>`;
   document.body.prepend(bar);
   const lo = $("#logout"); if (lo) lo.onclick = async () => { await api("/api/logout", { method: "POST" }); location.href = "/"; };

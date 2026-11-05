@@ -1,0 +1,3 @@
+{"total":2,"data":[
+ {"paperId":"s2sample1","title":"Sample paper: Scaling Laws for Test-Time Compute in Reasoning Agents","externalIds":{"ArXiv":"2611.00001"},"publicationDate":"2026-11-02","authors":[{"name":"A. Example"}],"citationCount":3,"tldr":{"text":"Synthetic test record."}},
+ {"paperId":"s2sample2","title":"Sample paper: Measuring Reward Hacking in Long-Horizon Agents","externalIds":{},"url":"https://www.semanticscholar.org/paper/s2sample2","publicationDate":"2026-11-04","authors":[{"name":"D. Placeholder"}],"citationCount":0,"abstract":"Synthetic test record on reward hacking and alignment of agents."}]}
