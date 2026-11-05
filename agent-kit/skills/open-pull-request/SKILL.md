@@ -1,6 +1,6 @@
 ---
 name: open-pull-request
-description: Prepare a branch and pull request for this repo following CONTRIBUTING.md (self-merge allowed once preflight is green). Use when the human asks to "make a PR", "push this", or "ship this".
+description: Prepare a branch, commit and pull request description for this repo (the human opens and merges the PR once preflight is green; no review needed). Use when asked to "make a PR", "push this", "ship this" or "merge it".
 ---
 
 # Open a pull request
@@ -17,7 +17,8 @@ Follow [CONTRIBUTING.md](../../../CONTRIBUTING.md). You prepare the branch; the 
 3. **Preflight.** Run `npm run preflight` (about 3 seconds). It must end with "Preflight passed." For bigger UI or logic changes, also start `npm run dev:sample` and run `npm test` (the full browser test). Don't hand over a red branch.
 4. **Secrets.** Preflight scans for them, but also glance at `git diff --cached` for anything private.
 5. **Commit** with a one-line summary and a short why. Note that an agent did the work (for example `Co-Authored-By: Claude …`).
-6. **Push** with `git push -u origin <branch>` and give the human the "Create a pull request" link the push prints.
+6. **Push** with `git push -u origin <branch>` and give the human the "Create a pull request" link the push prints. If the branch was cut from another unmerged branch, say which PR must merge first.
+   Asked to merge? Explain that a human merges (hard rule) and give the merge order instead.
 7. **Draft the PR description** using `.github/pull_request_template.md`:
    - what changed;
    - its type;

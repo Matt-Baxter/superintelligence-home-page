@@ -52,16 +52,11 @@ The same queries run on SQLite (local, tests) and Postgres (production) through 
 - [docs/V0.md](docs/V0.md): John's v0 workflow for his bake-off version.
 - `npm run preflight`: about 3 seconds of checks (syntax, build, secrets, no-Twitter, contract reminder, API smoke test). It runs on `git push` and in GitHub Actions.
 - [CLAUDE.md](CLAUDE.md) / [AGENTS.md](AGENTS.md): rules for AI agents working in this repo.
-- `.claude/skills/`: Claude Code skills:
-  - `open-pull-request`
-  - `change-the-contract`
-  - `run-tests`
-  - `add-feed-source`
-  - `bakeoff-entry`
+- [agent-kit/](agent-kit/README.md): the agent kit (10 skills, 3 subagents, a guard hook and an MCP server), installable as a Claude Code plugin and exportable to Claude apps, MCP clients, Cursor, Codex and v0 (`npm run kit:export`). Claude Code in this repo loads it automatically through `.claude/`.
 
 ## Tests
 
-`test/e2e.js` drives two signed-in users through the whole app. It runs 49 checks, including:
+`test/e2e.js` drives two signed-in users through the whole app. It runs about 100 checks, including:
 
 - grouping and tagging
 - votes, saves and notes kept separate per user
