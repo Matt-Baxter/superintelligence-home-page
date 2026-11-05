@@ -52,6 +52,7 @@ The same queries run on SQLite (local, tests) and Postgres (production) through 
 - [docs/V0.md](docs/V0.md): John's v0 workflow for his bake-off version.
 - `npm run preflight`: about 3 seconds of checks (syntax, build, secrets, no-Twitter, contract reminder, API smoke test). It runs on `git push` and in GitHub Actions.
 - [CLAUDE.md](CLAUDE.md) / [AGENTS.md](AGENTS.md): rules for AI agents working in this repo.
+- [modules/](modules/README.md): the modular monolith. Features are plug-in modules (capabilities, admin, project, generative UI with json-render, decision judges incl. JEV and CLEF) loaded by `kernel/` through extension points; switch them on or off in `modules/modules.json`.
 - [agent-kit/](agent-kit/README.md): the agent kit (10 skills, 3 subagents, a guard hook and an MCP server), installable as a Claude Code plugin and exportable to Claude apps, MCP clients, Cursor, Codex and v0 (`npm run kit:export`). Claude Code in this repo loads it automatically through `.claude/`.
 
 ## Tests

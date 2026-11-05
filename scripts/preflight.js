@@ -49,6 +49,10 @@ const cat = fs.readFileSync(path.join(root, "lib/source-catalog.json"), "utf8");
 try { const out = sh("node test/analysis-unit.js").trim(); ok("Analysis rules", out.replace(/^analysis unit checks: /, "")); }
 catch (e) { fail("Analysis rules", String(e.stderr || e.message).split("\n").find((l) => /Assertion|Error/.test(l)) || "failed"); }
 
+// 5b2. Modules: kernel boots, boundaries hold, blocks, views and judges are valid
+try { sh("node test/kernel-unit.js"); ok("Modules", sh("node scripts/modules.js check").trim() + "; kernel unit checks passed"); }
+catch (e) { fail("Modules", String(e.stderr || e.message).trim().split("\n").slice(0, 4).join(" ")); }
+
 // 5c. Agent kit: skills, subagents, plugin manifests, symlinks, index and MCP handshake
 try { ok("Agent kit", sh("node scripts/agent-kit.js check").trim()); }
 catch (e) { fail("Agent kit", String(e.stderr || e.message).trim().split("\n").slice(0, 4).join(" ")); }

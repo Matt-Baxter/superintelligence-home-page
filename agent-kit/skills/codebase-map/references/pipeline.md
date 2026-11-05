@@ -27,7 +27,12 @@
 
 ## 6. Serving (`server.js`)
 - `storyRows(where, args, uid, {sort})` loads matches, computes `rank` (votes, coverage, outside score, significance, age), sorts (`top`, `new`, `votes`, `signal`) and attaches links.
-- `/api/capabilities` aggregates topics, benchmark mentions, people and orgs over 7/30/90 days.
+- The capabilities module's `/api/capabilities` aggregates topics, benchmark mentions, people and orgs over 7/30/90 days.
+
+## 7. Modules
+- At require time `server.js` creates the kernel: modules register and contribute (formats, signals, schema, prune hooks are applied before anything reads them).
+- Routes from `http.routes` are mounted before static files; `start` hooks run in `boot()` after the database is ready.
+- `/api/me` returns `user.nav` (core links plus `ui.nav` contributions); `/api/modules` (admins) describes modules, extension points and views.
 
 ## Tables at a glance
-users, sessions · sources, fetch_runs · stories, story_keys, story_links, story_topics, story_entities · votes, saves, notes, lists, list_items, follows · agent_log, agent_log_saves · admin_audit · project_issues, project_milestones, project_comments, project_activity. Shapes: `docs/CONTRACT.md`.
+users, sessions · sources, fetch_runs · stories, story_keys, story_links, story_topics, story_entities · votes, saves, notes, lists, list_items, follows · agent_log, agent_log_saves · admin_audit · project_issues, project_milestones, project_comments, project_activity (owned by the project module). Shapes: `docs/CONTRACT.md`.

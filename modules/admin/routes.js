@@ -1,10 +1,7 @@
-// Admin layer: every route here requires a signed-in admin. Mounted by server.js.
+// Admin module routes: every route here requires a signed-in admin. Mounted by the kernel (modules/admin/module.js).
 // Covers harvesting (sources, catalog, discovery, test fetches, runs, OPML), users, moderation, ontology and the audit log.
-const db = require("./db");
-const feeds = require("./feeds");
-const tagger = require("./tagger");
 
-module.exports = function mountAdmin(app, { auth, admin, wrap, str, bad, notFound, bool, KINDS, FORMAT_IDS, harvester, audit }) {
+module.exports = function mountAdmin(app, { db, feeds, tagger, auth, admin, wrap, str, bad, notFound, bool, KINDS, FORMAT_IDS, harvester, audit }) {
   const A = [auth, admin];
   const now = () => db.now();
   const kindOk = (k) => KINDS.includes(k) && k !== "submitted";
@@ -117,7 +114,7 @@ module.exports = function mountAdmin(app, { auth, admin, wrap, str, bad, notFoun
 
   /* ----------------------------------------------------------------- catalog */
   // SOURCE_CATALOG lets the sample-data servers swap in test/fixtures/sample-catalog.json.
-  const catalog = () => JSON.parse(require("node:fs").readFileSync(process.env.SOURCE_CATALOG || require("node:path").join(__dirname, "source-catalog.json"), "utf8"));
+  const catalog = () => JSON.parse(require("node:fs").readFileSync(process.env.SOURCE_CATALOG || require("node:path").join(__dirname, "..", "..", "lib", "source-catalog.json"), "utf8"));
   app.get("/api/admin/catalog", ...A, wrap(async () => {
     const cat = catalog();
     const have = new Set((await db.all("SELECT url FROM sources")).map((r) => r.url));

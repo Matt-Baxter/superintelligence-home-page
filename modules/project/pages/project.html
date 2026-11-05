@@ -275,7 +275,7 @@ async function openIssue(n) {
       <p class="small muted" style="margin:0">Updated ${ago(i.updated_at)}${i.completed_at ? ` · done ${ago(i.completed_at)}` : ""}</p>
     </div></div></aside>`;
   $("#scrim").onclick = $("#closeD").onclick = closeIssue;
-  $("#copyLink").onclick = (e) => copy(location.origin + `/project#/all/${i.number}`, e.currentTarget);
+  $("#copyLink").onclick = (e) => copy(location.origin + `/m/project#/all/${i.number}`, e.currentTarget);
   $("#delIssue").onclick = async (e) => { if (e.currentTarget.textContent !== "Confirm delete") { e.currentTarget.textContent = "Confirm delete"; return; } await api(`/api/admin/project/issues/${i.number}`, { method: "DELETE" }); closeIssue(); toast(`${i.key} deleted`); await loadMeta(); render(); };
   $("#dTitle").onchange = () => update(i.number, { title: $("#dTitle").value }, true);
   $("#dDesc").onchange = () => update(i.number, { description: $("#dDesc").value }, true);

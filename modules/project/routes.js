@@ -1,6 +1,5 @@
 // Project workspace (Linear-style issue tracker for running the project itself). Admins only.
 // Free-tier friendly: no polling or background work; every read is one or two indexed queries.
-const db = require("./db");
 
 const STATUSES = [
   { id: "backlog", label: "Backlog" }, { id: "todo", label: "Todo" }, { id: "in_progress", label: "In progress" },
@@ -10,7 +9,7 @@ const PRIORITIES = [{ id: 0, label: "No priority" }, { id: 1, label: "Urgent" },
 const STATUS_IDS = STATUSES.map((s) => s.id);
 const PREFIX = "SI";
 
-module.exports = function mountProject(app, { auth, admin, wrap, str, bad, notFound, audit }) {
+module.exports = function mountProject(app, { db, auth, admin, wrap, str, bad, notFound, audit }) {
   const A = [auth, admin];
   const now = () => db.now();
   const isoDate = (v) => (v === null || v === "" ? null : /^\d{4}-\d{2}-\d{2}$/.test(String(v)) ? String(v) : bad("Dates look like 2026-11-11."));
@@ -142,10 +141,10 @@ module.exports = function mountProject(app, { auth, admin, wrap, str, bad, notFo
       LEFT JOIN users u ON u.id = a.actor_id LEFT JOIN project_issues i ON i.id = a.issue_id ORDER BY a.id DESC LIMIT 100`)).map((r) => ({ ...r, key: r.number ? `${PREFIX}-${r.number}` : null })),
   })));
 
-  // Load the project's real open to-dos (lib/project-starter.json, taken from docs/OUR_PARTS.md) into an empty tracker.
+  // Load the project's real open to-dos (modules/project/starter.json, taken from docs/OUR_PARTS.md) into an empty tracker.
   app.post("/api/admin/project/starter", ...A, wrap(async (req) => {
     if ((await db.get("SELECT COUNT(*) AS n FROM project_issues")).n > 0) bad("The tracker already has issues; starter issues only load into an empty one.");
-    const starter = require("./project-starter.json");
+    const starter = require("./starter.json");
     const users = await db.all("SELECT id, LOWER(username) AS u, LOWER(display_name) AS d FROM users WHERE is_admin = 1");
     const who = (name) => (name ? users.find((x) => x.u.startsWith(name) || x.d.startsWith(name))?.id || null : null);
     const ms = {};

@@ -17,7 +17,8 @@ async function api(path, opts = {}) {
   return data;
 }
 
-const NAV = [["/", "Feed"], ["/capabilities", "Capabilities"], ["/brief", "Weekly brief"], ["/lists", "Reading lists"], ["/sources", "Sources"], ["/agent-log", "Agent log"]];
+// Core pages; modules add theirs through the "ui.nav" extension point (returned with /api/me as user.nav).
+const NAV = [["/", "Feed"], ["/brief", "Weekly brief"], ["/lists", "Reading lists"], ["/sources", "Sources"], ["/agent-log", "Agent log"]];
 async function requireUser() {
   const { user } = await api("/api/me", { allow401: true });
   if (!user) { location.href = "/?next=" + encodeURIComponent(location.pathname + location.search); throw new Error("Not signed in"); }
@@ -26,7 +27,8 @@ async function requireUser() {
 function topbar(user) {
   const here = location.pathname.replace(/\.html$/, "").replace(/\/index$/, "/") || "/";
   const bar = document.createElement("header"); bar.className = "topbar";
-  const links = user?.admin ? [...NAV, ["/project", "Project"], ["/admin", "Admin"]] : NAV;
+  const mod = (user?.nav || []).map((n) => [n.href, n.label]);
+  const links = [NAV[0], ...mod.filter((_, i) => (user.nav[i].order ?? 50) < 20), ...NAV.slice(1), ...mod.filter((_, i) => (user.nav[i].order ?? 50) >= 20)];
   bar.innerHTML = `<div class="in"><a class="brand" href="/">Superintelligence Homepage</a><nav class="nav">${links.map(([h, t]) => `<a href="${h}"${(h === "/" ? here === "/" : here.startsWith(h)) ? ' aria-current="page"' : ""}>${t}</a>`).join("")}</nav>
     <div class="who">${user ? `<span>${esc(user.name)}</span><button class="btn" id="logout" type="button">Sign out</button>` : ""}</div></div>`;
   document.body.prepend(bar);

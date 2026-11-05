@@ -34,7 +34,7 @@ The MCP server mirrors the same levels as tools: `list_skills` → `load_skill` 
 
 `mcp/server.js` is the portable runtime: JSON-RPC over stdio, no dependencies, so it runs anywhere Node 22 runs (laptop, sandbox, CI, a cloud session).
 - **Knowledge tools**: always on.
-- **App tools** (`tag_text`, `analyze_text`, `parse_feed`) call the repo's own `lib/` code, so an agent in any client judges and tags text exactly like the live site. They turn on when the server finds the repo (`SI_REPO`, the working directory, or the kit's parent folder).
+- **App tools** call the repo's own code, so an agent in any client works exactly like the live site: `tag_text`, `analyze_text`, `parse_feed` (core), `list_modules` (the kernel's map), `ui_catalog` and `validate_spec` (generative UI), `list_judges` and `run_judge` (decision module). They turn on when the server finds the repo (`SI_REPO`, the working directory, or the kit's parent folder).
 - **No network, no writes, no secrets.** Fetching stays with the client's own web tools, so the server is safe to run in sandboxes.
 
 ## Guardrails
@@ -50,3 +50,7 @@ Runtimes without hooks rely on the written rules, the git pre-push hook and pref
 ## Adding a runtime
 
 Write an adapter that reads `agent-kit/` without changing it: a symlink, a generated file in `dist/`, or a client config for the MCP server. Add its check to `scripts/agent-kit.js` and a row to `README.md`.
+
+## The app is pluggable too
+
+The kit mirrors the app's own architecture: the app is a modular monolith (`kernel/`, `modules/`, see `modules/README.md`) where features plug into extension points (`http.routes`, `ui.nav`, `ui.blocks`, `ui.views`, `db.schema`, `feeds.formats`, `analysis.signals`, `decision.judges`). The add-a-module, generative-ui and run-a-judge skills cover building on it.

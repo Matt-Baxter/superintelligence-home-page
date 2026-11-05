@@ -12,7 +12,7 @@
   "functions": {
     "api/index.js": {
       "maxDuration": 60,
-      "includeFiles": "{lib,views}/**"
+      "includeFiles": "{lib,views,kernel,modules}/**"
     }
   },
   "crons": [
@@ -42,6 +42,23 @@
           "value": "public, max-age=3600, stale-while-revalidate=86400"
         }
       ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/capabilities",
+      "destination": "/m/capabilities",
+      "permanent": true
+    },
+    {
+      "source": "/admin",
+      "destination": "/m/admin",
+      "permanent": true
+    },
+    {
+      "source": "/project",
+      "destination": "/m/project",
+      "permanent": true
     }
   ]
 }

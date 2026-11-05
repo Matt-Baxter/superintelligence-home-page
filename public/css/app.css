@@ -192,3 +192,12 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, .btn:focus-vi
 @media (max-width: 1100px) { .topbar .brand { display: none; } }
 @media (max-width: 640px) { .topbar .in { flex-wrap: wrap; } .nav { order: 3; width: 100%; } .topbar .brand { display: inline; } }
 @media (max-width: 640px) { .who span { display: none; } .topbar .brand { font-size: 15px; } }
+/* ---------- decision blocks ---------- */
+.jr-scorecard th .w { display: block; font-weight: 400; font-size: 11px; }
+.jr-scorecard tr.leader td { background: var(--accent-soft); } .jr-scorecard tr.leader td:first-child { font-weight: 650; }
+.jr-scorecard .bar { display: block; height: 4px; background: var(--line); border-radius: 9px; margin-top: 3px; min-width: 60px; } .jr-scorecard .bar i { display: block; height: 100%; background: var(--accent); border-radius: 9px; }
+.jr-verdict { border: 1px solid var(--line); border-left-width: 4px; border-radius: var(--radius); padding: 14px 16px; background: var(--surface); display: grid; gap: 6px; }
+.jr-verdict.tone-good { border-left-color: var(--good); } .jr-verdict.tone-warn { border-left-color: var(--warn); }
+.jr-verdict .k { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; } .jr-verdict .rec { font-size: 20px; }
+.jr-verdict p { margin: 0; } .jr-verdict .agree { font-size: 14px; } .jr-verdict .sign { font-size: 13px; color: var(--muted); }
+.jr-verdict .warn { margin: 0; padding-left: 18px; font-size: 13px; color: var(--warn); }
