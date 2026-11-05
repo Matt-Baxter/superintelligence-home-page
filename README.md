@@ -4,7 +4,11 @@ SEIS 606 Vibe Coding · Project 2 · John Affolter and Matthew Baxter
 
 One place to follow progress toward advanced AI, drawn from papers, lab blogs, research organizations, forums, newsletters and academic blogs, with no dependence on any single platform. There's no Twitter/X: as a source, as a suggestion, or as a submitted link.
 
-The plan we build against (working agreement, spec, versioned contract) is in our shared Project 2 Plan doc.
+The plan we build against (working agreement, spec, versioned contract) is in our shared Project 2 Plan doc. Repo copies:
+
+- [Working Agreement](WORKING_AGREEMENT.md): how we'll work together
+- [Contract](CONTRACT.md): what we're building against
+- Initial spec: to be created with SpecKit
 
 ## What it does
 
