@@ -42,7 +42,7 @@ async function seedSources() {
   await db.tx(async (t) => { for (const s of sources) await t.run("INSERT OR IGNORE INTO sources (name, kind, format, url, home, created_at) VALUES (?, ?, ?, ?, ?, ?)", s.name, s.kind, s.format, s.url, s.home || "", now()); });
 }
 let bootP;
-const boot = () => (bootP ||= db.ready().then(seedSources).catch((e) => { bootP = null; throw e; }));
+const boot = () => (bootP ||= db.ready().then(seedSources).then(() => harvester.backfill()).catch((e) => { bootP = null; throw e; }));
 
 /* ------------------------------------------------------------------- app */
 const app = express();
@@ -86,10 +86,11 @@ app.post("/api/login", limit(30, 6e5), wrap(async (req, res) => {
 }));
 app.post("/api/logout", wrap(async (req, res) => { const t = cookie(req, "sid"); if (t) await db.run("DELETE FROM sessions WHERE token = ?", t); res.clearCookie("sid"); return { ok: true }; }));
 app.get("/api/me", wrap((req) => ({ user: req.user || null })));
-app.get("/api/ontology", wrap(() => ({ topics: tagger.topicList(), orgs: tagger.orgList(), about: tagger.ontology.about })));
+app.get("/api/ontology", wrap(() => ({ topics: tagger.topicList(), orgs: tagger.orgList(), about: tagger.ontology.about,
+  benchmarks: (tagger.ontology.benchmarks || []).map(({ id, label, measures }) => ({ id, label, measures })), people: (tagger.ontology.people || []).map(({ id, label }) => ({ id, label })) })));
 
 /* ------------------------------------------------------------------ stories */
-const KINDS = ["papers", "lab", "research-org", "forum", "newsletter", "academic", "community", "news", "policy", "submitted"];
+const KINDS = ["papers", "journal", "lab", "research-org", "forum", "newsletter", "people", "academic", "community", "news", "policy", "submitted"];
 const FORMAT_IDS = Object.keys(feeds.FORMATS);
 const parseTime = (t) => Date.parse(t && !t.includes("T") ? t.replace(" ", "T") + "Z" : t);
 async function storyRows(where, args, uid, { sort = "top", limit = 40, offset = 0 } = {}) {
@@ -104,9 +105,10 @@ async function storyRows(where, args, uid, { sort = "top", limit = 40, offset = 
   rows.forEach((r) => {
     const hours = Math.max(0, (t0 - parseTime(r.t)) / 36e5);
     // Votes count most; being covered by several independent sources is a strong signal; older stories sink.
-    r.rank = (1 + r.votes * 3 + (r.nsources - 1) * 2 + Math.log10(1 + (r.ext_score || 0))) / Math.pow(hours + 2, 1.15);
+    r.rank = (1 + r.votes * 3 + (r.nsources - 1) * 2 + Math.log10(1 + (r.ext_score || 0)) + (r.significance || 0) / 25) / Math.pow(hours + 2, 1.15);
   });
-  rows.sort(sort === "new" ? (a, b) => (a.t < b.t ? 1 : -1) : sort === "votes" ? (a, b) => b.votes - a.votes || (a.t < b.t ? 1 : -1) : (a, b) => b.rank - a.rank);
+  rows.sort(sort === "new" ? (a, b) => (a.t < b.t ? 1 : -1) : sort === "votes" ? (a, b) => b.votes - a.votes || (a.t < b.t ? 1 : -1)
+    : sort === "signal" ? (a, b) => (b.significance || 0) - (a.significance || 0) || (a.t < b.t ? 1 : -1) : (a, b) => b.rank - a.rank);
   const page = rows.slice(offset, offset + limit);
   if (!page.length) return [];
   const links = await db.all(`SELECT l.story_id, l.url, l.title, src.name AS source, src.kind FROM story_links l LEFT JOIN sources src ON src.id = l.source_id
@@ -118,7 +120,7 @@ function shapeStory(r, links) {
     id: r.id, title: r.title, url: r.url, summary: r.summary, authors: r.authors, published_at: r.published_at, first_seen: r.first_seen,
     topics: JSON.parse(r.topics || "[]"), orgs: JSON.parse(r.orgs || "[]"), votes: r.votes, voted: bool(r.voted), saved: bool(r.saved), notes: r.nnotes,
     sources: links.map((l) => ({ name: l.source || "Submitted by a reader", kind: l.kind || "submitted", url: l.url, title: l.title })),
-    nsources: r.nsources,
+    nsources: r.nsources, significance: r.significance || 0, analysis: JSON.parse(r.analysis || "{}"),
   };
 }
 app.get("/api/stories", auth, wrap(async (req) => {
@@ -130,8 +132,11 @@ app.get("/api/stories", auth, wrap(async (req) => {
   if (org) { w.push("s.orgs LIKE ?"); a.push(`%"id":"${org.replace(/[%_"]/g, "")}"%`); }
   if (qtext) { w.push("(LOWER(s.title) LIKE ? OR LOWER(s.summary) LIKE ?)"); a.push(`%${qtext}%`, `%${qtext}%`); }
   if (days) { w.push("COALESCE(s.published_at, s.first_seen) >= ?"); a.push(new Date(Date.now() - days * 864e5).toISOString()); }
+  if (req.query.benchmark) { w.push("s.id IN (SELECT story_id FROM story_entities WHERE kind = 'benchmark' AND entity = ?)"); a.push(str(req.query.benchmark, 40)); }
+  if (req.query.person) { w.push("s.id IN (SELECT story_id FROM story_entities WHERE kind = 'person' AND entity = ?)"); a.push(str(req.query.person, 60)); }
+  if (Number(req.query.min)) { w.push("COALESCE(s.significance, 0) >= ?"); a.push(Math.min(100, Number(req.query.min))); }
   if (req.query.saved === "1") { w.push("s.id IN (SELECT story_id FROM saves WHERE user_id = ?)"); a.push(req.user.id); }
-  const sort = ["top", "new", "votes"].includes(req.query.sort) ? req.query.sort : "top";
+  const sort = ["top", "new", "votes", "signal"].includes(req.query.sort) ? req.query.sort : "top";
   const offset = Math.max(0, Number(req.query.offset) || 0);
   return { stories: await storyRows(w.join(" AND "), a, req.user.id, { sort, offset, limit: 40 }), sort };
 }));
@@ -248,6 +253,42 @@ app.get("/api/cron/fetch", wrap(async (req, res) => {
   const secret = process.env.CRON_SECRET;
   if (!secret || req.headers.authorization !== `Bearer ${secret}`) { res.status(401).json({ error: "Not authorized." }); return; }
   return harvester.harvest({ trigger: "cron" });
+}));
+
+/* ------------------------------------------------------- capability tracker */
+// One read for the Capabilities page: capability areas this week vs last, benchmark mentions with reported scores,
+// watched people and organizations, and the strongest signals. Bounded queries only (free tier).
+app.get("/api/capabilities", auth, wrap(async (req) => {
+  const days = Math.min(90, Math.max(7, Number(req.query.days) || 7));
+  const since = new Date(Date.now() - days * 864e5).toISOString(), before = new Date(Date.now() - 2 * days * 864e5).toISOString();
+  const seen = "COALESCE(s.published_at, s.first_seen)", vis = "COALESCE(s.hidden, 0) = 0";
+  const areas = ["superintelligence", "capabilities", "reasoning", "math", "coding", "agents", "long-horizon", "ai-rnd", "multimodal", "robotics", "science", "safety", "evals", "compute"];
+  const counts = await db.all(`SELECT t.topic, SUM(CASE WHEN ${seen} >= ? THEN 1 ELSE 0 END) AS now, SUM(CASE WHEN ${seen} < ? THEN 1 ELSE 0 END) AS prev,
+      MAX(CASE WHEN ${seen} >= ? THEN s.significance ELSE 0 END) AS top FROM story_topics t JOIN stories s ON s.id = t.story_id
+    WHERE ${vis} AND ${seen} >= ? GROUP BY t.topic`, since, since, since, before);
+  const byTopic = Object.fromEntries(counts.map((r) => [r.topic, r]));
+  const topics = tagger.topicList();
+  const bench = await db.all(`SELECT e.entity, e.value, e.unit, s.id, s.title, s.significance, ${seen} AS t FROM story_entities e JOIN stories s ON s.id = e.story_id
+    WHERE e.kind = 'benchmark' AND ${vis} ORDER BY ${seen} DESC LIMIT 400`);
+  const people = await db.all(`SELECT e.entity, COUNT(*) AS n, MAX(${seen}) AS latest FROM story_entities e JOIN stories s ON s.id = e.story_id
+    WHERE e.kind = 'person' AND ${vis} AND ${seen} >= ? GROUP BY e.entity ORDER BY n DESC LIMIT 20`, before);
+  const orgRows = await db.all(`SELECT s.orgs FROM stories s WHERE ${vis} AND ${seen} >= ? LIMIT 2000`, since);
+  const orgCount = {}; orgRows.forEach((r) => JSON.parse(r.orgs || "[]").forEach((o) => (orgCount[o.id] = (orgCount[o.id] || 0) + 1)));
+  const B = tagger.ontology.benchmarks || [], P = tagger.ontology.people || [];
+  return {
+    days,
+    areas: areas.map((id) => ({ id, label: topics.find((t) => t.id === id)?.label || id, now: byTopic[id]?.now || 0, prev: byTopic[id]?.prev || 0, top: byTopic[id]?.top || 0 })),
+    benchmarks: B.map((b) => {
+      const rows = bench.filter((r) => r.entity === b.id);
+      return { id: b.id, label: b.label, measures: b.measures, mentions: rows.length,
+        latest: rows.slice(0, 5).map((r) => ({ id: r.id, title: r.title, value: r.value, unit: r.unit, t: r.t })),
+        best: rows.filter((r) => r.value != null).sort((x, y) => y.value - x.value)[0] || null };
+    }).filter((b) => b.mentions).sort((a, b) => b.mentions - a.mentions),
+    people: people.map((p) => ({ id: p.entity, label: P.find((x) => x.id === p.entity)?.label || p.entity, n: p.n, latest: p.latest })),
+    orgs: Object.entries(orgCount).map(([id, n]) => ({ id, label: tagger.orgList().find((o) => o.id === id)?.label || id, n })).sort((a, b) => b.n - a.n).slice(0, 15),
+    signals: await storyRows(`${seen} >= ?`, [since], req.user.id, { sort: "signal", limit: 10 }),
+    watchlist: { people: P.map(({ id, label }) => ({ id, label })), benchmarks: B.map(({ id, label, measures }) => ({ id, label, measures })) },
+  };
 }));
 
 /* ---------------------------------------------------------------- agent log */

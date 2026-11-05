@@ -17,7 +17,7 @@ async function api(path, opts = {}) {
   return data;
 }
 
-const NAV = [["/", "Feed"], ["/brief", "Weekly brief"], ["/lists", "Reading lists"], ["/sources", "Sources"], ["/agent-log", "Agent log"]];
+const NAV = [["/", "Feed"], ["/capabilities", "Capabilities"], ["/brief", "Weekly brief"], ["/lists", "Reading lists"], ["/sources", "Sources"], ["/agent-log", "Agent log"]];
 async function requireUser() {
   const { user } = await api("/api/me", { allow401: true });
   if (!user) { location.href = "/?next=" + encodeURIComponent(location.pathname + location.search); throw new Error("Not signed in"); }
@@ -47,19 +47,25 @@ const jrHandlers = (extra = {}) => ({
 });
 const ago = (iso) => { if (!iso) return ""; const t = Date.parse(iso.includes("T") ? iso : iso.replace(" ", "T") + "Z"); const h = (Date.now() - t) / 36e5;
   return h < 1 ? "just now" : h < 24 ? `${Math.round(h)}h ago` : h < 24 * 14 ? `${Math.round(h / 24)}d ago` : new Date(t).toLocaleDateString("en-US", { month: "short", day: "numeric" }); };
-const KIND = { papers: "Paper", lab: "Lab", "research-org": "Research org", forum: "Forum", newsletter: "Newsletter", academic: "Academic", community: "Community", news: "News", policy: "Policy", submitted: "Reader-submitted" };
+const KIND = { papers: "Paper", journal: "Journal", people: "Person", lab: "Lab", "research-org": "Research org", forum: "Forum", newsletter: "Newsletter", academic: "Academic", community: "Community", news: "News", policy: "Policy", submitted: "Reader-submitted" };
+// Significance score explanation, one line per factor (the same lines the story page shows as a table).
+const sigWhy = (an) => ["Significance " + (an.significance ?? 0) + "/100", ...(an.why || []).map((w) => `+${w.points} ${w.factor}${w.detail ? ": " + w.detail : ""}`)].join("\n");
+const fmtScore = (sc) => sc.unit === "%" ? `${sc.value}%` : sc.unit === "hours" ? (sc.value >= 1 ? `${+sc.value.toFixed(1)} h` : `${Math.round(sc.value * 60)} min`) : String(sc.value);
 // One story card, used by the feed, lists and saved views.
 function storyCard(s, opts = {}) {
   const li = document.createElement("li"); li.className = "story"; li.dataset.id = s.id;
   const tags = s.topics.filter((t) => !t.via).slice(0, 4).map((t) => `<a class="tag" href="/?topic=${t.id}" title="${t.matched.length ? "Matched: " + esc(t.matched.join(", ")) : ""}">${esc(t.label)}</a>`).join("");
   const orgs = s.orgs.slice(0, 2).map((o) => `<a class="tag org" href="/?org=${o.id}">${esc(o.label)}</a>`).join("");
   const kinds = [...new Set(s.sources.map((x) => KIND[x.kind] || x.kind))];
+  const an = s.analysis || {}, sig = s.significance || 0;
+  const sigBadge = `<span class="sig ${sig >= 60 ? "hi" : sig >= 35 ? "mid" : ""}" title="${esc(sigWhy(an))}">${sig}</span>`;
+  const bench = (an.benchmarks || []).slice(0, 3).map((b) => `<a class="tag bench" href="/?benchmark=${esc(b.id)}" title="Benchmark${b.score ? `: reported ${esc(b.score.raw)}` : ""}">${esc(b.label)}${b.score ? ` <b>${esc(fmtScore(b.score))}</b>` : ""}</a>`).join("");
   li.innerHTML = `<button class="vote ${s.voted ? "on" : ""}" type="button" aria-pressed="${s.voted}" aria-label="Upvote"><span aria-hidden="true">▲</span><b>${s.votes}</b></button>
     <div class="body"><a class="title" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.title)}</a>
-    <div class="meta"><span>${esc(s.sources[0]?.name || "")}${s.nsources > 1 ? ` <span class="multi">+ ${s.nsources - 1} more source${s.nsources > 2 ? "s" : ""}</span>` : ""}</span><span>${kinds.map(esc).join(" · ")}</span><span>${ago(s.published_at || s.first_seen)}</span></div>
+    <div class="meta">${sigBadge}${an.type ? `<span class="utype">${esc(an.type.label)}</span>` : ""}<span>${esc(s.sources[0]?.name || "")}${s.nsources > 1 ? ` <span class="multi">+ ${s.nsources - 1} more source${s.nsources > 2 ? "s" : ""}</span>` : ""}</span><span>${kinds.map(esc).join(" · ")}</span><span>${ago(s.published_at || s.first_seen)}</span></div>
     ${s.summary && !opts.compact ? `<p class="sum">${esc(s.summary.slice(0, 260))}${s.summary.length > 260 ? "…" : ""}</p>` : ""}
     ${opts.listNote ? `<p class="listnote">“${esc(opts.listNote)}”</p>` : ""}
-    <div class="row2"><div class="tags">${tags}${orgs}</div><div class="acts"><a href="/story?id=${s.id}">${s.notes ? `${s.notes} note${s.notes > 1 ? "s" : ""}` : "Notes"}</a><button type="button" class="save linkish">${s.saved ? "Saved ✓" : "Save"}</button></div></div></div>`;
+    <div class="row2"><div class="tags">${bench}${tags}${orgs}</div><div class="acts"><a href="/story?id=${s.id}">${s.notes ? `${s.notes} note${s.notes > 1 ? "s" : ""}` : "Notes"}</a><button type="button" class="save linkish">${s.saved ? "Saved ✓" : "Save"}</button></div></div></div>`;
   li.querySelector(".vote").onclick = async (e) => { const b = e.currentTarget; const r = await api(`/api/stories/${s.id}/vote`, { method: "POST" }); b.classList.toggle("on", r.voted); b.setAttribute("aria-pressed", r.voted); b.querySelector("b").textContent = r.votes; };
   li.querySelector(".save").onclick = async (e) => { const b = e.currentTarget; const r = await api(`/api/stories/${s.id}/save`, { method: "POST" }); b.textContent = r.saved ? "Saved ✓" : "Save"; };
   return li;
