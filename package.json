@@ -1,0 +1,27 @@
+{
+  "name": "si-home",
+  "version": "1.0.0",
+  "description": "Superintelligence Homepage: a multi-source, ontology-tagged homepage for advanced AI progress (SEIS 606 Project 2).",
+  "main": "server.js",
+  "scripts": {
+    "build": "esbuild client/jr.jsx --bundle --minify --format=iife --jsx=automatic --define:process.env.NODE_ENV=\\\"production\\\" --outfile=public/js/jr.js",
+    "start": "node --no-warnings server.js",
+    "dev:sample": "node --no-warnings test/serve-fixtures.js",
+    "test": "node test/e2e.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@json-render/core": "0.22.0",
+    "@json-render/react": "0.22.0",
+    "esbuild": "^0.28.2",
+    "express": "4.21.2",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "zod": "^4.6.7"
+  },
+  "engines": {
+    "node": ">=22.5"
+  }
+}

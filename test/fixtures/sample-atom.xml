@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Synthetic arXiv-style feed (test data)</title>
+  <entry>
+    <id>http://arxiv.org/abs/2611.00001v1</id>
+    <published>2026-11-02T17:00:00Z</published>
+    <title>Sample paper: Scaling Laws for Test-Time Compute in Reasoning Agents</title>
+    <summary>  We study how inference-time compute changes the reasoning performance of agents on a benchmark of planning tasks. (Synthetic test record.) </summary>
+    <author><name>A. Example</name></author><author><name>B. Placeholder</name></author>
+    <link href="http://arxiv.org/abs/2611.00001v1" rel="alternate" type="text/html"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2611.00002v1</id>
+    <published>2026-11-03T09:30:00Z</published>
+    <title>Sample paper: Sparse Autoencoders Find Deceptive Features in Aligned Models</title>
+    <summary>Mechanistic interpretability study using sparse autoencoders to probe for scheming. (Synthetic test record.)</summary>
+    <author><name>C. Sample</name></author>
+    <link href="http://arxiv.org/abs/2611.00002v1" rel="alternate" type="text/html"/>
+  </entry>
+</feed>

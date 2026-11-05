@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sources · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css"></head>
+<body>
+<main>
+  <div class="pagehead">
+    <div><h1>Sources</h1><p class="muted" id="sub">Every feed we read, what kind it is, and whether the last fetch worked. No Twitter/X.</p></div>
+    <button class="btn primary" id="fetchAll" type="button" hidden>Fetch all now</button>
+  </div>
+  <p class="err" id="fetchMsg" role="status"></p>
+  <section class="panel"><div class="tablewrap"><table>
+    <thead><tr><th>Source</th><th>Kind</th><th>Stories</th><th>Last fetch</th><th id="adminCol" hidden>Admin</th></tr></thead>
+    <tbody id="rows"></tbody></table></div></section>
+  <form class="panel" id="suggest">
+    <h2>Suggest a source</h2>
+    <p class="small muted">Any blog, newsletter, research group or paper feed with RSS or Atom. An admin approves it before it's fetched.</p>
+    <div class="row">
+      <label>Name<input id="sName" required placeholder="Example Research Group blog"></label>
+      <label>Kind<select id="sKind"></select></label>
+      <label>Format<select id="sFormat"><option value="rss">RSS or Atom</option><option value="arxiv">arXiv API</option><option value="hf-daily">Hugging Face Daily Papers</option></select></label>
+    </div>
+    <label>Feed URL<input id="sUrl" type="url" required placeholder="https://example.org/feed.xml"></label>
+    <label>Why it's worth reading <span class="small">(optional)</span><input id="sNote"></label>
+    <div class="actions"><button class="btn primary" type="submit">Suggest</button></div>
+    <p class="err" id="sErr" role="alert"></p>
+  </form>
+</main>
+<script src="/js/api.js"></script>
+<script>
+let isAdmin = false;
+async function load() {
+  const d = await api("/api/sources"); isAdmin = d.isAdmin;
+  $("#fetchAll").hidden = !isAdmin; $("#adminCol").hidden = !isAdmin;
+  if (!$("#sKind").options.length) d.kinds.forEach((k) => $("#sKind").insertAdjacentHTML("beforeend", `<option value="${k}">${KIND[k] || k}</option>`));
+  const active = d.sources.filter((s) => s.status === "active"), kinds = new Set(active.map((s) => s.kind));
+  $("#sub").textContent = `${active.length} active sources across ${kinds.size} kinds. Fetched every ${d.fetchMinutes || "–"} minutes. No Twitter/X.`;
+  $("#rows").innerHTML = d.sources.map((s) => {
+    const st = s.status !== "active" ? `<span class="status-dot pending"></span>${esc(s.status)}${s.suggested_by_name ? ` · suggested by ${esc(s.suggested_by_name)}` : ""}`
+      : s.last_error ? `<span class="status-dot err"></span>Failed ${ago(s.last_fetched)}: ${esc(s.last_error)}`
+      : s.last_ok ? `<span class="status-dot ok"></span>OK ${ago(s.last_ok)} · ${s.last_count} items` : `<span class="status-dot"></span>Not fetched yet`;
+    const adm = !isAdmin ? "" : `<td><select data-status="${s.id}" aria-label="Status for ${esc(s.name)}">${["active", "paused", "pending", "rejected"].map((x) => `<option ${x === s.status ? "selected" : ""}>${x}</option>`).join("")}</select></td>`;
+    return `<tr><td><a href="${esc(s.home || s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.name)}</a></td><td>${esc(KIND[s.kind] || s.kind)}</td><td>${s.stories}</td><td>${st}</td>${adm}</tr>`;
+  }).join("");
+  $$("[data-status]").forEach((sel) => sel.onchange = async () => { await api(`/api/sources/${sel.dataset.status}`, { method: "PUT", body: { status: sel.value } }); load(); });
+}
+$("#fetchAll").onclick = async () => {
+  $("#fetchAll").disabled = true; $("#fetchMsg").className = "small muted"; $("#fetchMsg").textContent = "Fetching every active source…";
+  try { const r = await api("/api/sources/fetch", { body: {} }); const ok = (r.report || []).filter((x) => !x.error).length; $("#fetchMsg").textContent = r.skipped ? "A fetch is already running." : `${ok} of ${(r.report || []).length} sources fetched.`; }
+  catch (err) { showErr($("#fetchMsg"), err); } finally { $("#fetchAll").disabled = false; load(); }
+};
+$("#suggest").onsubmit = async (e) => {
+  e.preventDefault();
+  try { const r = await api("/api/sources/suggest", { body: { name: $("#sName").value, kind: $("#sKind").value, format: $("#sFormat").value, url: $("#sUrl").value, note: $("#sNote").value } });
+    e.target.reset(); flash($("#sErr"), r.status === "active" ? "Added." : "Thanks. An admin will review it."); load(); }
+  catch (err) { showErr($("#sErr"), err); }
+};
+requireUser().then(load);
+</script>
+</body></html>

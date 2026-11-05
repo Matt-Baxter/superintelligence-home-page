@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css"></head>
+<body>
+<section class="auth panel" id="auth" hidden>
+  <div><h1>Superintelligence Homepage</h1><p class="muted">Progress toward advanced AI from papers, labs, research groups, forums and newsletters, grouped into stories and tagged by topic. No single-platform feed.</p></div>
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-mode="login" type="button">Sign in</button>
+    <button role="tab" aria-selected="false" data-mode="signup" type="button">Create account</button>
+  </div>
+  <form id="authForm" class="panel" style="border:0;padding:0">
+    <label>Username<input id="username" autocomplete="username" required></label>
+    <label id="nameWrap" hidden>Display name<input id="displayName" autocomplete="name"></label>
+    <label>Password<input id="password" type="password" autocomplete="current-password" required minlength="8"></label>
+    <button class="btn primary" type="submit" id="authBtn">Sign in</button>
+    <p class="err" id="authErr" role="alert"></p>
+  </form>
+</section>
+
+<main id="feedView" hidden>
+  <div class="pagehead">
+    <div><h1 id="feedTitle">Today in AI progress</h1><p class="muted" id="feedSub">Ranked by reader votes, how many independent sources covered a story, and recency.</p></div>
+    <button class="btn" id="submitBtn" type="button">Submit a link</button>
+  </div>
+  <nav class="topicbar" id="topicbar" aria-label="Topics"></nav>
+  <div class="filters">
+    <div class="seg-btns" role="group" aria-label="Sort">
+      <button type="button" data-sort="top" aria-pressed="true">Top</button><button type="button" data-sort="new" aria-pressed="false">New</button><button type="button" data-sort="votes" aria-pressed="false">Most voted</button>
+    </div>
+    <select id="kind" aria-label="Source kind"><option value="">All kinds of source</option></select>
+    <select id="days" aria-label="Time window"><option value="">Any time</option><option value="1">Last day</option><option value="7" selected>Last week</option><option value="30">Last month</option></select>
+    <label style="display:flex;flex-direction:row;gap:6px;align-items:center;color:var(--fg)"><input type="checkbox" id="savedOnly" style="width:auto"> Saved</label>
+    <input type="search" id="q" placeholder="Search titles and summaries" aria-label="Search">
+  </div>
+  <form class="panel" id="submitForm" hidden>
+    <h2>Submit a link</h2>
+    <p class="small muted">A paper, lab post, report or article. Not a Twitter/X post: link to the thing itself.</p>
+    <label>Link<input id="sUrl" type="url" required placeholder="https://arxiv.org/abs/…"></label>
+    <label>Title<input id="sTitle" required minlength="8"></label>
+    <label>Why it matters <span class="small">(optional)</span><textarea id="sSum" style="min-height:64px"></textarea></label>
+    <div class="actions"><button class="btn primary" type="submit">Submit</button><button class="btn" type="button" id="sCancel">Cancel</button></div>
+    <p class="err" id="sErr" role="alert"></p>
+  </form>
+  <ol class="feed" id="feed"></ol>
+  <div class="actions"><button class="btn" id="more" type="button" hidden>Load more</button></div>
+</main>
+<script src="/js/api.js"></script>
+<script>
+let mode = "login", sort = params.get("sort") || "top", offset = 0, ONT;
+$$(".tabs button").forEach((b) => b.onclick = () => {
+  mode = b.dataset.mode; $$(".tabs button").forEach((x) => x.setAttribute("aria-selected", x === b));
+  $("#nameWrap").hidden = mode !== "signup"; $("#authBtn").textContent = mode === "signup" ? "Create account" : "Sign in"; $("#authErr").textContent = "";
+});
+$("#authForm").onsubmit = async (e) => {
+  e.preventDefault(); $("#authBtn").disabled = true;
+  try { await api(mode === "signup" ? "/api/signup" : "/api/login", { body: { username: $("#username").value, password: $("#password").value, displayName: $("#displayName").value }, allow401: true });
+    const next = params.get("next"); location.href = next && next.startsWith("/") ? next : "/"; }
+  catch (err) { showErr($("#authErr"), err); } finally { $("#authBtn").disabled = false; }
+};
+function state() { return { topic: params.get("topic") || "", org: params.get("org") || "", kind: $("#kind").value, days: $("#days").value, q: $("#q").value.trim(), saved: $("#savedOnly").checked ? "1" : "" }; }
+async function load(append = false) {
+  if (!append) offset = 0;
+  const s = state(), qs = new URLSearchParams({ ...s, sort, offset });
+  const { stories } = await api("/api/stories?" + qs);
+  const feed = $("#feed"); if (!append) feed.innerHTML = "";
+  stories.forEach((st) => feed.append(storyCard(st)));
+  if (!append && !stories.length) feed.innerHTML = `<li class="empty">No stories match. ${s.days ? "Try a longer time window, or " : ""}check the <a href="/sources">Sources</a> page: feeds are fetched every 30 minutes once the site is deployed.</li>`;
+  $("#more").hidden = stories.length < 40; offset += stories.length;
+}
+function header() {
+  const s = state(), t = ONT.topics.find((x) => x.id === s.topic), o = ONT.orgs.find((x) => x.id === s.org);
+  $("#feedTitle").textContent = t ? t.label : o ? o.label : s.saved ? "Saved for later" : "Today in AI progress";
+  $("#topicbar").innerHTML = `<a href="/" ${!s.topic && !s.org ? 'aria-current="true"' : ""}>All</a>` + ONT.topics.filter((x) => !x.parent).map((x) => `<a href="/?topic=${x.id}" ${x.id === s.topic ? 'aria-current="true"' : ""}>${esc(x.label)}</a>`).join("")
+    + (t && t.parent ? `<a href="/?topic=${t.id}" aria-current="true">${esc(t.label)}</a>` : "");
+}
+$$(".seg-btns button").forEach((b) => b.onclick = () => { sort = b.dataset.sort; $$(".seg-btns button").forEach((x) => x.setAttribute("aria-pressed", x === b)); load(); });
+let tmr; $("#q").oninput = () => { clearTimeout(tmr); tmr = setTimeout(load, 250); };
+["#kind", "#days", "#savedOnly"].forEach((id) => $(id).onchange = () => { header(); load(); });
+$("#more").onclick = () => load(true);
+$("#submitBtn").onclick = () => { $("#submitForm").hidden = false; $("#sUrl").focus(); };
+$("#sCancel").onclick = () => { $("#submitForm").hidden = true; };
+$("#submitForm").onsubmit = async (e) => { e.preventDefault(); try { const r = await api("/api/stories", { body: { url: $("#sUrl").value, title: $("#sTitle").value, summary: $("#sSum").value } }); location.href = `/story?id=${r.id}`; } catch (err) { showErr($("#sErr"), err); } };
+(async () => {
+  const { user } = await api("/api/me", { allow401: true });
+  if (!user) { $("#auth").hidden = false; $("#username").focus(); return; }
+  topbar(user); $("#feedView").hidden = false;
+  ONT = await api("/api/ontology");
+  Object.entries(KIND).filter(([k]) => k !== "news" && k !== "policy").forEach(([k, v]) => $("#kind").insertAdjacentHTML("beforeend", `<option value="${k}">${v}</option>`));
+  if (params.get("topic") || params.get("org")) $("#days").value = "";
+  header(); load();
+})();
+</script>
+</body></html>

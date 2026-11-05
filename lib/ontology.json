@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "about": "Topics for tracking progress toward advanced AI. Each topic lists match terms (case-insensitive, whole-word unless a term ends in *). An item gets a topic when its title or summary matches at least one term; the matched terms are stored so every tag can explain itself.",
+  "topics": [
+    { "id": "capabilities", "label": "Capabilities", "parent": null, "terms": ["state of the art", "sota", "frontier model", "new model", "outperforms", "capabilit*", "general intelligence", "agi", "superintelligen*"] },
+    { "id": "reasoning", "label": "Reasoning", "parent": "capabilities", "terms": ["reasoning", "chain of thought", "chain-of-thought", "test-time compute", "inference-time", "mathematical", "theorem prov*", "planning"] },
+    { "id": "agents", "label": "Agents", "parent": "capabilities", "terms": ["agent", "agents", "agentic", "tool use", "computer use", "autonomous", "multi-agent", "web navigation"] },
+    { "id": "multimodal", "label": "Multimodal", "parent": "capabilities", "terms": ["multimodal", "vision-language", "video generation", "image generation", "speech", "audio"] },
+    { "id": "robotics", "label": "Robotics & embodiment", "parent": "capabilities", "terms": ["robot*", "embodied", "manipulation", "humanoid", "world model"] },
+    { "id": "science", "label": "AI for science", "parent": "capabilities", "terms": ["protein", "drug discovery", "materials", "scientific discovery", "biology", "chemistry", "automated research"] },
+
+    { "id": "safety", "label": "Safety & alignment", "parent": null, "terms": ["alignment", "aligned", "misalign*", "ai safety", "safety", "rlhf", "constitutional", "reward hacking", "deceptive", "scheming", "sycophancy", "jailbreak*", "red team*", "corrigib*"] },
+    { "id": "interpretability", "label": "Interpretability", "parent": "safety", "terms": ["interpretab*", "mechanistic", "sparse autoencoder*", "circuits", "probing", "feature visualization", "explainab*"] },
+    { "id": "evals", "label": "Evals & benchmarks", "parent": null, "terms": ["benchmark*", "evaluation", "evals", "leaderboard", "swe-bench", "gpqa", "arc-agi", "mmlu", "frontiermath", "humanity's last exam", "dangerous capabilit*"] },
+
+    { "id": "compute", "label": "Compute & hardware", "parent": null, "terms": ["compute", "gpu*", "tpu*", "datacenter", "data center", "chips", "semiconductor*", "flops", "training run", "energy", "power grid"] },
+    { "id": "scaling", "label": "Scaling & training", "parent": null, "terms": ["scaling law*", "scaling", "pretraining", "pre-training", "post-training", "fine-tun*", "distillation", "synthetic data", "reinforcement learning", "mixture of experts", "long context"] },
+    { "id": "open-models", "label": "Open models", "parent": null, "terms": ["open-weight*", "open weight*", "open-source model*", "open source model*", "llama", "mistral", "qwen", "deepseek", "gemma", "olmo"] },
+
+    { "id": "policy", "label": "Policy & governance", "parent": null, "terms": ["regulation", "policy", "governance", "legislation", "executive order", "export control*", "eu ai act", "compliance", "standards", "liability", "licensing"] },
+    { "id": "economics", "label": "Economics & labor", "parent": null, "terms": ["labor market", "jobs", "automation", "productivity", "economic*", "investment", "revenue", "valuation"] },
+    { "id": "forecasting", "label": "Forecasting & timelines", "parent": null, "terms": ["forecast*", "timeline*", "trend*", "prediction", "takeoff", "explosion"] },
+    { "id": "security", "label": "Security & misuse", "parent": "safety", "terms": ["cyber*", "bioweapon*", "biosecurity", "misuse", "model weights security", "exfiltrat*", "prompt injection"] }
+  ],
+  "organizations": [
+    { "id": "anthropic", "label": "Anthropic", "terms": ["anthropic", "claude"] },
+    { "id": "openai", "label": "OpenAI", "terms": ["openai", "chatgpt", "gpt-*", "o1", "o3", "sora"] },
+    { "id": "google-deepmind", "label": "Google DeepMind", "terms": ["deepmind", "gemini", "google research", "alphafold", "alphaproof"] },
+    { "id": "meta", "label": "Meta", "terms": ["meta ai", "llama", "fair"] },
+    { "id": "xai", "label": "xAI", "terms": ["xai", "grok"] },
+    { "id": "mistral", "label": "Mistral", "terms": ["mistral"] },
+    { "id": "deepseek", "label": "DeepSeek", "terms": ["deepseek"] },
+    { "id": "microsoft", "label": "Microsoft", "terms": ["microsoft", "copilot"] },
+    { "id": "nvidia", "label": "NVIDIA", "terms": ["nvidia", "cuda", "blackwell"] },
+    { "id": "epoch", "label": "Epoch AI", "terms": ["epoch ai"] },
+    { "id": "metr", "label": "METR", "terms": ["metr"] }
+  ]
+}

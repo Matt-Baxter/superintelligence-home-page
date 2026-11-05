@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Story · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css"></head>
+<body>
+<main>
+  <p class="small"><a href="/">← Feed</a></p>
+  <ol class="feed" id="card"></ol>
+  <div class="cols side">
+    <section class="panel">
+      <h2>Why it's tagged this way</h2>
+      <div id="why"></div>
+      <h2 style="margin-top:8px">Covered by</h2>
+      <div class="tablewrap"><table><thead><tr><th>Source</th><th>Kind</th><th>Their headline</th></tr></thead><tbody id="covered"></tbody></table></div>
+    </section>
+    <div style="display:grid;gap:22px">
+      <form class="panel" id="noteForm">
+        <h2>Notes</h2>
+        <div id="notes" style="display:grid;gap:10px"></div>
+        <textarea id="noteText" placeholder="What's important here? What would you check?" aria-label="New note"></textarea>
+        <div class="actions"><label style="display:flex;flex-direction:row;gap:6px;align-items:center;color:var(--fg)"><input type="checkbox" id="shareNote" style="width:auto"> Share with everyone</label><button class="btn primary" type="submit">Add note</button></div>
+        <p class="err" id="noteErr" role="alert"></p>
+      </form>
+      <section class="panel">
+        <h2>Reading lists</h2>
+        <div id="myLists" style="display:grid;gap:6px"></div>
+        <form class="row" id="newList"><input id="newListTitle" placeholder="New list, e.g. Interpretability reading group" aria-label="New list title"><button class="btn" type="submit">Create and add</button></form>
+        <p class="small muted" id="inLists"></p>
+      </section>
+    </div>
+  </div>
+</main>
+<script src="/js/api.js"></script>
+<script>
+const id = Number(params.get("id"));
+async function load() {
+  const d = await api(`/api/stories/${id}`); const s = d.story;
+  document.title = s.title + " · Superintelligence Homepage";
+  $("#card").innerHTML = ""; $("#card").append(storyCard(s));
+  $("#why").innerHTML = (s.topics.length ? s.topics.map((t) => `<p><a class="tag" href="/?topic=${t.id}">${esc(t.label)}</a> ${t.via ? `<span class="small muted">because it's tagged ${esc(s.topics.find((x) => x.id === t.via)?.label || t.via)}</span>` : `<span class="small muted">matched “${t.matched.map(esc).join("”, “")}”</span>`}</p>`).join("") : `<p class="muted">No topic in the ontology matched this story's title or summary.</p>`)
+    + (s.orgs.length ? `<p class="small muted">Organizations: ${s.orgs.map((o) => `${esc(o.label)} (“${o.matched.map(esc).join("”, “")}”)`).join(", ")}</p>` : "");
+  $("#covered").innerHTML = s.sources.map((x) => `<tr><td>${esc(x.name)}</td><td>${esc(KIND[x.kind] || x.kind)}</td><td><a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.title)}</a></td></tr>`).join("");
+  $("#notes").innerHTML = d.notes.length ? d.notes.map((n) => `<div class="note"><div class="who">${esc(n.name)} · ${ago(n.created_at)} · ${n.private ? "only you" : "shared"}${n.mine ? ` · <button class="linkish" data-del="${n.id}" type="button">Delete</button>` : ""}</div>${esc(n.text)}</div>`).join("") : `<p class="muted small">No notes yet.</p>`;
+  $$("[data-del]").forEach((b) => b.onclick = async () => { await api(`/api/notes/${b.dataset.del}`, { method: "DELETE" }); load(); });
+  $("#myLists").innerHTML = d.lists.length ? d.lists.map((l) => `<label style="display:flex;flex-direction:row;gap:8px;align-items:center;color:var(--fg)"><input type="checkbox" data-list="${l.id}" ${l.has ? "checked" : ""} style="width:auto"> ${esc(l.title)}</label>`).join("") : `<p class="muted small">You don't have any lists yet.</p>`;
+  $$("[data-list]").forEach((c) => c.onchange = () => api(`/api/lists/${c.dataset.list}/items/${id}`, { method: "PUT", body: c.checked ? { note: "" } : { remove: true } }));
+  $("#inLists").textContent = d.inPublicLists.length ? "Also in: " + d.inPublicLists.map((l) => `${l.title} (${l.owner})`).join(", ") : "";
+}
+$("#noteForm").onsubmit = async (e) => { e.preventDefault(); try { await api(`/api/stories/${id}/notes`, { body: { text: $("#noteText").value, private: !$("#shareNote").checked } }); $("#noteText").value = ""; load(); } catch (err) { showErr($("#noteErr"), err); } };
+$("#newList").onsubmit = async (e) => { e.preventDefault(); const t = $("#newListTitle").value.trim(); if (!t) return; const r = await api("/api/lists", { body: { title: t } }); await api(`/api/lists/${r.id}/items/${id}`, { method: "PUT", body: { note: "" } }); $("#newListTitle").value = ""; load(); };
+requireUser().then(load).catch((e) => { $("#card").innerHTML = `<li class="empty">${esc(e.message)}</li>`; });
+</script>
+</body></html>
