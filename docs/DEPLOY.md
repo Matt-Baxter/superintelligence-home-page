@@ -50,9 +50,23 @@ Never commit these; `.env` is git-ignored.
 
 ## How feeds stay fresh
 
-`vercel.json` schedules `/api/cron/fetch` daily at 12:00 UTC (6 am Chicago). Vercel's Hobby plan allows cron at most once a day, so admins can also press **Harvest all now** on the Admin page at any time. The cron route only runs when the request carries `Authorization: Bearer $CRON_SECRET`, which Vercel adds automatically.
+`vercel.json` schedules `/api/cron/fetch` four times a day (00, 06, 12 and 18 UTC). Vercel's Hobby plan allows each cron job to run at most once a day, but allows many jobs, so there are four daily jobs. Hobby runs each within the hour it's set for. Admins can also press **Harvest all now** on the Admin page at any time. The cron route only runs when the request carries `Authorization: Bearer $CRON_SECRET`, which Vercel adds automatically.
 
 Each source has its own interval (default 6 hours, set on **Admin → Sources**). A harvest fetches only sources that are due, asks servers for changes only (ETag / Last-Modified), backs off a failing source (2×, 4× … up to 32× its interval) and stops starting new fetches after 45 seconds (`HARVEST_BUDGET_MS`) so it fits in one function call; sources it didn't reach go first next time. Every fetch is written to **Admin → Harvest log**.
+
+## Staying on the free tiers
+
+Checked Nov 5, 2026. Plans change, so check the links before relying on these numbers.
+
+| Limit | Free allowance | How the app stays under it |
+| --- | --- | --- |
+| [Neon Free](https://neon.com/faqs/free-plan-limits-and-quotas) storage | 1 GB per project | Harvest log capped at 2,000 runs, audit log at 5,000 rows, expired sessions deleted, story summaries capped at 1,500 characters. **Admin → Overview → Free tier** shows the size. |
+| Neon compute | 100 CU-hours a month; scales to zero after 5 idle minutes | The Postgres pool holds at most 2 connections on Vercel and closes them after 5 s idle (`PG_POOL`, `PG_IDLE_MS`), so the database can sleep between visits. No page polls. |
+| Neon egress | 5 GB a month | Feed pages return 40 stories at a time. |
+| [Vercel Hobby](https://vercel.com/docs/plans/hobby) functions | 1M invocations, 4 active CPU-hours | One function for the whole API. Fetching feeds is mostly waiting on the network, which doesn't count as active CPU. |
+| [Hobby cron](https://vercel.com/docs/cron-jobs/usage-and-pricing) | Each job at most daily | Four daily jobs give a harvest every 6 hours. |
+| Function duration | Up to 300 s on Hobby | `maxDuration` is 60 s and a harvest stops starting fetches after 45 s; unreached sources go first next time. |
+| Bandwidth | 100 GB fast data transfer | Static pages come from the CDN; `/js` and `/css` are cached for an hour. |
 
 ## Day to day
 

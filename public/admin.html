@@ -15,6 +15,7 @@
   .catgroup label { display: flex; gap: 8px; align-items: baseline; font-weight: normal; margin: 3px 0; }
   .catgroup label.added { color: var(--muted); }
   .tablewrap { overflow-x: auto; }
+  .meter { height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; } .meter span { display: block; height: 100%; background: var(--accent); }
 </style></head>
 <body>
 <main>
@@ -32,12 +33,14 @@
     <button role="tab" data-tab="moderation">Moderation</button>
     <button role="tab" data-tab="ontology">Ontology</button>
     <button role="tab" data-tab="audit">Audit log</button>
+    <a class="btn" href="/project" style="margin-left:auto">Project workspace →</a>
   </div>
 
   <section class="tabpanel" data-panel="overview">
     <div class="kpis" id="kpis"></div>
     <div class="panel"><h2>Needs attention</h2><div id="failing"></div></div>
     <div class="panel"><h2>Stories by source kind, last 7 days</h2><div id="kinds"></div></div>
+    <div class="panel"><h2>Free tier</h2><div id="freeTier"></div></div>
     <div class="panel"><h2>Recent harvests</h2><div class="tablewrap"><table><thead><tr><th>When</th><th>Trigger</th><th>Sources</th><th>Errors</th><th>New stories</th></tr></thead><tbody id="lastRuns"></tbody></table></div></div>
   </section>
 
@@ -147,6 +150,12 @@ async function loadOverview() {
   $("#sub").textContent = `Database: ${d.engine === "pg" ? "Postgres" : "SQLite"}. Harvest schedule: ${d.schedule}${process_cron(d)}.${d.harvesting ? " A harvest is running now." : ""}`;
   $("#failing").innerHTML = d.failing.length ? `<ul>${d.failing.map((s) => `<li><b>${esc(s.name)}</b>: ${esc(s.last_error || "")} <span class="small muted">(${s.failures} failures, last ${ago(s.last_fetched)})</span></li>`).join("")}</ul>` : `<p class="small muted">Nothing failing.</p>`;
   $("#kinds").innerHTML = d.kindsThisWeek.length ? `<div class="chips">${d.kindsThisWeek.map((r) => `<span class="chip">${esc(KIND[r.kind] || r.kind)}: ${r.n}</span>`).join("")}</div>` : `<p class="small muted">No stories this week yet.</p>`;
+  const ft = d.freeTier, mb = (b) => (b / 1024 ** 2).toFixed(1) + " MB";
+  const pct = ft.dbBytes == null ? null : Math.min(100, (100 * ft.dbBytes) / ft.dbLimitBytes);
+  $("#freeTier").innerHTML = `${pct == null ? "" : `<p>Database: <b>${mb(ft.dbBytes)}</b> of the 1 GB Neon free plan allows (${pct.toFixed(1)}%).</p>
+    <div class="meter" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct.toFixed(1)}" aria-label="Database storage used"><span style="width:${Math.max(pct, 0.5)}%"></span></div>`}
+    <p class="small muted">Rows: ${Object.entries(ft.rows).map(([t, n]) => `${t.replace("_", " ")} ${n}`).join(" · ")}. Harvest log keeps 2,000 runs and the audit log 5,000; expired sessions are removed after each harvest.</p>
+    <p class="small muted">Slowest fetch this week: ${(ft.slowestRunMs / 1000).toFixed(1)} s. A harvest stops starting new fetches after ${ft.harvestBudgetMs / 1000} s, inside the 60 s function limit set in vercel.json.</p>`;
   $("#lastRuns").innerHTML = d.lastRuns.map((r) => `<tr><td>${ago(r.started)}</td><td>${esc(r.trigger)}</td><td>${r.sources}</td><td>${r.errors}</td><td>${r.stored}</td></tr>`).join("") || `<tr><td colspan="5" class="muted">No harvests in the last 7 days.</td></tr>`;
 }
 const process_cron = (d) => (d.schedule.startsWith("Vercel") && !d.cronConfigured ? " (CRON_SECRET isn't set, so the cron call will be refused)" : "");
