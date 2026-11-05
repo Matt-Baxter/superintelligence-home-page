@@ -8,7 +8,9 @@
     "start": "node --no-warnings server.js",
     "dev:sample": "node --no-warnings test/serve-fixtures.js",
     "test": "node test/e2e.js",
-    "dev:sample:pg": "node --no-warnings test/serve-fixtures-pg.js"
+    "dev:sample:pg": "node --no-warnings test/serve-fixtures-pg.js",
+    "preflight": "node scripts/preflight.js",
+    "prepare": "node scripts/install-hooks.js"
   },
   "keywords": [],
   "author": "",

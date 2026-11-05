@@ -6,4 +6,4 @@ The full guide is [CLAUDE.md](CLAUDE.md). It applies to every agent, not just Cl
 - Build against [docs/CONTRACT.md](docs/CONTRACT.md). Changing a table, API route or response shape is a contract change and needs both humans.
 - Never write agent log entries. The humans write them in their own words.
 - No secrets in code; no Twitter/X sources; test data is synthetic and labelled "Sample".
-- Before saying it works: `npm run build`, `npm run dev:sample`, `npm test`, and report the exact result.
+- Before saying it works: run `npm run preflight` (and `npm test` for bigger changes), and report the exact result.
