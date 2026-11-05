@@ -10,7 +10,11 @@
     "test": "node test/e2e.js",
     "dev:sample:pg": "node --no-warnings test/serve-fixtures-pg.js",
     "preflight": "node scripts/preflight.js",
-    "prepare": "node scripts/install-hooks.js"
+    "prepare": "node scripts/install-hooks.js",
+    "kit:sync": "node scripts/agent-kit.js sync",
+    "kit:check": "node scripts/agent-kit.js check",
+    "kit:export": "node scripts/agent-kit.js export",
+    "kit:mcp": "node agent-kit/mcp/server.js"
   },
   "keywords": [],
   "author": "",
