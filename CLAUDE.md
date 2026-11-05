@@ -24,9 +24,12 @@ Read before changing anything: [docs/CONTRACT.md](docs/CONTRACT.md) (what both h
 | `lib/feeds.js` | RSS/Atom/arXiv/HF parsing and story keys (grouping rules). |
 | `lib/tagger.js`, `lib/ontology.json` | Ontology tagging; every tag stores the words that matched. |
 | `lib/sources.json` | Default sources. |
+| `lib/source-catalog.json` | Candidate sources an admin can enable in bulk (unverified until a test fetch). No Twitter/X. |
+| `lib/harvest.js` | Harvester: per-source intervals, conditional GET, backoff, time budget, `fetch_runs` log. |
+| `lib/admin.js`, `lib/audit.js` | `/api/admin/*` routes (admins only) and the `admin_audit` log. |
 | `views/catalog.mjs`, `views/specs.mjs` | json-render catalog and server-built specs (weekly brief, agent log summary). |
 | `client/jr.jsx` → `public/js/jr.js` | Browser renderer for the catalog (`npm run build`). |
-| `public/` | Pages: feed, story, lists, brief, sources, agent log. |
+| `public/` | Pages: feed, story, lists, brief, sources, agent log, admin. |
 | `test/` | Synthetic fixtures, sample-data servers, two-user Playwright test. |
 
 ## Portable SQL (SQLite and Postgres)

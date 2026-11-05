@@ -5,7 +5,7 @@
 <main>
   <div class="pagehead">
     <div><h1>Sources</h1><p class="muted" id="sub">Every feed we read, what kind it is, and whether the last fetch worked. No Twitter/X.</p></div>
-    <button class="btn primary" id="fetchAll" type="button" hidden>Fetch all now</button>
+    <div class="actions"><a class="btn" id="adminLink" href="/admin#sources" hidden>Manage in Admin</a><button class="btn primary" id="fetchAll" type="button" hidden>Fetch all now</button></div>
   </div>
   <p class="err" id="fetchMsg" role="status"></p>
   <section class="panel"><div class="tablewrap"><table>
@@ -17,7 +17,7 @@
     <div class="row">
       <label>Name<input id="sName" required placeholder="Example Research Group blog"></label>
       <label>Kind<select id="sKind"></select></label>
-      <label>Format<select id="sFormat"><option value="rss">RSS or Atom</option><option value="arxiv">arXiv API</option><option value="hf-daily">Hugging Face Daily Papers</option></select></label>
+      <label>Format<select id="sFormat"></select></label>
     </div>
     <label>Feed URL<input id="sUrl" type="url" required placeholder="https://example.org/feed.xml"></label>
     <label>Why it's worth reading <span class="small">(optional)</span><input id="sNote"></label>
@@ -30,10 +30,11 @@
 let isAdmin = false;
 async function load() {
   const d = await api("/api/sources"); isAdmin = d.isAdmin;
-  $("#fetchAll").hidden = !isAdmin; $("#adminCol").hidden = !isAdmin;
+  $("#fetchAll").hidden = $("#adminLink").hidden = !isAdmin; $("#adminCol").hidden = !isAdmin;
   if (!$("#sKind").options.length) d.kinds.forEach((k) => $("#sKind").insertAdjacentHTML("beforeend", `<option value="${k}">${KIND[k] || k}</option>`));
+  if (!$("#sFormat").options.length) (d.formats || []).forEach((f) => $("#sFormat").insertAdjacentHTML("beforeend", `<option value="${f.id}">${esc(f.label)}</option>`));
   const active = d.sources.filter((s) => s.status === "active"), kinds = new Set(active.map((s) => s.kind));
-  $("#sub").textContent = `${active.length} active sources across ${kinds.size} kinds. Fetched every ${d.fetchMinutes || "–"} minutes. No Twitter/X.`;
+  $("#sub").textContent = `${active.length} active sources across ${kinds.size} kinds. ${d.schedule ? `Harvested ${d.schedule}.` : `Checked every ${d.fetchMinutes || "–"} minutes; each source has its own interval.`} No Twitter/X.`;
   $("#rows").innerHTML = d.sources.map((s) => {
     const st = s.status !== "active" ? `<span class="status-dot pending"></span>${esc(s.status)}${s.suggested_by_name ? ` · suggested by ${esc(s.suggested_by_name)}` : ""}`
       : s.last_error ? `<span class="status-dot err"></span>Failed ${ago(s.last_fetched)}: ${esc(s.last_error)}`

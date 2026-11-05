@@ -7,6 +7,7 @@ const path = require("node:path");
 const db = require("./lib/db");
 const feeds = require("./lib/feeds");
 const tagger = require("./lib/tagger");
+const audit = require("./lib/audit");
 
 const FETCH_MINUTES = Number(process.env.FETCH_MINUTES ?? 30);
 const APP_TZ = process.env.APP_TZ || "America/Chicago";
@@ -32,44 +33,9 @@ async function startSession(res, uid) {
 const cookie = (req, n) => { const m = (req.headers.cookie || "").split(/;\s*/).find((c) => c.startsWith(n + "=")); return m ? decodeURIComponent(m.slice(n.length + 1)) : null; };
 
 /* ---------------------------------------------------------------- ingestion */
-async function addItem(t, item, sourceId, submittedBy = null) {
-  const keys = feeds.storyKeys(item);
-  if (!keys.length) return null;
-  let sid = null;
-  for (const k of keys) { const r = await t.get("SELECT story_id FROM story_keys WHERE key = ?", k); if (r) { sid = r.story_id; break; } }
-  if (!sid) {
-    const tg = tagger.tag(item.title, item.summary);
-    sid = await t.insert(`INSERT INTO stories (title, url, summary, authors, published_at, first_seen, topics, orgs, ext_score, submitted_by) VALUES (?,?,?,?,?,?,?,?,?,?)`,
-      item.title, feeds.canonicalUrl(item), item.summary || "", (item.authors || []).join(", "), item.published, now(), JSON.stringify(tg.topics), JSON.stringify(tg.orgs), item.score || 0, submittedBy);
-    for (const x of tg.topics) await t.run("INSERT OR IGNORE INTO story_topics (story_id, topic) VALUES (?, ?)", sid, x.id);
-  } else if (item.score) await t.run("UPDATE stories SET ext_score = CASE WHEN ext_score > ? THEN ext_score ELSE ? END WHERE id = ?", item.score, item.score, sid);
-  for (const k of keys) await t.run("INSERT OR IGNORE INTO story_keys (key, story_id) VALUES (?, ?)", k, sid);
-  await t.run("INSERT OR IGNORE INTO story_links (story_id, source_id, url, title, published_at, seen_at) VALUES (?, ?, ?, ?, ?, ?)", sid, sourceId, item.url, item.title, item.published, now());
-  return sid;
-}
-async function ingestItems(sourceId, items) {
-  return db.tx(async (t) => { let n = 0; for (const it of items) if (await addItem(t, it, sourceId)) n++; return n; });
-}
-let fetching = false;
-async function fetchAll(only = null) {
-  if (fetching) return { skipped: true };
-  fetching = true; const report = [];
-  try {
-    const list = only ? await db.all("SELECT * FROM sources WHERE status = 'active' AND id = ?", only) : await db.all("SELECT * FROM sources WHERE status = 'active'");
-    await Promise.all(list.map(async (s) => {
-      await db.run("UPDATE sources SET last_fetched = ? WHERE id = ?", now(), s.id);
-      try {
-        const items = await feeds.fetchSource(s); const n = await ingestItems(s.id, items);
-        await db.run("UPDATE sources SET last_ok = ?, last_error = NULL, last_count = ? WHERE id = ?", now(), items.length, s.id);
-        report.push({ source: s.name, items: items.length, stored: n });
-      } catch (e) {
-        await db.run("UPDATE sources SET last_error = ? WHERE id = ?", String(e.cause?.code || e.message).slice(0, 200), s.id);
-        report.push({ source: s.name, error: String(e.cause?.code || e.message) });
-      }
-    }));
-  } finally { fetching = false; }
-  return { report };
-}
+const harvester = require("./lib/harvest");
+const { addItem, ingestItems } = harvester;
+const fetchAll = (only = null) => harvester.harvest({ trigger: "admin", force: true, sourceId: only });
 async function seedSources() {
   if ((await db.get("SELECT COUNT(*) AS n FROM sources")).n) return;
   const { sources } = require("./lib/sources.json");
@@ -87,8 +53,8 @@ app.use(async (req, res, next) => {
   const t = req.path.startsWith("/api/") && cookie(req, "sid");
   if (!t) return next();
   try {
-    const r = await db.get("SELECT u.id, u.username, u.display_name, u.is_admin, s.expires_at FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token = ?", t);
-    if (r && Number(r.expires_at) > Date.now()) req.user = { id: r.id, username: r.username, name: r.display_name, admin: bool(r.is_admin) };
+    const r = await db.get("SELECT u.id, u.username, u.display_name, u.is_admin, u.disabled, s.expires_at FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token = ?", t);
+    if (r && Number(r.expires_at) > Date.now() && !bool(r.disabled)) req.user = { id: r.id, username: r.username, name: r.display_name, admin: bool(r.is_admin) };
     else if (r) await db.run("DELETE FROM sessions WHERE token = ?", t);
     next();
   } catch (e) { next(e); }
@@ -115,6 +81,7 @@ app.post("/api/signup", limit(30, 6e5), wrap(async (req, res) => {
 app.post("/api/login", limit(30, 6e5), wrap(async (req, res) => {
   const u = await db.get("SELECT * FROM users WHERE LOWER(username) = LOWER(?)", str(req.body.username, 40));
   if (!u || !checkPassword(String(req.body.password || ""), u.pass_hash)) throw new HttpError(401, "Wrong username or password.");
+  if (bool(u.disabled)) throw new HttpError(403, "This account has been disabled. Contact the site admin.");
   await startSession(res, u.id); return { user: { id: u.id, username: u.username, name: u.display_name, admin: bool(u.is_admin) } };
 }));
 app.post("/api/logout", wrap(async (req, res) => { const t = cookie(req, "sid"); if (t) await db.run("DELETE FROM sessions WHERE token = ?", t); res.clearCookie("sid"); return { ok: true }; }));
@@ -123,6 +90,7 @@ app.get("/api/ontology", wrap(() => ({ topics: tagger.topicList(), orgs: tagger.
 
 /* ------------------------------------------------------------------ stories */
 const KINDS = ["papers", "lab", "research-org", "forum", "newsletter", "academic", "community", "news", "policy", "submitted"];
+const FORMAT_IDS = Object.keys(feeds.FORMATS);
 const parseTime = (t) => Date.parse(t && !t.includes("T") ? t.replace(" ", "T") + "Z" : t);
 async function storyRows(where, args, uid, { sort = "top", limit = 40, offset = 0 } = {}) {
   const rows = await db.all(`SELECT s.*, (SELECT COUNT(*) FROM votes v WHERE v.story_id = s.id) AS votes,
@@ -131,7 +99,7 @@ async function storyRows(where, args, uid, { sort = "top", limit = 40, offset = 
       EXISTS(SELECT 1 FROM saves v WHERE v.story_id = s.id AND v.user_id = ?) AS saved,
       (SELECT COUNT(*) FROM notes n WHERE n.story_id = s.id AND (n.private = 0 OR n.user_id = ?)) AS nnotes,
       COALESCE(s.published_at, s.first_seen) AS t
-    FROM stories s WHERE ${where}`, uid, uid, uid, ...args);
+    FROM stories s WHERE COALESCE(s.hidden, 0) = 0 AND (${where})`, uid, uid, uid, ...args);
   const t0 = Date.now();
   rows.forEach((r) => {
     const hours = Math.max(0, (t0 - parseTime(r.t)) / 36e5);
@@ -205,8 +173,8 @@ app.post("/api/stories", auth, limit(20, 36e5), wrap(async (req) => {
   if (!/^https?:\/\/[^\s]+\.[^\s]+/.test(url)) bad("Enter a full link starting with https://");
   if (title.length < 8) bad("Give it a descriptive title (8+ characters).");
   if (/(^|\.)(twitter\.com|x\.com)\//i.test(url.replace(/^https?:\/\//, ""))) bad("This homepage doesn't track Twitter/X posts. Link to the paper, post or article itself.");
-  const id = await db.tx((t) => addItem(t, { url, title, summary: str(req.body.summary, 700), published: now() }, null, req.user.id));
-  return { id };
+  const r = await db.tx((t) => addItem(t, { url, title, summary: str(req.body.summary, 700), published: now() }, null, req.user.id));
+  return { id: r?.sid };
 }));
 
 /* -------------------------------------------------------------------- lists */
@@ -251,10 +219,11 @@ app.delete("/api/lists/:id", auth, wrap(async (req) => {
 app.get("/api/sources", auth, wrap(async (req) => ({
   sources: await db.all(`SELECT s.*, u.display_name AS suggested_by_name, (SELECT COUNT(DISTINCT story_id) FROM story_links l WHERE l.source_id = s.id) AS stories
     FROM sources s LEFT JOIN users u ON u.id = s.suggested_by ORDER BY CASE WHEN s.status = 'active' THEN 0 ELSE 1 END, s.kind, s.name`),
-  kinds: KINDS.filter((k) => k !== "submitted"), fetching, fetchMinutes: process.env.VERCEL ? null : FETCH_MINUTES, schedule: process.env.VERCEL ? "daily (Vercel Cron)" : null, isAdmin: req.user.admin,
+  kinds: KINDS.filter((k) => k !== "submitted"), fetching: harvester.isRunning(), fetchMinutes: process.env.VERCEL ? null : FETCH_MINUTES, schedule: process.env.VERCEL ? "daily (Vercel Cron)" : null, isAdmin: req.user.admin,
+  formats: Object.entries(feeds.FORMATS).map(([id, f]) => ({ id, label: f.label })),
 })));
 app.post("/api/sources/suggest", auth, limit(10, 36e5), wrap(async (req) => {
-  const name = str(req.body.name, 100), url = str(req.body.url, 600), kind = str(req.body.kind, 30), format = ["rss", "arxiv", "hf-daily"].includes(req.body.format) ? req.body.format : "rss";
+  const name = str(req.body.name, 100), url = str(req.body.url, 600), kind = str(req.body.kind, 30), format = FORMAT_IDS.includes(req.body.format) ? req.body.format : "rss";
   if (!name || !/^https?:\/\//.test(url)) bad("Give the source a name and its feed URL (https://…).");
   if (!KINDS.includes(kind) || kind === "submitted") bad("Pick what kind of source it is.");
   if (/(twitter\.com|x\.com|nitter)/i.test(url)) bad("This homepage doesn't track Twitter/X. Suggest the person's blog or newsletter instead.");
@@ -269,12 +238,16 @@ app.put("/api/sources/:id", auth, admin, wrap(async (req) => {
   await db.run("UPDATE sources SET status = ?, url = ?, name = ? WHERE id = ?", status, str(req.body.url, 600) || s.url, str(req.body.name, 100) || s.name, s.id);
   return { ok: true };
 }));
-app.post("/api/sources/fetch", auth, admin, wrap((req) => fetchAll(req.body.id ? Number(req.body.id) : null)));
+app.post("/api/sources/fetch", auth, admin, wrap(async (req) => {
+  const r = await fetchAll(req.body.id ? Number(req.body.id) : null);
+  await audit.log(req.user.id, "harvest.run", req.body.id ? `source:${req.body.id}` : "all", r.skipped ? "skipped" : `${r.ok} ok, ${r.errors} errors, ${r.stored} new`);
+  return r;
+}));
 // Vercel Cron calls this with "Authorization: Bearer $CRON_SECRET". Without a secret configured it stays closed.
 app.get("/api/cron/fetch", wrap(async (req, res) => {
   const secret = process.env.CRON_SECRET;
   if (!secret || req.headers.authorization !== `Bearer ${secret}`) { res.status(401).json({ error: "Not authorized." }); return; }
-  return fetchAll();
+  return harvester.harvest({ trigger: "cron" });
 }));
 
 /* ---------------------------------------------------------------- agent log */
@@ -348,7 +321,7 @@ app.get("/api/brief", auth, wrap(async (req) => {
   const prevStart = new Date(start.getTime() - 7 * 864e5);
   const inRange = "COALESCE(s.published_at, s.first_seen) >= ? AND COALESCE(s.published_at, s.first_seen) < ?";
   const stories = await storyRows(inRange, [start.toISOString(), end.toISOString()], req.user.id, { sort: "top", limit: 1000 });
-  const prev = await db.all(`SELECT t.topic, COUNT(*) AS n FROM story_topics t JOIN stories s ON s.id = t.story_id WHERE ${inRange} GROUP BY t.topic`, prevStart.toISOString(), start.toISOString());
+  const prev = await db.all(`SELECT t.topic, COUNT(*) AS n FROM story_topics t JOIN stories s ON s.id = t.story_id WHERE COALESCE(s.hidden, 0) = 0 AND ${inRange} GROUP BY t.topic`, prevStart.toISOString(), start.toISOString());
   const prevMap = Object.fromEntries(prev.map((r) => [r.topic, r.n]));
   const kinds = {}; stories.forEach((s) => new Set(s.sources.map((x) => x.kind)).forEach((k) => (kinds[k] = (kinds[k] || 0) + 1)));
   const v = await views();
@@ -359,6 +332,9 @@ app.get("/api/agent-log-view", auth, wrap(async (req) => {
   return { spec: (await views()).agentLogSummary(rows) };
 }));
 app.get("/api/catalog", wrap(async () => { const { catalog } = await views(); return { components: Object.keys(catalog.data?.components ?? {}), prompt: catalog.prompt(), jsonSchema: catalog.jsonSchema() }; }));
+
+/* -------------------------------------------------------------------- admin */
+require("./lib/admin")(app, { auth, admin, wrap, str, bad, notFound, bool, KINDS, FORMAT_IDS, harvester, audit });
 
 /* ------------------------------------------------------------------ static */
 app.use(express.static(path.join(__dirname, "public"), { extensions: ["html"] }));
@@ -373,7 +349,9 @@ if (require.main === module) {
   const PORT = process.env.PORT || 3000;
   boot().then(() => {
     app.listen(PORT, () => console.log(`Superintelligence Homepage on http://localhost:${PORT} (${db.engine})`));
-    if (FETCH_MINUTES > 0) { fetchAll().then((r) => console.log("First fetch:", JSON.stringify(r.report || r))); setInterval(fetchAll, FETCH_MINUTES * 60e3).unref(); }
+    // Locally, check every FETCH_MINUTES for sources that are due (each source keeps its own interval).
+    const tick = () => harvester.harvest({ trigger: "schedule" }).then((r) => r.sources && console.log(`Harvest: ${r.ok} ok, ${r.errors} errors, ${r.stored} new stories`)).catch((e) => console.error("Harvest failed:", e.message));
+    if (FETCH_MINUTES > 0) { tick(); setInterval(tick, FETCH_MINUTES * 60e3).unref(); }
   });
 }
-module.exports = { app, db, ingestItems, seedSources, fetchAll, boot };
+module.exports = { app, db, ingestItems, seedSources, fetchAll, boot, harvester };
