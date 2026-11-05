@@ -43,12 +43,16 @@ Never commit these; `.env` is git-ignored.
 ### 5. Deploy and claim admin
 
 1. Click **Deploy**. When it's done, open the URL.
-2. **Create the first account right away.** The first account becomes the admin, who approves sources and can press **Fetch all now** on the Sources page.
-3. On the Sources page, press **Fetch all now** and check that each source shows a green "OK". Feeds that fail show their error there.
+2. **Create the first account right away.** The first account becomes the admin and gets an **Admin** link in the top bar.
+3. Open **Admin → Harvest all now**. The message says how many sources worked; **Admin → Overview → Needs attention** lists any that failed, with the error.
+4. Open **Admin → Add sources → Source catalog**, tick the sources you want and press **Enable selected and test them**. Each one is test-fetched; none of the catalog URLs could be checked from the build sandbox, so expect a few to need fixing or deleting on the **Sources** tab.
+5. Make Matt an admin on **Admin → Users** after he signs up.
 
 ## How feeds stay fresh
 
-`vercel.json` schedules `/api/cron/fetch` daily at 12:00 UTC (6 am Chicago). Vercel's Hobby plan allows cron at most once a day, so the admin can also press **Fetch all now** at any time. The cron route only runs when the request carries `Authorization: Bearer $CRON_SECRET`, which Vercel adds automatically.
+`vercel.json` schedules `/api/cron/fetch` daily at 12:00 UTC (6 am Chicago). Vercel's Hobby plan allows cron at most once a day, so admins can also press **Harvest all now** on the Admin page at any time. The cron route only runs when the request carries `Authorization: Bearer $CRON_SECRET`, which Vercel adds automatically.
+
+Each source has its own interval (default 6 hours, set on **Admin → Sources**). A harvest fetches only sources that are due, asks servers for changes only (ETag / Last-Modified), backs off a failing source (2×, 4× … up to 32× its interval) and stops starting new fetches after 45 seconds (`HARVEST_BUDGET_MS`) so it fits in one function call; sources it didn't reach go first next time. Every fetch is written to **Admin → Harvest log**.
 
 ## Day to day
 

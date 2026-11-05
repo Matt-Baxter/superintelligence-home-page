@@ -1,6 +1,8 @@
 // Same as serve-fixtures.js but against a Postgres database (DATABASE_URL must point at a throwaway test database).
 if (!process.env.DATABASE_URL) { console.error("Set DATABASE_URL to a throwaway Postgres database."); process.exit(1); }
 process.env.FETCH_MINUTES = "0";
+process.env.ALLOW_FIXTURE_FEEDS = "1";
+process.env.SOURCE_CATALOG = require("node:path").join(__dirname, "fixtures", "sample-catalog.json");
 const fs = require("node:fs"), path = require("node:path");
 const { app, db, ingestItems, boot } = require("../server");
 const feeds = require("../lib/feeds");

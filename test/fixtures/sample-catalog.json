@@ -1,0 +1,8 @@
+{
+  "about": "Sample catalog for tests (test data). Entries read synthetic fixture files; one is deliberately missing so the failure path is tested.",
+  "sources": [
+    { "name": "Sample newsletter (test data)", "kind": "newsletter", "format": "jsonfeed", "url": "fixture://sample-jsonfeed.json", "home": "" },
+    { "name": "Sample community feed (test data)", "kind": "community", "format": "hn-algolia", "url": "fixture://sample-hn.json", "home": "" },
+    { "name": "Sample broken feed (test data)", "kind": "news", "format": "rss", "url": "fixture://does-not-exist.xml", "home": "" }
+  ]
+}
