@@ -1,0 +1,13 @@
+{
+  "name": "superintelligence-homepage",
+  "owner": { "name": "John Affolter and Matthew Baxter" },
+  "metadata": { "description": "Agent kit for the Superintelligence Homepage (SEIS 606 Project 2)." },
+  "plugins": [
+    {
+      "name": "si-homepage-kit",
+      "source": "./agent-kit",
+      "description": "Skills, subagents, guard hooks and an MCP runtime for the Superintelligence Homepage.",
+      "version": "0.1.0"
+    }
+  ]
+}

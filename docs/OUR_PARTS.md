@@ -23,9 +23,9 @@ Paul asked for three documents, and "these can be in a repo":
    git clone https://github.com/Matt-Baxter/superintelligence-home-page && cd superintelligence-home-page
    npm install            # also installs the pre-push preflight hook
    npm run preflight      # should end with "Preflight passed."
-   claude                 # Claude Code reads CLAUDE.md and the skills in .claude/skills/
+   claude                 # Claude Code reads CLAUDE.md and the agent kit's skills (agent-kit/, linked from .claude/)
    ```
-   Useful asks: "use the run-tests skill", "open a PR for this" (open-pull-request), "add the METR blog as a source" (add-feed-source), "I need a new field on stories" (change-the-contract), "work on my bake-off version" (bakeoff-entry).
+   Useful asks: "use the run-tests skill", "open a PR for this" (open-pull-request), "add the METR blog as a source" (add-sources), "this story is ranked too high" (tune-significance), "where does grouping happen?" (codebase-map), "I need a new field on stories" (change-the-contract), "work on my bake-off version" (bakeoff-entry).
 5. [ ] **Start your bake-off branch** `bakeoff/claude-matt` from `main`.
 6. [ ] **Agent log:** when Claude gets something wrong, write it up yourself in the app's Agent log page.
 

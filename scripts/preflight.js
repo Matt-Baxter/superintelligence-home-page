@@ -49,6 +49,10 @@ const cat = fs.readFileSync(path.join(root, "lib/source-catalog.json"), "utf8");
 try { const out = sh("node test/analysis-unit.js").trim(); ok("Analysis rules", out.replace(/^analysis unit checks: /, "")); }
 catch (e) { fail("Analysis rules", String(e.stderr || e.message).split("\n").find((l) => /Assertion|Error/.test(l)) || "failed"); }
 
+// 5c. Agent kit: skills, subagents, plugin manifests, symlinks, index and MCP handshake
+try { ok("Agent kit", sh("node scripts/agent-kit.js check").trim()); }
+catch (e) { fail("Agent kit", String(e.stderr || e.message).trim().split("\n").slice(0, 4).join(" ")); }
+
 // 6. Contract reminder: schema or routes changed without docs/CONTRACT.md changing
 try {
   const base = sh("git merge-base HEAD origin/main 2>/dev/null || git rev-parse HEAD~1 2>/dev/null || echo").trim();
