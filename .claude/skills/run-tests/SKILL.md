@@ -5,6 +5,8 @@ description: Run the app on synthetic data and the two-user browser test, on SQL
 
 # Run the tests
 
+Quick check first: `npm run preflight` (about 3 seconds, no browser). Then, for the full test:
+
 1. `npm install` (first time) and `npm run build`.
 2. Start the sample-data server in the background: `npm run dev:sample` (http://localhost:3200, a throwaway SQLite database with synthetic feeds).
 3. Run `npm test`. It drives two signed-in users (`john`, `matt` test accounts) through feed, grouping, tags, votes, saves, notes, lists, sources, weekly brief, agent log and phone width.

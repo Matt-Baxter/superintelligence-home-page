@@ -6,7 +6,7 @@ Read before changing anything: [docs/CONTRACT.md](docs/CONTRACT.md) (what both h
 
 ## Hard rules
 
-- **Never push to `main`** and never merge. Work on a `feature/`, `fix/` or `bakeoff/` branch; a human opens and merges the pull request.
+- **Never push to `main`** and never merge. Work on a `feature/`, `fix/` or `bakeoff/` branch; the human opens the pull request and merges it themselves once preflight is green (no review required).
 - **Never deploy** or change Vercel, Neon or GitHub settings. Humans do that ([docs/DEPLOY.md](docs/DEPLOY.md)).
 - **Never write agent log entries.** The Agent log page holds entries the humans write in their own words about what the agent got wrong. Don't draft, suggest wording for, or fill in an entry, even if asked to "help with the log". You may remind the human to write one.
 - **No secrets** in code, commits or messages. Configuration comes from environment variables (`.env.example` lists them).
@@ -40,8 +40,9 @@ Read before changing anything: [docs/CONTRACT.md](docs/CONTRACT.md) (what both h
 ## Checking your work
 
 ```bash
-npm run build && npm run dev:sample     # http://localhost:3200 on synthetic data
-npm test                                 # must stay at 0 failed
+npm run preflight                        # ~3 s: syntax, build, secrets, no-Twitter, contract reminder, API smoke test
+npm run build && npm run dev:sample      # http://localhost:3200 on synthetic data
+npm test                                 # full two-user browser test; must stay at 0 failed
 ```
 
 Run against Postgres too when you touch SQL (see [docs/DEPLOY.md](docs/DEPLOY.md), "Local Postgres"). Report the exact pass/fail line. Never claim something works that you didn't run.

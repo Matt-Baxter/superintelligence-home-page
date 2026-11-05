@@ -24,7 +24,7 @@ The lead has the final say in their area; the backup reviews their pull requests
 
 ## Tools
 
-For the bake-off, John builds with **v0** and Matt builds with **Claude**. Shared: GitHub for code and reviews (repo on Matt's account, John as a collaborator), **Vercel** for hosting (deployed from John's Vercel account, connected to Matt's repo), a hosted Postgres database through Vercel **[confirm: Neon or Supabase]**, and our plan doc for planning.
+For the bake-off, John builds with **v0** and Matt builds with **Claude**; both push to GitHub, and pushes deploy to Vercel. Shared: GitHub for code and reviews (repo on Matt's account, John as a collaborator), **Vercel** for hosting (deployed from John's Vercel account, connected to Matt's repo), a **Neon** Postgres database through Vercel, and our plan doc for planning.
 
 ## Communication
 
@@ -32,12 +32,12 @@ One project channel **[confirm: Teams, Slack, Discord or text]**. Reply within 2
 
 ## Repo workflow
 
-`main` is always deployable. Each change goes on its own branch (`feature/short-name`) and into a pull request the other person reviews. Bake-off work lives on `bakeoff/v0-john` and `bakeoff/claude-matt`. Before merging: tests pass, it works for two different signed-in users, no secrets in the diff, and any agent mistake from that work is in the agent log.
+`main` is always deployable. Each change goes on its own branch (`feature/short-name`) and into a pull request, which **you may merge yourself, with no review required**, for speed. Cheap automatic checks run instead: `npm run preflight` on every push, locally and in GitHub Actions (syntax, build, secrets, a no-Twitter check, a contract reminder, and an API smoke test). Bake-off work lives on `bakeoff/v0-john` and `bakeoff/claude-matt`. Contract changes still need both of us to tick the change log. See [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Agent rules
 
 - **Agents may do unattended:** read the code, run tests, write code on a feature branch, and draft pull requests.
-- **A human must review:** every merge to `main`, anything touching sign-in, passwords or permissions, database changes, deployments, and anything that costs money.
+- **A human must check:** the person who ran the agent looks over its work (the preview and preflight) before merging. Take extra care with anything touching sign-in, passwords or permissions, database changes, deployments, or anything that costs money.
 - **Agents never:** push to `main`, handle real secrets, or deploy.
 - **Agent log:** each of us writes our own entries, in our own words, in the app's Agent log page, within a day of the session: what the agent got wrong, how we caught it, and the fix. No AI-written entries, and we don't write each other's.
 
