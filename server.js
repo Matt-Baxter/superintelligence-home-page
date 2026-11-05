@@ -335,6 +335,7 @@ app.get("/api/catalog", wrap(async () => { const { catalog } = await views(); re
 
 /* -------------------------------------------------------------------- admin */
 require("./lib/admin")(app, { auth, admin, wrap, str, bad, notFound, bool, KINDS, FORMAT_IDS, harvester, audit });
+require("./lib/project")(app, { auth, admin, wrap, str, bad, notFound, audit });
 
 /* ------------------------------------------------------------------ static */
 app.use(express.static(path.join(__dirname, "public"), { extensions: ["html"] }));
