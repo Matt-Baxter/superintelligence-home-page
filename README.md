@@ -6,6 +6,8 @@ One place to follow progress toward advanced AI, drawn from papers, lab blogs, r
 
 The plan we build against lives in `docs/` (working agreement, spec, versioned contract), mirrored from our shared Project 2 Plan doc.
 
+**Start here:** [docs/OUR_PARTS.md](docs/OUR_PARTS.md) lists who does what next, with step-by-step instructions for John and Matt.
+
 ## What it does
 
 | Feature | Detail |
@@ -27,6 +29,7 @@ The weekly brief and the agent log summary are [json-render](https://github.com/
 - [docs/WORKING_AGREEMENT.md](docs/WORKING_AGREEMENT.md): how we work together, including roles, tools, repo workflow, agent rules and costs.
 - [docs/SPEC.md](docs/SPEC.md): the initial spec and open questions.
 - [docs/CONTRACT.md](docs/CONTRACT.md): the versioned contract (data models, API, auth, rules, milestones) with its change log.
+- [docs/OUR_PARTS.md](docs/OUR_PARTS.md): who does what next, including the Week 9 homework checklist.
 
 ## Run locally
 
