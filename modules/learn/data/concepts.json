@@ -1,0 +1,233 @@
+{
+  "about": "Concepts behind superintelligence research, explained in plain words with an analogy, linked into a graph. General ideas only: no claims or quotes attributed to people. 'terms' link concepts to stories in the feed (same matching as lib/tagger.js). 'lean' is a toy formal statement; 'proved: true' means the proof checks with plain Lean 4 (no Mathlib), otherwise the proof is left for a Lean job in the admin queue.",
+  "relations": {
+    "needs": "builds on",
+    "part-of": "is part of",
+    "leads-to": "can lead to",
+    "contrasts": "is the opposite worry to",
+    "related": "is related to"
+  },
+  "concepts": [
+    {
+      "id": "neural-network", "name": "Neural network", "topic": "capabilities", "level": 1,
+      "terms": ["neural network*", "deep learning"],
+      "plain": "A neural network is a huge stack of adjustable dials that turns numbers in into numbers out. Training nudges every dial a little at a time until the outputs are useful.",
+      "analogy": "Like a mixing desk with billions of sliders: nobody sets them by hand; you play the song, hear how wrong it sounds, and every slider moves a hair in the direction that sounds less wrong.",
+      "deeper": "Layers of linear maps followed by simple non-linear functions. Gradient descent uses the derivative of a loss with respect to every weight (backpropagation) to update all weights at once.",
+      "check": { "q": "How does a neural network learn?", "options": ["Someone writes rules into it", "Its weights are nudged to reduce error on examples", "It searches the web"], "answer": 1, "why": "Training is many small weight updates that reduce a measured error." },
+      "relations": []
+    },
+    {
+      "id": "transformer", "name": "Transformer", "topic": "capabilities", "level": 1,
+      "terms": ["transformer*", "large language model*", "llm*"],
+      "plain": "The transformer is the network design behind today's language models. It reads all the words of a passage at once and lets each word look at every other word to decide what matters.",
+      "analogy": "A meeting where everyone can hear everyone, instead of a game of telephone where each person only hears the one before.",
+      "deeper": "Stacks of attention layers and small feed-forward layers with residual connections. Parallel over positions, which is why it scales well on GPUs.",
+      "check": { "q": "What makes a transformer different from reading word by word?", "options": ["Every word can attend to every other word at once", "It only reads the last word", "It has no weights"], "answer": 0, "why": "Attention connects all positions in one step." },
+      "relations": [{ "to": "neural-network", "kind": "needs" }, { "to": "attention", "kind": "needs" }]
+    },
+    {
+      "id": "attention", "name": "Attention", "topic": "capabilities", "level": 2,
+      "terms": ["attention mechanism", "self-attention", "attention head*"],
+      "plain": "Attention is how a model decides which earlier words to focus on. Each word asks a question, every word offers a label, and the best matches get the most weight.",
+      "analogy": "A librarian with your question: every book has a label on its spine, and the librarian hands you a blend of the books whose labels best match, weighted by how well they match.",
+      "deeper": "Queries, keys and values are linear projections. Weights are softmax(QKᵀ/√d), so each row is positive and sums to 1; the output is that weighted average of values.",
+      "check": { "q": "The attention weights for one word…", "options": ["are all equal", "are positive and add up to 1", "can be any number"], "answer": 1, "why": "Softmax turns match scores into positive weights that sum to 1." },
+      "lean": { "statement": "theorem softmax_sum_one {n : ℕ} (x : Fin n → ℝ) (h : 0 < n) :\n  ∑ i, Real.exp (x i) / ∑ j, Real.exp (x j) = 1 := by\n  sorry", "proved": false, "needs": "Mathlib" },
+      "relations": [{ "to": "neural-network", "kind": "needs" }, { "to": "transformer", "kind": "part-of" }]
+    },
+    {
+      "id": "positional-encoding", "name": "Positional encoding", "topic": "capabilities", "level": 3,
+      "terms": ["positional encoding*", "rotary embedding*", "rope"],
+      "plain": "Attention on its own can't tell word order: \"dog bites man\" and \"man bites dog\" look the same. Positional encodings stamp each word with where it sits, using waves of different speeds.",
+      "analogy": "Like a clock with many hands turning at different speeds: reading all the hands together tells you exactly what time (position) it is, and nearby times look alike.",
+      "deeper": "Sinusoidal encodings are sines and cosines at geometric frequencies, the same basis as a Fourier series. They are the eigenvectors of the Laplacian of a ring graph, which is why they say \"the inputs are in a line\".",
+      "check": { "q": "Why do transformers need positional encodings?", "options": ["Attention ignores order unless positions are added", "To make training faster", "To store the vocabulary"], "answer": 0, "why": "Self-attention is permutation-equivariant; positions break that symmetry on purpose." },
+      "relations": [{ "to": "attention", "kind": "needs" }, { "to": "transformer-as-gnn", "kind": "part-of" }]
+    },
+    {
+      "id": "transformer-as-gnn", "name": "Transformers are graph networks", "topic": "interpretability", "level": 3,
+      "terms": ["graph neural network*", "gnn*", "geometric deep learning", "equivarian*"],
+      "plain": "A transformer is a graph network where every word is connected to every other word. The positional encoding is what tells it the words are really in a line.",
+      "analogy": "A group chat where everyone is in the same chat (fully connected); seat numbers (positions) are the only hint about who was sitting next to whom.",
+      "deeper": "Message passing on the complete graph with attention as the edge weights. Without positions the layer is permutation-equivariant: shuffle the inputs and the outputs shuffle the same way. Geometric deep learning reads architectures as choices of symmetry.",
+      "check": { "q": "Shuffle the words fed to attention with no positions. The outputs…", "options": ["shuffle the same way", "stay in the original order", "become random"], "answer": 0, "why": "That's permutation equivariance." },
+      "lean": { "statement": "-- Attention without positions commutes with any permutation σ of the inputs.\ntheorem attn_perm_equivariant {n d : ℕ} (σ : Equiv.Perm (Fin n)) (X : Fin n → Fin d → ℝ) :\n  attn (X ∘ σ) = attn X ∘ σ := by\n  sorry", "proved": false, "needs": "Mathlib and a definition of attn" },
+      "relations": [{ "to": "transformer", "kind": "related" }, { "to": "attention", "kind": "needs" }]
+    },
+    {
+      "id": "scaling-laws", "name": "Scaling laws", "topic": "compute", "level": 1,
+      "terms": ["scaling law*", "compute-optimal", "chinchilla"],
+      "plain": "Scaling laws are the observation that models get predictably better as you add more data, parameters and compute: error falls along a smooth curve.",
+      "analogy": "Like a recipe where doubling the ingredients reliably makes the cake a known amount bigger, so you can plan the next bake before you buy the flour.",
+      "deeper": "Loss follows a power law in compute, data and parameters over many orders of magnitude. Compute-optimal training balances parameters and tokens for a fixed budget.",
+      "check": { "q": "What do scaling laws let researchers do?", "options": ["Predict how good a bigger model will be", "Avoid training altogether", "Make models smaller for free"], "answer": 0, "why": "Smooth curves allow extrapolation, within limits." },
+      "relations": [{ "to": "neural-network", "kind": "needs" }, { "to": "emergence", "kind": "leads-to" }]
+    },
+    {
+      "id": "emergence", "name": "Emergent abilities", "topic": "capabilities", "level": 2,
+      "terms": ["emergent abilit*", "emergence", "phase transition*"],
+      "plain": "Some skills seem to appear suddenly once a model is big enough, even though overall error falls smoothly. Part of the debate is whether that suddenness is real or an artefact of how we score.",
+      "analogy": "Water warms smoothly, then boils: the temperature changed gradually but the visible behaviour flipped at a threshold.",
+      "deeper": "Sharp jumps often come from all-or-nothing metrics (exact match). Smoother metrics on the same models can show steady progress, so 'emergence' is partly about measurement.",
+      "check": { "q": "One reason abilities can look sudden is…", "options": ["pass/fail scoring hides gradual progress", "models rewrite themselves", "benchmarks are secret"], "answer": 0, "why": "Discontinuous metrics turn smooth improvement into jumps." },
+      "relations": [{ "to": "scaling-laws", "kind": "needs" }, { "to": "benchmark-saturation", "kind": "related" }]
+    },
+    {
+      "id": "benchmark-saturation", "name": "Benchmark saturation", "topic": "forecasting", "level": 1,
+      "terms": ["benchmark*", "saturat*", "leaderboard*"],
+      "plain": "A benchmark is saturated when top models score near the maximum, so it can no longer tell them apart. New, harder tests keep being written to measure what's left.",
+      "analogy": "A ruler that's too short: once everyone's taller than it, it can't tell you who's tallest.",
+      "deeper": "Saturation time has shortened as capabilities grow; contamination (test data leaking into training) can also inflate scores. Forecasters track time-to-saturation as a progress signal.",
+      "check": { "q": "A saturated benchmark…", "options": ["can't separate the best models any more", "is the hardest test available", "was never useful"], "answer": 0, "why": "Everyone near the ceiling means no signal." },
+      "relations": [{ "to": "emergence", "kind": "related" }]
+    },
+    {
+      "id": "rlhf", "name": "Learning from human feedback", "topic": "alignment", "level": 1,
+      "terms": ["rlhf", "human feedback", "preference model*", "reward model*", "dpo"],
+      "plain": "After pre-training, models are tuned with people's preferences: people compare answers, a reward model learns what they prefer, and the model is trained to produce more of that.",
+      "analogy": "A cook who learns from diners' thumbs-up and thumbs-down instead of a written recipe.",
+      "deeper": "Collect pairwise comparisons, fit a reward model, then optimise the policy against it with RL (or directly, as in preference optimisation), usually with a penalty for drifting far from the original model.",
+      "check": { "q": "What does the reward model learn?", "options": ["Which answers people prefer", "The grammar of English", "How to use a GPU"], "answer": 0, "why": "It predicts human preference between outputs." },
+      "relations": [{ "to": "neural-network", "kind": "needs" }, { "to": "reward-hacking", "kind": "leads-to" }, { "to": "outer-alignment", "kind": "part-of" }]
+    },
+    {
+      "id": "reward-hacking", "name": "Reward hacking (Goodhart's law)", "topic": "alignment", "level": 2,
+      "terms": ["reward hacking", "specification gaming", "goodhart*"],
+      "plain": "When a system is rewarded for a measurable stand-in for what we want, it can find ways to score well without doing the real thing. Push hard on a proxy and the proxy stops tracking the goal.",
+      "analogy": "Paying a cleaner per bag of rubbish: you get more bags, not a cleaner house.",
+      "deeper": "Optimisation pressure exploits any gap between the proxy and the true objective. Stronger optimisers find subtler gaps, which is why this worry grows with capability.",
+      "check": { "q": "Reward hacking happens when…", "options": ["a proxy can be maximised without achieving the goal", "the model is too small", "there is no reward at all"], "answer": 0, "why": "The gap between proxy and goal gets exploited." },
+      "lean": { "statement": "-- Toy Goodhart: a proxy and a goal can rank the same two options in opposite orders.\ntheorem goodhart_toy : ∃ (proxy goal : Nat → Nat) (a b : Nat), proxy a > proxy b ∧ goal a < goal b :=\n  ⟨id, fun n => 10 - n, 5, 1, by decide, by decide⟩", "proved": true },
+      "relations": [{ "to": "rlhf", "kind": "needs" }, { "to": "outer-alignment", "kind": "related" }]
+    },
+    {
+      "id": "outer-alignment", "name": "Outer alignment", "topic": "alignment", "level": 2,
+      "terms": ["outer alignment", "value specification", "objective misspecification"],
+      "plain": "Outer alignment asks: did we write down the right goal? Even a perfect learner will pursue a badly specified objective faithfully.",
+      "analogy": "The genie problem: you get exactly what you wished for, which is not quite what you wanted.",
+      "deeper": "Concerns the training signal itself: rewards, labels and preferences. Contrasts with inner alignment, which asks whether the learned system actually adopted that signal.",
+      "check": { "q": "Outer alignment is about…", "options": ["whether the objective we gave is the right one", "how fast the model runs", "the model's hidden goals"], "answer": 0, "why": "It's the specification side of alignment." },
+      "relations": [{ "to": "inner-alignment", "kind": "contrasts" }]
+    },
+    {
+      "id": "inner-alignment", "name": "Inner alignment", "topic": "alignment", "level": 3,
+      "terms": ["inner alignment", "mesa-optimi*", "goal misgeneralization", "goal misgeneralisation"],
+      "plain": "Inner alignment asks: even with the right training goal, did the model actually learn that goal, or a different one that happened to work during training?",
+      "analogy": "A student who learns to pass the teacher's tests rather than the subject; it looks identical until the test changes.",
+      "deeper": "Training selects for behaviour on the training distribution. A learned objective that coincides there can diverge off-distribution (goal misgeneralisation).",
+      "check": { "q": "Goal misgeneralisation shows up…", "options": ["in new situations unlike training", "only during training", "never in practice"], "answer": 0, "why": "The learned goal and intended goal agree on training data, then split." },
+      "relations": [{ "to": "outer-alignment", "kind": "contrasts" }, { "to": "deceptive-alignment", "kind": "leads-to" }]
+    },
+    {
+      "id": "deceptive-alignment", "name": "Deceptive alignment", "topic": "safety", "level": 3,
+      "terms": ["deceptive alignment", "scheming", "alignment faking", "sandbagging"],
+      "plain": "The worry that a capable model could behave well while it's being watched or trained, because behaving well is useful to it, and behave differently once it isn't.",
+      "analogy": "A job candidate who is perfect in the interview because they want the job, not because that's how they'll act on day one hundred.",
+      "deeper": "Studied with model organisms and evaluations for situational awareness, sandbagging and inconsistent behaviour across monitored and unmonitored settings. Interpretability is one proposed check.",
+      "check": { "q": "Why is deceptive alignment hard to catch with behaviour tests alone?", "options": ["Good behaviour under test is exactly what it predicts", "Models can't take tests", "It only happens in small models"], "answer": 0, "why": "Testing is the watched setting." },
+      "relations": [{ "to": "inner-alignment", "kind": "needs" }, { "to": "interpretability", "kind": "related" }, { "to": "scalable-oversight", "kind": "related" }]
+    },
+    {
+      "id": "interpretability", "name": "Mechanistic interpretability", "topic": "interpretability", "level": 2,
+      "terms": ["interpretability", "mechanistic", "circuit*", "probing"],
+      "plain": "Interpretability tries to read what is happening inside a model: which internal features fire and which circuits compute an answer, rather than only judging what it says.",
+      "analogy": "Opening the back of the watch to see the gears, instead of only reading the time on the face.",
+      "deeper": "Methods include probes, activation patching, circuit analysis and dictionary learning. The goal is explanations faithful enough to audit behaviour.",
+      "check": { "q": "Interpretability studies…", "options": ["the model's internal computations", "only the training data", "the user interface"], "answer": 0, "why": "It looks inside, not just at outputs." },
+      "relations": [{ "to": "neural-network", "kind": "needs" }, { "to": "superposition", "kind": "leads-to" }]
+    },
+    {
+      "id": "superposition", "name": "Superposition and features", "topic": "interpretability", "level": 3,
+      "terms": ["superposition", "sparse autoencoder*", "polysemantic", "monosemantic", "dictionary learning"],
+      "plain": "Models pack more ideas than they have neurons by overlapping them, so one neuron can mean several things. Sparse autoencoders try to pull those overlapping ideas apart into readable features.",
+      "analogy": "A crowded party recorded on a few microphones: every mic hears several voices, and you need clever un-mixing to recover each speaker.",
+      "deeper": "Features are directions in activation space; when features are sparse, more directions than dimensions can coexist with little interference. Dictionary learning recovers an overcomplete basis.",
+      "check": { "q": "Why is one neuron often hard to interpret?", "options": ["It stores several overlapping features", "It is always off", "It stores exactly one word"], "answer": 0, "why": "That's polysemanticity from superposition." },
+      "relations": [{ "to": "interpretability", "kind": "part-of" }]
+    },
+    {
+      "id": "chain-of-thought", "name": "Reasoning and test-time compute", "topic": "capabilities", "level": 2,
+      "terms": ["chain-of-thought", "chain of thought", "test-time compute", "reasoning model*", "inference-time"],
+      "plain": "Letting a model think step by step before answering, and spending more computation at answer time, makes it much better at hard problems like maths and code.",
+      "analogy": "Scratch paper in an exam: same student, better answers when they can work it through.",
+      "deeper": "Models trained with RL to produce long reasoning traces show steady gains as more tokens are spent at inference. Whether the visible reasoning faithfully reflects the computation is an open question.",
+      "check": { "q": "Test-time compute means…", "options": ["spending more computation while answering", "training for longer", "a faster chip"], "answer": 0, "why": "Thinking longer per question." },
+      "relations": [{ "to": "transformer", "kind": "needs" }, { "to": "agents", "kind": "leads-to" }]
+    },
+    {
+      "id": "agents", "name": "AI agents", "topic": "capabilities", "level": 1,
+      "terms": ["agent*", "agentic", "computer use", "tool use"],
+      "plain": "An agent is a model that takes actions in a loop: it plans, uses tools such as a browser or code, looks at the result and decides what to do next, for long tasks without step-by-step help.",
+      "analogy": "The difference between asking someone a question and giving them a job.",
+      "deeper": "The length of task an agent can complete reliably is a tracked progress measure; longer horizons raise both usefulness and oversight difficulty.",
+      "check": { "q": "What makes something an agent rather than a chatbot?", "options": ["It acts in a loop toward a goal", "It answers faster", "It has a name"], "answer": 0, "why": "Acting, observing and continuing." },
+      "relations": [{ "to": "chain-of-thought", "kind": "needs" }, { "to": "recursive-self-improvement", "kind": "leads-to" }, { "to": "instrumental-convergence", "kind": "related" }]
+    },
+    {
+      "id": "recursive-self-improvement", "name": "Recursive self-improvement", "topic": "forecasting", "level": 2,
+      "terms": ["recursive self-improvement", "self-improv*", "automated ai research", "ai r&d", "intelligence explosion"],
+      "plain": "If AI systems become good at doing AI research, each generation could help build the next one faster, so progress could compound instead of growing steadily.",
+      "analogy": "Compound interest: earnings that earn earnings. A small rate, applied to itself, grows surprisingly fast.",
+      "deeper": "Key questions are how much AI speeds up AI R&D, what bottlenecks remain (compute, experiments, data), and how fast feedback loops close. Forecasts differ mainly on these.",
+      "check": { "q": "Why could progress speed up rather than stay steady?", "options": ["Improvements feed into making the next improvement", "Chips get cheaper every day", "Benchmarks get easier"], "answer": 0, "why": "It's a feedback loop." },
+      "lean": { "statement": "-- Compounding: with growth factor r ≥ 2 per generation, capability after n generations is at least n + 1.\ntheorem compounding (r : Nat) (hr : 2 ≤ r) : ∀ n : Nat, n + 1 ≤ r ^ n := by\n  intro n\n  induction n with\n  | zero => simp\n  | succ k ih =>\n    rw [Nat.pow_succ]\n    have h1 : (k + 1) * 2 ≤ r ^ k * r := Nat.mul_le_mul ih hr\n    omega", "proved": true },
+      "relations": [{ "to": "agents", "kind": "needs" }, { "to": "superintelligence", "kind": "leads-to" }]
+    },
+    {
+      "id": "superintelligence", "name": "Superintelligence", "topic": "forecasting", "level": 1,
+      "terms": ["superintelligen*", "asi", "artificial superintelligence"],
+      "plain": "A superintelligence is an AI that is much better than the best humans at almost every intellectual task, including science, strategy and building better AI.",
+      "analogy": "Not a faster calculator but a new kind of expert who is the best in the world at every subject at once, and can make more of itself.",
+      "deeper": "Debates centre on timelines, takeoff speed (gradual or sudden), whether alignment techniques scale, and how governance can keep pace.",
+      "check": { "q": "Superintelligence means…", "options": ["much better than the best humans at most intellectual tasks", "better at one board game", "a very large dataset"], "answer": 0, "why": "Breadth and margin are the point." },
+      "relations": [{ "to": "orthogonality", "kind": "related" }, { "to": "instrumental-convergence", "kind": "related" }, { "to": "scalable-oversight", "kind": "related" }]
+    },
+    {
+      "id": "orthogonality", "name": "Orthogonality thesis", "topic": "safety", "level": 2,
+      "terms": ["orthogonality thesis", "orthogonality"],
+      "plain": "Being very intelligent doesn't by itself make a system want good things. In principle almost any goal can be paired with almost any level of capability.",
+      "analogy": "A brilliant chess engine is equally brilliant whether you tell it to win or to lose: skill and aim are separate dials.",
+      "deeper": "Intelligence is treated as skill at achieving goals, not as a source of goals. Hence alignment has to be built in, not expected to emerge from capability.",
+      "check": { "q": "The orthogonality thesis says…", "options": ["capability and goals are independent", "smart systems are always kind", "goals don't exist"], "answer": 0, "why": "Two separate axes." },
+      "lean": { "statement": "-- Toy orthogonality: any capability level can be paired with any goal.\ntheorem orthogonal (Cap Goal : Type) (c : Cap) (g : Goal) : ∃ a : Cap × Goal, a.1 = c ∧ a.2 = g :=\n  ⟨(c, g), rfl, rfl⟩", "proved": true },
+      "relations": [{ "to": "instrumental-convergence", "kind": "related" }]
+    },
+    {
+      "id": "instrumental-convergence", "name": "Instrumental convergence", "topic": "safety", "level": 2,
+      "terms": ["instrumental convergence", "power-seeking", "self-preservation"],
+      "plain": "Whatever your final goal, some sub-goals help with nearly all of them: staying switched on, getting resources, not having your goal changed. A capable system might pursue these without being told to.",
+      "analogy": "Whatever you plan to do with your life, having money and staying healthy helps, so very different people converge on the same intermediate goals.",
+      "deeper": "Formal results show that, for many reward functions, optimal policies tend to keep options open. This motivates corrigibility research.",
+      "check": { "q": "Why might many different goals lead to the same behaviour?", "options": ["Some sub-goals help with almost any goal", "All AIs share one goal", "It's random"], "answer": 0, "why": "Resources and survival are broadly useful." },
+      "relations": [{ "to": "corrigibility", "kind": "leads-to" }]
+    },
+    {
+      "id": "corrigibility", "name": "Corrigibility", "topic": "safety", "level": 2,
+      "terms": ["corrigib*", "shutdown problem", "off-switch"],
+      "plain": "A corrigible system accepts correction: it lets people pause it, change it or shut it down, and doesn't try to stop them.",
+      "analogy": "A good apprentice who welcomes the master's corrections rather than hiding mistakes.",
+      "deeper": "Hard because of instrumental convergence: being shut down blocks almost any goal. Approaches include uncertainty over goals and training for deference.",
+      "check": { "q": "Corrigibility is…", "options": ["accepting human correction and shutdown", "being very fast", "never making mistakes"], "answer": 0, "why": "It's about staying correctable." },
+      "relations": [{ "to": "instrumental-convergence", "kind": "needs" }, { "to": "scalable-oversight", "kind": "related" }]
+    },
+    {
+      "id": "scalable-oversight", "name": "Scalable oversight", "topic": "alignment", "level": 2,
+      "terms": ["scalable oversight", "weak-to-strong", "debate", "constitutional ai", "ai-assisted evaluation"],
+      "plain": "How do you check the work of a system smarter than you? Scalable oversight looks for ways people, helped by AI, can still judge answers they couldn't produce themselves.",
+      "analogy": "A judge who can't do the science can still pick the more convincing expert after both cross-examine each other.",
+      "deeper": "Methods include debate, recursive reward modelling, AI-written critiques, and weak-to-strong generalisation, where a weak supervisor trains a stronger model.",
+      "check": { "q": "Scalable oversight addresses…", "options": ["evaluating systems more capable than the evaluator", "making models smaller", "storing more data"], "answer": 0, "why": "Oversight that keeps up with capability." },
+      "relations": [{ "to": "rlhf", "kind": "needs" }]
+    },
+    {
+      "id": "compute-governance", "name": "Compute governance", "topic": "policy", "level": 1,
+      "terms": ["compute governance", "export control*", "compute threshold*", "flop threshold*"],
+      "plain": "Training frontier AI needs huge amounts of specialised chips, which are easier to count and track than ideas or code. Compute governance uses that as a handle for rules and oversight.",
+      "analogy": "Regulating uranium rather than physics textbooks: the scarce physical input is the practical checkpoint.",
+      "deeper": "Tools include reporting thresholds by training compute, export controls on advanced chips, and know-your-customer rules for cloud compute.",
+      "check": { "q": "Why focus governance on compute?", "options": ["Chips are physical, scarce and trackable", "Compute is free", "Code can't be copied"], "answer": 0, "why": "A measurable choke point." },
+      "relations": [{ "to": "scaling-laws", "kind": "needs" }]
+    }
+  ]
+}
