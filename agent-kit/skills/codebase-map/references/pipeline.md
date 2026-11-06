@@ -36,4 +36,4 @@
 - `/api/me` returns `user.nav` (core links plus `ui.nav` contributions); `/api/modules` (admins) describes modules, extension points and views.
 
 ## Tables at a glance
-users, sessions · sources, fetch_runs · stories, story_keys, story_links, story_topics, story_entities · votes, saves, notes, lists, list_items, follows · agent_log, agent_log_saves · admin_audit · project_issues, project_milestones, project_comments, project_activity (owned by the project module). Shapes: `docs/CONTRACT.md`.
+users, sessions · sources, fetch_runs · stories, story_keys, story_links, story_topics, story_entities · votes, saves, notes, lists, list_items, follows · agent_log, agent_log_saves · admin_audit · project_issues, project_milestones, project_comments, project_activity (owned by the project module). Shapes: `docs/INTERFACES.md`.

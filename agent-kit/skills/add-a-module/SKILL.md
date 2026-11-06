@@ -12,7 +12,7 @@ Everything beyond the core (accounts, stories, lists, agent log, feeds, tagging,
 3. **Write the parts**: `routes.js` (gets `deps`: db, auth, admin, wrap, storyRows, views, …), `pages/*.html` (served at `/m/<page>`; use the build-a-page skill), `blocks/` (use the generative-ui skill), judges (use the run-a-judge skill).
 4. **Respect boundaries**: use the core through `deps` or `lib/`; never require another module's files. Need something from another module? Give that module an extension point.
 5. **Enable it** in `modules/modules.json`, then `npm run build` (generates the block registry and copies pages) and `npm run modules:check`.
-6. **Contract**: new tables or routes need a row in `docs/CONTRACT.md` (change-the-contract skill).
+6. **Contract**: new tables or routes need a row in `docs/INTERFACES.md` (change-the-contract skill).
 7. **Test**: add browser checks to `test/e2e.js` and, for headless logic, a check in `test/kernel-unit.js` using a fixture module in `test/fixtures/modules/` (run-tests skill).
 
 To unplug: remove the id from `modules.json` (or set `MODULES_DISABLED=id`). Pages, nav, routes and blocks disappear; its tables stay.

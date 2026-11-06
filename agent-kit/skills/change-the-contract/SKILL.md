@@ -1,18 +1,21 @@
 ---
 name: change-the-contract
-description: Change a table, API route, or request/response shape the right way, by updating docs/CONTRACT.md with a versioned change-log row before the code. Use whenever a change would break what the other partner builds against.
+description: Change what the project is built against the right way - the shared spec, constitution, CONTRACT.md or WORKING_AGREEMENT.md (both partners approve) or this build's own tables, routes and response shapes (logged in docs/INTERFACES.md). Use whenever a change would alter a requirement, a rule, a table, an API route or a request/response shape.
 ---
 
 # Change the contract
 
-`docs/CONTRACT.md` is what both partners (and both bake-off versions) build against. A shape change without a contract update breaks the other half.
+Two kinds of change, two paths.
 
-1. **Say it first.** Tell the human what would change and who it affects (the other partner's area, or the other bake-off version). Get a go-ahead before editing.
-2. **Bump the version.** New fields, routes or tables are a minor bump (0.3 → 0.4). Removing or renaming something, or changing a type, is a major bump (1.x → 2.0).
-3. **Add a change-log row** at the bottom of the table in `docs/CONTRACT.md`:
-   `| <version> | <Mon D, YYYY> | <what changed, in one or two sentences> | John ☐ · Matt ☐ |`
-   Update the version line at the top of the file to match.
-4. **Update the affected section**: "Data models", "API" (request and response columns), "Auth" or "Rules". Keep the examples exact.
-5. **Then change the code** to match: schema in `lib/db.js` (portable SQL for both engines), routes in `server.js`, callers in `public/`.
-6. **Test on both engines.** Run `npm test` against `dev:sample` (SQLite) and, for schema changes, against `dev:sample:pg` (see docs/DEPLOY.md).
-7. **PR title starts with `Contract vX.Y:`**. Remind the human that both partners must tick their box in the change log before merging, and that the same change belongs in the shared Plan doc.
+## Shared documents (both partners)
+The [spec](../../../specs/001-superintelligence-homepage/spec.md), the [constitution](../../../.specify/memory/constitution.md), [CONTRACT.md](../../../CONTRACT.md) and [WORKING_AGREEMENT.md](../../../WORKING_AGREEMENT.md) bind both builds.
+1. **Stop and say so** to the human: this needs both partners.
+2. **Spec changes** go through Spec Kit: `/speckit-specify` to amend, `/speckit-clarify` for open questions. Keep REQ IDs stable; new requirements get the next free ID. Update `docs/SPEC_TRACE.md`.
+3. **Constitution changes** bump its version (MAJOR: remove or redefine a principle; MINOR: add or change a rule; PATCH: wording) and add a Sync Impact Report comment.
+4. **Log it**: a row in CONTRACT.md's change log, marked proposed, with boxes for both partners. The humans tick them; never tick for them.
+
+## This build's interfaces (the builder)
+Tables, columns, API routes, request and response shapes of this build live in [docs/INTERFACES.md](../../../docs/INTERFACES.md). Builds may differ here (constitution: bake-off rules), so the builder decides.
+1. Add a row to the INTERFACES.md change log (version, date, what changed, why) and update the affected table or route section.
+2. Prefer additive changes (new optional fields, new routes). Breaking changes bump the major version.
+3. Name the REQ IDs the change serves; preflight warns when tables or routes change without INTERFACES.md.

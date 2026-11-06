@@ -57,16 +57,32 @@ catch (e) { fail("Modules", String(e.stderr || e.message).trim().split("\n").sli
 try { ok("Agent kit", sh("node scripts/agent-kit.js check").trim()); }
 catch (e) { fail("Agent kit", String(e.stderr || e.message).trim().split("\n").slice(0, 4).join(" ")); }
 
-// 6. Contract reminder: schema or routes changed without docs/CONTRACT.md changing
+// 6. Spec trace: every REQ in the shared spec(s) appears in docs/SPEC_TRACE.md, and the trace cites no unknown REQ
+{
+  const specDir = path.join(root, "specs");
+  const specReqs = new Set();
+  if (fs.existsSync(specDir)) for (const d of fs.readdirSync(specDir)) { const f = path.join(specDir, d, "spec.md"); if (fs.existsSync(f)) for (const m of fs.readFileSync(f, "utf8").matchAll(/\*\*(REQ-\d{3})\*\*/g)) specReqs.add(m[1]); }
+  const traceFile = path.join(root, "docs", "SPEC_TRACE.md");
+  const trace = fs.existsSync(traceFile) ? fs.readFileSync(traceFile, "utf8") : "";
+  const traced = new Set(); for (const m of trace.matchAll(/REQ-(\d{3})(?:[–-](\d{3}))?/g)) { const a = +m[1], b = +(m[2] || m[1]); for (let i = a; i <= b; i++) traced.add(`REQ-${String(i).padStart(3, "0")}`); }
+  if (!specReqs.size) warn("Spec trace", "no specs/*/spec.md found");
+  else {
+    const missing = [...specReqs].filter((r) => !traced.has(r)), unknown = [...traced].filter((r) => !specReqs.has(r));
+    missing.length || unknown.length ? fail("Spec trace", [missing.length && `not traced: ${missing.join(", ")}`, unknown.length && `not in the spec: ${unknown.join(", ")}`].filter(Boolean).join("; ") + " (docs/SPEC_TRACE.md)")
+      : ok("Spec trace", `${specReqs.size} requirements traced`);
+  }
+}
+
+// 7. Interfaces reminder: schema or routes changed without docs/INTERFACES.md changing
 try {
   const base = sh("git merge-base HEAD origin/main 2>/dev/null || git rev-parse HEAD~1 2>/dev/null || echo").trim();
   if (base) {
     const changed = sh(`git diff --name-only ${base}`).split("\n");
-    const diff = sh(`git diff ${base} -- lib/db.js server.js`);
+    const diff = sh(`git diff ${base} -- lib/db.js server.js modules kernel`);
     const shape = /^[+-].*(CREATE TABLE|app\.(get|post|put|delete)\()/m.test(diff);
-    if (shape && !changed.includes("docs/CONTRACT.md")) warn("Contract", "tables or API routes changed but docs/CONTRACT.md didn't; add a change-log row if shapes changed");
-    else ok("Contract", shape ? "routes or tables changed and CONTRACT.md updated" : "no shape changes");
-  } else ok("Contract", "no base to compare");
+    if (shape && !changed.includes("docs/INTERFACES.md")) warn("Interfaces", "tables or API routes changed but docs/INTERFACES.md didn't; add a row if shapes changed");
+    else ok("Interfaces", shape ? "routes or tables changed and INTERFACES.md updated" : "no shape changes");
+  } else ok("Interfaces", "no base to compare");
 } catch { ok("Contract", "skipped (no git history)"); }
 
 // 7. API smoke test on synthetic data (SQLite, random port)

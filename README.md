@@ -2,19 +2,24 @@
 
 SEIS 606 Vibe Coding · Project 2 · John Affolter and Matthew Baxter
 
-One place to follow progress toward advanced AI, drawn from papers, lab blogs, research organizations, forums, newsletters and academic blogs, with no dependence on any single platform. There's no Twitter/X: as a source, as a suggestion, or as a submitted link.
+A home page for articles about superintelligence: progress toward AGI and superintelligence, and the research and policy work on making it safe. Drawn from papers, frontier lab blogs, alignment and safety groups, forecasting groups, forums and newsletters; only superintelligence stories make the feed. There's no Twitter/X: as a source, as a suggestion, or as a submitted link.
 
-The plan we build against lives in `docs/` (working agreement, spec, versioned contract), mirrored from our shared Project 2 Plan doc.
+The plan both builds follow:
 
-**Start here:** [docs/OUR_PARTS.md](docs/OUR_PARTS.md) lists who does what next, with step-by-step instructions for John and Matt.
+- [Working Agreement](WORKING_AGREEMENT.md): how we'll work together
+- [Contract](CONTRACT.md): what we're building against
+- [Initial spec](specs/001-superintelligence-homepage/spec.md): written with Spec Kit, under the [constitution](.specify/memory/constitution.md) (prompts used: [docs/speckit-prompts.md](docs/speckit-prompts.md))
+- [Spec trace](docs/SPEC_TRACE.md): how this build meets each requirement
+
+**Start here:** [docs/OUR_PARTS.md](docs/OUR_PARTS.md) lists who does what next.
 
 ## What it does
 
 | Feature | Detail |
 | --- | --- |
-| **Multi-source feed** | 11 default sources across 7 kinds (`lib/sources.json`): arXiv, Hugging Face Daily Papers, OpenAI, Google DeepMind, Google Research, Alignment Forum, Epoch AI, Import AI, BAIR, Hacker News (AI-filtered). Fetched every 30 minutes. |
+| **Superintelligence feed** | 11 default sources across 5 kinds (`lib/sources.json`): arXiv (cs.AI and an alignment/safety search), Hugging Face Daily Papers, OpenAI, Google DeepMind, Alignment Forum, LessWrong, Epoch AI, AI Impacts, MIRI, Import AI. Only stories about superintelligence are shown (REQ-003); each says why. Newest first. Harvested four times a day. |
 | **Story grouping** | The same paper or announcement from several sources becomes one story. An arXiv id beats a URL, and a URL beats a normalized title (`lib/feeds.js`). |
-| **Ontology tags that explain themselves** | 17 topics in a tree, plus 11 organizations (`lib/ontology.json`). Every tag stores the words that matched; child topics roll up to their parents. |
+| **Ontology tags that explain themselves** | The spec's seven superintelligence topics at the top, finer topics under them, plus organizations, benchmarks and a people watchlist (`lib/ontology.json`). Every tag stores the words that matched. |
 | **Accounts and curation** | Votes, saves, private or shared notes, public or private reading lists that others can follow, and submitted links. |
 | **Weekly brief** | Top stories and per-topic activity, compared with last week. Built as a json-render spec on the server. |
 | **Sources page** | Every feed, its kind, and whether its last fetch worked. Users suggest feeds; the admin (the first account) approves them. |
@@ -26,12 +31,7 @@ The weekly brief and the agent log summary are [json-render](https://github.com/
 
 ## Plan documents
 
-> **To reconcile:** there are two sets of plan docs right now. Matt's templates sit at the repo root ([WORKING_AGREEMENT.md](WORKING_AGREEMENT.md), [CONTRACT.md](CONTRACT.md)) and choose a pure bake-off (Option B). The fuller drafts from the shared Plan doc are in `docs/` and describe a split-plus-bake-off mix. Pick one set and one option together, then delete the other.
-
-- [docs/WORKING_AGREEMENT.md](docs/WORKING_AGREEMENT.md): how we work together, including roles, tools, repo workflow, agent rules and costs.
-- [docs/SPEC.md](docs/SPEC.md): the initial spec and open questions.
-- [docs/CONTRACT.md](docs/CONTRACT.md): the versioned contract (data models, API, auth, rules, milestones) with its change log.
-- [docs/OUR_PARTS.md](docs/OUR_PARTS.md): who does what next, including the Week 9 homework checklist.
+One set, at the root, shared by both builds: the [constitution](.specify/memory/constitution.md), the [shared spec](specs/001-superintelligence-homepage/spec.md) (written with Spec Kit; prompts in [docs/speckit-prompts.md](docs/speckit-prompts.md)), the [contract](CONTRACT.md) (bake-off rules, comparison criteria, change log) and the [working agreement](WORKING_AGREEMENT.md). This build's own tables and API are in [docs/INTERFACES.md](docs/INTERFACES.md), and [docs/SPEC_TRACE.md](docs/SPEC_TRACE.md) maps every requirement to code and tests. [CONTRIBUTING.md](CONTRIBUTING.md) has the spec-to-merge flow.
 
 ## Run locally
 
