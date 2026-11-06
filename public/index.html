@@ -63,7 +63,7 @@ async function load(append = false) {
   const s = state(), qs = new URLSearchParams({ ...s, sort, offset });
   const { stories } = await api("/api/stories?" + qs);
   const feed = $("#feed"); if (!append) feed.innerHTML = "";
-  stories.forEach((st) => feed.append(storyCard(st)));
+  feed.classList.add("stagger"); stories.forEach((st, i) => { const li = storyCard(st); li.style.setProperty("--i", i); feed.append(li); });
   if (!append && !stories.length) feed.innerHTML = `<li class="empty">No stories match. ${s.days ? "Try a longer time window, or " : ""}check the <a href="/sources">Sources</a> page: feeds are harvested several times a day once the site is deployed.</li>`;
   $("#more").hidden = stories.length < 40; offset += stories.length;
 }

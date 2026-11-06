@@ -210,3 +210,21 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, .btn:focus-vi
 .navmenu[data-here] summary, .navmenu[open] summary { color: var(--accent); background: var(--accent-soft); }
 .navmenu > div { position: fixed; margin-top: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,.12); padding: 6px; display: grid; min-width: 160px; z-index: 50; }
 .navmenu > div a { padding: 6px 10px; border-radius: 6px; }
+
+/* ---------- motion (agent-kit/skills/ui-design/references/motion.md) ---------- */
+:root { --ease-out: cubic-bezier(.23, 1, .32, 1); --ease-in-out: cubic-bezier(.77, 0, .175, 1); --ease-in: cubic-bezier(.55, .055, .675, .19);
+  --dur-1: 150ms; --dur-2: 200ms; --dur-3: 250ms; --dur-exit: 160ms; }
+@keyframes si-enter { from { opacity: 0; transform: translateY(4px); } }
+@keyframes si-pop { from { opacity: 0; transform: scale(.95); } }
+@keyframes si-sheet { from { opacity: 0; transform: translateX(24px); } }
+@keyframes si-pulse { from { box-shadow: 0 0 0 0 var(--accent-soft); } to { box-shadow: 0 0 0 8px transparent; } }
+@media (prefers-reduced-motion: no-preference) {
+  .btn, .seg-btns button, .story .vote, .navmenu summary, .nav a, .tag, .topicbar a { transition: transform var(--dur-1) var(--ease-out), background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out); }
+  .btn:active, .seg-btns button:active, .story .vote:active, .linkish:active { transform: scale(.97); }
+  .enter { animation: si-enter var(--dur-3) var(--ease-out) both; }
+  .pop, .navmenu[open] > div { animation: si-pop var(--dur-2) var(--ease-out) both; transform-origin: top left; }
+  .stagger > * { animation: si-enter var(--dur-3) var(--ease-out) both; animation-delay: calc(min(var(--i, 0), 10) * 30ms); }
+  .sheet { animation: si-sheet var(--dur-3) var(--ease-out) both; }
+  .pulse { animation: si-pulse 360ms var(--ease-out) 1; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; scroll-behavior: auto !important; } }
