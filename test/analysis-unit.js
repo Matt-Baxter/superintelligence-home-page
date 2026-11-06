@@ -12,4 +12,15 @@ assert.equal(analyze({ title: "Sample (test data)", summary: "Accepted at NeurIP
 const low = analyze({ title: "Sample community post (test data)" }, { kinds: ["community"] });
 assert.ok(low.significance < a.significance, "community chatter scores below a lab release with results");
 const j = analyze({ title: "Sample (test data)" }, { kinds: ["community", "journal"], nsources: 2 }); assert.equal(j.evidence.id, "peer-reviewed", "strongest source decides evidence");
-console.log("analysis unit checks: 9 passed");
+// REQ-003: superintelligence-only scope (when in doubt, leave it out)
+const { scope } = require("../lib/analysis");
+const sc = (t) => analyze({ title: t }, { kinds: ["news"] }).scope;
+assert.equal(sc("Sample: an alignment technique for superhuman systems (test data)").in, true, "strong term is in scope");
+assert.equal(sc("Sample launch: a new AI photo-editing app (test data)").in, false, "general AI news is out");
+assert.equal(sc("Sample story: AI helps retailers forecast demand (test data)").in, false, "one weak topic is out");
+assert.equal(sc("Sample: export controls on datacenter chips (test data)").in, true, "two spec topics are in");
+assert.match(sc("Sample launch: a new AI photo-editing app (test data)").reason, /No superintelligence topic/);
+// REQ-001: at least 8 default sources across at least 5 kinds
+const src = require("../lib/sources.json"); const list = src.sources || src;
+assert.ok(list.length >= 8 && new Set(list.map((x) => x.kind)).size >= 5, "REQ-001: 8+ sources across 5+ kinds");
+console.log("analysis unit checks: 15 passed");

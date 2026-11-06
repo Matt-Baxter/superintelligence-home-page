@@ -105,7 +105,7 @@
   <section class="tabpanel" data-panel="moderation" hidden>
     <div class="panel">
       <h2>Stories</h2>
-      <div class="row"><label>Search<input id="mq" placeholder="Title or URL"></label><label><input type="checkbox" id="mHidden"> Hidden only</label><label><input type="checkbox" id="mUntagged"> Untagged only</label></div>
+      <div class="row"><label>Search<input id="mq" placeholder="Title or URL"></label><label><input type="checkbox" id="mHidden"> Hidden only</label><label><input type="checkbox" id="mUntagged"> Untagged only</label><label><input type="checkbox" id="mOff"> Left out of the feed only</label></div>
       <div class="tablewrap"><table><thead><tr><th>Story</th><th>Topics</th><th>Votes</th><th>Sources</th><th></th></tr></thead><tbody id="storyRows"></tbody></table></div>
     </div>
     <div class="panel"><h2>Shared notes</h2><p class="small muted">Private notes aren't shown to admins.</p><div class="tablewrap"><table><thead><tr><th>Note</th><th>By</th><th>On</th><th></th></tr></thead><tbody id="noteRows"></tbody></table></div></div>
@@ -145,7 +145,7 @@ $$("#tabs button").forEach((b) => (b.onclick = () => show(b.dataset.tab)));
 /* overview */
 async function loadOverview() {
   const d = await api("/api/admin/overview"), c = d.counts;
-  const k = [["Active sources", d.sources.active || 0], ["Pending review", d.sources.pending || 0], ["Failing", d.failing.length], ["Stories", c.stories], ["New in 24 h", c.storiesToday], ["Untagged", c.untagged], ["Hidden", c.hidden], ["Users", c.users], ["Admins", c.admins], ["Votes", c.votes], ["Notes", c.notes], ["Agent log entries", c.agentLog]];
+  const k = [["Active sources", d.sources.active || 0], ["Pending review", d.sources.pending || 0], ["Failing", d.failing.length], ["Stories", c.stories], ["New in 24 h", c.storiesToday], ["Untagged", c.untagged], ["Left out (off-topic)", c.offTopic], ["Hidden", c.hidden], ["Users", c.users], ["Admins", c.admins], ["Votes", c.votes], ["Notes", c.notes], ["Agent log entries", c.agentLog]];
   $("#kpis").innerHTML = k.map(([t, v]) => `<div class="kpi"><b>${v}</b><span>${t}</span></div>`).join("");
   $("#sub").textContent = `Database: ${d.engine === "pg" ? "Postgres" : "SQLite"}. Harvest schedule: ${d.schedule}${process_cron(d)}.${d.harvesting ? " A harvest is running now." : ""}`;
   $("#failing").innerHTML = d.failing.length ? `<ul>${d.failing.map((s) => `<li><b>${esc(s.name)}</b>: ${esc(s.last_error || "")} <span class="small muted">(${s.failures} failures, last ${ago(s.last_fetched)})</span></li>`).join("")}</ul>` : `<p class="small muted">Nothing failing.</p>`;
@@ -272,9 +272,9 @@ async function loadUsers() {
 /* moderation */
 let mt;
 async function loadModeration() {
-  const q = new URLSearchParams({ q: $("#mq").value, hidden: $("#mHidden").checked ? 1 : 0, untagged: $("#mUntagged").checked ? 1 : 0, limit: 100 });
+  const q = new URLSearchParams({ q: $("#mq").value, hidden: $("#mHidden").checked ? 1 : 0, untagged: $("#mUntagged").checked ? 1 : 0, scope: $("#mOff").checked ? "out" : "", limit: 100 });
   const [s, n] = await Promise.all([api(`/api/admin/stories?${q}`), api("/api/admin/notes")]);
-  $("#storyRows").innerHTML = s.stories.map((x) => `<tr data-id="${x.id}"><td class="wrap"><a href="/story?id=${x.id}">${esc(x.title)}</a>${x.hidden ? `<div class="small err">Hidden${x.hidden_reason ? `: ${esc(x.hidden_reason)}` : ""}</div>` : ""}</td>
+  $("#storyRows").innerHTML = s.stories.map((x) => `<tr data-id="${x.id}"><td class="wrap"><a href="/story?id=${x.id}">${esc(x.title)}</a>${x.hidden ? `<div class="small err">Hidden${x.hidden_reason ? `: ${esc(x.hidden_reason)}` : ""}</div>` : ""}${x.in_scope === false ? `<div class="small muted">Left out of the feed: ${esc(x.scope_reason)}</div>` : ""}</td>
     <td class="small">${esc(x.topics.join(", ") || "none")}</td><td>${x.votes}</td><td>${x.links}</td>
     <td>${x.hidden ? '<button class="btn" data-act="unhide" type="button">Unhide</button>' : '<input aria-label="Reason" placeholder="Reason" size="12"> <button class="btn" data-act="hide" type="button">Hide</button>'}</td></tr>`).join("") || `<tr><td colspan="5" class="muted">No stories match.</td></tr>`;
   $$("#storyRows button").forEach((b) => (b.onclick = async () => { const tr = b.closest("tr"); await api(`/api/admin/stories/${tr.dataset.id}`, { method: "PUT", body: { hidden: b.dataset.act === "hide", reason: $("input", tr)?.value || "" } }); loadModeration(); }));
@@ -282,7 +282,7 @@ async function loadModeration() {
   $$("#noteRows button").forEach((b) => (b.onclick = async () => { if (b.textContent !== "Confirm") { b.textContent = "Confirm"; return; } await api(`/api/admin/notes/${b.closest("tr").dataset.id}`, { method: "DELETE" }); loadModeration(); }));
 }
 $("#mq").oninput = () => { clearTimeout(mt); mt = setTimeout(loadModeration, 250); };
-$("#mHidden").onchange = $("#mUntagged").onchange = loadModeration;
+$("#mHidden").onchange = $("#mUntagged").onchange = $("#mOff").onchange = loadModeration;
 
 /* ontology */
 async function loadOntology() {

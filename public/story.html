@@ -43,6 +43,7 @@ async function load() {
   const an = s.analysis || {};
   $("#analysis").innerHTML = `<p><span class="sig ${s.significance >= 60 ? "hi" : s.significance >= 35 ? "mid" : ""}" style="font-size:15px;height:26px;min-width:36px">${s.significance}</span> out of 100 ·
       <b>${esc(an.type?.label || "Update")}</b> · ${esc(an.evidence?.label || "")}</p>
+    ${an.scope ? `<p class="small"><b>Why it's on a superintelligence feed:</b> ${esc(an.scope.reason)}</p>` : ""}
     <table class="why" aria-label="Significance breakdown">${(an.why || []).map((w) => `<tr><td>+${w.points}</td><td>${esc(w.factor)}</td><td>${esc(w.detail || "")}</td></tr>`).join("")}</table>
     ${(an.benchmarks || []).length ? `<p class="small">Benchmarks: ${an.benchmarks.map((b) => `<a class="tag bench" href="/?benchmark=${esc(b.id)}">${esc(b.label)}${b.score ? ` <b>${esc(fmtScore(b.score))}</b>` : ""}</a>`).join(" ")}
       <span class="muted">Scores are read from the text next to the benchmark's name; check the source before quoting them.</span></p>` : ""}

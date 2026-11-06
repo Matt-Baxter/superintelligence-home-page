@@ -27,6 +27,7 @@ module.exports = function mountAdmin(app, { db, feeds, tagger, auth, admin, wrap
         stories: await c("SELECT COUNT(*) AS n FROM stories"), storiesToday: await c("SELECT COUNT(*) AS n FROM stories WHERE first_seen >= ?", dayAgo),
         hidden: await c("SELECT COUNT(*) AS n FROM stories WHERE COALESCE(hidden, 0) = 1"),
         untagged: await c("SELECT COUNT(*) AS n FROM stories WHERE topics = '[]'"),
+        offTopic: await c("SELECT COUNT(*) AS n FROM stories WHERE COALESCE(in_scope, 1) = 0"),
         votes: await c("SELECT COUNT(*) AS n FROM votes"), notes: await c("SELECT COUNT(*) AS n FROM notes"), lists: await c("SELECT COUNT(*) AS n FROM lists"),
         agentLog: await c("SELECT COUNT(*) AS n FROM agent_log WHERE status = 'submitted'"),
       },
@@ -191,10 +192,11 @@ module.exports = function mountAdmin(app, { db, feeds, tagger, auth, admin, wrap
     const q = str(req.query.q, 100).toLowerCase(); if (q) { w.push("(LOWER(s.title) LIKE ? OR LOWER(s.url) LIKE ?)"); a.push(`%${q}%`, `%${q}%`); }
     if (req.query.hidden === "1") w.push("COALESCE(s.hidden, 0) = 1");
     if (req.query.untagged === "1") w.push("s.topics = '[]'");
-    const rows = await db.all(`SELECT s.id, s.title, s.url, s.first_seen, s.published_at, s.hidden, s.hidden_reason, s.topics,
+    if (req.query.scope === "out") w.push("COALESCE(s.in_scope, 1) = 0");
+    const rows = await db.all(`SELECT s.id, s.title, s.url, s.first_seen, s.published_at, s.hidden, s.hidden_reason, s.topics, s.in_scope, s.analysis,
       (SELECT COUNT(*) FROM votes v WHERE v.story_id = s.id) AS votes, (SELECT COUNT(*) FROM story_links l WHERE l.story_id = s.id) AS links
       FROM stories s WHERE ${w.join(" AND ")} ORDER BY s.id DESC LIMIT ?`, ...a, num(req.query.limit, 1, 500, 100));
-    return { stories: rows.map((r) => ({ ...r, hidden: bool(r.hidden), topics: JSON.parse(r.topics || "[]").filter((t) => !t.via).map((t) => t.label) })) };
+    return { stories: rows.map(({ analysis, ...r }) => ({ ...r, hidden: bool(r.hidden), in_scope: r.in_scope == null ? null : bool(r.in_scope), scope_reason: JSON.parse(analysis || "{}").scope?.reason || "", topics: JSON.parse(r.topics || "[]").filter((t) => !t.via).map((t) => t.label) })) };
   }));
   app.put("/api/admin/stories/:id", ...A, wrap(async (req) => {
     const s = await db.get("SELECT id, title FROM stories WHERE id = ?", Number(req.params.id)); if (!s) notFound("That story");

@@ -87,7 +87,7 @@ async function smoke() {
     };
     const steps = [];
     const su = await call("/api/signup", { body: { username: "preflight", password: "preflight-pass-1" } }); steps.push(["sign up", su.status === 200]);
-    const st = await call("/api/stories"); steps.push(["feed (5 sample stories)", st.status === 200 && st.json.stories?.length === 5]);
+    const st = await call("/api/stories"); steps.push(["feed (4 superintelligence stories; the general-AI sample is left out)", st.status === 200 && st.json.stories?.length === 4]);
     steps.push(["grouping (3 sources on one story)", st.json.stories?.some((s) => s.nsources === 3)]);
     const id = st.json.stories?.[0]?.id; const v = await call(`/api/stories/${id}/vote`, { method: "POST" }); steps.push(["vote", v.json.voted === true && v.json.votes === 1]);
     const br = await call("/api/brief"); steps.push(["weekly brief spec", br.status === 200 && !!br.json.spec?.root]);
