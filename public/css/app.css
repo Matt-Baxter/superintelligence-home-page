@@ -201,3 +201,12 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, .btn:focus-vi
 .jr-verdict .k { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; } .jr-verdict .rec { font-size: 20px; }
 .jr-verdict p { margin: 0; } .jr-verdict .agree { font-size: 14px; } .jr-verdict .sign { font-size: 13px; color: var(--muted); }
 .jr-verdict .warn { margin: 0; padding-left: 18px; font-size: 13px; color: var(--warn); }
+
+/* Admin menu in the top bar (module admin tools: Project, Decide, Studio, Map, Admin) */
+.navmenu { position: relative; flex: none; }
+.navmenu summary { list-style: none; cursor: pointer; font-size: 14px; padding: 6px 8px; border-radius: 6px; color: var(--muted); white-space: nowrap; }
+.navmenu summary::-webkit-details-marker { display: none; }
+.navmenu summary::after { content: " ▾"; font-size: 11px; }
+.navmenu[data-here] summary, .navmenu[open] summary { color: var(--accent); background: var(--accent-soft); }
+.navmenu > div { position: fixed; margin-top: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,.12); padding: 6px; display: grid; min-width: 160px; z-index: 50; }
+.navmenu > div a { padding: 6px 10px; border-radius: 6px; }

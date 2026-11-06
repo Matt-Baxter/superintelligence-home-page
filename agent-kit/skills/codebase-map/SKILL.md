@@ -25,6 +25,14 @@ A modular monolith: one Express app (`server.js`, the core) plus plug-in modules
 
 For the step-by-step version (grouping keys, when re-scoring happens, what each table holds), read `references/pipeline.md`.
 
+## Ask the map before grepping
+
+The codemap module parses the repo into a graph: pages → routes they call → tables those routes read or write; modules → extension points; spec REQs → files → tests.
+- Terminal: `npm run codemap -- votes` (or `REQ-003`, `project_issues`, `POST /api/lists`).
+- MCP: the `codemap_query` tool (`trace: true` returns everything connected).
+- Browser: `/m/codemap` (admins), click anything to trace it.
+Preflight fails when a page calls an API route that doesn't exist, so a renamed route can't silently break a page.
+
 ## Contract
 
 What to build comes from the shared spec (`specs/001-superintelligence-homepage/spec.md`, REQ IDs) under the constitution; `docs/SPEC_TRACE.md` maps each REQ to code and tests. This build's tables, routes and shapes are in `docs/INTERFACES.md`. Changing either: use the change-the-contract skill.

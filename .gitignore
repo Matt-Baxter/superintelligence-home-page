@@ -5,3 +5,4 @@ data/
 dist/
 client/blocks.gen.jsx
 public/m/
+modules/codemap/data/

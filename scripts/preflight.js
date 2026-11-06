@@ -53,6 +53,10 @@ catch (e) { fail("Analysis rules", String(e.stderr || e.message).split("\n").fin
 try { sh("node test/kernel-unit.js"); ok("Modules", sh("node scripts/modules.js check").trim() + "; kernel unit checks passed"); }
 catch (e) { fail("Modules", String(e.stderr || e.message).trim().split("\n").slice(0, 4).join(" ")); }
 
+// 5b3. Codebase map: every API call a page makes has a route
+try { ok("Codebase map", sh("node scripts/codemap.js check").trim()); }
+catch (e) { fail("Codebase map", String(e.stderr || e.message).trim().split("\n").slice(0, 4).join(" ")); }
+
 // 5c. Agent kit: skills, subagents, plugin manifests, symlinks, index and MCP handshake
 try { ok("Agent kit", sh("node scripts/agent-kit.js check").trim()); }
 catch (e) { fail("Agent kit", String(e.stderr || e.message).trim().split("\n").slice(0, 4).join(" ")); }
