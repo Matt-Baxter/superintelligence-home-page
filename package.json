@@ -17,7 +17,8 @@
     "kit:mcp": "node agent-kit/mcp/server.js",
     "modules:check": "node scripts/modules.js check",
     "modules:list": "node scripts/modules.js list",
-    "codemap": "node scripts/codemap.js"
+    "codemap": "node scripts/codemap.js",
+    "learn:worker": "node scripts/learn-worker.js"
   },
   "keywords": [],
   "author": "",
