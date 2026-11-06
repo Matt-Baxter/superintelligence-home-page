@@ -1,16 +1,82 @@
 {
-  "about": "Default sources. Deliberately mixed across kinds so the homepage isn't tied to any one platform (and none of them is Twitter/X). Feed URLs were chosen from each site's published feed; any that move can be edited on the Sources page.",
+  "about": "Default sources (REQ-001): 11 public feeds across 5 kinds that regularly cover superintelligence, matching the shared spec's examples. The feed keeps only superintelligence stories (REQ-003), so broad feeds like arXiv cs.AI are filtered. No Twitter/X. Feed URLs follow each site's published feed; any that move can be fixed on the Admin page.",
   "sources": [
-    { "name": "arXiv: AI (cs.AI)", "kind": "papers", "format": "arxiv", "url": "https://export.arxiv.org/api/query?search_query=cat:cs.AI&sortBy=submittedDate&sortOrder=descending&max_results=40", "home": "https://arxiv.org/list/cs.AI/recent" },
-    { "name": "arXiv: Machine learning (cs.LG)", "kind": "papers", "format": "arxiv", "url": "https://export.arxiv.org/api/query?search_query=cat:cs.LG+AND+(all:alignment+OR+all:scaling+OR+all:reasoning+OR+all:agent)&sortBy=submittedDate&sortOrder=descending&max_results=40", "home": "https://arxiv.org/list/cs.LG/recent" },
-    { "name": "Hugging Face Daily Papers", "kind": "papers", "format": "hf-daily", "url": "https://huggingface.co/api/daily_papers", "home": "https://huggingface.co/papers" },
-    { "name": "OpenAI News", "kind": "lab", "format": "rss", "url": "https://openai.com/news/rss.xml", "home": "https://openai.com/news" },
-    { "name": "Google DeepMind Blog", "kind": "lab", "format": "rss", "url": "https://deepmind.google/blog/rss.xml", "home": "https://deepmind.google/discover/blog/" },
-    { "name": "Google Research Blog", "kind": "lab", "format": "rss", "url": "https://research.google/blog/rss/", "home": "https://research.google/blog/" },
-    { "name": "Alignment Forum", "kind": "forum", "format": "rss", "url": "https://www.alignmentforum.org/feed.xml", "home": "https://www.alignmentforum.org" },
-    { "name": "Epoch AI", "kind": "research-org", "format": "rss", "url": "https://epoch.ai/blog/rss.xml", "home": "https://epoch.ai/blog" },
-    { "name": "Import AI (Jack Clark)", "kind": "newsletter", "format": "rss", "url": "https://importai.substack.com/feed", "home": "https://importai.substack.com" },
-    { "name": "BAIR Blog (Berkeley)", "kind": "academic", "format": "rss", "url": "https://bair.berkeley.edu/blog/feed.xml", "home": "https://bair.berkeley.edu/blog/" },
-    { "name": "Hacker News: AI", "kind": "community", "format": "rss", "url": "https://hnrss.org/newest?q=LLM+OR+%22AI+model%22&points=50", "home": "https://news.ycombinator.com" }
+    {
+      "name": "arXiv: AI (cs.AI)",
+      "kind": "papers",
+      "format": "arxiv",
+      "url": "https://export.arxiv.org/api/query?search_query=cat:cs.AI&sortBy=submittedDate&sortOrder=descending&max_results=40",
+      "home": "https://arxiv.org/list/cs.AI/recent"
+    },
+    {
+      "name": "arXiv: AI alignment and safety papers",
+      "kind": "papers",
+      "format": "arxiv",
+      "url": "https://export.arxiv.org/api/query?search_query=all:%22AI%20alignment%22%20OR%20all:%22AI%20safety%22%20OR%20all:superintelligence&sortBy=submittedDate&sortOrder=descending&max_results=40",
+      "home": "https://arxiv.org"
+    },
+    {
+      "name": "Hugging Face Daily Papers",
+      "kind": "papers",
+      "format": "hf-daily",
+      "url": "https://huggingface.co/api/daily_papers",
+      "home": "https://huggingface.co/papers"
+    },
+    {
+      "name": "OpenAI News",
+      "kind": "lab",
+      "format": "rss",
+      "url": "https://openai.com/news/rss.xml",
+      "home": "https://openai.com/news"
+    },
+    {
+      "name": "Google DeepMind Blog",
+      "kind": "lab",
+      "format": "rss",
+      "url": "https://deepmind.google/blog/rss.xml",
+      "home": "https://deepmind.google/discover/blog/"
+    },
+    {
+      "name": "AI Impacts blog",
+      "kind": "research-org",
+      "format": "rss",
+      "url": "https://blog.aiimpacts.org/feed",
+      "home": "https://blog.aiimpacts.org"
+    },
+    {
+      "name": "Alignment Forum",
+      "kind": "forum",
+      "format": "rss",
+      "url": "https://www.alignmentforum.org/feed.xml",
+      "home": "https://www.alignmentforum.org"
+    },
+    {
+      "name": "Epoch AI",
+      "kind": "research-org",
+      "format": "rss",
+      "url": "https://epoch.ai/blog/rss.xml",
+      "home": "https://epoch.ai/blog"
+    },
+    {
+      "name": "Import AI (Jack Clark)",
+      "kind": "newsletter",
+      "format": "rss",
+      "url": "https://importai.substack.com/feed",
+      "home": "https://importai.substack.com"
+    },
+    {
+      "name": "MIRI blog",
+      "kind": "research-org",
+      "format": "rss",
+      "url": "https://intelligence.org/feed/",
+      "home": "https://intelligence.org/blog/"
+    },
+    {
+      "name": "LessWrong (curated)",
+      "kind": "forum",
+      "format": "rss",
+      "url": "https://www.lesswrong.com/feed.xml?view=curated-rss",
+      "home": "https://www.lesswrong.com"
+    }
   ]
 }

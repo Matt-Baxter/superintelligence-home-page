@@ -19,13 +19,13 @@
 
 <main id="feedView" hidden>
   <div class="pagehead">
-    <div><h1 id="feedTitle">Today in AI progress</h1><p class="muted" id="feedSub">Ranked by reader votes, how many independent sources covered a story, its significance score, and recency.</p></div>
+    <div><h1 id="feedTitle">The path to superintelligence</h1><p class="muted" id="feedSub">Superintelligence stories only: progress toward AGI, alignment, interpretability, safety, timelines, compute and governance. Newest first; each story shows why it's here.</p></div>
     <button class="btn" id="submitBtn" type="button">Submit a link</button>
   </div>
   <nav class="topicbar" id="topicbar" aria-label="Topics"></nav>
   <div class="filters">
     <div class="seg-btns" role="group" aria-label="Sort">
-      <button type="button" data-sort="top" aria-pressed="true">Top</button><button type="button" data-sort="new" aria-pressed="false">New</button><button type="button" data-sort="votes" aria-pressed="false">Most voted</button><button type="button" data-sort="signal" aria-pressed="false" title="Ranked by the significance score: evidence, coverage, benchmarks, frontier claims">Significance</button>
+      <button type="button" data-sort="new" aria-pressed="true">Newest</button><button type="button" data-sort="top" aria-pressed="false">Top</button><button type="button" data-sort="votes" aria-pressed="false">Most voted</button><button type="button" data-sort="signal" aria-pressed="false" title="Ranked by the significance score: evidence, coverage, benchmarks, frontier claims">Significance</button>
     </div>
     <select id="kind" aria-label="Source kind"><option value="">All kinds of source</option></select>
     <select id="days" aria-label="Time window"><option value="">Any time</option><option value="1">Last day</option><option value="7" selected>Last week</option><option value="30">Last month</option></select>
@@ -46,7 +46,7 @@
 </main>
 <script src="/js/api.js"></script>
 <script>
-let mode = "login", sort = params.get("sort") || "top", offset = 0, ONT;
+let mode = "login", sort = params.get("sort") || "new", offset = 0, ONT;
 $$(".tabs button").forEach((b) => b.onclick = () => {
   mode = b.dataset.mode; $$(".tabs button").forEach((x) => x.setAttribute("aria-selected", x === b));
   $("#nameWrap").hidden = mode !== "signup"; $("#authBtn").textContent = mode === "signup" ? "Create account" : "Sign in"; $("#authErr").textContent = "";
@@ -70,7 +70,7 @@ async function load(append = false) {
 function header() {
   const s = state(), t = ONT.topics.find((x) => x.id === s.topic), o = ONT.orgs.find((x) => x.id === s.org);
   const bm = (ONT.benchmarks || []).find((x) => x.id === s.benchmark), pp = (ONT.people || []).find((x) => x.id === s.person);
-  $("#feedTitle").textContent = bm ? `Benchmark: ${bm.label}` : pp ? `Mentions of ${pp.label}` : t ? t.label : o ? o.label : s.saved ? "Saved for later" : "Today in AI progress";
+  $("#feedTitle").textContent = bm ? `Benchmark: ${bm.label}` : pp ? `Mentions of ${pp.label}` : t ? t.label : o ? o.label : s.saved ? "Saved for later" : "The path to superintelligence";
   $("#topicbar").innerHTML = `<a href="/" ${!s.topic && !s.org ? 'aria-current="true"' : ""}>All</a>` + ONT.topics.filter((x) => !x.parent).map((x) => `<a href="/?topic=${x.id}" ${x.id === s.topic ? 'aria-current="true"' : ""}>${esc(x.label)}</a>`).join("")
     + (t && t.parent ? `<a href="/?topic=${t.id}" aria-current="true">${esc(t.label)}</a>` : "");
 }

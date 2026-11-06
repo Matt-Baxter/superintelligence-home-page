@@ -7,6 +7,8 @@ description: Add or fix where stories come from - default sources, the admin sou
 
 **Never Twitter/X** (or Nitter or other mirrors). Use the person's blog or newsletter instead. Preflight checks both source files.
 
+The shared spec asks for sources that regularly cover superintelligence (REQ-001: 8+ sources, 5+ kinds). Broad feeds are fine because the feed keeps only superintelligence stories (REQ-003), but prefer focused ones.
+
 ## Where a source goes
 | File | Effect | Use for |
 | --- | --- | --- |

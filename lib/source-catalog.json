@@ -79,13 +79,6 @@
       "home": "https://aws.amazon.com/blogs/machine-learning/"
     },
     {
-      "name": "LessWrong (curated)",
-      "kind": "forum",
-      "format": "rss",
-      "url": "https://www.lesswrong.com/feed.xml?view=curated-rss",
-      "home": "https://www.lesswrong.com"
-    },
-    {
       "name": "Redwood Research blog",
       "kind": "research-org",
       "format": "rss",
@@ -98,13 +91,6 @@
       "format": "rss",
       "url": "https://newsletter.safe.ai/feed",
       "home": "https://newsletter.safe.ai"
-    },
-    {
-      "name": "AI Impacts blog",
-      "kind": "research-org",
-      "format": "rss",
-      "url": "https://blog.aiimpacts.org/feed",
-      "home": "https://blog.aiimpacts.org"
     },
     {
       "name": "METR",

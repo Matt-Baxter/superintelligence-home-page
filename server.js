@@ -111,7 +111,7 @@ async function storyRows(where, args, uid, { sort = "top", limit = 40, offset = 
       EXISTS(SELECT 1 FROM saves v WHERE v.story_id = s.id AND v.user_id = ?) AS saved,
       (SELECT COUNT(*) FROM notes n WHERE n.story_id = s.id AND (n.private = 0 OR n.user_id = ?)) AS nnotes,
       COALESCE(s.published_at, s.first_seen) AS t
-    FROM stories s WHERE COALESCE(s.hidden, 0) = 0 AND (${where})`, uid, uid, uid, ...args);
+    FROM stories s WHERE COALESCE(s.hidden, 0) = 0 AND COALESCE(s.in_scope, 1) = 1 AND (${where})`, uid, uid, uid, ...args);
   const t0 = Date.now();
   rows.forEach((r) => {
     const hours = Math.max(0, (t0 - parseTime(r.t)) / 36e5);
@@ -147,7 +147,7 @@ app.get("/api/stories", auth, wrap(async (req) => {
   if (req.query.person) { w.push("s.id IN (SELECT story_id FROM story_entities WHERE kind = 'person' AND entity = ?)"); a.push(str(req.query.person, 60)); }
   if (Number(req.query.min)) { w.push("COALESCE(s.significance, 0) >= ?"); a.push(Math.min(100, Number(req.query.min))); }
   if (req.query.saved === "1") { w.push("s.id IN (SELECT story_id FROM saves WHERE user_id = ?)"); a.push(req.user.id); }
-  const sort = ["top", "new", "votes", "signal"].includes(req.query.sort) ? req.query.sort : "top";
+  const sort = ["top", "new", "votes", "signal"].includes(req.query.sort) ? req.query.sort : "new"; // REQ-002: newest first
   const offset = Math.max(0, Number(req.query.offset) || 0);
   return { stories: await storyRows(w.join(" AND "), a, req.user.id, { sort, offset, limit: 40 }), sort };
 }));
@@ -337,7 +337,7 @@ app.get("/api/brief", auth, wrap(async (req) => {
   const prevStart = new Date(start.getTime() - 7 * 864e5);
   const inRange = "COALESCE(s.published_at, s.first_seen) >= ? AND COALESCE(s.published_at, s.first_seen) < ?";
   const stories = await storyRows(inRange, [start.toISOString(), end.toISOString()], req.user.id, { sort: "top", limit: 1000 });
-  const prev = await db.all(`SELECT t.topic, COUNT(*) AS n FROM story_topics t JOIN stories s ON s.id = t.story_id WHERE COALESCE(s.hidden, 0) = 0 AND ${inRange} GROUP BY t.topic`, prevStart.toISOString(), start.toISOString());
+  const prev = await db.all(`SELECT t.topic, COUNT(*) AS n FROM story_topics t JOIN stories s ON s.id = t.story_id WHERE COALESCE(s.hidden, 0) = 0 AND COALESCE(s.in_scope, 1) = 1 AND ${inRange} GROUP BY t.topic`, prevStart.toISOString(), start.toISOString());
   const prevMap = Object.fromEntries(prev.map((r) => [r.topic, r.n]));
   const kinds = {}; stories.forEach((s) => new Set(s.sources.map((x) => x.kind)).forEach((k) => (kinds[k] = (kinds[k] || 0) + 1)));
   const v = await views();

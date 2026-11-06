@@ -1,21 +1,40 @@
 {
-  "version": 2,
-  "about": "Topics for tracking progress toward advanced AI. Each topic lists match terms (case-insensitive, whole-word unless a term ends in *). An item gets a topic when its title or summary matches at least one term; the matched terms are stored so every tag can explain itself. Version 2 adds superintelligence signals, finer capability areas, a benchmark registry (lib/analysis.js reads the reported score next to a benchmark name) and a watchlist of people whose names are matched in titles, summaries and author lists.",
+  "version": 3,
+  "about": "Topics for tracking progress toward advanced AI. Each topic lists match terms (case-insensitive, whole-word unless a term ends in *). An item gets a topic when its title or summary matches at least one term; the matched terms are stored so every tag can explain itself. Version 2 adds superintelligence signals, finer capability areas, a benchmark registry (lib/analysis.js reads the reported score next to a benchmark name) and a watchlist of people whose names are matched in titles, summaries and author lists. Version 3 follows the shared spec (specs/001-superintelligence-homepage): the top level is exactly its seven superintelligence topics, finer topics are children, and 'scope' decides which stories make the superintelligence-only feed (REQ-003).",
   "topics": [
     {
       "id": "capabilities",
-      "label": "Capabilities",
-      "parent": null,
+      "label": "Capabilities & AGI progress",
       "terms": [
         "state of the art",
         "sota",
         "frontier model",
         "new model",
         "outperforms",
-        "capabilit*",
-        "general intelligence",
-        "agi",
-        "superintelligen*"
+        "capabilit*"
+      ]
+    },
+    {
+      "id": "alignment",
+      "label": "Alignment",
+      "terms": [
+        "alignment",
+        "aligned",
+        "misalign*",
+        "rlhf",
+        "constitutional ai",
+        "reward hacking",
+        "reward model*",
+        "deceptive",
+        "scheming",
+        "sycophancy",
+        "corrigib*",
+        "scalable oversight",
+        "superalignment",
+        "sandbagg*",
+        "alignment faking",
+        "power-seeking",
+        "goal misgeneralization"
       ]
     },
     {
@@ -89,29 +108,21 @@
     },
     {
       "id": "safety",
-      "label": "Safety & alignment",
-      "parent": null,
+      "label": "Safety & risk",
       "terms": [
-        "alignment",
-        "aligned",
-        "misalign*",
         "ai safety",
         "safety",
-        "rlhf",
-        "constitutional",
-        "reward hacking",
-        "deceptive",
-        "scheming",
-        "sycophancy",
         "jailbreak*",
         "red team*",
-        "corrigib*"
+        "existential risk",
+        "x-risk",
+        "catastrophic risk*",
+        "loss of control"
       ]
     },
     {
       "id": "interpretability",
       "label": "Interpretability",
-      "parent": "safety",
       "terms": [
         "interpretab*",
         "mechanistic",
@@ -124,8 +135,8 @@
     },
     {
       "id": "evals",
-      "label": "Evals & benchmarks",
-      "parent": null,
+      "label": "Evals & dangerous capabilities",
+      "parent": "safety",
       "terms": [
         "benchmark*",
         "evaluation",
@@ -142,8 +153,7 @@
     },
     {
       "id": "compute",
-      "label": "Compute & hardware",
-      "parent": null,
+      "label": "Compute & scaling",
       "terms": [
         "compute",
         "gpu*",
@@ -161,7 +171,7 @@
     {
       "id": "scaling",
       "label": "Scaling & training",
-      "parent": null,
+      "parent": "compute",
       "terms": [
         "scaling law*",
         "scaling",
@@ -179,7 +189,7 @@
     {
       "id": "open-models",
       "label": "Open models",
-      "parent": null,
+      "parent": "capabilities",
       "terms": [
         "open-weight*",
         "open weight*",
@@ -195,8 +205,7 @@
     },
     {
       "id": "policy",
-      "label": "Policy & governance",
-      "parent": null,
+      "label": "Governance & policy",
       "terms": [
         "regulation",
         "policy",
@@ -208,13 +217,17 @@
         "compliance",
         "standards",
         "liability",
-        "licensing"
+        "licensing",
+        "ai governance",
+        "international treaty",
+        "compute governance",
+        "frontier ai policy"
       ]
     },
     {
       "id": "economics",
       "label": "Economics & labor",
-      "parent": null,
+      "parent": "policy",
       "terms": [
         "labor market",
         "jobs",
@@ -229,14 +242,16 @@
     {
       "id": "forecasting",
       "label": "Forecasting & timelines",
-      "parent": null,
       "terms": [
         "forecast*",
         "timeline*",
         "trend*",
         "prediction",
         "takeoff",
-        "explosion"
+        "explosion",
+        "agi timeline*",
+        "timelines to agi",
+        "ai 2027"
       ]
     },
     {
@@ -255,7 +270,7 @@
     },
     {
       "id": "superintelligence",
-      "label": "Superintelligence & AGI",
+      "label": "AGI & superintelligence",
       "terms": [
         "agi",
         "artificial general intelligence",
@@ -268,7 +283,8 @@
         "human-level ai",
         "superhuman",
         "takeoff"
-      ]
+      ],
+      "parent": "capabilities"
     },
     {
       "id": "coding",
@@ -986,5 +1002,51 @@
         "jaime sevilla"
       ]
     }
-  ]
+  ],
+  "scope": {
+    "about": "REQ-003 (superintelligence only). A story is in the feed when it contains a strong term below, or matches at least min_topics of the seven top-level topics. Everything else is stored but left out of the feed (admins can see it with the reason). When in doubt, leave it out.",
+    "min_topics": 2,
+    "strong": [
+      "superintelligen*",
+      "agi",
+      "artificial general intelligence",
+      "asi",
+      "transformative ai",
+      "human-level ai",
+      "superhuman",
+      "intelligence explosion",
+      "recursive self-improvement",
+      "recursively self-improv*",
+      "takeoff",
+      "alignment",
+      "aligned",
+      "misalign*",
+      "superalignment",
+      "scalable oversight",
+      "scheming",
+      "deceptive alignment",
+      "alignment faking",
+      "sandbagg*",
+      "reward hacking",
+      "power-seeking",
+      "corrigib*",
+      "interpretab*",
+      "mechanistic",
+      "sparse autoencoder*",
+      "existential risk",
+      "x-risk",
+      "catastrophic risk*",
+      "loss of control",
+      "ai safety",
+      "dangerous capabilit*",
+      "frontier model*",
+      "frontier ai",
+      "agi timeline*",
+      "timelines to agi",
+      "ai 2027",
+      "automated ai research",
+      "ai r&d",
+      "self-improv*"
+    ]
+  }
 }
