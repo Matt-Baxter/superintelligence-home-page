@@ -229,6 +229,36 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   ok(!(await john.textContent('.tlwarn')).includes('starts before') && (await j(john, `/api/admin/project/issues/${tB.number}`)).issue.start_date === dIso(8), 'Undo puts the dates back and clears the warning');
   await john.screenshot({ path: 'shots/timeline.png' });
 
+  console.log('Learn: concepts, teardown, studio jobs');
+  const lc = await j(matt, '/api/learn/concepts');
+  ok(lc.concepts.length >= 20 && lc.edges.length >= 30 && lc.edges.every((e) => lc.concepts.some((c) => c.id === e.to)), 'concept graph loads with links that all point at real concepts');
+  const att = await j(matt, '/api/learn/concepts/attention');
+  ok(att.concept.plain && att.concept.analogy && att.concept.check.options.length === 3 && att.path.at(-1).id === 'attention', 'a concept has plain words, an analogy, a quiz and a read-first path');
+  ok((await j(matt, '/api/learn/concepts/nope')).status === 404, 'unknown concept is a 404');
+  const td = await j(matt, '/api/learn/teardown', 'POST', { title: 'Sample: sparse autoencoder features linked to deceptive alignment in AGI-scale models', summary: 'Test data.', url: 'https://example.org/sample-td', kind: 'papers' });
+  ok(td.steps.map((x) => x.id).join() === 'fetch,group,tag,scope,score,concepts,feed' && td.steps[3].output.in === true && td.steps[5].output.concepts.some((c) => c.id === 'superposition'), 'teardown runs every step with real values (in scope, linked to concepts)');
+  const tdx = await j(matt, '/api/learn/teardown', 'POST', { title: 'Sample post', url: 'https://twitter.com/someone/status/1' });
+  ok(tdx.stopped === 'fetch' && tdx.steps[0].output.dropped, 'teardown shows Twitter/X links dropped at fetch');
+  ok((await j(matt, '/api/admin/learn/jobs')).status === 403, 'studio jobs are admins only');
+  const pj = await j(john, '/api/admin/learn/jobs', 'POST', { kind: 'post', concept_id: 'orthogonality' });
+  ok(pj.job && pj.job.status === 'queued', 'admin queues a blog draft');
+  ok((await j(john, '/api/admin/learn/jobs', 'POST', { kind: 'lean-proof', concept_id: 'agents' })).status === 400, 'a Lean job needs a concept with a formal statement');
+  ok((await j(john, `/api/admin/learn/jobs/${pj.job.id}`, 'PUT', { status: 'published' })).status === 400, "a draft can't be published before it's written");
+  await j(john, `/api/admin/learn/jobs/${pj.job.id}`, 'PUT', { status: 'done', output: '# Orthogonality thesis, in plain words\n\nSample draft (test data).' });
+  ok((await j(john, `/api/admin/learn/jobs/${pj.job.id}`, 'PUT', { status: 'published' })).job.status === 'published', 'a finished draft can be published');
+  const rss = await john.evaluate(async () => (await fetch('/learn/feed.xml')).text());
+  ok(rss.includes('<rss') && rss.includes('Orthogonality thesis, in plain words'), 'published explainers appear in the public RSS feed');
+  ok((await (await b.newPage()).goto(B + '/api/learn/explainer/attention')).status() === 200, 'explainer storyboard is public (shareable links)');
+  await matt.goto(B + '/m/learn'); await matt.waitForSelector('.gnode');
+  ok((await matt.$$('.gnode')).length === lc.concepts.length && await matt.$eval('#jobsTab', (e) => e.hidden), 'Learn map draws every concept; Studio tab hidden for readers');
+  await matt.click('.gnode[data-id="orthogonality"]'); await matt.waitForSelector('#quiz');
+  await matt.click('#quiz button[data-o="0"]'); ok((await matt.textContent('#why')).startsWith('Right.'), 'concept page quiz marks the right answer');
+  await matt.goto(B + '/m/learn#/how'); await matt.waitForSelector('[data-step="feed"]');
+  ok((await matt.$$('.steps > li')).length === 7, 'How it works shows all seven steps');
+  await matt.screenshot({ path: 'shots/learn-how.png', fullPage: true });
+  const ex = await b.newPage(); await ex.goto(B + '/m/explainer?c=attention&record=1'); await ex.waitForFunction(() => window.__explainerSeconds > 0);
+  ok(await ex.$$eval('.scene', (s) => s.length) === 6, 'explainer player builds six scenes'); await ex.waitForTimeout(400); await ex.screenshot({ path: 'shots/explainer.png' }); await ex.close();
+
   console.log('Modules, generative UI and judges');
   const mods = await j(john, '/api/modules');
   ok(['blocks-core', 'generative-ui', 'decision', 'capabilities', 'admin', 'project'].every((id) => mods.modules.some((m) => m.id === id)) && mods.points.some((p) => p.id === 'decision.judges' && p.owner === 'decision'), 'kernel loads every enabled module; decision owns its extension point');
@@ -304,7 +334,7 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   console.log('Phone width');
   const ph = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })).newPage();
   await ph.goto(B); await ph.fill('#username', 'john'); await ph.fill('#password', 'correct-horse-9'); await ph.click('#authBtn'); await ph.waitForSelector('#feed .story');
-  for (const path of ['/', '/story?id=' + sid, '/brief', '/lists', '/sources', '/agent-log', '/m/admin', '/m/project', '/m/capabilities', '/m/studio', '/m/decide', '/m/view?name=capability-snapshot', '/m/codemap', '/m/project#/timeline']) { await ph.goto(B + path); await ph.waitForTimeout(600); ok(!(await ph.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'no sideways scroll: ' + path.split('?')[0]); }
+  for (const path of ['/', '/story?id=' + sid, '/brief', '/lists', '/sources', '/agent-log', '/m/admin', '/m/project', '/m/capabilities', '/m/studio', '/m/decide', '/m/view?name=capability-snapshot', '/m/codemap', '/m/project#/timeline', '/m/learn', '/m/learn#/c/attention', '/m/learn#/how']) { await ph.goto(B + path); await ph.waitForTimeout(600); ok(!(await ph.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'no sideways scroll: ' + path.split('?')[0]); }
   await ph.goto(B); await ph.waitForSelector('#feed .story'); await ph.screenshot({ path: 'shots/phone-feed.png' });
   await john.goto(B); await john.waitForSelector('#feed .story'); await john.screenshot({ path: 'shots/feed.png', fullPage: true });
   await john.goto(B + '/brief'); await john.waitForSelector('#brief .jr-metric'); await john.screenshot({ path: 'shots/brief.png', fullPage: true });

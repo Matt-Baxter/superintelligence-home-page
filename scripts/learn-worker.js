@@ -1,0 +1,138 @@
+#!/usr/bin/env node
+// Learn studio worker: does the queued background jobs off the web server, so the free tier never pays for them.
+// Runs once and exits (no polling). Run it by hand, from a daily scheduled job, or let an agent run it.
+//
+//   node scripts/learn-worker.js                 do every queued job once
+//   node scripts/learn-worker.js list            show the queue
+//   node scripts/learn-worker.js complete <id> <file> [--failed]   record an agent's result (Markdown/text file)
+//
+// Environment: the same DATABASE_URL / DATA_DIR as the server. For videos, BASE (a running site, default
+// http://localhost:3000) is recorded with Playwright; ffmpeg converts to MP4 and manim renders the Manim scene when installed.
+// LEAN (path to the lean binary) checks proofs. Files go to out/learn/<job id>/ (gitignored). Nothing is posted anywhere.
+const fs = require("node:fs"), path = require("node:path"), { execFileSync } = require("node:child_process");
+const root = path.join(__dirname, "..");
+const db = require("../lib/db");
+const { createKernel } = require("../kernel/kernel");
+const L = require("../modules/learn/learn");
+
+const OUT = process.env.LEARN_OUT || path.join(root, "out", "learn");
+const iso = () => new Date().toISOString();
+const has = (cmd, args = ["--version"]) => { try { execFileSync(cmd, args, { stdio: "ignore", timeout: 60000 }); return true; } catch { return false; } };
+
+async function save(job, fields) {
+  const f = { status: job.status, output: job.output || "", files: JSON.stringify(job.files || []), error: job.error || "", ...fields };
+  await db.run("UPDATE learn_jobs SET status = ?, output = ?, files = ?, error = ?, updated_at = ? WHERE id = ?", f.status, f.output, f.files, f.error, iso(), job.id);
+}
+
+const AGENT_BRIEF = {
+  explain: "Read the linked paper or story and write a plain-language explainer: one-paragraph summary, an analogy, what is new, what is still uncertain, and which Learn concepts it touches (ids from modules/learn/data/concepts.json).",
+  "paper-to-code": "Turn the paper's core method into a small, runnable, commented implementation (Python or JavaScript) with a toy example on synthetic data, plus a README saying what is and isn't reproduced.",
+  "reverse-engineer": "Work out how the named system or result most likely works from public material: inputs, mechanism, outputs, evidence for each claim, and open questions. Mark guesses as guesses.",
+};
+
+async function runJob(job, opts) {
+  const dir = path.join(OUT, String(job.id)); fs.mkdirSync(dir, { recursive: true });
+  const files = [], put = (name, text) => { fs.writeFileSync(path.join(dir, name), text); files.push(`out/learn/${job.id}/${name}`); };
+  const c = job.concept_id && L.BY_ID[job.concept_id];
+
+  if (job.kind === "post") {
+    if (!c) throw new Error("A blog draft needs a concept.");
+    const rows = await db.all("SELECT id, title, url, summary FROM stories WHERE COALESCE(in_scope, 1) = 1 ORDER BY id DESC LIMIT 400");
+    const stories = rows.filter((s) => L.conceptsIn(`${s.title}\n${s.summary || ""}`).some((x) => x.id === c.id));
+    const draft = L.postDraft(c.id, stories);
+    put("post.md", draft);
+    put("social.md", L.socialDrafts(c.id).map((d) => `## ${d.channel}\n\n${d.text}\n`).join("\n") + "\n(Drafts for a person to post. No Twitter/X.)\n");
+    return { status: "done", output: draft, files };
+  }
+
+  if (job.kind === "video") {
+    if (!c) throw new Error("A video needs a concept.");
+    const sb = L.storyboard(c.id), scene = L.manimScene(c.id), notes = [];
+    put("storyboard.json", JSON.stringify(sb, null, 2));
+    put(scene.file, scene.source);
+    put("narration.txt", sb.scenes.map((s) => s.text ? `${s.text}${s.why ? " " + s.why : ""}` : `${s.center}: ${s.nodes.map((n) => n.name).join(", ")}`).join("\n\n") + "\n");
+    // 1) Record the browser explainer (always available where Playwright is).
+    if (!opts.noVideo) {
+      try {
+        const { chromium } = require("playwright");
+        const base = (process.env.BASE || "http://localhost:3000").replace(/\/$/, "");
+        const browser = await chromium.launch();
+        const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 }, recordVideo: { dir, size: { width: 1280, height: 720 } } });
+        const page = await ctx.newPage();
+        await page.goto(`${base}/m/explainer?c=${encodeURIComponent(c.id)}&record=1`);
+        const secs = await page.waitForFunction(() => window.__explainerSeconds, null, { timeout: 15000 }).then((h) => h.jsonValue());
+        await page.waitForFunction(() => window.__explainerDone === true, null, { timeout: (secs + 15) * 1000 });
+        await page.waitForTimeout(800);
+        const v = page.video(); await ctx.close(); await browser.close();
+        const webm = path.join(dir, "explainer.webm"); fs.renameSync(await v.path(), webm); files.push(`out/learn/${job.id}/explainer.webm`);
+        if (has("ffmpeg", ["-version"])) {
+          execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-i", webm, "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p", "-movflags", "+faststart", path.join(dir, "explainer.mp4")], { timeout: 300000 });
+          files.push(`out/learn/${job.id}/explainer.mp4`); notes.push(`Recorded the browser explainer (${secs}s) to MP4.`);
+        } else notes.push(`Recorded the browser explainer (${secs}s) to WebM; install ffmpeg for MP4.`);
+      } catch (e) { notes.push(`Browser recording skipped: ${String(e.message).split("\n")[0]}`); }
+    }
+    // 2) Render the Manim scene when Manim is installed (pip install manim).
+    if (has("manim")) {
+      try { execFileSync("manim", ["-qm", "--media_dir", path.join(dir, "manim"), path.join(dir, scene.file), scene.className], { timeout: 900000, stdio: "ignore" }); notes.push("Rendered the Manim scene (out/learn/<id>/manim)."); }
+      catch (e) { notes.push(`Manim render failed: ${String(e.message).split("\n")[0]}`); }
+    } else notes.push(`Manim isn't installed here; render with: manim -qm ${scene.file} ${scene.className}`);
+    notes.push("Upload the video yourself (YouTube, LinkedIn, Bluesky, Substack): nothing is posted automatically.");
+    return { status: "done", output: notes.join("\n"), files };
+  }
+
+  if (job.kind === "lean-proof") {
+    const lf = c && L.leanFile(c.id); if (!lf) throw new Error("That concept has no formal statement.");
+    put(lf.file, lf.source);
+    const lean = process.env.LEAN || (has("lean") ? "lean" : null);
+    const sorry = /\bsorry\b/.test(lf.source);
+    if (lf.needs || sorry) return { status: "needs-agent", output: `Proof still to do${lf.needs ? ` (needs ${lf.needs})` : ""}. An agent fills in the proof in a Lean project with Mathlib, checks it with \`lake build\`, then records it with: node scripts/learn-worker.js complete ${job.id} <file.lean>`, files };
+    if (!lean) return { status: "needs-agent", output: "Lean isn't installed here. Install Lean 4 (elan) or set LEAN, then run the worker again.", files };
+    try { execFileSync(lean, [path.join(dir, lf.file)], { timeout: 300000, stdio: "pipe" }); return { status: "done", output: `Checked with ${path.basename(lean)}: the proof is accepted.`, files }; }
+    catch (e) { return { status: "failed", output: "", error: String(e.stdout || e.stderr || e.message).slice(0, 2000), files }; }
+  }
+
+  if (AGENT_BRIEF[job.kind]) {
+    const brief = [`Job #${job.id}: ${L.JOB_KINDS.find((k) => k.id === job.kind).label}`, "", AGENT_BRIEF[job.kind], "",
+      job.note ? `Request: ${job.note}` : "", c ? `Concept: ${c.name} (${c.id})` : "", job.story_id ? `Story id: ${job.story_id}` : "", "",
+      "Rules: no paid API calls by default; never attribute claims or quotes to real people; test data is synthetic and labelled; no Twitter/X.",
+      `When finished: node scripts/learn-worker.js complete ${job.id} <result.md>`].filter((x, i, a) => x !== "" || a[i - 1] !== "").join("\n");
+    put("brief.md", brief + "\n");
+    return { status: "needs-agent", output: brief, files };
+  }
+  throw new Error(`Unknown job kind ${job.kind}`);
+}
+
+async function main() {
+  const kernel = createKernel();
+  db.extend({ sql: kernel.store.schema.join("\n"), columns: kernel.store.columns });
+  await db.ready();
+  const [cmd, ...args] = process.argv.slice(2);
+  if (cmd === "list") {
+    const rows = await db.all("SELECT id, kind, concept_id, status, updated_at FROM learn_jobs ORDER BY id DESC LIMIT 50");
+    for (const r of rows) console.log(`#${r.id}\t${r.status}\t${r.kind}\t${r.concept_id || ""}`);
+    if (!rows.length) console.log("No jobs.");
+    return;
+  }
+  if (cmd === "complete") {
+    const [id, file] = args; if (!id || !file) throw new Error("Usage: complete <id> <file> [--failed]");
+    const job = await db.get("SELECT * FROM learn_jobs WHERE id = ?", Number(id)); if (!job) throw new Error(`No job #${id}`);
+    const text = fs.readFileSync(file, "utf8").slice(0, 60000);
+    const failed = args.includes("--failed");
+    await save(job, { status: failed ? "failed" : "done", output: failed ? job.output : text, error: failed ? text.slice(0, 2000) : "", files: JSON.stringify([...JSON.parse(job.files || "[]"), file]) });
+    console.log(`Job #${id} recorded as ${failed ? "failed" : "done"}.`);
+    return;
+  }
+  const jobs = await db.all("SELECT * FROM learn_jobs WHERE status = 'queued' ORDER BY id LIMIT 20");
+  if (!jobs.length) { console.log("learn worker: no queued jobs"); return; }
+  const tally = {};
+  for (const job of jobs) {
+    job.files = JSON.parse(job.files || "[]");
+    await save(job, { status: "running" });
+    let r; try { r = await runJob(job, { noVideo: args.includes("--no-video") }); } catch (e) { r = { status: "failed", error: String(e.message || e).slice(0, 2000), output: "" }; }
+    await save(job, { status: r.status, output: r.output || "", error: r.error || "", files: JSON.stringify(r.files || []) });
+    tally[r.status] = (tally[r.status] || 0) + 1;
+    console.log(`#${job.id} ${job.kind} ${job.concept_id || ""} -> ${r.status}${r.error ? ": " + r.error.split("\n")[0] : ""}`);
+  }
+  console.log(`learn worker: ${jobs.length} job(s): ${Object.entries(tally).map(([k, v]) => `${v} ${k}`).join(", ")}`);
+}
+main().then(() => process.exit(0), (e) => { console.error("learn worker:", e.message); process.exit(1); });
