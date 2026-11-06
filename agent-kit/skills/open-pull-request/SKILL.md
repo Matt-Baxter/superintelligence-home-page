@@ -13,7 +13,7 @@ Follow [CONTRIBUTING.md](../../../CONTRIBUTING.md). You prepare the branch; the 
    - an API route, or a request or response shape, in `server.js`;
    - auth behaviour.
 
-   A contract change needs a new row in `docs/CONTRACT.md` and both partners' approval.
+   Name the spec REQ IDs the change serves and update `docs/SPEC_TRACE.md`. A table, route or shape change gets a row in `docs/INTERFACES.md`; a change to the spec, constitution, CONTRACT.md or WORKING_AGREEMENT.md needs both partners.
 3. **Preflight.** Run `npm run preflight` (about 3 seconds). It must end with "Preflight passed." For bigger UI or logic changes, also start `npm run dev:sample` and run `npm test` (the full browser test). Don't hand over a red branch.
 4. **Secrets.** Preflight scans for them, but also glance at `git diff --cached` for anything private.
 5. **Commit** with a one-line summary and a short why. Note that an agent did the work (for example `Co-Authored-By: Claude …`).
