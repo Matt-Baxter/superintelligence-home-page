@@ -34,6 +34,7 @@ module.exports = function mountProject(app, { db, auth, admin, wrap, str, bad, n
     if (b.milestone_id !== undefined) { f.milestone_id = b.milestone_id ? Number(b.milestone_id) : null; if (f.milestone_id && !(await db.get("SELECT id FROM project_milestones WHERE id = ?", f.milestone_id))) bad("Unknown milestone."); }
     if (b.labels !== undefined) f.labels = JSON.stringify(labelsOf(b.labels));
     if (b.due_date !== undefined) f.due_date = isoDate(b.due_date);
+    if (b.start_date !== undefined) f.start_date = isoDate(b.start_date);
     if (b.sort_order !== undefined) f.sort_order = Number(b.sort_order) || 0;
     return f;
   }
@@ -41,10 +42,12 @@ module.exports = function mountProject(app, { db, auth, admin, wrap, str, bad, n
   async function createIssue(b, actor) {
     const f = await fields({ status: "todo", priority: 0, ...b });
     if (!f.title) bad("Give the issue a title.");
+    if (f.start_date && f.due_date && f.start_date > f.due_date) bad("The start date has to be on or before the due date.");
     return db.tx(async (t) => {
       const n = ((await t.get("SELECT MAX(number) AS n FROM project_issues"))?.n || 0) + 1;
       const id = await t.insert(`INSERT INTO project_issues (number, title, description, status, priority, assignee_id, creator_id, milestone_id, labels, due_date, sort_order, created_at, updated_at, completed_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, n, f.title, f.description || "", f.status, f.priority, f.assignee_id || null, actor, f.milestone_id || null, f.labels || "[]", f.due_date || null, -Date.now(), now(), now(), f.status === "done" ? now() : null);
+      if (f.start_date) await t.run("UPDATE project_issues SET start_date = ? WHERE id = ?", f.start_date, id);
       await t.run("INSERT INTO project_activity (issue_id, actor_id, action, detail, at) VALUES (?, ?, 'created', '', ?)", id, actor, now());
       return n;
     });
@@ -61,6 +64,25 @@ module.exports = function mountProject(app, { db, auth, admin, wrap, str, bad, n
     };
   }));
 
+  // Dependencies: issue A is blocked by B (A can't start before B ends). Conflicts are computed, never stored.
+  const depsAll = async () => db.all("SELECT d.issue_id, d.depends_on, a.number AS a, b.number AS b FROM project_deps d JOIN project_issues a ON a.id = d.issue_id JOIN project_issues b ON b.id = d.depends_on");
+  const startOf = (i) => i.start_date || i.due_date;
+  function conflicts(issues, deps) {
+    const byNum = new Map(issues.map((i) => [i.number, i])), out = [];
+    for (const d of deps) {
+      const a = byNum.get(d.a), b = byNum.get(d.b);
+      if (!a || !b || a.status === "canceled" || b.status === "canceled") continue;
+      if (startOf(a) && b.due_date && startOf(a) <= b.due_date && b.status !== "done")
+        out.push({ issue: a.number, blockedBy: b.number, message: `${PREFIX}-${a.number} starts before ${PREFIX}-${b.number} ends (${startOf(a)} vs ${b.due_date})` });
+    }
+    return out;
+  }
+  async function wouldCycle(fromId, toId) { // adding fromId → toId; is toId already (transitively) blocked by fromId?
+    const seen = new Set(), stack = [toId];
+    while (stack.length) { const x = stack.pop(); if (x === fromId) return true; if (seen.has(x)) continue; seen.add(x); for (const r of await db.all("SELECT depends_on FROM project_deps WHERE issue_id = ?", x)) stack.push(r.depends_on); }
+    return false;
+  }
+
   app.get("/api/admin/project/issues", ...A, wrap(async (req) => {
     const w = ["1=1"], a = [], q = req.query;
     if (q.status) { const st = String(q.status).split(",").filter((s) => STATUS_IDS.includes(s)); if (st.length) { w.push(`i.status IN (${st.map(() => "?").join(",")})`); a.push(...st); } }
@@ -73,7 +95,9 @@ module.exports = function mountProject(app, { db, auth, admin, wrap, str, bad, n
     const text = str(q.q, 100).toLowerCase();
     if (text) { w.push("(LOWER(i.title) LIKE ? OR LOWER(i.description) LIKE ? OR CAST(i.number AS TEXT) = ?)"); a.push(`%${text}%`, `%${text}%`, text.replace(/^si-/, "")); }
     const rows = await db.all(`${SELECT} WHERE ${w.join(" AND ")} ORDER BY ${q.sort === "manual" ? "i.sort_order, " : ""}CASE i.priority WHEN 0 THEN 9 ELSE i.priority END, i.due_date IS NULL, i.due_date, i.number LIMIT 500`, ...a);
-    return { issues: rows.map(shape) };
+    const deps = await depsAll(), issues = rows.map(shape);
+    for (const i of issues) i.blocked_by = deps.filter((d) => d.a === i.number).map((d) => d.b);
+    return { issues, conflicts: conflicts(issues, deps) };
   }));
 
   app.post("/api/admin/project/issues", ...A, wrap(async (req) => {
@@ -85,20 +109,40 @@ module.exports = function mountProject(app, { db, auth, admin, wrap, str, bad, n
     const issue = await byNumber(req.params.n);
     const comments = await db.all("SELECT c.id, c.body, c.created_at, c.author_id, u.display_name AS author FROM project_comments c LEFT JOIN users u ON u.id = c.author_id WHERE c.issue_id = ? ORDER BY c.id", issue.id);
     const activity = await db.all("SELECT a.action, a.detail, a.at, u.display_name AS actor FROM project_activity a LEFT JOIN users u ON u.id = a.actor_id WHERE a.issue_id = ? ORDER BY a.id", issue.id);
+    const deps = await depsAll();
+    issue.blocked_by = deps.filter((d) => d.a === issue.number).map((d) => d.b);
+    issue.blocks = deps.filter((d) => d.b === issue.number).map((d) => d.a);
     return { issue, comments: comments.map((c) => ({ ...c, mine: c.author_id === req.user.id })), activity };
   }));
 
   app.put("/api/admin/project/issues/:n", ...A, wrap(async (req) => {
     const before = await byNumber(req.params.n), f = await fields(req.body);
+    const st = f.start_date !== undefined ? f.start_date : before.start_date, du = f.due_date !== undefined ? f.due_date : before.due_date;
+    if (st && du && st > du) bad("The start date has to be on or before the due date.");
     const changed = Object.keys(f).filter((k) => String(f[k] ?? "") !== String(k === "labels" ? JSON.stringify(before.labels) : before[k] ?? ""));
     if (!changed.length) return { issue: before };
     if (f.status) f.completed_at = f.status === "done" ? before.completed_at || now() : null;
     const cols = Object.keys(f);
     await db.run(`UPDATE project_issues SET ${cols.map((c) => `${c} = ?`).join(", ")}, updated_at = ? WHERE id = ?`, ...cols.map((c) => f[c]), now(), before.id);
     const after = await byNumber(req.params.n);
-    const show = { status: (v) => STATUSES.find((s) => s.id === v)?.label, priority: (v) => PRIORITIES.find((p) => p.id === Number(v))?.label, assignee_id: () => after.assignee_name || "nobody", milestone_id: () => after.milestone_name || "none", labels: () => after.labels.join(", ") || "none", due_date: (v) => v || "none" };
+    const show = { status: (v) => STATUSES.find((s) => s.id === v)?.label, priority: (v) => PRIORITIES.find((p) => p.id === Number(v))?.label, assignee_id: () => after.assignee_name || "nobody", milestone_id: () => after.milestone_name || "none", labels: () => after.labels.join(", ") || "none", due_date: (v) => v || "none", start_date: (v) => v || "none" };
     for (const k of changed) if (k !== "sort_order") await log(before.id, req.user.id, k === "description" ? "edited the description" : `set ${k.replace("_id", "").replace("_", " ")}`, k in show ? show[k](f[k]) : k === "title" ? f.title : "");
     return { issue: after };
+  }));
+
+  app.post("/api/admin/project/issues/:n/deps", ...A, wrap(async (req) => {
+    const a = await byNumber(req.params.n), b = await byNumber(String(req.body?.depends_on ?? "").replace(/^SI-/i, ""));
+    if (a.id === b.id) bad("An issue can't depend on itself.");
+    if (await wouldCycle(a.id, b.id)) bad(`${b.key} already depends on ${a.key}; that would make a loop.`);
+    await db.run("INSERT OR IGNORE INTO project_deps (issue_id, depends_on) VALUES (?, ?)", a.id, b.id);
+    await log(a.id, req.user.id, "is blocked by", b.key);
+    return { ok: true };
+  }));
+  app.delete("/api/admin/project/issues/:n/deps/:m", ...A, wrap(async (req) => {
+    const a = await byNumber(req.params.n), b = await byNumber(req.params.m);
+    await db.run("DELETE FROM project_deps WHERE issue_id = ? AND depends_on = ?", a.id, b.id);
+    await log(a.id, req.user.id, "is no longer blocked by", b.key);
+    return { ok: true };
   }));
 
   app.delete("/api/admin/project/issues/:n", ...A, wrap(async (req) => {
