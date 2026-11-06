@@ -263,10 +263,28 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   await matt.goto(B + '/story?id=' + sid2); await matt.waitForSelector('#analysis');
   ok((await matt.textContent('#analysis')).includes("Why it's on a superintelligence feed"), 'REQ-005: the story page says why the story is on the feed');
 
+  console.log('Codebase map');
+  ok((await j(matt, '/api/codemap')).status === 403, 'the codebase map is admins only');
+  const cmap = await j(john, '/api/codemap');
+  ok(cmap.counts.route > 50 && cmap.counts.table > 15 && cmap.problems.length === 0, 'the map parses routes and tables, and every page call has a route');
+  const voteW = cmap.edges.some((e) => e.from === 'route:POST /api/stories/:id/vote' && e.to === 'table:votes' && e.kind === 'writes');
+  const feedCall = cmap.edges.some((e) => e.from === 'page:/' && e.to === 'route:GET /api/stories' && e.kind === 'calls');
+  ok(voteW && feedCall, 'edges are right: the feed page calls GET /api/stories; voting writes the votes table');
+  const askR = await j(john, '/api/codemap/ask?q=REQ-003');
+  ok(askR.answer[0].id === 'req:REQ-003' && askR.answer[0].links.some((l) => /analysis\.js/.test(l)) && askR.answer[0].links.some((l) => /SC-003/.test(l)), 'asking the map for REQ-003 finds where it is met and which tests check it');
+  await john.goto(B + '/m/codemap'); await john.waitForSelector('#lanes .nd');
+  await john.click('#lanes [data-id="table:votes"]'); await john.waitForSelector('.side');
+  ok((await john.textContent('.side')).includes('POST /api/stories/:id/vote') && (await john.$$('#svg path.lit')).length > 0, 'clicking a table traces the routes and pages that touch it');
+  await john.fill('#ask', 'project_issues'); await john.waitForFunction(() => document.querySelector('.side h2')?.textContent === 'project_issues');
+  ok(true, 'typing in "Ask the map" jumps to the match');
+  await john.click('[data-view="spec"]'); await john.waitForSelector('#lanes [data-id="req:REQ-003"]');
+  ok((await john.$$('#lanes .lane:nth-child(1) .nd')).length === 20, 'the spec view lists all 20 requirements');
+  await john.screenshot({ path: 'shots/codemap.png' });
+
   console.log('Phone width');
   const ph = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })).newPage();
   await ph.goto(B); await ph.fill('#username', 'john'); await ph.fill('#password', 'correct-horse-9'); await ph.click('#authBtn'); await ph.waitForSelector('#feed .story');
-  for (const path of ['/', '/story?id=' + sid, '/brief', '/lists', '/sources', '/agent-log', '/m/admin', '/m/project', '/m/capabilities', '/m/studio', '/m/decide', '/m/view?name=capability-snapshot']) { await ph.goto(B + path); await ph.waitForTimeout(600); ok(!(await ph.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'no sideways scroll: ' + path.split('?')[0]); }
+  for (const path of ['/', '/story?id=' + sid, '/brief', '/lists', '/sources', '/agent-log', '/m/admin', '/m/project', '/m/capabilities', '/m/studio', '/m/decide', '/m/view?name=capability-snapshot', '/m/codemap']) { await ph.goto(B + path); await ph.waitForTimeout(600); ok(!(await ph.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'no sideways scroll: ' + path.split('?')[0]); }
   await ph.goto(B); await ph.waitForSelector('#feed .story'); await ph.screenshot({ path: 'shots/phone-feed.png' });
   await john.goto(B); await john.waitForSelector('#feed .story'); await john.screenshot({ path: 'shots/feed.png', fullPage: true });
   await john.goto(B + '/brief'); await john.waitForSelector('#brief .jr-metric'); await john.screenshot({ path: 'shots/brief.png', fullPage: true });

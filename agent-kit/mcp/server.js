@@ -86,6 +86,14 @@ if (REPO) TOOLS.push(
     inputSchema: S({ judge: { type: "string" }, input: { type: "object" } }, ["judge", "input"]),
     run: ({ judge, input }) => { const j = decision().judges.get(judge); if (!j) fail(`No judge "${judge}". Call list_judges.`); return JSON.stringify(j.judge(input), null, 1); } },
 );
+TOOLS.push(...(REPO ? [{ name: "codemap_query", description: "Ask the codebase map instead of grepping: which pages call a route, which routes read or write a table, where a spec REQ is met and tested, what a module contributes. Query with words (\"votes\", \"REQ-003\", \"project_issues\", \"POST /api/lists\") or an exact node id (\"table:votes\") to trace everything connected.",
+  inputSchema: S({ q: { type: "string" }, trace: { type: "boolean", description: "Return every node connected to the best match (pages ↔ routes ↔ tables, REQ ↔ code ↔ tests)." } }, ["q"]),
+  run: ({ q, trace }) => {
+    const scan = require(path.join(REPO, "modules", "codemap", "scan.js")), g = scan.build();
+    const id = g.nodes.some((n) => n.id === q) ? q : scan.search(g, q)[0]?.id;
+    if (!id) return "Nothing in the map matches. Try a table, route, page, module or REQ id.";
+    return JSON.stringify(trace ? { id, connected: scan.trace(g, id) } : { answer: scan.answer(g, q), problems: g.problems }, null, 1);
+  } }] : []));
 function kernel() { return require(path.join(REPO, "kernel", "kernel.js")).createKernel(); }
 function decision() { const m = kernel().modules.find((x) => x.id === "decision"); if (!m) fail("The decision module isn't enabled."); return m; }
 const esm = (rel) => import(require("node:url").pathToFileURL(path.join(REPO, rel)).href);
