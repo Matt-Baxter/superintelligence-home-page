@@ -61,6 +61,13 @@ catch (e) { fail("Codebase map", String(e.stderr || e.message).trim().split("\n"
 try { sh("node test/unslop-unit.js"); ok("Unslop", sh("node scripts/unslop.js").trim().split("\n").pop().replace(/^unslop: /, "")); }
 catch (e) { fail("Unslop", String(e.stdout || e.stderr || e.message).trim().split("\n").slice(0, 5).join(" | ")); }
 
+// 5b3. Nothing the code needs is git-ignored (a fresh clone in CI must have every module file).
+try {
+  const GENERATED = [/^modules\/codemap\/data\//, /\/node_modules\//];
+  const ignored = sh("git ls-files --others --ignored --exclude-standard -- modules lib kernel scripts agent-kit").split("\n").filter((f) => f && !GENERATED.some((r) => r.test(f)));
+  ignored.length ? fail("No ignored source files", `git-ignored but needed: ${ignored.slice(0, 5).join(", ")} (fix .gitignore)`) : ok("No ignored source files");
+} catch { ok("No ignored source files", "skipped (no git)"); }
+
 // 5c. Agent kit: skills, subagents, plugin manifests, symlinks, index and MCP handshake
 try { ok("Agent kit", sh("node scripts/agent-kit.js check").trim()); }
 catch (e) { fail("Agent kit", String(e.stderr || e.message).trim().split("\n").slice(0, 4).join(" ")); }
