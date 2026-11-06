@@ -71,7 +71,7 @@ function storyCard(s, opts = {}) {
     ${s.summary && !opts.compact ? `<p class="sum">${esc(s.summary.slice(0, 260))}${s.summary.length > 260 ? "…" : ""}</p>` : ""}
     ${opts.listNote ? `<p class="listnote">“${esc(opts.listNote)}”</p>` : ""}
     <div class="row2"><div class="tags">${bench}${tags}${orgs}</div><div class="acts"><a href="/story?id=${s.id}">${s.notes ? `${s.notes} note${s.notes > 1 ? "s" : ""}` : "Notes"}</a><button type="button" class="save linkish">${s.saved ? "Saved ✓" : "Save"}</button></div></div></div>`;
-  li.querySelector(".vote").onclick = async (e) => { const b = e.currentTarget; const r = await api(`/api/stories/${s.id}/vote`, { method: "POST" }); b.classList.toggle("on", r.voted); b.setAttribute("aria-pressed", r.voted); b.querySelector("b").textContent = r.votes; };
+  li.querySelector(".vote").onclick = async (e) => { const b = e.currentTarget; const r = await api(`/api/stories/${s.id}/vote`, { method: "POST" }); b.classList.toggle("on", r.voted); if (r.voted) { b.classList.remove("pulse"); void b.offsetWidth; b.classList.add("pulse"); } b.setAttribute("aria-pressed", r.voted); b.querySelector("b").textContent = r.votes; };
   li.querySelector(".save").onclick = async (e) => { const b = e.currentTarget; const r = await api(`/api/stories/${s.id}/save`, { method: "POST" }); b.textContent = r.saved ? "Saved ✓" : "Save"; };
   return li;
 }

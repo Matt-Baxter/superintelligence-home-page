@@ -57,6 +57,10 @@ catch (e) { fail("Modules", String(e.stderr || e.message).trim().split("\n").sli
 try { ok("Codebase map", sh("node scripts/codemap.js check").trim()); }
 catch (e) { fail("Codebase map", String(e.stderr || e.message).trim().split("\n").slice(0, 4).join(" ")); }
 
+// 5b2. Unslop: UI patterns that read as AI-generated (agent-kit/skills/ui-design)
+try { sh("node test/unslop-unit.js"); ok("Unslop", sh("node scripts/unslop.js").trim().split("\n").pop().replace(/^unslop: /, "")); }
+catch (e) { fail("Unslop", String(e.stdout || e.stderr || e.message).trim().split("\n").slice(0, 5).join(" | ")); }
+
 // 5c. Agent kit: skills, subagents, plugin manifests, symlinks, index and MCP handshake
 try { ok("Agent kit", sh("node scripts/agent-kit.js check").trim()); }
 catch (e) { fail("Agent kit", String(e.stderr || e.message).trim().split("\n").slice(0, 4).join(" ")); }

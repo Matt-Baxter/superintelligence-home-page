@@ -70,7 +70,7 @@
   .cbox { display: grid; gap: 6px; } .cbox textarea { min-height: 60px; border-color: var(--line); margin: 0; }
   .scrim { position: fixed; inset: 0; background: rgba(0,0,0,.25); z-index: 15; }
   /* modal + palette */
-  .modal { position: fixed; z-index: 30; top: 12vh; left: 50%; transform: translateX(-50%); width: min(620px, calc(100vw - 32px)); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+  .modal { position: fixed; z-index: 30; top: 12vh; left: 50%; transform: translateX(-50%); width: min(620px, calc(100vw - 32px)); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.25); } /* unslop-ok: the command menu floats above a dimmed page */
   .modal .mi { padding: 14px 16px; display: grid; gap: 10px; }
   .modal .mi .title { font: inherit; font-size: 17px; font-weight: 600; border: 0; background: none; color: var(--fg); outline: none; }
   .modal .mi textarea { font: inherit; font-size: 14px; border: 0; background: none; color: var(--fg); min-height: 70px; resize: vertical; outline: none; }
@@ -367,7 +367,7 @@ async function openIssue(n) {
   open = String(n); history.replaceState(null, "", `#/${view}/${n}`);
   const d = await api(`/api/admin/project/issues/${n}`), i = d.issue;
   const opts = (list, cur) => list.map(([v, t]) => `<option value="${esc(v)}" ${String(v) === String(cur ?? "") ? "selected" : ""}>${esc(t)}</option>`).join("");
-  $("#overlay").innerHTML = `<div class="scrim" id="scrim"></div><aside class="drawer" role="dialog" aria-label="${i.key}">
+  $("#overlay").innerHTML = `<div class="scrim" id="scrim"></div><aside class="drawer sheet" role="dialog" aria-label="${i.key}">
     <div class="dh"><span class="key">${i.key}</span><span>created by ${esc(i.creator_name || "someone")} ${ago(i.created_at)}</span><span style="flex:1"></span><button type="button" id="copyLink">Copy link</button><button type="button" id="delIssue">Delete</button><button type="button" id="closeD" aria-label="Close">✕ <span class="kbd">Esc</span></button></div>
     <div class="db"><div class="content">
       <input class="title" id="dTitle" value="${esc(i.title)}" aria-label="Title">
