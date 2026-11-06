@@ -53,9 +53,12 @@ function check() {
     if (!entry) p("marketplace.json doesn't list the plugin"); else { if (entry.version !== plugin.version) p("plugin version differs between plugin.json and marketplace.json"); if (path.resolve(root, entry.source) !== KIT) p("marketplace source must point at ./agent-kit"); }
     JSON.parse(read(path.join(KIT, "hooks/hooks.json"))); JSON.parse(read(path.join(KIT, ".mcp.json")));
   } catch (e) { p(`manifest: ${e.message}`); }
-  for (const [link, target] of [[".claude/skills", "../agent-kit/skills"], [".claude/agents", "../agent-kit/agents"]]) {
-    try { if (fs.readlinkSync(path.join(root, link)) !== target) p(`${link} should link to ${target}`); } catch { p(`${link} should be a symlink to ${target} (git config core.symlinks true on Windows)`); }
+  // .claude/skills holds one link per kit skill (so other tools, e.g. Spec Kit, can add their own skills beside them).
+  for (const s of list) {
+    const link = `.claude/skills/${s.dir}`, target = `../../agent-kit/skills/${s.dir}`;
+    try { if (fs.readlinkSync(path.join(root, link)) !== target) p(`${link} should link to ${target}`); } catch { p(`${link} should be a symlink to ${target} (run npm run kit:sync; on Windows set git config core.symlinks true)`); }
   }
+  try { if (fs.readlinkSync(path.join(root, ".claude/agents")) !== "../agent-kit/agents") p(".claude/agents should link to ../agent-kit/agents"); } catch { p(".claude/agents should be a symlink to ../agent-kit/agents"); }
   const r = spawnSync("node", [path.join(KIT, "mcp/server.js")], { input: '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}\n{"jsonrpc":"2.0","id":2,"method":"tools/list"}\n', env: { ...process.env, SI_REPO: root }, timeout: 5000 });
   const out = String(r.stdout || "");
   if (!out.includes('"serverInfo"') || !out.includes('"analyze_text"')) p(`MCP server didn't answer initialize and tools/list${r.stderr?.length ? ": " + String(r.stderr).slice(0, 160) : ""}`);
@@ -92,7 +95,10 @@ function exportKit() {
 }
 
 const cmd = process.argv[2];
-if (cmd === "sync") { for (const [file, prefix] of INDEXED) fs.writeFileSync(file, withIndex(file, prefix)); console.log(`index updated: ${skills().length} skills, ${agents().length} subagents`); }
+if (cmd === "sync") {
+  for (const [file, prefix] of INDEXED) fs.writeFileSync(file, withIndex(file, prefix));
+  const dir = path.join(root, ".claude", "skills"); fs.mkdirSync(dir, { recursive: true });
+  for (const s of skills()) { const link = path.join(dir, s.dir); if (!fs.existsSync(link)) fs.symlinkSync(`../../agent-kit/skills/${s.dir}`, link); } console.log(`index updated: ${skills().length} skills, ${agents().length} subagents`); }
 else if (cmd === "check") { const r = check(); if (r.problems.length) { console.error(r.problems.map((x) => "  - " + x).join("\n")); process.exit(1); } console.log(`${r.count} skills, ${r.agents} subagents, plugin, hooks and MCP server OK`); }
 else if (cmd === "export") { const out = exportKit(); console.log("exported to " + path.relative(root, out)); for (const f of execSync("find . -type f | sort", { cwd: out }).toString().trim().split("\n")) console.log("  " + f.slice(2) + "  " + fs.statSync(path.join(out, f)).size + " B"); }
 else { console.log("usage: node scripts/agent-kit.js sync|check|export"); process.exit(1); }
