@@ -79,6 +79,30 @@
   .pal input { width: 100%; font: inherit; font-size: 15px; padding: 14px 16px; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--fg); outline: none; }
   .pal ul { list-style: none; margin: 0; padding: 6px; max-height: 50vh; overflow: auto; } .pal li { padding: 8px 10px; border-radius: 6px; font-size: 14px; display: flex; gap: 8px; align-items: center; cursor: pointer; }
   .pal li.on { background: var(--accent-soft); color: var(--accent); } .pal li .h { margin-left: auto; color: var(--muted); font-size: 12px; }
+  /* timeline */
+  .tlbar-top { display: flex; gap: 10px; align-items: center; padding: 10px 18px; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
+  .tl { display: grid; grid-template-columns: 280px max-content; overflow: auto; max-height: calc(100vh - 220px); position: relative; }
+  .tlleft { position: sticky; left: 0; z-index: 3; background: var(--surface); border-right: 1px solid var(--line); }
+  .tlhead { height: 44px; position: sticky; top: 0; z-index: 2; background: var(--surface); border-bottom: 1px solid var(--line); }
+  .tlright .tlhead { position: sticky; top: 0; }
+  .tlm { position: absolute; top: 4px; font-size: 12px; font-weight: 600; } .tlt { position: absolute; top: 24px; font-size: 11px; color: var(--muted); transform: translateX(2px); }
+  .tlrow { height: 34px; display: flex; align-items: center; gap: 8px; padding: 0 12px; font-size: 13px; border-bottom: 1px solid var(--line); cursor: pointer; white-space: nowrap; overflow: hidden; }
+  .tlrow .key { font-family: var(--mono); font-size: 11px; color: var(--muted); } .tlrow .t { overflow: hidden; text-overflow: ellipsis; }
+  .tlrow.tlg { background: var(--bg); cursor: default; } .tlrow.tlg .n { color: var(--muted); font-size: 12px; }
+  .tlgrid { position: relative; background-image: linear-gradient(var(--line) 1px, transparent 1px); background-size: 100% 34px; }
+  .tlgrid .we { position: absolute; top: 0; bottom: 0; background: var(--bg); opacity: .6; }
+  .tlgrid .today { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px solid var(--accent); z-index: 1; } .tlgrid .today span { position: absolute; top: -2px; left: -22px; font-size: 10px; background: var(--accent); color: #fff; border-radius: 9px; padding: 0 6px; }
+  .tlbar { position: absolute; height: 22px; border-radius: 6px; background: var(--surface); border: 1px solid var(--accent); font-size: 12px; display: flex; align-items: center; gap: 6px; padding: 0 8px; overflow: hidden; cursor: grab; z-index: 2; touch-action: none; user-select: none; white-space: nowrap; }
+  .tlbar .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent-soft); z-index: -1; } .tlbar .lbl2 { overflow: hidden; text-overflow: ellipsis; } .tlbar .pct { margin-left: auto; color: var(--muted); font-size: 11px; }
+  .tlbar .h { position: absolute; top: 0; bottom: 0; width: 7px; cursor: ew-resize; } .tlbar .h.l { left: 0; } .tlbar .h.r { right: 0; }
+  .tlbar.done { opacity: .6; } .tlbar.conflict { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad); }
+  .tlgbar { position: absolute; height: 5px; border-radius: 9px; background: var(--line); overflow: hidden; } .tlgbar i { display: block; height: 100%; background: var(--accent); }
+  .tlsched { position: absolute; font: inherit; font-size: 11px; padding: 2px 8px; border: 1px dashed var(--muted); border-radius: 6px; background: var(--surface); color: var(--muted); cursor: pointer; z-index: 2; }
+  .tlsvg { position: absolute; inset: 0; pointer-events: none; z-index: 1; } .tlsvg path { fill: none; stroke: var(--muted); stroke-width: 1.3; } .tlsvg path.bad { stroke: var(--bad); }
+  .tlsvg .ahp { fill: var(--muted); stroke: none; } .tlsvg .ahp.bad { fill: var(--bad); }
+  .tlfoot { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 10px 18px; border-top: 1px solid var(--line); }
+  .tlwarn { color: var(--bad); font-size: 13px; }
+  .deps { display: flex; flex-wrap: wrap; gap: 4px; }
   .toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--fg); color: var(--surface); padding: 8px 14px; border-radius: 8px; font-size: 13px; z-index: 40; }
   @media (max-width: 760px) {
     .pm { grid-template-columns: minmax(0, 1fr); }
@@ -99,6 +123,7 @@
     <button class="nv" data-view="backlog">Backlog <span class="n" data-count="backlog"></span></button>
     <button class="nv" data-view="all">All issues <span class="n" data-count="all"></span></button>
     <button class="nv" data-view="board">Board</button>
+    <button class="nv" data-view="timeline">Timeline</button>
     <button class="nv" data-view="milestones">Milestones</button>
     <button class="nv" data-view="activity">Activity</button>
     <h2>Milestones</h2><div class="ms-nav" id="msNav"></div>
@@ -155,6 +180,7 @@ const VIEWS = {
   backlog: { title: "Backlog", query: { status: "backlog" }, groups: true },
   all: { title: "All issues", query: {}, groups: true },
   board: { title: "Board", query: { status: "backlog,todo,in_progress,in_review,done", sort: "manual" }, board: true },
+  timeline: { title: "Timeline", query: { status: "backlog,todo,in_progress,in_review,done" }, timeline: true },
   milestones: { title: "Milestones", special: true },
   activity: { title: "Activity", special: true },
 };
@@ -182,10 +208,10 @@ async function render() {
   if (view === "milestones") return renderMilestones();
   if (view === "activity") return renderActivity();
   const q = new URLSearchParams({ ...V.query }); for (const [k, v] of Object.entries(filters)) if (v !== "") q.set(k, v);
-  issues = (await api("/api/admin/project/issues?" + q)).issues;
+  const resp = await api("/api/admin/project/issues?" + q); issues = resp.issues;
   $("#viewCount").textContent = `${issues.length} issue${issues.length === 1 ? "" : "s"}`;
   if (!M.counts || !Object.keys(M.counts).length) { $("#body").innerHTML = `<div class="empty-st"><p>No issues yet.</p><p><button class="btn primary" id="starter" type="button">Load the project's open to-dos</button> <button class="btn" type="button" onclick="newIssue()">New issue</button></p><p class="small">Loads the checklist from docs/OUR_PARTS.md as issues in three milestones: Week 9 homework, Live site, Bake-off.</p></div>`; $("#starter").onclick = loadStarter; return; }
-  V.board ? renderBoard() : renderList();
+  V.timeline ? renderTimeline(resp.conflicts || []) : V.board ? renderBoard() : renderList();
 }
 function rowHtml(i, idx) {
   return `<div class="irow ${idx === sel ? "sel" : ""}" data-n="${i.number}" data-idx="${idx}" role="button" tabindex="-1">
@@ -230,6 +256,93 @@ function renderBoard() {
     };
   });
 }
+/* ---------- timeline (dependencies, drag to move or resize, undo) ---------- */
+const DAY = 864e5, PX = { day: 34, week: 13, month: 4.5 };
+let TL = { zoom: "week", undo: [] };
+const toMs = (d) => Date.parse(d + "T00:00:00Z"), toIso = (ms) => new Date(ms).toISOString().slice(0, 10);
+const PROGRESS = { backlog: 0, todo: 0, in_progress: 50, in_review: 75, done: 100 };
+function renderTimeline(conflicts) {
+  const px = PX[TL.zoom], items = issues.filter((i) => i.status !== "canceled");
+  const today = toMs(toIso(Date.now()));
+  const span = (i) => { const s = toMs(i.start_date || i.due_date), e = toMs(i.due_date || i.start_date); return [Math.min(s, e), Math.max(s, e)]; };
+  const dated = items.filter((i) => i.start_date || i.due_date);
+  let min = Math.min(today - 14 * DAY, ...dated.map((i) => span(i)[0])) - 7 * DAY, max = Math.max(today + 49 * DAY, ...dated.map((i) => span(i)[1])) + 14 * DAY;
+  min -= ((new Date(min).getUTCDay() + 6) % 7) * DAY; // start on a Monday
+  const x = (ms) => ((ms - min) / DAY) * px, W = x(max);
+  // Header ticks
+  const ticks = []; const months = [];
+  for (let t = min; t <= max; t += DAY) {
+    const d = new Date(t), first = d.getUTCDate() === 1;
+    if (first || t === min) months.push(`<span class="tlm" style="left:${x(t)}px">${d.toLocaleDateString("en-US", { month: "long", timeZone: "UTC" })}</span>`);
+    if (TL.zoom === "day" || (TL.zoom === "week" && d.getUTCDay() === 1) || (TL.zoom === "month" && first)) ticks.push(`<span class="tlt" style="left:${x(t)}px">${d.getUTCDate()}</span>`);
+  }
+  const weekendBands = TL.zoom === "month" ? "" : Array.from({ length: Math.ceil((max - min) / DAY) }, (_, k) => min + k * DAY).filter((t) => [0, 6].includes(new Date(t).getUTCDay())).map((t) => `<i class="we" style="left:${x(t)}px;width:${px}px"></i>`).join("");
+  // Rows: milestone groups, then their issues
+  const groups = [...M.milestones.map((m) => ({ id: m.id, name: m.name, items: items.filter((i) => i.milestone_id === m.id) })), { id: 0, name: "No milestone", items: items.filter((i) => !i.milestone_id) }].filter((g) => g.items.length);
+  const rows = [];
+  for (const g of groups) {
+    const gd = g.items.filter((i) => i.start_date || i.due_date), done = g.items.filter((i) => i.status === "done").length;
+    rows.push({ kind: "group", g, span: gd.length ? [Math.min(...gd.map((i) => span(i)[0])), Math.max(...gd.map((i) => span(i)[1]))] : null, pct: Math.round((100 * done) / g.items.length) });
+    for (const i of g.items) rows.push({ kind: "issue", i });
+  }
+  const conflictNums = new Set(conflicts.flatMap((c) => [c.issue, c.blockedBy]));
+  const RH = 34;
+  const left = rows.map((r) => r.kind === "group" ? `<div class="tlrow tlg"><b>${esc(r.g.name)}</b><span class="n">${r.g.items.length}</span></div>`
+    : `<div class="tlrow" data-n="${r.i.number}"><span>${SICON[r.i.status]}</span><span class="key">${r.i.key}</span><span class="t">${esc(r.i.title)}</span></div>`).join("");
+  const bars = rows.map((r, k) => {
+    const top = k * RH + 6;
+    if (r.kind === "group") return r.span ? `<div class="tlgbar" style="top:${top + 10}px;left:${x(r.span[0])}px;width:${Math.max(px, x(r.span[1] + DAY) - x(r.span[0]))}px"><i style="width:${r.pct}%"></i></div>` : "";
+    const i = r.i;
+    if (!i.start_date && !i.due_date) return `<button class="tlsched" type="button" data-sched="${i.number}" style="top:${top}px;left:${x(today)}px">Schedule</button>`;
+    const [s0, e0] = span(i), pct = PROGRESS[i.status] ?? 0;
+    return `<div class="tlbar ${i.status === "done" ? "done" : ""} ${conflictNums.has(i.number) ? "conflict" : ""}" data-bar="${i.number}" title="${esc(i.key + " " + i.title)}: ${toIso(s0)} → ${toIso(e0)}" style="top:${top}px;left:${x(s0)}px;width:${Math.max(px, x(e0 + DAY) - x(s0))}px">
+      <i class="fill" style="width:${pct}%"></i><span class="lbl2">${esc(i.title)}</span><span class="pct">${pct}%</span><b class="h l"></b><b class="h r"></b></div>`;
+  }).join("");
+  // Dependency arrows: from the blocker's end to the blocked issue's start
+  const rowOf = new Map(rows.map((r, k) => [r.i?.number, k]).filter(([n]) => n));
+  const arrows = items.flatMap((a) => (a.blocked_by || []).map((bn) => {
+    const b = items.find((z) => z.number === bn); if (!b || !(a.start_date || a.due_date) || !(b.start_date || b.due_date)) return "";
+    const x1 = x(span(b)[1] + DAY), y1 = rowOf.get(b.number) * RH + 17, x2 = x(span(a)[0]), y2 = rowOf.get(a.number) * RH + 17, bad = conflicts.some((c) => c.issue === a.number && c.blockedBy === b.number);
+    const mid = Math.max(x1 + 10, Math.min(x2 - 10, x1 + 10));
+    return `<path class="${bad ? "bad" : ""}" d="M${x1},${y1} H${mid} V${y2} H${x2 - 4}" marker-end="url(#ah${bad ? "b" : ""})"/>`;
+  })).join("");
+  $("#body").innerHTML = `<div class="tlbar-top"><div class="seg-btns" role="group" aria-label="Zoom">${["day", "week", "month"].map((z) => `<button type="button" data-zoom="${z}" aria-pressed="${TL.zoom === z}">${z[0].toUpperCase() + z.slice(1)}</button>`).join("")}</div><button class="btn" id="tlToday" type="button">Today</button>
+      <span class="small muted">Drag a bar to move it, its ends to change the dates. Add "blocked by" links in an issue.</span></div>
+    <div class="tl" id="tl"><div class="tlleft"><div class="tlhead"></div>${left}</div>
+      <div class="tlright" style="width:${W}px"><div class="tlhead">${months.join("")}${ticks.join("")}</div>
+        <div class="tlgrid" style="height:${rows.length * RH}px">${weekendBands}<i class="today" style="left:${x(today) + px / 2}px"><span>Today</span></i>${bars}
+          <svg class="tlsvg" width="${W}" height="${rows.length * RH}"><defs><marker id="ah" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7z" class="ahp"/></marker><marker id="ahb" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7z" class="ahp bad"/></marker></defs>${arrows}</svg></div></div></div>
+    <div class="tlfoot"><div class="tlwarn" role="status">${conflicts.map((c) => `<div>${esc(c.message)}</div>`).join("")}</div><button class="btn" id="tlUndo" type="button" ${TL.undo.length ? "" : "disabled"}>Undo</button></div>`;
+  $$("[data-zoom]").forEach((b) => (b.onclick = () => { TL.zoom = b.dataset.zoom; render(); }));
+  $("#tlToday").onclick = () => { $("#tl").scrollLeft = x(today) - 200; };
+  $("#tlUndo").onclick = async () => { const u = TL.undo.pop(); if (!u) return; await api(`/api/admin/project/issues/${u.n}`, { method: "PUT", body: u.body }); toast(`Undid the change to SI-${u.n}`); await loadMeta(); render(); };
+  $$(".tlrow[data-n]").forEach((r) => (r.onclick = () => openIssue(r.dataset.n)));
+  $$("[data-sched]").forEach((b) => (b.onclick = async () => { const n = b.dataset.sched, iss = issues.find((z) => String(z.number) === n); TL.undo.push({ n, body: { start_date: iss.start_date || null, due_date: iss.due_date || null } }); await api(`/api/admin/project/issues/${n}`, { method: "PUT", body: { start_date: toIso(today), due_date: toIso(today + 6 * DAY) } }); render(); }));
+  $$(".tlbar").forEach((bar) => {
+    bar.onpointerdown = (e) => {
+      e.preventDefault(); bar.setPointerCapture(e.pointerId);
+      const n = Number(bar.dataset.bar), iss = issues.find((z) => z.number === n), [s0, e0] = span(iss);
+      const r = bar.getBoundingClientRect(), mode = e.clientX - r.left < 8 ? "start" : r.right - e.clientX < 8 ? "end" : "move";
+      const x0 = e.clientX, L0 = bar.offsetLeft, W0 = bar.offsetWidth; let days = 0;
+      bar.onpointermove = (ev) => {
+        days = Math.round((ev.clientX - x0) / px);
+        if (mode === "move") bar.style.left = `${L0 + days * px}px`;
+        if (mode === "end") bar.style.width = `${Math.max(px, W0 + days * px)}px`;
+        if (mode === "start") { const d = Math.min(days, Math.round((W0 - px) / px)); bar.style.left = `${L0 + d * px}px`; bar.style.width = `${W0 - d * px}px`; }
+      };
+      bar.onpointerup = async () => {
+        bar.onpointermove = bar.onpointerup = null;
+        if (!days) return openIssue(n);
+        const ns = mode === "end" ? s0 : s0 + days * DAY, ne = mode === "start" ? e0 : e0 + days * DAY;
+        TL.undo.push({ n, body: { start_date: iss.start_date || null, due_date: iss.due_date || null } });
+        try { await api(`/api/admin/project/issues/${n}`, { method: "PUT", body: { start_date: toIso(Math.min(ns, ne)), due_date: toIso(Math.max(ns, ne)) } }); } catch (err) { TL.undo.pop(); toast(err.message); }
+        await loadMeta(); render();
+      };
+    };
+  });
+  if (!TL.scrolled) { TL.scrolled = true; $("#tl").scrollLeft = x(today) - 200; }
+}
+
 async function renderMilestones() {
   $("#viewCount").textContent = `${M.milestones.length}`;
   $("#body").innerHTML = `<div class="ms">${M.milestones.map((m) => `<div class="m"><div style="display:flex;gap:8px;align-items:baseline"><b>${esc(m.name)}</b><span class="small muted">${m.target_date ? "Target " + m.target_date : "No target date"}</span><span style="margin-left:auto" class="small">${m.done} / ${m.total} done</span></div>
@@ -270,7 +383,11 @@ async function openIssue(n) {
       <label>Assignee<select data-p="assignee_id">${opts([["", "Unassigned"], ...M.members.map((m) => [m.id, m.name])], i.assignee_id)}</select></label>
       <label>Milestone<select data-p="milestone_id">${opts([["", "No milestone"], ...M.milestones.map((m) => [m.id, m.name])], i.milestone_id)}</select></label>
       <label>Labels<input data-p="labels" value="${esc(i.labels.join(", "))}" placeholder="comma, separated" list="lblList"></label>
+      <label>Start date<input type="date" data-p="start_date" value="${esc(i.start_date || "")}"></label>
       <label>Due date<input type="date" data-p="due_date" value="${esc(i.due_date || "")}"></label>
+      <label>Blocked by<span class="deps">${(i.blocked_by || []).map((b) => `<span class="lbl">SI-${b} <button class="linkish" type="button" data-undep="${b}" aria-label="Remove SI-${b}">✕</button></span>`).join("") || '<span class="small muted">Nothing</span>'}</span>
+        <select id="addDep" aria-label="Add a blocking issue"><option value="">Add an issue it waits for…</option></select></label>
+      ${(i.blocks || []).length ? `<p class="small muted" style="margin:0">Blocks ${i.blocks.map((b) => "SI-" + b).join(", ")}</p>` : ""}
       <datalist id="lblList">${M.labels.map((l) => `<option value="${esc(l)}">`).join("")}</datalist>
       <p class="small muted" style="margin:0">Updated ${ago(i.updated_at)}${i.completed_at ? ` · done ${ago(i.completed_at)}` : ""}</p>
     </div></div></aside>`;
@@ -280,6 +397,11 @@ async function openIssue(n) {
   $("#dTitle").onchange = () => update(i.number, { title: $("#dTitle").value }, true);
   $("#dDesc").onchange = () => update(i.number, { description: $("#dDesc").value }, true);
   $$(".props [data-p]").forEach((el) => (el.onchange = () => update(i.number, { [el.dataset.p]: el.dataset.p === "priority" ? Number(el.value) : el.value || null }, true)));
+  api("/api/admin/project/issues?status=backlog,todo,in_progress,in_review,done").then((r) => {
+    $("#addDep")?.insertAdjacentHTML("beforeend", r.issues.filter((x) => x.number !== i.number && !(i.blocked_by || []).includes(x.number)).map((x) => `<option value="${x.number}">${x.key} ${esc(x.title.slice(0, 50))}</option>`).join(""));
+  });
+  if ($("#addDep")) $("#addDep").onchange = async () => { try { await api(`/api/admin/project/issues/${i.number}/deps`, { body: { depends_on: Number($("#addDep").value) } }); } catch (e) { toast(e.message); } await render(); openIssue(i.number); };
+  $$("[data-undep]").forEach((b) => (b.onclick = async () => { await api(`/api/admin/project/issues/${i.number}/deps/${b.dataset.undep}`, { method: "DELETE" }); await render(); openIssue(i.number); }));
   $("#cForm").onsubmit = async (e) => { e.preventDefault(); if (!$("#cBody").value.trim()) return; await api(`/api/admin/project/issues/${i.number}/comments`, { body: { body: $("#cBody").value } }); openIssue(i.number); render(); };
   $("#cBody").onkeydown = (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) $("#cForm").requestSubmit(); };
   $$("[data-delc]").forEach((b) => (b.onclick = async () => { await api(`/api/admin/project/comments/${b.dataset.delc}`, { method: "DELETE" }); openIssue(i.number); }));
@@ -352,7 +474,7 @@ function palette() {
 }
 function shortcuts() {
   $("#overlay").innerHTML = `<div class="scrim" id="scrim"></div><div class="modal" role="dialog" aria-label="Keyboard shortcuts"><div class="mi"><b>Keyboard shortcuts</b>
-    ${[["C", "New issue"], ["/", "Search"], ["J / K", "Move down / up"], ["Enter", "Open selected issue"], ["Esc", "Close"], ["⌘K or Ctrl+K", "Command menu (change status, priority, assignee; jump to an issue)"], ["G then B / A / M", "Go to Board, All issues, My issues"], ["?", "This list"]]
+    ${[["C", "New issue"], ["/", "Search"], ["J / K", "Move down / up"], ["Enter", "Open selected issue"], ["Esc", "Close"], ["⌘K or Ctrl+K", "Command menu (change status, priority, assignee; jump to an issue)"], ["G then B / T / A / M", "Go to Board, Timeline, All issues, My issues"], ["?", "This list"]]
       .map(([k, t]) => `<div style="display:flex;gap:10px"><span class="kbd" style="min-width:110px;text-align:center">${k}</span><span>${t}</span></div>`).join("")}</div></div>`;
   $("#scrim").onclick = () => ($("#overlay").innerHTML = "");
 }
@@ -364,7 +486,7 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") { if ($(".pal")) return; if ($("#overlay").innerHTML) { if (open) closeIssue(); else $("#overlay").innerHTML = ""; } return; }
   const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName); if (typing || e.metaKey || e.ctrlKey || e.altKey || $("#overlay").innerHTML) return;
   const k = e.key.toLowerCase();
-  if (gPending) { gPending = false; if (k === "b") go("board"); else if (k === "a") go("all"); else if (k === "m") go("mine"); return; }
+  if (gPending) { gPending = false; if (k === "b") go("board"); else if (k === "t") go("timeline"); else if (k === "a") go("all"); else if (k === "m") go("mine"); return; }
   if (k === "g") { gPending = true; setTimeout(() => (gPending = false), 800); return; }
   if (k === "c") { e.preventDefault(); newIssue(); }
   else if (k === "/") { e.preventDefault(); $("#q").focus(); }
