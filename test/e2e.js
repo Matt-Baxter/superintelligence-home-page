@@ -209,6 +209,26 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   await john.click('[data-days="30"]'); await john.waitForTimeout(400); ok((await john.textContent('#areaNote')).includes('30 days'), 'time window switches');
   await john.screenshot({ path: 'shots/capabilities.png', fullPage: true });
 
+  console.log('Project timeline');
+  const dIso = (k) => new Date(Date.now() + k * 864e5).toISOString().slice(0, 10);
+  const tA = (await j(john, '/api/admin/project/issues', 'POST', { title: 'Sample: API contracts (test data)', start_date: dIso(0), due_date: dIso(5) })).issue;
+  const tB = (await j(john, '/api/admin/project/issues', 'POST', { title: 'Sample: iOS app (test data)', start_date: dIso(8), due_date: dIso(14) })).issue;
+  ok(tA.start_date === dIso(0) && tB.due_date === dIso(14), 'issues take a start and a due date');
+  ok((await j(john, `/api/admin/project/issues/${tA.number}`, 'PUT', { start_date: dIso(9) })).status === 400, 'a start after the due date is refused');
+  await j(john, `/api/admin/project/issues/${tB.number}/deps`, 'POST', { depends_on: tA.number });
+  ok((await j(john, `/api/admin/project/issues/${tA.number}/deps`, 'POST', { depends_on: tB.number })).status === 400, 'a dependency loop is refused');
+  const tli = await j(john, '/api/admin/project/issues?status=todo');
+  ok(tli.issues.find((x) => x.number === tB.number).blocked_by.includes(tA.number) && !tli.conflicts.some((c) => c.issue === tB.number), 'B is blocked by A, and starting after A ends is no conflict');
+  await john.goto(B + '/m/project#/timeline'); await john.waitForSelector(`.tlbar[data-bar="${tB.number}"]`);
+  ok((await john.$$('.tlsvg path[marker-end]')).length >= 1 && (await john.$$('.tlsched')).length > 0, 'the timeline draws bars, a dependency arrow, and Schedule buttons for undated issues');
+  const bb = await john.$(`.tlbar[data-bar="${tB.number}"]`); await bb.scrollIntoViewIfNeeded(); const box = await bb.boundingBox();
+  await john.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await john.mouse.down(); await john.mouse.move(box.x + box.width / 2 - 13 * 6, box.y + box.height / 2, { steps: 8 }); await john.mouse.up();
+  await john.waitForFunction(() => /starts before/.test(document.querySelector('.tlwarn')?.textContent || ''), null, { timeout: 5000 }).catch(() => {});
+  ok((await john.textContent('.tlwarn')).includes(`SI-${tB.number} starts before SI-${tA.number} ends`) && (await john.$$('.tlbar.conflict')).length >= 1, 'dragging B before A ends warns that it now starts before its dependency ends');
+  await john.click('#tlUndo'); await john.waitForFunction(() => !/starts before/.test(document.querySelector('.tlwarn')?.textContent || ''), null, { timeout: 5000 }).catch(() => {});
+  ok(!(await john.textContent('.tlwarn')).includes('starts before') && (await j(john, `/api/admin/project/issues/${tB.number}`)).issue.start_date === dIso(8), 'Undo puts the dates back and clears the warning');
+  await john.screenshot({ path: 'shots/timeline.png' });
+
   console.log('Modules, generative UI and judges');
   const mods = await j(john, '/api/modules');
   ok(['blocks-core', 'generative-ui', 'decision', 'capabilities', 'admin', 'project'].every((id) => mods.modules.some((m) => m.id === id)) && mods.points.some((p) => p.id === 'decision.judges' && p.owner === 'decision'), 'kernel loads every enabled module; decision owns its extension point');
@@ -284,7 +304,7 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   console.log('Phone width');
   const ph = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })).newPage();
   await ph.goto(B); await ph.fill('#username', 'john'); await ph.fill('#password', 'correct-horse-9'); await ph.click('#authBtn'); await ph.waitForSelector('#feed .story');
-  for (const path of ['/', '/story?id=' + sid, '/brief', '/lists', '/sources', '/agent-log', '/m/admin', '/m/project', '/m/capabilities', '/m/studio', '/m/decide', '/m/view?name=capability-snapshot', '/m/codemap']) { await ph.goto(B + path); await ph.waitForTimeout(600); ok(!(await ph.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'no sideways scroll: ' + path.split('?')[0]); }
+  for (const path of ['/', '/story?id=' + sid, '/brief', '/lists', '/sources', '/agent-log', '/m/admin', '/m/project', '/m/capabilities', '/m/studio', '/m/decide', '/m/view?name=capability-snapshot', '/m/codemap', '/m/project#/timeline']) { await ph.goto(B + path); await ph.waitForTimeout(600); ok(!(await ph.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'no sideways scroll: ' + path.split('?')[0]); }
   await ph.goto(B); await ph.waitForSelector('#feed .story'); await ph.screenshot({ path: 'shots/phone-feed.png' });
   await john.goto(B); await john.waitForSelector('#feed .story'); await john.screenshot({ path: 'shots/feed.png', fullPage: true });
   await john.goto(B + '/brief'); await john.waitForSelector('#brief .jr-metric'); await john.screenshot({ path: 'shots/brief.png', fullPage: true });
