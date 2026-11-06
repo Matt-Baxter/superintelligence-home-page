@@ -27,9 +27,12 @@ async function requireUser() {
 function topbar(user) {
   const here = location.pathname.replace(/\.html$/, "").replace(/\/index$/, "/") || "/";
   const bar = document.createElement("header"); bar.className = "topbar";
-  const mod = (user?.nav || []).map((n) => [n.href, n.label]);
-  const links = [NAV[0], ...mod.filter((_, i) => (user.nav[i].order ?? 50) < 20), ...NAV.slice(1), ...mod.filter((_, i) => (user.nav[i].order ?? 50) >= 20)];
-  bar.innerHTML = `<div class="in"><a class="brand" href="/">Superintelligence Homepage</a><nav class="nav">${links.map(([h, t]) => `<a href="${h}"${(h === "/" ? here === "/" : here.startsWith(h)) ? ' aria-current="page"' : ""}>${t}</a>`).join("")}</nav>
+  // Module links from "ui.nav": reader-facing ones sit in the bar; admin tools go in one Admin menu.
+  const nav = user?.nav || [], isHere = (h) => (h === "/" ? here === "/" : here.startsWith(h));
+  const mod = nav.filter((n) => !n.admin), tools = nav.filter((n) => n.admin);
+  const links = [NAV[0], ...mod.filter((n) => (n.order ?? 50) < 20).map((n) => [n.href, n.label]), ...NAV.slice(1), ...mod.filter((n) => (n.order ?? 50) >= 20).map((n) => [n.href, n.label])];
+  const menu = tools.length ? `<details class="navmenu"${tools.some((n) => isHere(n.href)) ? ' data-here=""' : ""}><summary>Admin</summary><div>${tools.map((n) => `<a href="${n.href}"${isHere(n.href) ? ' aria-current="page"' : ""}>${n.label}</a>`).join("")}</div></details>` : "";
+  bar.innerHTML = `<div class="in"><a class="brand" href="/">Superintelligence Homepage</a><nav class="nav">${links.map(([h, t]) => `<a href="${h}"${isHere(h) ? ' aria-current="page"' : ""}>${t}</a>`).join("")}${menu}</nav>
     <div class="who">${user ? `<span>${esc(user.name)}</span><button class="btn" id="logout" type="button">Sign out</button>` : ""}</div></div>`;
   document.body.prepend(bar);
   const lo = $("#logout"); if (lo) lo.onclick = async () => { await api("/api/logout", { method: "POST" }); location.href = "/"; };

@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Map · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css">
+<style>
+  main { max-width: 1400px; }
+  .mapbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+  .mapbar input[type=search] { width: 320px; max-width: 100%; margin: 0; }
+  .mapwrap { position: relative; overflow: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); max-height: 75vh; }
+  .lanes { position: relative; display: grid; gap: 70px; padding: 14px 18px; min-width: 980px; }
+  .lane h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; position: sticky; top: 0; background: var(--surface); padding: 4px 0; z-index: 2; }
+  .lane .grp { font-size: 11px; color: var(--muted); margin: 10px 0 4px; font-weight: 600; }
+  .nd { display: block; width: 100%; text-align: left; font: inherit; font-size: 12.5px; padding: 4px 8px; margin: 0 0 4px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; position: relative; z-index: 1; }
+  .nd .k { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-right: 4px; }
+  .nd.m-GET .k { color: #2e9e5b; } .nd.m-POST .k { color: #d4572a; } .nd.m-PUT .k { color: #b8860b; } .nd.m-DELETE .k { color: #e5484d; }
+  .nd:hover { border-color: var(--accent); }
+  .nd.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .nd.hit { outline: 2px solid var(--warn); }
+  .dim .nd:not(.lit):not(.on) { opacity: .28; }
+  svg.edges { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+  svg.edges path { fill: none; stroke: var(--line); stroke-width: 1; }
+  svg.edges path.lit { stroke: var(--accent); stroke-width: 1.6; }
+  svg.edges path.w { stroke-dasharray: 4 3; }
+  .side { position: fixed; right: 0; top: 0; bottom: 0; width: min(420px, 100vw); background: var(--surface); border-left: 1px solid var(--line); box-shadow: -12px 0 40px rgba(0,0,0,.12); z-index: 20; padding: 16px 18px; overflow: auto; }
+  .side h2 { font-size: 16px; margin: 4px 0 6px; overflow-wrap: anywhere; } .side .kind { font-size: 11px; text-transform: uppercase; color: var(--muted); letter-spacing: .05em; }
+  .side ul { padding-left: 18px; font-size: 13px; } .side li { margin: 2px 0; overflow-wrap: anywhere; }
+  .side .close { position: absolute; right: 12px; top: 10px; }
+  .legend { font-size: 12px; color: var(--muted); }
+  .problems li { color: var(--bad); } .problems:empty { display: none; }
+</style></head>
+<body>
+<main>
+  <div class="pagehead">
+    <div><h1>Codebase map</h1><p class="muted" id="sub">How the app fits together, parsed from the code: which pages call which routes, which routes read and write which tables, which modules plug into what, and where each spec requirement is met and tested.</p></div>
+  </div>
+  <div class="mapbar">
+    <input type="search" id="ask" placeholder="Ask the map: votes, REQ-003, project_issues, /m/admin…" aria-label="Search the map">
+    <div class="seg-btns" role="group" aria-label="View">
+      <button type="button" data-view="flow" aria-pressed="true">Pages → routes → tables</button>
+      <button type="button" data-view="modules" aria-pressed="false">Modules</button>
+      <button type="button" data-view="spec" aria-pressed="false">Spec</button>
+    </div>
+    <span class="legend">Solid line: reads or calls · dashed: writes · click anything to trace it</span>
+  </div>
+  <ul class="problems" id="problems"></ul>
+  <div class="mapwrap" id="wrap"><div class="lanes" id="lanes"></div></div>
+  <p class="small muted" id="stats"></p>
+</main>
+<div id="side"></div>
+<script src="/js/api.js"></script>
+<script>
+const REPO = "https://github.com/Matt-Baxter/superintelligence-home-page/blob/main/";
+let G, byId, view = "flow", selected = null;
+const VIEWS = {
+  flow: { lanes: [{ title: "Pages", kinds: ["page"], group: (n) => n.module === "core" ? "Core" : `Module: ${n.module}` }, { title: "API routes", kinds: ["route"], group: (n) => n.module === "core" ? "Core" : `Module: ${n.module}` }, { title: "Tables", kinds: ["table"] }], edges: ["calls", "reads", "writes"] },
+  modules: { lanes: [{ title: "Modules", kinds: ["module"] }, { title: "Extension points", kinds: ["point"] }, { title: "Contributions", kinds: ["block", "view", "judge"], group: (n) => n.kind[0].toUpperCase() + n.kind.slice(1) + "s" }], edges: ["contributes", "declares", "implements", "requires"] },
+  spec: { lanes: [{ title: "Requirements", kinds: ["req"] }, { title: "Code", kinds: ["file"], group: (n) => n.module === "core" ? "Core" : `Module: ${n.module}` }, { title: "Tests", kinds: ["test"] }], edges: ["met-in", "checked-by"] },
+};
+const short = (n) => n.kind === "route" ? `<span class="k">${n.method}</span>${esc(n.path)}` : n.kind === "req" ? `<span class="k">${n.label}</span>${esc((n.detail || "").slice(0, 60))}` : esc(n.label);
+
+function render() {
+  const V = VIEWS[view];
+  $("#lanes").style.gridTemplateColumns = `repeat(${V.lanes.length}, minmax(0, 1fr))`;
+  $("#lanes").innerHTML = V.lanes.map((L, li) => {
+    const ns = G.nodes.filter((n) => L.kinds.includes(n.kind)).sort((a, b) => (L.group ? L.group(a).localeCompare(L.group(b)) : 0) || a.label.localeCompare(b.label));
+    let last = null;
+    return `<div class="lane" data-lane="${li}"><h3>${L.title} (${ns.length})</h3>${ns.map((n) => { const g = L.group?.(n); const head = g && g !== last ? `<div class="grp">${esc(g)}</div>` : ""; last = g; return `${head}<button class="nd ${n.method ? "m-" + n.method : ""}" data-id="${esc(n.id)}" title="${esc(n.label)}">${short(n)}</button>`; }).join("")}</div>`;
+  }).join("") + `<svg class="edges" id="svg"></svg>`;
+  $$("#lanes .nd").forEach((b) => (b.onclick = () => select(b.dataset.id)));
+  drawEdges();
+  if (selected && $(`#lanes [data-id="${CSS.escape(selected)}"]`)) select(selected, true); else { selected = null; $("#lanes").classList.remove("dim"); }
+}
+function drawEdges(lit = new Set()) {
+  const V = VIEWS[view], svg = $("#svg"), box = $("#lanes").getBoundingClientRect();
+  svg.setAttribute("width", $("#lanes").scrollWidth); svg.setAttribute("height", $("#lanes").scrollHeight);
+  const pos = (id) => { const el = $(`#lanes [data-id="${CSS.escape(id)}"]`); if (!el) return null; const r = el.getBoundingClientRect(); return { l: r.left - box.left, r: r.right - box.left, y: r.top - box.top + r.height / 2 }; };
+  const paths = [];
+  for (const e of G.edges) {
+    if (!V.edges.includes(e.kind)) continue;
+    const a = pos(e.from), b = pos(e.to); if (!a || !b) continue;
+    const [p, q] = a.l < b.l ? [a, b] : [b, a]; const x1 = p.r, x2 = q.l, mx = (x1 + x2) / 2;
+    const on = lit.has(e.from) && lit.has(e.to);
+    if (!on && lit.size) continue; // when something is selected, draw only its paths
+    paths.push(`<path class="${on ? "lit" : ""} ${e.kind === "writes" ? "w" : ""}" d="M${x1},${p.y} C${mx},${p.y} ${mx},${q.y} ${x2},${q.y}"/>`);
+  }
+  svg.innerHTML = paths.join("");
+}
+function traceIds(id, depth = 3) {
+  const kinds = VIEWS[view].edges, seen = new Set([id]), fr = [[id, 0]];
+  while (fr.length) { const [c, d] = fr.shift(); if (d >= depth) continue; for (const e of G.edges) { if (!kinds.includes(e.kind)) continue; const nx = e.from === c ? e.to : e.to === c ? e.from : null; if (nx && !seen.has(nx)) { seen.add(nx); fr.push([nx, d + 1]); } } }
+  return seen;
+}
+function select(id, quiet) {
+  selected = id; const lit = traceIds(id);
+  $("#lanes").classList.add("dim");
+  $$("#lanes .nd").forEach((b) => { b.classList.toggle("on", b.dataset.id === id); b.classList.toggle("lit", lit.has(b.dataset.id)); });
+  drawEdges(lit);
+  if (!quiet) $(`#lanes [data-id="${CSS.escape(id)}"]`)?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  showSide(byId[id]);
+}
+function showSide(n) {
+  if (!n) return;
+  const ins = G.edges.filter((e) => e.to === n.id), outs = G.edges.filter((e) => e.from === n.id);
+  const link = (id) => `<a href="#" data-go="${esc(id)}">${esc(byId[id]?.label || id)}</a>`;
+  const group = (list, side) => Object.entries(list.reduce((a, e) => ((a[e.kind] ||= []).push(side === "out" ? e.to : e.from), a), {}));
+  $("#side").innerHTML = `<aside class="side" role="dialog" aria-label="${esc(n.label)}"><button class="btn close" type="button" id="closeSide">Close</button>
+    <div class="kind">${esc(n.kind)}${n.module ? ` · ${esc(n.module)}` : ""}</div><h2>${esc(n.label)}</h2>
+    ${n.detail ? `<p class="small">${esc(n.detail)}</p>` : ""}
+    ${n.file ? `<p class="small"><a href="${REPO}${esc(n.file)}${n.line ? "#L" + n.line : ""}" target="_blank" rel="noopener noreferrer">${esc(n.file)}${n.line ? ":" + n.line : ""}</a></p>` : ""}
+    ${n.kind === "route" ? `<p class="small">${n.admin ? "Admins only" : n.auth ? "Signed-in users" : "Anyone"}</p>` : ""}
+    ${n.columns ? `<p class="small"><b>Columns:</b> ${n.columns.map(esc).join(", ")}</p>` : ""}
+    ${group(outs, "out").map(([k, ids]) => `<p class="small"><b>${esc(k)} →</b></p><ul>${ids.map((i) => `<li>${link(i)}</li>`).join("")}</ul>`).join("")}
+    ${group(ins, "in").map(([k, ids]) => `<p class="small"><b>← ${esc(k)}</b></p><ul>${ids.map((i) => `<li>${link(i)}</li>`).join("")}</ul>`).join("")}</aside>`;
+  $("#closeSide").onclick = clear;
+  $$("#side [data-go]").forEach((a) => (a.onclick = (e) => { e.preventDefault(); goTo(a.dataset.go); }));
+}
+function goTo(id) {
+  const n = byId[id]; if (!n) return;
+  const v = Object.entries(VIEWS).find(([, V]) => V.lanes.some((L) => L.kinds.includes(n.kind)));
+  if (v && v[0] !== view) { view = v[0]; $$("[data-view]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.view === view)); render(); }
+  select(id);
+}
+function clear() { selected = null; $("#side").innerHTML = ""; $("#lanes").classList.remove("dim"); $$("#lanes .nd").forEach((b) => b.classList.remove("on", "lit", "hit")); drawEdges(); }
+let t;
+$("#ask").oninput = () => { clearTimeout(t); t = setTimeout(ask, 200); };
+async function ask() {
+  const q = $("#ask").value.trim(); $$("#lanes .nd").forEach((b) => b.classList.remove("hit"));
+  if (!q) return clear();
+  const r = await api(`/api/codemap/ask?q=${encodeURIComponent(q)}`);
+  if (!r.answer.length) { $("#stats").textContent = "Nothing in the map matches."; return; }
+  goTo(r.answer[0].id);
+  for (const a of r.answer) $(`#lanes [data-id="${CSS.escape(a.id)}"]`)?.classList.add("hit");
+  $("#stats").textContent = `${r.answer.length} match${r.answer.length > 1 ? "es" : ""}: ${r.answer.map((a) => byId[a.id]?.label).slice(0, 6).join(", ")}`;
+}
+$$("[data-view]").forEach((b) => (b.onclick = () => { view = b.dataset.view; $$("[data-view]").forEach((x) => x.setAttribute("aria-pressed", x === b)); clear(); render(); }));
+addEventListener("resize", () => { clearTimeout(t); t = setTimeout(() => (selected ? select(selected, true) : drawEdges()), 150); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") clear(); if (e.key === "/" && document.activeElement !== $("#ask")) { e.preventDefault(); $("#ask").focus(); } });
+
+requireUser().then(async (u) => {
+  if (!u.admin) { $("main").innerHTML = '<div class="panel"><h1>Codebase map</h1><p>The map is for admins.</p></div>'; return; }
+  G = await api("/api/codemap"); byId = Object.fromEntries(G.nodes.map((n) => [n.id, n]));
+  $("#stats").textContent = `${Object.entries(G.counts).map(([k, v]) => `${v} ${k}${v > 1 ? "s" : ""}`).join(" · ")} · ${G.edges.length} links · built ${ago(G.generated)}`;
+  $("#problems").innerHTML = G.problems.map((p) => `<li>${esc(p.message)}</li>`).join("");
+  render();
+  const q = params.get("q"); if (q) { $("#ask").value = q; ask(); }
+});
+</script>
+</body></html>
