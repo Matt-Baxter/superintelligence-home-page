@@ -1,14 +1,16 @@
-# Contract
+# Build interfaces: John's build
 
 SEIS 606 Project 2 · Superintelligence Homepage · John Affolter and Matthew Baxter
 
-**Version 0.8 · November 6, 2026 · draft, not yet approved by both partners.**
+**Version 0.8 · November 6, 2026.**
 
-This contract serves both halves of our **mix**: the split parts must fit together, and both bake-off versions must meet the same API and data models so the comparison is fair. Matt's accounts, data and API layer is the shared base. Each bake-off version writes stories into the shared schema and reads only through the API. If something isn't written here, neither side may depend on it.
+The data model, API, auth and rules of **John's build** (the code in this repo). Under the [constitution](../.specify/memory/constitution.md), each bake-off build may differ in database, framework and internal structure, so this is not the shared contract. What both builds must meet is the [shared spec](../specs/001-superintelligence-homepage/spec.md) and the bake-off rules in [CONTRACT.md](../CONTRACT.md); [SPEC_TRACE.md](SPEC_TRACE.md) shows how this build meets each requirement.
+
+Log every change to a table, route or shape here, so whoever merges the builds (or reads this API) can follow it. Rows up to 0.8 were drafted when we planned a split; their approval boxes are history, not a requirement.
 
 ## Change log
 
-Every change is approved by both of us and gets a row here. Breaking changes bump the major version (1.0 → 2.0). Tick your box by editing this file in a pull request.
+Every interface change gets a row here. Breaking changes bump the major version (1.0 → 2.0).
 
 | Version | Date | Change | Approved by |
 | --- | --- | --- | --- |

@@ -13,7 +13,8 @@ module.exports = function mountProject(app, { db, auth, admin, wrap, str, bad, n
   const A = [auth, admin];
   const now = () => db.now();
   const isoDate = (v) => (v === null || v === "" ? null : /^\d{4}-\d{2}-\d{2}$/.test(String(v)) ? String(v) : bad("Dates look like 2026-11-11."));
-  const labelsOf = (v) => [...new Set((Array.isArray(v) ? v : String(v || "").split(",")).map((x) => str(x, 30).toLowerCase()).filter(Boolean))].slice(0, 8);
+  // Labels are lowercase, except spec requirement IDs, which keep the spec's form (REQ-003).
+  const labelsOf = (v) => [...new Set((Array.isArray(v) ? v : String(v || "").split(",")).map((x) => str(x, 30)).map((x) => (/^req-\d{3}$/i.test(x) ? x.toUpperCase() : x.toLowerCase())).filter(Boolean))].slice(0, 8);
   const shape = (r) => r && ({ ...r, key: `${PREFIX}-${r.number}`, labels: JSON.parse(r.labels || "[]") });
   const SELECT = `SELECT i.*, a.display_name AS assignee_name, c.display_name AS creator_name, m.name AS milestone_name,
     (SELECT COUNT(*) FROM project_comments pc WHERE pc.issue_id = i.id) AS comments

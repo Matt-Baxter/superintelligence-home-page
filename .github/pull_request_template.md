@@ -1,25 +1,20 @@
 ## What this changes
 
-<!-- One or two sentences. Link the issue or contract section if there is one. -->
+<!-- One or two sentences. -->
 
-## Type
+## Spec
 
-- [ ] Shared-base feature or fix (`feature/` or `fix/`)
-- [ ] Bake-off work (`bakeoff/v0-john` or `bakeoff/claude-matt`)
-- [ ] Contract change: tables, API routes or shapes, auth (needs both approvals and a change-log row in `docs/CONTRACT.md`)
-- [ ] Docs only
+- REQ IDs this serves: <!-- e.g. REQ-003, REQ-005; or "none: docs/tooling" -->
+- [ ] `docs/SPEC_TRACE.md` updated (preflight checks every REQ is traced)
+- [ ] Shared document changed (spec, constitution, CONTRACT.md, WORKING_AGREEMENT.md): both of us agreed
+- [ ] Table, route or shape changed: row added to `docs/INTERFACES.md`
 
 ## Checks
 
 - [ ] Preflight is green (runs automatically)
 - [ ] Clicked through the Vercel preview
-- [ ] Contract updated if shapes changed (then both of us tick the change log)
 - [ ] Any agent mistakes from this work are in the Agent log page, written by me in my own words
-
-## How to try it
-
-<!-- Optional. Self-merge is fine once preflight is green. -->
 
 ## Agent use
 
-<!-- Which agent and model did the work (v0, Claude Code …), and what you checked by hand. -->
+<!-- Which agent and model did the work (v0, Claude Code …), and what you checked by hand. Review is optional; self-merge is fine once preflight is green. -->

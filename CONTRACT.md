@@ -3,8 +3,8 @@
 _What we're building against._
 
 **Team:** Matt Baxter & John Affolter
-**Current version:** 0.2
-**Date:** _YYYY-MM-DD_
+**Current version:** 0.5
+**Date:** 2026-11-06
 **Option:** Bake-off (Option B: partners build from the same spec on different platforms, then compare and merge the best parts)
 
 ## Change log
@@ -15,6 +15,9 @@ Both partners approve every change, and every change gets logged here.
 |---------|------|--------|-------------|
 | 0.1 | _YYYY-MM-DD_ | Initial draft | _Matt, John_ |
 | 0.2 | 2026-11-05 | Chose the bake-off option; removed the split section; drafted required features from the current build | _Matt, John_ |
+| 0.3 | 2026-11-06 | Shared spec created with Spec Kit; required features now point to its REQ IDs | _Matt, John_ |
+| 0.4 | 2026-11-06 | Site focuses on superintelligence specifically, not AI in general; only superintelligence stories in the feed (new REQ-003); requirements renumbered | _Matt, John_ |
+| 0.5 | 2026-11-06 | One set of plan documents (this file, WORKING_AGREEMENT.md, the spec and constitution); John's build interfaces moved to docs/INTERFACES.md; review is optional (constitution 1.2.0); proposed comparison criteria and how we decide (below, weights to agree) | _John (proposed), Matt ☐_ |
 
 ## Bake-off
 
@@ -22,55 +25,61 @@ Both partners approve every change, and every change gets logged here.
 
 Keeps the comparison fair.
 
-- **Partner 1 platform:** _Matt: ..._
-- **Partner 2 platform:** _John: ..._
+- **Partner 1 platform:** Matt: Claude Code
+- **Partner 2 platform:** John: v0
 
 ### Core content: One shared spec
 
-_Link to the shared spec (SpecKit), plus a summary here._
+The shared spec is [`specs/001-superintelligence-homepage/spec.md`](specs/001-superintelligence-homepage/spec.md),
+governed by the [constitution](.specify/memory/constitution.md). It is the source of truth; the
+list below is a summary. Both builds must meet every REQ in the spec.
 
 #### Required features
 
-_Draft, based on what's in John's first build (see README). Confirm or cut together._
-
-1. **Accounts:** sign up, log in, log out
-2. **Multi-user persistence:** each user's votes, saves, notes and reading lists are saved and kept separate per user
-3. **Multi-source feed:** pulls from multiple AI research sources (papers, lab blogs, forums, newsletters); no Twitter/X
-4. **Story grouping:** the same paper or announcement from several sources shows as one story
-5. **Topic tags:** stories are tagged by topic and organization, and show why a tag was applied
-6. **Curation:** votes, saves, notes, reading lists, submitted links
-7. **Weekly brief:** top stories and per-topic activity compared with last week
-8. **Sources page:** lists feeds and their status; users can suggest new feeds
-9. **Agent log:** each partner records what the agent got wrong and how they caught it
-10. **Deployed:** publicly reachable URL shared with the class 1–2 weeks before the presentation
+| Area | Requirements |
+|------|--------------|
+| Superintelligence feed: 8+ superintelligence sources across 5+ kinds, only superintelligence stories, grouping, topics with reasons, no Twitter/X | REQ-001 to REQ-008 |
+| Accounts: sign up, sign in/out, stay signed in, passwords never readable | REQ-009 to REQ-012 |
+| Votes and saves, kept per user, enforced by the system | REQ-013 to REQ-016 |
+| Filter by superintelligence topic; works on laptop and phone | REQ-017, REQ-018 |
+| Live at a public URL 2+ weeks before the presentation | REQ-019 |
+| Agent log (open question: in the app or a repo file) | REQ-020 |
 
 #### Acceptance tests
 
-| # | Feature | Given / When / Then | Matt's build | John's build |
-|---|---------|---------------------|--------------|--------------|
-| 1 | _Sign up_ | _Given a new email, when I sign up, then I'm logged in_ | ☐ | ☐ |
-| 2 | _..._ | _..._ | ☐ | ☐ |
+The acceptance scenarios (Given / When / Then) are in the spec, grouped by user story. Each
+build tracks its results here:
+
+| User story | Requirements | Matt's build | John's build |
+|------------|--------------|--------------|--------------|
+| 1. Read a superintelligence feed | REQ-001 to REQ-008 | ☐ | ☐ |
+| 2. Create an account and stay signed in | REQ-009 to REQ-012 | ☐ | ☐ |
+| 3. Vote on and save superintelligence stories | REQ-013 to REQ-016 | ☐ | ☐ |
+| 4. Filter by superintelligence topic | REQ-017, REQ-018 | ☐ | ☐ |
 
 ### Rules
 
-- **Can differ between builds:** _e.g. platform, agent/AI tools, UI styling, internal code structure_
-- **Stays fixed:** _e.g. required features, acceptance tests, data model, synthetic data set, time box_
+- **Can differ between builds:** platform, AI tools, language, framework, database, hosting, internal code structure, visual styling
+- **Stays fixed:** the constitution, the shared spec and its REQ IDs, the acceptance scenarios, the synthetic test data, the deadline
 
 ### Decision point
 
 #### Comparison criteria
 
+_Proposed by John; agree the weights together before comparing (constitution: criteria are recorded here first)._
+
 | Criterion | Weight | Matt's build | John's build |
 |-----------|--------|--------------|--------------|
-| _Acceptance tests passed_ | _..._ | | |
-| _Ease of deployment_ | _..._ | | |
-| _Code quality / maintainability_ | _..._ | | |
-| _Cost_ | _..._ | | |
-| _UX_ | _..._ | | |
+| Acceptance scenarios passed (spec, all user stories) | _..._ | | |
+| Stays on superintelligence (SC-003 on test data, SC-004 on a live sample of 20) | _..._ | | |
+| Ease of deployment and running on free tiers | _..._ | | |
+| Code quality / maintainability (simplicity, constitution II) | _..._ | | |
+| Cost | _..._ | | |
+| UX (SC-001: a classmate signs up and reads the feed in under 2 minutes) | _..._ | | |
 
 #### How we'll choose or merge the final version
 
-_e.g. score both builds, pick the winning base, then port the best parts of the other build._
+Score both builds 0–10 per criterion with evidence (test output, timings, links) on the Decide page (`/m/decide`). The weighted-criteria judge computes the totals; if we also run CLEF or JEV, we enter their result there and it is cross-checked against the totals. The leader becomes the base; within 3 points we merge the best parts. We both sign off or override, and log the decision and reason as a row in the change log.
 
 ### Changes
 

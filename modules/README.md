@@ -30,7 +30,7 @@ Pages in `modules/<id>/pages/*.html` are served at `/m/<page>` (the build copies
 - **Headless first.** Definitions (block props, judges, signals, formats) run without a browser; views are separate files.
 - **Fail loudly at boot**, with the module's name: unknown extension point, missing dependency, duplicate id.
 - **Unplug** a feature by removing it from `modules.json` (or `MODULES_DISABLED=id` per environment). Tables a module owns stay in the database.
-- **Contract.** A module's tables and routes are part of `docs/CONTRACT.md` like any other.
+- **Interfaces and spec.** A module's tables and routes are logged in `docs/INTERFACES.md`, and the module names the spec REQ IDs it serves (or is listed under "Beyond the spec" in `docs/SPEC_TRACE.md`).
 
 ## Add a module
 Use the add-a-module skill (`agent-kit/skills/add-a-module`).
