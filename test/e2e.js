@@ -68,6 +68,7 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   await matt.fill('#sUrl', 'https://x.com/someone/status/123'); await matt.fill('#sTitle', 'A thread about a new model'); await matt.click('#submitForm button[type=submit]'); await matt.waitForTimeout(300);
   ok((await matt.textContent('#sErr')).includes('Twitter/X'), 'Twitter/X links are refused');
   await matt.fill('#sUrl', 'https://arxiv.org/abs/2611.00002'); await matt.fill('#sTitle', 'Same SAE paper, submitted by hand'); await matt.click('#submitForm button[type=submit]'); await matt.waitForURL(/story\?id=/);
+  await matt.waitForFunction(() => document.querySelectorAll('#covered tr').length >= 2, null, { timeout: 5000 }).catch(() => {});
   ok((await matt.$$('#covered tr')).length === 2, 'a hand-submitted link joins the existing story (same arXiv id)');
   await matt.goto(B + '/sources'); await matt.waitForSelector('#rows tr');
   ok(await matt.isHidden('#fetchAll'), 'non-admins cannot trigger fetches');
