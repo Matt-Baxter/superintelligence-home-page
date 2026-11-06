@@ -8,7 +8,7 @@ The plan we build against (working agreement, spec, versioned contract) is in ou
 
 - [Working Agreement](WORKING_AGREEMENT.md): how we'll work together
 - [Contract](CONTRACT.md): what we're building against
-- Initial spec: to be created with SpecKit
+- [Initial spec](specs/001-superintelligence-homepage/spec.md): written with Spec Kit, under the [constitution](.specify/memory/constitution.md) (prompts used: [docs/speckit-prompts.md](docs/speckit-prompts.md))
 
 ## What it does
 

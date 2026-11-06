@@ -1,50 +1,89 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# Superintelligence Homepage Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Simplicity First
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+The simplest solution that meets the spec wins.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+- Builds MUST NOT add services, abstractions or dependencies that no requirement needs.
+- Scope MUST stay small enough for two students to finish within the course timeline.
+- When two approaches both meet the spec, choose the one with less code and fewer moving parts.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+Rationale: agents make extra scope cheap to write but expensive to review, test and deploy.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### II. Spec First and Traceable
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+The spec defines what to build before any code is written.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+- Every requirement MUST have a stable ID (REQ-001, REQ-002, ...).
+- Plans, tasks, code changes and tests MUST name the requirement IDs they satisfy.
+- Work that traces to no requirement MUST NOT be built until the spec is updated to include it.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+Rationale: traceability is how we prove each build does what the spec says, and nothing else.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### III. Test What the Spec Says
+
+- Every requirement MUST have at least one acceptance test written as Given / When / Then.
+- Tests MUST be grouped by requirement ID so each requirement's coverage is visible.
+- Tests MUST use synthetic data only: made-up users and recorded or sample feeds.
+- A change MUST NOT be merged while any acceptance test fails.
+
+Rationale: shared acceptance tests are what make the two bake-off builds comparable.
+
+### IV. Accounts and Data Are Safe
+
+- Passwords MUST NOT be stored or logged in plain text.
+- Users MUST be able to change or delete only what they created, and the server MUST enforce
+  this, not just the user interface.
+- Secrets (API keys, database credentials) MUST NOT be committed to the repository or pasted
+  into AI prompts; they live in the hosting platform's environment settings.
+- The app MUST NOT store personal data beyond what accounts need to work.
+
+Rationale: accounts and multi-user persistence are a course requirement, and classmates will
+sign up on the live site.
+
+### V. Open Sources Only
+
+- Content MUST come from public feeds or public pages, and MUST link out to the original.
+- Twitter/X MUST NOT be used as a source, suggested as a source, or accepted as a submitted link.
+- The app MUST NOT host full copies of articles.
+
+Rationale: the point of the site is broad, platform-independent coverage of AI progress.
+
+## Bake-off Rules
+
+Project 2 is a platform bake-off: Matt (Claude Code) and John (v0) each build the whole app from
+this constitution and the shared spec, then compare the builds and merge the best parts.
+
+- **Fixed for both builds:** this constitution, the shared spec, its requirement IDs, its
+  acceptance tests and the list of required features.
+- **May differ between builds:** platform, AI tools, language, framework, database, hosting,
+  internal code structure and visual styling.
+- This constitution MUST NOT choose a technology stack; each partner records theirs in their
+  own `/speckit-plan`.
+- Comparison criteria and how the final version is chosen are recorded in `CONTRACT.md` before
+  either build is compared.
+- **Costs:** use free tiers where possible. Total spending on hosting and AI APIs MUST stay at or
+  under $10 a month unless both partners agree to raise it.
+
+## Development Workflow
+
+- Work happens on branches; `main` stays deployable.
+- The other partner reviews every pull request, and a human reviews every merge to `main`.
+- Agents MAY read code, run tests, write code on a branch and draft pull requests.
+- Agents MUST NOT merge to `main`, deploy, handle real secrets or spend money.
+- Each partner keeps an agent log in their own words: what the agent got wrong, how it was
+  caught, and the fix. Partners do not write each other's entries, and entries are not
+  AI-generated.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+- This constitution overrides other project practices where they conflict.
+- Changes require approval from both partners and a note in the pull request that makes them.
+- Versioning follows MAJOR.MINOR.PATCH: MAJOR for removing or redefining a principle, MINOR for
+  adding a principle or section, PATCH for wording fixes.
+- Every spec, plan and pull request review checks compliance with these principles; any
+  exception must be written down with its reason.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2026-11-06 | **Last Amended**: 2026-11-06

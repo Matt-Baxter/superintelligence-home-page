@@ -11,7 +11,7 @@
 _Split (Option A: contract-first build with mid-point swap) or bake-off (Option B: platform bake-off), and why._
 
 - **Choice:** Bake-off (Option B)
-- **Why:** _..._
+- **Why:** Each of us builds the whole site, which is a cleaner division of labor than splitting it in half and integrating two halves later. Matt builds with Claude Code, John with v0, and we compare and merge the best parts.
 
 ## Roles
 
@@ -31,8 +31,8 @@ _Which agents and platforms each partner will use._
 
 | Partner | Agents / AI tools | Platforms / hosting |
 |---------|-------------------|---------------------|
-| Matt | _..._ | _..._ |
-| John | _..._ | _..._ |
+| Matt | Claude Code (with Spec Kit) | _..._ |
+| John | v0 | _..._ |
 
 ## Communication
 
