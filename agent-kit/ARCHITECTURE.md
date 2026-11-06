@@ -10,7 +10,7 @@
    └──────────────┬───────────────┴─────────┬─────────┴──────┬──────┴──────┬───────┘
                   │                         │                │             │
    adapters:      ▼                         ▼                ▼             ▼
-   Claude Code in repo ── .claude/skills, .claude/agents (symlinks), .claude/settings.json (hook)
+   Claude Code in repo ── .claude/skills/<name>, .claude/agents (symlinks), .claude/settings.json (hook)
    Claude Code plugin ─── .claude-plugin/marketplace.json → agent-kit/.claude-plugin/plugin.json
    Claude apps / API ──── dist/agent-kit/skills/<name>.zip            (npm run kit:export)
    MCP clients ────────── agent-kit/mcp/server.js over stdio           (tools, resources, prompts)

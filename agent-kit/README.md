@@ -16,7 +16,7 @@ How it fits together: [ARCHITECTURE.md](ARCHITECTURE.md).
 
 | Where | How |
 | --- | --- |
-| **Claude Code in this repo** (terminal, desktop app, web, cloud sessions) | Nothing to install. `.claude/skills` and `.claude/agents` link here and `.claude/settings.json` turns on the guard. |
+| **Claude Code in this repo** (terminal, desktop app, web, cloud sessions) | Nothing to install. `.claude/skills/<name>` (one link per skill, so Spec Kit's skills sit beside them) and `.claude/agents` link here and `.claude/settings.json` turns on the guard. |
 | **Claude Code anywhere else** | `/plugin marketplace add Matt-Baxter/superintelligence-home-page`, then `/plugin install si-homepage-kit@superintelligence-homepage`. Set `SI_REPO` to a clone to enable the app tools. |
 | **Claude apps (claude.ai, desktop) and the Claude API** | `npm run kit:export`, then upload `dist/agent-kit/skills/<name>.zip` as a skill. |
 | **Claude Desktop, Cursor, VS Code or any MCP client** | Add the server from `dist/agent-kit/mcp-configs.json` (`node <clone>/agent-kit/mcp/server.js`, env `SI_REPO=<clone>`). |
