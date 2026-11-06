@@ -3,7 +3,7 @@
 _What we're building against._
 
 **Team:** Matt Baxter & John Affolter
-**Current version:** 0.3
+**Current version:** 0.4
 **Date:** _YYYY-MM-DD_
 **Option:** Bake-off (Option B: partners build from the same spec on different platforms, then compare and merge the best parts)
 
@@ -16,6 +16,7 @@ Both partners approve every change, and every change gets logged here.
 | 0.1 | _YYYY-MM-DD_ | Initial draft | _Matt, John_ |
 | 0.2 | 2026-11-05 | Chose the bake-off option; removed the split section; drafted required features from the current build | _Matt, John_ |
 | 0.3 | 2026-11-06 | Shared spec created with Spec Kit; required features now point to its REQ IDs | _Matt, John_ |
+| 0.4 | 2026-11-06 | Site focuses on superintelligence specifically, not AI in general; only superintelligence stories in the feed (new REQ-003); requirements renumbered | _Matt, John_ |
 
 ## Bake-off
 
@@ -36,12 +37,12 @@ list below is a summary. Both builds must meet every REQ in the spec.
 
 | Area | Requirements |
 |------|--------------|
-| Feed and sources: 8+ sources, 5+ kinds, grouping, topic tags with reasons, no Twitter/X | REQ-001 to REQ-007 |
-| Accounts: sign up, sign in/out, stay signed in, passwords never readable | REQ-008 to REQ-011 |
-| Votes and saves, kept per user, enforced by the system | REQ-012 to REQ-015 |
-| Filter by topic; works on laptop and phone | REQ-016, REQ-017 |
-| Live at a public URL 2+ weeks before the presentation | REQ-018 |
-| Agent log (open question: in the app or a repo file) | REQ-019 |
+| Superintelligence feed: 8+ superintelligence sources across 5+ kinds, only superintelligence stories, grouping, topics with reasons, no Twitter/X | REQ-001 to REQ-008 |
+| Accounts: sign up, sign in/out, stay signed in, passwords never readable | REQ-009 to REQ-012 |
+| Votes and saves, kept per user, enforced by the system | REQ-013 to REQ-016 |
+| Filter by superintelligence topic; works on laptop and phone | REQ-017, REQ-018 |
+| Live at a public URL 2+ weeks before the presentation | REQ-019 |
+| Agent log (open question: in the app or a repo file) | REQ-020 |
 
 #### Acceptance tests
 
@@ -50,10 +51,10 @@ build tracks its results here:
 
 | User story | Requirements | Matt's build | John's build |
 |------------|--------------|--------------|--------------|
-| 1. Read a grouped, tagged feed | REQ-001 to REQ-007 | ☐ | ☐ |
-| 2. Create an account and stay signed in | REQ-008 to REQ-011 | ☐ | ☐ |
-| 3. Vote on and save stories | REQ-012 to REQ-015 | ☐ | ☐ |
-| 4. Filter the feed by topic | REQ-016, REQ-017 | ☐ | ☐ |
+| 1. Read a superintelligence feed | REQ-001 to REQ-008 | ☐ | ☐ |
+| 2. Create an account and stay signed in | REQ-009 to REQ-012 | ☐ | ☐ |
+| 3. Vote on and save superintelligence stories | REQ-013 to REQ-016 | ☐ | ☐ |
+| 4. Filter by superintelligence topic | REQ-017, REQ-018 | ☐ | ☐ |
 
 ### Rules
 

@@ -91,3 +91,32 @@ OUT OF SCOPE (for now):
   summaries
 - Social media scraping, hosting full article text, real-time chat
 ```
+
+## 3. Amendment: focus on superintelligence (2026-11-06)
+
+Matt's direction: the site is a home page for articles about **superintelligence** specifically,
+not AI in general, and the word should run through the constitution and the spec.
+
+`/speckit-constitution`:
+
+```text
+Amend the constitution so the project's purpose is superintelligence specifically, not AI in
+general. Add a principle that every story on the site must be relevant to superintelligence:
+progress toward AGI and superintelligence, frontier capabilities, alignment and safety of
+superintelligent systems, interpretability, forecasts and timelines, compute and scaling, and
+governance of frontier AI. General AI news (product launches, everyday AI apps, AI in a
+specific industry) is out. Readers must be able to see why each story counts as
+superintelligence-related.
+```
+
+`/speckit-specify` (update the existing spec):
+
+```text
+Update the Superintelligence Homepage spec so it is a home page for articles about
+superintelligence specifically, not AI in general. Sources should be ones that regularly cover
+superintelligence (alignment and safety research, frontier labs, forecasting groups, research
+papers on frontier capabilities). Only stories relevant to superintelligence appear in the feed;
+stories that match no superintelligence topic are left out rather than shown as "Untagged".
+Topic tags should be superintelligence topics, and each story should show which words made it
+relevant.
+```
