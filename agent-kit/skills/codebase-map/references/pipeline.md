@@ -23,10 +23,11 @@
 
 ## 5. Judging (`lib/analysis.js`)
 - `rescore(t, storyId)` runs when a story is created, when another source links to it, on Admin → Re-tag, and at boot for unscored stories (`backfill`, 300 at a time).
-- Writes `stories.significance`, `stories.analysis` (JSON with `why` lines) and `story_entities` (benchmarks with scores, people).
+- Writes `stories.significance`, `stories.analysis` (JSON with `why` lines and `scope`), `stories.in_scope` (REQ-003: superintelligence-only feed) and `story_entities` (benchmarks with scores, people).
+- Items linking to Twitter/X are dropped in `addItem` before any of this (REQ-006).
 
 ## 6. Serving (`server.js`)
-- `storyRows(where, args, uid, {sort})` loads matches, computes `rank` (votes, coverage, outside score, significance, age), sorts (`top`, `new`, `votes`, `signal`) and attaches links.
+- `storyRows(where, args, uid, {sort})` loads visible, in-scope matches (default sort: newest first, REQ-002), computes `rank` (votes, coverage, outside score, significance, age), sorts (`top`, `new`, `votes`, `signal`) and attaches links.
 - The capabilities module's `/api/capabilities` aggregates topics, benchmark mentions, people and orgs over 7/30/90 days.
 
 ## 7. Modules
