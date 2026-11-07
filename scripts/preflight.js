@@ -88,6 +88,12 @@ try {
   ok("Rules and schemas", `si-expr ${ex} vectors; schema/gen ${sc} current`);
 } catch (e) { fail("Rules and schemas", String(e.stdout || e.stderr || e.message).trim().split("\n").slice(-3).join(" | ")); }
 
+// 5b7. Benchmarks with a ratchet (scripts/bench.js): no metric may get worse than bench/baseline.json allows.
+try {
+  const out = sh("node scripts/bench.js").trim().split("\n").at(-1).replace(/^bench: /, "");
+  ok("Benchmarks", out);
+} catch (e) { fail("Benchmarks", String(e.stdout || e.message).trim().split("\n").filter((l) => /REGRESSION|bench:/.test(l)).join(" | ")); }
+
 // 5c. Agent kit: skills, subagents, plugin manifests, symlinks, index and MCP handshake
 try { ok("Agent kit", sh("node scripts/agent-kit.js check").trim()); }
 catch (e) { fail("Agent kit", String(e.stderr || e.message).trim().split("\n").slice(0, 4).join(" ")); }
