@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Research control room · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css">
+<style>
+  #out { display: grid; gap: 16px; } #out > section { margin: 0; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .tiles a, .tiles div { background: var(--surface); padding: 12px 14px; display: grid; gap: 2px; text-decoration: none; color: inherit; }
+  .tiles b { font-size: 26px; font-weight: 500; font-variant-numeric: tabular-nums; } .tiles span { font-size: 13px; color: var(--muted); }
+  .tiles .due b { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
+  table.t { width: 100%; border-collapse: collapse; font-size: 14px; } table.t th { text-align: left; font-weight: 500; color: var(--muted); font-size: 13px; }
+  table.t td, table.t th { padding: 8px 8px 8px 0; border-bottom: 1px solid var(--line); vertical-align: top; } table.t td { overflow-wrap: anywhere; } table.t td.n { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .scroll { overflow-x: auto; }
+  .acts { display: flex; gap: 6px; flex-wrap: wrap; }
+  .ok-no { font-size: 12px; font-weight: 600; padding: 1px 7px; border: 1px solid var(--fg); border-radius: var(--radius); white-space: nowrap; } .ok-no.yes { background: var(--fg); color: var(--surface); }
+  .links { display: flex; flex-wrap: wrap; gap: 8px; } .links a { font-size: 14px; padding: 4px 10px; border: 1px solid var(--line); border-radius: var(--radius); text-decoration: none; color: var(--fg); background: var(--surface); }
+  .links a:hover { border-color: var(--fg); }
+  .reqs { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-size: 14px; }
+</style></head>
+<body>
+<main>
+  <div class="pagehead"><div><h1>Research control room</h1><p class="muted">Everything the research layer needs from a person, in one place: forecasts to resolve, reviews to label, requirements to approve, and how well the judging is doing on real reviews. Nothing here publishes, merges or deploys.</p></div></div>
+  <p id="status" class="small muted" role="status" aria-live="polite">Loading…</p>
+  <div id="out"></div>
+</main>
+<script src="/js/api.js"></script>
+<script>
+const OUTCOMES = [["happened", "Happened"], ["did-not", "Did not"], ["unclear", "Unclear"], ["annulled", "Annulled"]];
+async function load() {
+  try {
+    const r = await api("/api/admin/research/status"), W = r.waiting;
+    const due = r.forecasts.filter((f) => f.overdue);
+    $("#out").innerHTML = `
+    <section><div class="tiles">
+      <a href="#forecasts" class="${due.length ? "due" : ""}"><b>${due.length}</b><span>forecasts due to resolve (${W.forecastsPending} pending)</span></a>
+      <a href="#flagged" class="${r.flagged.length ? "due" : ""}"><b>${r.flagged.length}</b><span>reviews waiting for a person</span></a>
+      <a href="#approvals"><b>${r.proposals.length}</b><span>proposed requirements to approve</span></a>
+      <a href="#quality"><b>${r.quality.filter((q) => q.ok).length}/${r.quality.length}</b><span>quality checks holding</span></a>
+      <div><b>${r.panel.ready ? "on" : "off"}</b><span>two-model panel ${r.panel.ready ? `(${r.panel.models.map(esc).join(", ")})` : "(set PANEL_MODELS)"}</span></div>
+      <div><b>${W.jobsQueued}</b><span>agent jobs queued${W.jobsFailed ? `, ${W.jobsFailed} failed` : ""}</span></div>
+    </div></section>
+
+    <section class="panel"><h2>Go to</h2><div class="links">
+      <a href="/research">Public write-ups${r.public ? "" : " (hidden: RESEARCH_PUBLIC is off)"}</a><a href="/research/criteria">How we judge</a><a href="/research/outlets">Track records</a>
+      <a href="/research/feed.xml">RSS feed</a><a href="/m/review">Review desk</a><a href="/m/dossier">Dossiers</a><a href="/m/map">Map</a><a href="/m/lab">Lab</a><a href="/m/project">Project tracker</a></div></section>
+
+    <section class="panel" id="forecasts"><h2>Forecasts to resolve</h2>
+      <p class="small muted">Mark each once it's due. Unclear (reality is ambiguous) and annulled (a premise fell away) count for neither side. Forecasts carry no names.</p>
+      ${r.forecasts.length ? `<div class="scroll"><table class="t"><thead><tr><th>Due</th><th>Forecast</th><th>From</th><th>Outcome</th></tr></thead><tbody>${r.forecasts.map((f) => `<tr><td class="n">${esc(f.due)}${f.overdue ? "<br><b class=\"small\">due now</b>" : ""}</td><td>${esc(f.sentence)}${f.title ? `<br><a class="small" href="/m/review#/doc/${f.doc_id}">${esc(f.title)}</a>` : ""}</td><td>${esc(f.outlet_label)}</td>
+        <td>${f.overdue ? `<div class="acts">${OUTCOMES.map(([v, l]) => `<button class="btn" type="button" data-ev="${f.id}" data-v="${v}">${l}</button>`).join("")}</div>` : `<span class="small muted">due ${esc(f.due)}</span>`}</td></tr>`).join("")}</tbody></table></div>` : '<p class="small muted">No pending forecasts.</p>'}</section>
+
+    <section class="panel" id="flagged"><h2>Reviews waiting for a person</h2>
+      <p class="small muted">The guards sent these to a person. Agree or disagree with the verdict; your labels are how the judges are calibrated.</p>
+      ${r.flagged.length ? `<div class="scroll"><table class="t"><thead><tr><th>Piece</th><th>Verdict</th><th>Why it was flagged</th><th></th></tr></thead><tbody>${r.flagged.map((d) => `<tr><td><a href="/m/review#/doc/${d.id}">${esc(d.title)}</a></td><td class="n">${esc(d.verdict)}, ${d.credibility}</td><td class="small">${d.reasons.map(esc).join("; ")}</td>
+        <td><div class="acts"><button class="btn" type="button" data-doc="${d.id}" data-l="agree">Agree</button><button class="btn" type="button" data-doc="${d.id}" data-l="disagree">Disagree</button></div></td></tr>`).join("")}</tbody></table></div>` : '<p class="small muted">Nothing waiting.</p>'}</section>
+
+    <section class="panel" id="quality"><h2>Judging quality on real reviews</h2>
+      <p class="small muted">Label-free checks: does the judging tell pieces apart, and do its parts agree? A failed check becomes a synthetic benchmark item before any rule changes.</p>
+      ${r.quality.length ? `<div class="scroll"><table class="t"><thead><tr><th>Check</th><th>Value</th><th>Holds</th><th>If not</th></tr></thead><tbody>${r.quality.map((q) => `<tr><td>${esc(q.label)}<br><span class="small muted">${esc(q.why)}</span></td><td class="n">${q.value ?? "n/a"}</td><td><span class="ok-no ${q.ok ? "yes" : ""}">${q.ok ? "yes" : "no"}</span></td><td class="small">${q.ok ? "" : esc(q.fix)}</td></tr>`).join("")}</tbody></table></div>` : '<p class="small muted">No reviews yet.</p>'}</section>
+
+    <section class="panel" id="approvals"><h2>Waiting on both partners</h2>
+      <p class="small muted">${esc(r.specStatus.replace(/\*\*|`/g, ""))}</p>
+      <ol class="reqs">${r.proposals.map((p) => `<li><b>${esc(p.id)}</b> ${esc(p.text)}…</li>`).join("")}</ol>
+      <h3 style="font-size:15px;margin:14px 0 6px">People checks in the shared spec</h3>
+      <ul class="small">${Object.entries(r.people).map(([id, t]) => `<li><b>${esc(id)}</b>: ${esc(t)}</li>`).join("")}</ul></section>`;
+    $$("[data-ev]").forEach((b) => (b.onclick = async () => { try { await api(`/api/admin/review/events/${b.dataset.ev}`, { body: { status: b.dataset.v } }); flash($("#status"), `Forecast marked ${b.dataset.v}.`); load(); } catch (e) { showErr($("#status"), e); } }));
+    $$("[data-doc]").forEach((b) => (b.onclick = async () => { try { await api(`/api/admin/review/docs/${b.dataset.doc}/label`, { body: { label: b.dataset.l } }); flash($("#status"), `Labelled: ${b.dataset.l}.`); load(); } catch (e) { showErr($("#status"), e); } }));
+    $("#status").textContent = `As of ${r.today}.`;
+  } catch (e) { showErr($("#status"), e); }
+}
+requireUser().then((u) => { if (!u.admin) { $("#status").textContent = "Only an admin can open the research control room."; return; } load(); });
+</script>
+</body></html>

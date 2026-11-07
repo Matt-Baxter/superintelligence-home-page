@@ -59,6 +59,20 @@ const serve = (port, env) => new Promise((resolve, reject) => {
     const doubt = await fetch("http://localhost:3291/research/paper/2");
     ok(doubt.status === 404, "a doubtful review has no public write-up");
 
+    console.log("Research control room (admins)");
+    const sign = async (u) => { const x = await fetch("http://localhost:3291/api/signup", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ username: u, password: "correct-horse-9" }) }); return (x.headers.get("set-cookie") || "").split(";")[0]; };
+    const adminC = await sign("sample-admin"), readerC = await sign("sample-reader");
+    const post = (path, body, cookie) => fetch(`http://localhost:3291${path}`, { method: "POST", headers: { "content-type": "application/json", cookie }, body: JSON.stringify(body) });
+    const st = await (await fetch("http://localhost:3291/api/admin/research/status", { headers: { cookie: adminC } })).json();
+    ok(st.quality.length === 6 && Array.isArray(st.forecasts) && st.proposals.length >= 14 && st.panel && st.panel.ready === false, "the status call gathers quality checks, forecasts, proposals and the panel's set-up");
+    ok(st.flagged.some((d) => /Superintelligence is here/.test(d.title) && d.reasons.length), "a review the guards flagged is listed with its reasons");
+    ok((await fetch("http://localhost:3291/api/admin/research/status", { headers: { cookie: readerC } })).status === 403, "a reader who isn't an admin is refused");
+    const f = st.flagged[0]; await post(`/api/admin/review/docs/${f.id}/label`, { label: "agree" }, adminC);
+    const st2 = await (await fetch("http://localhost:3291/api/admin/research/status", { headers: { cookie: adminC } })).json();
+    ok(!st2.flagged.some((d) => d.id === f.id), "labelling a flagged review takes it off the list");
+    const cpg = await fetch("http://localhost:3291/m/control", { headers: { cookie: adminC } });
+    ok(cpg.ok && /Research control room/.test(await cpg.text()), "the control room page is served at /m/control");
+
     console.log("Spec version takes the research feed as a source (SITE_PROFILE=spec)");
     delete process.env.DATABASE_URL; delete process.env.POSTGRES_URL;
     process.env.DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "si-spec-")); process.env.SITE_PROFILE = "spec"; process.env.FETCH_MINUTES = "0";

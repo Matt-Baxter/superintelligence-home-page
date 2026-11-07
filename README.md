@@ -51,6 +51,10 @@ The same queries run on SQLite (local, tests) and Postgres (production) through 
 - [CONTRIBUTING.md](CONTRIBUTING.md): branches, the pull request checklist, review and merge rules.
 - [docs/DEPLOY.md](docs/DEPLOY.md): Vercel + Neon setup, cron, troubleshooting and the fork fallback.
 - [docs/V0.md](docs/V0.md): John's v0 workflow for his bake-off version.
+- [docs/HANDOFF.md](docs/HANDOFF.md): the state of John's build, how to run and check it, what waits on people (start here when picking it up).
+- [docs/RESEARCH_SITE.md](docs/RESEARCH_SITE.md): the research layer as its own site that feeds the main feed (proposed, spec 002).
+- [docs/PRACTICES.md](docs/PRACTICES.md): the practices this build follows and the ones still to do, with sources.
+- Admins run the research layer from the **research control room** (`/m/control`): forecasts to resolve, reviews to label, quality checks, approvals.
 - `npm run preflight`: about 3 seconds of checks (syntax, build, secrets, no-Twitter, contract reminder, API smoke test). It runs on `git push` and in GitHub Actions.
 - [CLAUDE.md](CLAUDE.md) / [AGENTS.md](AGENTS.md): rules for AI agents working in this repo.
 - [modules/](modules/README.md): the modular monolith. Features are plug-in modules (capabilities, admin, project, generative UI with json-render, decision judges incl. JEV and CLEF) loaded by `kernel/` through extension points; switch them on or off in `modules/modules.json`.

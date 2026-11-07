@@ -49,6 +49,7 @@ Research layer (all proposed in spec 002, REQ-021 to REQ-033, not yet approved):
 | Benchmarks | `scripts/bench.js`, `bench/` | 23 metrics on labelled synthetic sets; a change that makes one worse than its tolerance fails preflight. |
 | Project tracker sync | `scripts/project-sync.js`, `modules/project/sync.json` | One issue per proposed REQ, people check, research item waiting for a person, agent job and scheduled task (idempotent `sync-key:` lines). |
 | Judge panel | `modules/review/panel.js`, `PANEL_MODELS` | Background only: two different models plus the rules judge, with identity, prestige and wording masks, rubric order varied, quotes checked; agree → mean, disagree → most conservative and a person, fewer than two usable → rules stand (incomplete). Set `PANEL_MODELS=ollama:gemma3:12b,groq:llama-3.1-8b-instant` (or two other families) wherever the watcher runs. |
+| Research control room | `/m/control` (admins), `GET /api/admin/research/status` | One page for everything waiting on a person: forecasts due (happened, did not, unclear, annulled), reviews to label, quality checks, panel set-up, proposals and people checks, links to every research page. |
 | Agent check-in | `scripts/checkin.js` (`npm run checkin`) | What is waiting on both partners, on a person and on agents, with the next action; writes `out/checkin/<date>.md`. |
 
 Source catalog: `lib/source-catalog.json` (61 candidates, kinds as in the core). Buzz feeds added and checked 2026-11-07: Medium tag feeds `superintelligence` and `agi`, Hacker News search for superintelligence. Reddit blocks automated readers.
@@ -69,6 +70,9 @@ npm run checkin                        # what's waiting, on whom
 Results at handoff: preflight passed; browser test 182 passed, 0 failed; spec acceptance 37/37 (18 of 18 testable requirements); review unit 26/0; sources unit 26/0; panel unit 15/0 (stand-in models; no live model was reachable from the build sandbox); research feed 14/0; dossier unit 14/0; project-sync unit 5/0; bench 23 metrics, 0 regressions.
 
 ## 5. Waiting on people
+
+Most of these are visible and actionable in the research control room (`/m/control`). [PRACTICES.md](PRACTICES.md) lists what to adopt next (calibration with kappa, skill trigger tests, forecast resolution criteria).
+
 
 - John and Matt: approve or drop REQ-021 to REQ-033 (spec 002), contract 0.6 and constitution 1.2.0.
 - Deploy (REQ-019); share with the class two weeks before the presentation.

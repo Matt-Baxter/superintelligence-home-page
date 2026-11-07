@@ -144,7 +144,7 @@ function trackRecords(docs, events) {
   }
   for (const e of events) {
     const o = by[e.outlet]; if (!o) continue;
-    o.forecasts++; if (e.status === "happened") o.happened++; else if (e.status === "did-not") o.didNot++; else if (e.status === "unclear") o.unclear++; else o.pending++;
+    o.forecasts++; if (e.status === "happened") o.happened++; else if (e.status === "did-not") o.didNot++; else if (e.status === "unclear" || e.status === "annulled") o.unclear++; else o.pending++;
   }
   return Object.values(by).map((o) => {
     const resolved = o.happened + o.didNot;
