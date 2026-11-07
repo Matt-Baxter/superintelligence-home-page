@@ -8,6 +8,7 @@ Written 2026-11-07 (on branch `feature/judge-fidelity-spec` until merged), so th
 2. [`STATE.md`](STATE.md): where things stand today, which branches hold what, and the decisions waiting for the humans.
 3. The open work: [`specs/003-judge-fidelity/tasks.md`](../specs/003-judge-fidelity/tasks.md) (newest), and the proposed requirements in [`specs/002-research-layer/spec.md`](../specs/002-research-layer/spec.md) and [`specs/003-judge-fidelity/spec.md`](../specs/003-judge-fidelity/spec.md). The shared spec is [`specs/001-superintelligence-homepage/spec.md`](../specs/001-superintelligence-homepage/spec.md).
 4. The skill for the job: [`agent-kit/skills/<name>/SKILL.md`](../agent-kit/skills) (plain Markdown, any tool; index in AGENTS.md).
+5. When you need something else: [`docs/HUB.md`](../docs/HUB.md), one generated page with every skill, spec, check, measure, pitfall and open decision.
 
 ## How work moves
 

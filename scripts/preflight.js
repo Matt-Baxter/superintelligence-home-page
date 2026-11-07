@@ -120,6 +120,10 @@ try {
 try { ok("Agent kit", sh("node scripts/agent-kit.js check").trim()); }
 catch (e) { fail("Agent kit", String(e.stderr || e.message).trim().split("\n").slice(0, 4).join(" ")); }
 
+// 5c2. Hub (docs/HUB.md): generated from the repo by scripts/hub.js, so it fails when stale or when a relative link in it breaks (test/hub-unit.js first)
+try { sh("node test/hub-unit.js"); ok("Hub", sh("node scripts/hub.js --check").trim().replace(/^hub: /, "")); }
+catch (e) { fail("Hub", String(e.stderr || e.message).trim().split("\n").slice(0, 4).join(" ") + " (run npm run hub)"); }
+
 // 6. Spec trace: every REQ in the shared spec(s) appears in docs/SPEC_TRACE.md, and the trace cites no unknown REQ
 {
   const specDir = path.join(root, "specs");

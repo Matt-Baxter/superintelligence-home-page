@@ -2,6 +2,8 @@
 
 Ideas collected on Nov 6 (Sean Parent on declarative property models and DSL pipelines, GitNexus, Floorplan, a dependency-aware timeline, Teardown) and what we do with each. Decided by John's agent at John's request; anything that changes the shared spec is a proposal until both of us approve it.
 
+Where each of these now lives (skills, specs, checks, measures) is indexed in [HUB.md](HUB.md), generated from the repo.
+
 | Idea | Decision | Why | Spec |
 | --- | --- | --- | --- |
 | **Codebase map** (Floorplan, GitNexus) | **Build now** (`feature/codemap`) | Developer and agent tooling: agents query a graph of the repo instead of grepping, and preflight catches pages that call routes that don't exist. It follows Sean Parent's pipeline: a parser reads the repo, maps it into a graph schema, and a layout engine and behaviour layer draw it. | None needed (tooling); listed under "Beyond the spec" in `docs/SPEC_TRACE.md` |
