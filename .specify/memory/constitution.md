@@ -97,7 +97,7 @@ and merge the best parts.
 - The other partner reviews every pull request, and a human reviews every merge to `main`.
 - Agents MAY read code, run tests, write code on a branch and draft pull requests.
 - Agents MUST NOT merge to `main`, deploy, handle real secrets or spend money.
-- Each partner keeps an agent log in their own words: what the agent got wrong, how it was
+- Each partner keeps an agent log in their own words in `AGENT_LOG.md`: what the agent got wrong, how it was
   caught, and the fix. Partners do not write each other's entries, and entries are not
   AI-generated.
 
@@ -110,4 +110,4 @@ and merge the best parts.
 - Every spec, plan and pull request review checks compliance with these principles, starting
   with the superintelligence focus; any exception must be written down with its reason.
 
-**Version**: 1.1.0 | **Ratified**: 2026-11-06 | **Last Amended**: 2026-11-06
+**Version**: 1.1.1 | **Ratified**: 2026-11-06 | **Last Amended**: 2026-11-07

@@ -55,7 +55,7 @@ _Which agents and platforms each partner will use._
 
 - **Agents may do unattended:** _e.g. write code on a feature branch, run tests, draft docs_
 - **A human must review:** _e.g. every merge to `main`, contract changes, auth/security code, database schema changes, deployments, anything that spends money_
-- **Agent log:** _How you'll keep it (file location, how often you update it). Entries record what the agent got wrong and how we caught it, written in our own words, not AI-generated._
+- **Agent log:** [`AGENT_LOG.md`](AGENT_LOG.md) in the repo. Each of us adds our own entries within a day of a session: what the agent got wrong and how we caught it, in our own words, never AI-generated.
 
 ## Disagreements
 

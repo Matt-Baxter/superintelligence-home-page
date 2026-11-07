@@ -3,7 +3,7 @@
 _What we're building against._
 
 **Team:** Matt Baxter & John Affolter
-**Current version:** 0.4
+**Current version:** 0.5
 **Date:** _YYYY-MM-DD_
 **Option:** Bake-off (Option B: partners build from the same spec on different platforms, then compare and merge the best parts)
 
@@ -17,6 +17,7 @@ Both partners approve every change, and every change gets logged here.
 | 0.2 | 2026-11-05 | Chose the bake-off option; removed the split section; drafted required features from the current build | _Matt, John_ |
 | 0.3 | 2026-11-06 | Shared spec created with Spec Kit; required features now point to its REQ IDs | _Matt, John_ |
 | 0.4 | 2026-11-06 | Site focuses on superintelligence specifically, not AI in general; only superintelligence stories in the feed (new REQ-003); requirements renumbered | _Matt, John_ |
+| 0.5 | 2026-11-07 | Agent log is a human-written Markdown file in the repo (`AGENT_LOG.md`), not an app page | _Matt, John_ |
 
 ## Bake-off
 
@@ -42,7 +43,7 @@ list below is a summary. Both builds must meet every REQ in the spec.
 | Votes and saves, kept per user, enforced by the system | REQ-013 to REQ-016 |
 | Filter by superintelligence topic; works on laptop and phone | REQ-017, REQ-018 |
 | Live at a public URL 2+ weeks before the presentation | REQ-019 |
-| Agent log (open question: in the app or a repo file) | REQ-020 |
+| Agent log: human-written `AGENT_LOG.md` in the repo | REQ-020 |
 
 #### Acceptance tests
 

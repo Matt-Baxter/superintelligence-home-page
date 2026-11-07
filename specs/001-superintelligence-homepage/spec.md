@@ -199,8 +199,14 @@ filter and check the full feed returns.
 
 - **REQ-019**: The Superintelligence Homepage MUST be live at a public URL and shared with the
   class at least 2 weeks before our presentation.
-- **REQ-020**: [NEEDS CLARIFICATION: Should the agent log be a page inside the app (as in John's
-  first build), or a Markdown file in the repo? The course requires an agent log either way.]
+- **REQ-020**: Each partner MUST keep a human-written agent log in the repository
+  (`AGENT_LOG.md`) answering "What did the agent get wrong & how did you catch it?". The agent log
+  is not a feature of the app.
+
+### Clarifications
+
+- 2026-11-07: Q: Should the agent log be a page inside the app or a Markdown file in the repo?
+  A: A Markdown file in the repo (`AGENT_LOG.md`), written by the partners, not by AI.
 
 ### Key Entities
 
@@ -271,3 +277,4 @@ filter and check the full feed returns.
 - Hosting full article text
 - Real-time chat or comments
 - Admin tools beyond what's needed to run the site
+- An agent log page inside the app (the agent log is `AGENT_LOG.md` in the repo)
