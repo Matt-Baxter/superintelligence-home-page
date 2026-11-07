@@ -30,7 +30,8 @@
     "lab:results": "node scripts/lab-results.js",
     "dossier": "node scripts/dossier.js",
     "test:research": "node --no-warnings test/research-feed.js",
-    "checkin": "node scripts/checkin.js"
+    "checkin": "node scripts/checkin.js",
+    "quality": "node scripts/quality.js"
   },
   "keywords": [],
   "author": "",

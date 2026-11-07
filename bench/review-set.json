@@ -88,6 +88,22 @@
    "title": "Sample: Self-improving AI is no longer sci-fi (test data)",
    "authors": "Sample outlet (test data)",
    "text": "Self-improving AI is the holy grail of the field, and the gap is closing fast. Labs say new models are now built largely by earlier ones. The coming intelligence explosion could be the most consequential event in history, a doomsday scenario for some and utterly transformative for others. Explosive progress is coming. Sources include posts on social media."
+  },
+  {
+   "id": "b-careful-report",
+   "credible": true,
+   "kind": "article",
+   "title": "Sample: Agents fall short on open research questions, study finds (test data)",
+   "authors": "Sample newsroom (test data)",
+   "text": "A study posted this week (arXiv 2611.00009) tested whether coding agents can answer the central question of two unpublished papers. Graded by the papers' own authors, the agents finished the engineering but made little progress on the research questions in either case. The authors list five recurring failure modes. Two case studies are a small sample, and the researchers say the result has not yet been tested on other fields. Whether agents will automate research remains an open question."
+  },
+  {
+   "id": "b-calm-uncited-blog",
+   "credible": false,
+   "kind": "article",
+   "title": "Sample: Why self-improving AI is already here (test data)",
+   "authors": "Sample blog (test data)",
+   "text": "Self-improving AI is already here. Labs now build each model mostly with the previous one. Agents run their own experiments and improve their own code. Each generation makes the next one faster. This is how progress compounds. The next few model generations will automate most of AI research."
   }
  ]
 }

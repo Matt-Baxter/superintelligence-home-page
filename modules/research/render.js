@@ -37,13 +37,13 @@ const { CRITERIA, VERDICTS } = require("../review/review");
 function scorecard(row, r) {
   const J = Object.fromEntries((r.judges || []).map((j) => [j.id, j]));
   const rig = J.rigor || { score: 0, why: [] }, hp = J.hype || { score: 0, why: [] };
-  const list = r.survey ? CRITERIA.survey.checks : CRITERIA.rigor.checks;
+  const list = r.rubric === "reporting" ? CRITERIA.reporting.checks : r.survey ? CRITERIA.survey.checks : CRITERIA.rigor.checks;
   const got = Object.fromEntries((rig.why || []).map((w) => [w.factor, w]));
   const rows = list.map((c) => { const w = got[c.label]; return `<tr class="${w ? "met" : ""}"><td class="mk">${w ? "✓" : "–"}</td><td>${esc(c.label)}${w && w.detail ? `<span class="ev">${esc(w.detail)}${w.detail.length >= 140 ? "…" : ""}</span>` : ""}</td><td class="n">${w ? w.points : 0} / ${c.points}</td></tr>`; }).join("");
   const unb = (hp.why || []).find((w) => w.factor === "Unbacked claims") || {}, words = (hp.why || []).find((w) => w.factor === "Hype words") || {};
   const v = VERDICTS.find((x) => x.id === row.verdict);
   return `<section><h2>How it was judged</h2>
-<p class="small muted" style="margin:0 0 8px">${esc(r.survey ? CRITERIA.survey.about : CRITERIA.rigor.about)} <a href="/research/criteria">All criteria</a></p>
+<p class="small muted" style="margin:0 0 8px">${esc(r.rubric === "reporting" ? CRITERIA.reporting.about : r.survey ? CRITERIA.survey.about : CRITERIA.rigor.about)} <a href="/research/criteria">All criteria</a></p>
 <table class="card sc"><tbody>${rows}<tr class="tot"><td></td><td>Rigor</td><td class="n">${rig.score} / 100</td></tr></tbody></table>
 <dl class="sum">
 <dt>Hype</dt><dd>${hp.score} (lower is better): ${unb.detail && !/^0 of 0/.test(unb.detail) ? `${esc(unb.detail)} claims unbacked` : "no claims found"}${words.detail ? `; hype words: ${esc(words.detail)}` : "; no hype words"}</dd>
@@ -60,6 +60,7 @@ function criteriaPage(base) {
 <p class="lede">Every write-up is scored by the same published rules, from the abstract, with no model and no hidden weights. Two separate questions: how big a step it reports (significance) and how far to believe it (credibility).</p>
 <section><h2>1. Rigor, out of 100</h2><p class="small muted" style="margin:0 0 8px">${esc(CRITERIA.rigor.about)}</p>${tbl(CRITERIA.rigor.checks)}</section>
 <section><h2>Surveys instead</h2><p class="small muted" style="margin:0 0 8px">${esc(CRITERIA.survey.about)}</p>${tbl(CRITERIA.survey.checks)}</section>
+<section><h2>Articles instead</h2><p class="small muted" style="margin:0 0 8px">${esc(CRITERIA.reporting.about)}</p>${tbl(CRITERIA.reporting.checks)}</section>
 <section><h2>2. Claims</h2><p>${esc(CRITERIA.claims.about)}</p></section>
 <section><h2>3. Hype, out of 100</h2><p>${esc(CRITERIA.hype.about)}</p></section>
 <section><h2>4. Credibility</h2><p>${esc(CRITERIA.credibility.about)}</p></section>

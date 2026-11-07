@@ -32,6 +32,11 @@ jobs:
           PANEL_MODELS: ${{ vars.PANEL_MODELS }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      - name: Judging quality on real reviews
+        run: node scripts/quality.js
+        env:
+          SITE_PROFILE: extended
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
       - name: Check in
         run: node scripts/checkin.js
         env:
@@ -43,4 +48,5 @@ jobs:
           path: |
             out/watch/*.md
             out/checkin/*.md
+            out/quality/*.md
           retention-days: 14

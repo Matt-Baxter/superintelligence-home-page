@@ -106,9 +106,23 @@ const COVERAGE = [
   { label: "Compares findings across them", points: 20, re: /\b(compar\w+|follow(?:s)? this ordering|across (?:the )?(?:studies|papers|works))\b/i },
   { label: "States gaps or open problems", points: 20, re: /\b(open (?:questions|problems)|least[- ]studied|gaps?|remaining (?:questions|problems)|limitations?)\b/i },
 ];
-function hype(text, cl, survey = false) {
+// An article's evidence is how well it reports: does it cite the study it describes, give that study's numbers or size,
+// say what was not shown, and keep forecasts apart from findings. Used instead of the paper checks when it scores
+// higher, so a careful news report is not judged as a paper with no experiments.
+const REPORTING = [
+  { label: "Cites the study it reports on", points: 30, re: /arxiv[: ]?\d{4}\.\d{4,5}|arxiv\.org\/(?:abs|pdf|html)\/|doi(?:\.org\/|:\s?10\.)|\b(?:a|the|this|one) (?:new |recent )?(?:study|paper|preprint|survey|review|evaluation|report) (?:\(|of\b|on\b|by\b|from\b|found\b|finds\b|shows\b|showed\b|reports\b|in which\b|that\b|posted\b|published\b)/i },
+  { label: "Gives the study's numbers or size", points: 25, re: /\b\d+(?:\.\d+)?\s?(?:%|percent\b|points?\b)|\b(?:\d[\d,]*|two|three|four|five|six|seven|eight|nine|ten) (?:case studies|papers|studies|tasks|models|benchmarks|participants|failure modes|seeds|prompts|runs)\b/i },
+  { label: "Says what was not shown", points: 25, re: /\b(limitations?|caveats?|small sample|not yet|has not|have not|hasn't|haven't|none (?:has|have)|not fully|does not (?:show|prove|mean)|did not|didn't|remains? (?:unclear|untested|open))\b/i },
+  { label: "Keeps forecasts apart from findings", points: 20, re: /\b(whether|may|might|uncertain|unclear|open question|plausible|nobody knows|speculat\w+)\b/i },
+];
+// In an article, a sentence that asserts progress or the future with nothing behind it (no number, sample, citation
+// or hedge) counts as an unbacked claim, so a calm post that cites nothing can't pass as careful.
+const ASSERT = /\b(is (?:already )?here|already|will (?!not)\w+|now \w+s\b|most of|every|each generation|compounds?|inevitabl\w+|soon)\b/i;
+const HEDGE = /\b(whether|may|might|could|uncertain|unclear|open question|plausible|if )\b/i;
+const CITE = REPORTING[0].re;
+function hype(text, cl, survey = false, asserts = 0) {
   const hits = [...new Set((String(text).match(HYPE) || []).map((h) => h.toLowerCase()))];
-  const unbacked = cl.filter((c) => c.level === "unbacked").length;
+  const unbacked = cl.filter((c) => c.level === "unbacked").length + asserts; cl = { length: cl.length + asserts };
   // In a survey, claims are summaries of other work, so only hype words count.
   const score = Math.min(100, Math.round((cl.length && !survey ? (unbacked / cl.length) * 60 : 0) + Math.min(40, hits.length * 10)));
   return { score, words: hits, unbacked, claims: cl.length };
@@ -142,7 +156,12 @@ function review(input) {
   const sigText = sents.filter((s) => !unbackedSet.has(s.slice(0, 200))).join(" ");
   const sig = step("judge-significance", "Significance on the cleaned text, without unbacked claims", () => analysis.analyze({ title, summary: sigText, authors }, { kinds: [source] }));
   const isSurvey = k.kind === "paper" && SURVEY.test(`${title} ${sents[0] || ""}`);
-  const hp = step("judge-hype", "Hype: unbacked claims and hype words", () => hype(`${title} ${text}`, cl, isSurvey));
+  const isArticle = k.kind === "article";
+  const asserts = isArticle ? sents.filter((x) => ASSERT.test(x) && !HEDGE.test(x) && !CITE.test(x) && !markersIn(x).length && !CLAIM.test(x)).length : 0;
+  const hp = step("judge-hype", "Hype: unbacked claims and hype words", () => hype(`${title} ${text}`, cl, isSurvey, asserts));
+  let rubric = isSurvey ? "survey" : "paper";
+  if (isArticle) { const rp = REPORTING.filter((c) => c.re.test(cleaned.text)), rv = rp.reduce((a, c) => a + c.points, 0);
+    if (rv > rg.score) { rubric = "reporting"; rg.score = rv; rg.why = rp.map((c) => ({ factor: c.label, points: c.points, detail: (sents.find((x) => c.re.test(x)) || "").slice(0, 140) })); rg.missing = REPORTING.filter((c) => !rp.includes(c)).map((c) => c.label); } }
   if (isSurvey) { const cov = COVERAGE.filter((c) => c.re.test(cleaned.text)); const sv = cov.reduce((a, c) => a + c.points, 0);
     if (sv > rg.score) { rg.score = sv; rg.why = cov.map((c) => ({ factor: c.label, points: c.points, detail: "survey coverage" })); rg.missing = COVERAGE.filter((c) => !cov.includes(c)).map((c) => c.label); } }
 
@@ -221,7 +240,7 @@ function review(input) {
   });
 
   return {
-    qid, kind: k.kind, kindWhy: k.why, kindLabel: isSurvey ? "Survey" : KINDS[k.kind].label, verdictRule: v.rule, source: origin, forecasts, survey: isSurvey, arxiv, title, authors,
+    qid, kind: k.kind, kindWhy: k.why, kindLabel: isSurvey ? "Survey" : KINDS[k.kind].label, verdictRule: v.rule, rubric, source: origin, forecasts, survey: isSurvey, arxiv, title, authors,
     score, naive: naive.significance, credibility, verdict, needsPerson: review_reasons.length > 0, reasons: review_reasons,
     judges: [
       { id: "significance", label: "Significance", score: sig.significance, about: "How big a step toward superintelligence it reports (lib/analysis.js, on the cleaned text)", why: sig.why },
@@ -284,11 +303,13 @@ const VERDICTS = [
   { id: "major and credible", rule: "significance 55 or more and credibility 60 or more", when: (s, c) => s >= 55 && c >= 60 },
   { id: "solid, modest step", rule: "credibility 70 or more", when: (s, c) => c >= 70 },
   { id: "big if true", rule: "significance 40 or more", when: (s) => s >= 40 },
+  { id: "plausible, worth checking", rule: "credibility 55 or more", when: (s, c) => c >= 55 },
   { id: "minor", rule: "none of the rules above applied", when: () => true },
 ];
 const CRITERIA = {
   rigor: { about: "What the evidence needs. Each check counts only when a sentence shows it; the points add up to 100.", checks: MARKERS.map(({ id, label, points }) => ({ id, label, points })) },
   survey: { about: "A survey is judged on coverage instead, and only when its title or first sentence says it is one.", checks: COVERAGE.map(({ label, points }) => ({ label, points })) },
+  reporting: { about: "An article is judged on how well it reports instead, when that scores higher: does it cite the study it describes, give the study's numbers or size, say what was not shown, and keep forecasts apart from findings. In an article, a sentence that asserts progress or the future with no number, sample, citation or hedge counts as an unbacked claim.", checks: REPORTING.map(({ label, points }) => ({ label, points })) },
   claims: { about: "A claim is backed when its own sentence carries a number, a sample size or an uncertainty; partly backed when a neighbouring sentence does; otherwise unbacked." },
   hype: { about: "Lower is better: up to 60 for the share of unbacked claims, plus 10 per hype word up to 40 (a survey's summaries of other work aren't counted as its claims)." },
   credibility: { about: "Half rigor plus half (100 minus hype)." },
