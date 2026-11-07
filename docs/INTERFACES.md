@@ -105,7 +105,8 @@ Every interface change gets a row here. Breaking changes bump the major version 
 - **Workflow:** `.github/workflows/paper-watch.yml` passes `PANEL_MODELS` (repository variable) and provider keys (secrets) to the watcher, runs `scripts/checkin.js` after it and keeps both reports.
 - **Rigor in the feed:** each `/research/feed.xml` item carries `<category domain="si:verdict|si:credibility|si:grade|si:panel">` (papers) or `si:evidence` (topics). Readers that don't know them ignore them; the spec version parses the feed unchanged.
 - **Article rubric and verdict:** articles are judged on reporting (`CRITERIA.reporting`: cites the study, gives its numbers or size, says what was not shown, keeps forecasts apart) when that scores higher; review results gain `rubric` (paper, survey, reporting). New verdict `plausible, worth checking` (credibility 55 or more, below big-if-true). Unsupported assertions in articles count as unbacked claims.
-- **Quality report:** `npm run quality` (`scripts/quality.js`) writes `out/quality/<date>.md` from real reviews: verdict spread, article spread, grade versus credibility, hype versus credibility, papers judged minor, panel coverage. The watcher workflow runs it. | logged by John |
+- **Quality report:** `npm run quality` (`scripts/quality.js`) writes `out/quality/<date>.md` from real reviews: verdict spread, article spread, grade versus credibility, hype versus credibility, papers judged minor, panel coverage. The watcher workflow runs it.
+- **Buzz feeds in the research version:** at start, the research module adds the catalog's checked buzz feeds (entries marked "(buzz)") as active sources if missing, only when `SITE_PROFILE=research`. | logged by John |
 
 **Done means:** a classmate can sign up on the live site, see a grouped, tagged feed from at least 8 sources, and vote on and save stories that are still there the next time they sign in.
 
