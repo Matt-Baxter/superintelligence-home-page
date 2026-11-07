@@ -63,7 +63,7 @@ catch (e) { fail("Unslop", String(e.stdout || e.stderr || e.message).trim().spli
 
 // 5b3. Nothing the code needs is git-ignored (a fresh clone in CI must have every module file).
 try {
-  const GENERATED = [/^modules\/codemap\/data\//, /\/node_modules\//];
+  const GENERATED = [/^modules\/codemap\/data\//, /^modules\/project\/data\//, /\/node_modules\//];
   const ignored = sh("git ls-files --others --ignored --exclude-standard -- modules lib kernel scripts agent-kit").split("\n").filter((f) => f && !GENERATED.some((r) => r.test(f)));
   ignored.length ? fail("No ignored source files", `git-ignored but needed: ${ignored.slice(0, 5).join(", ")} (fix .gitignore)`) : ok("No ignored source files");
 } catch { ok("No ignored source files", "skipped (no git)"); }
@@ -82,7 +82,7 @@ try {
 
 // 5b6. si-expr (portable rules) and the schema registry: Node vectors, builder/registry units, generated schemas current.
 try {
-  sh("node test/expr-unit.js"); sh("node test/lab-unit.js"); sh("node test/review-unit.js"); sh("node test/papers-unit.js"); sh("node test/watch-unit.js"); sh("node test/project-sync-unit.js"); sh("node test/dossier-unit.js");
+  sh("node test/expr-unit.js"); sh("node test/lab-unit.js"); sh("node test/review-unit.js"); sh("node test/papers-unit.js"); sh("node test/watch-unit.js"); sh("node test/project-sync-unit.js"); sh("node test/project-specs-unit.js"); sh("node test/dossier-unit.js");
   const ex = sh("node scripts/expr-check.js --only=node").trim().split("\n")[0].replace(/^✓ node\s+/, "");
   const sc = sh("node scripts/schema.js check").trim().split("\n")[0].replace(/^✓ up to date\s+/, "");
   ok("Rules and schemas", `si-expr ${ex} vectors; schema/gen ${sc} current`);
