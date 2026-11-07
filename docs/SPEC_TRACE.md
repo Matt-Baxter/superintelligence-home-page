@@ -38,6 +38,25 @@ How this build meets the shared spec ([specs/001-superintelligence-homepage/spec
 | REQ-032–038 | Judge fidelity and stability (proposed, `specs/003-judge-fidelity`) | REQ-037 bands built (`modules/review/bands.js`; review result `bands`/`verdictNote`, dossier counts High only, digest Band column; T041, T042); the rest not built yet; measured by `bench/judge-edge-cases.json`, `bench/fidelity-cases.json`, `scripts/judge-report.js`, Lean model in `proofs/` (unchecked) | preflight: judge edge cases (known gaps reported; `ok` cases must pass), judge properties (`test/judge-properties.js`), fidelity set, near-cutoff report, bands (`test/bands-unit.js`) and Lean vectors units |
 | REQ-039–040 | Peer reviews and reader comments (proposed, `specs/003-judge-fidelity`) | not built yet | none yet (tasks T060, T061) |
 
+## Feature parity (proposed, `specs/004-parity/spec.md`; extended version; needs both partners)
+
+From the public-features survey in `docs/PARITY.md` (data `docs/market/apps.json`). Proposed, not built: none of these exists in the code yet; "today" is what the survey's code check found.
+
+| REQ | What | Where in the code | Checked by |
+| --- | --- | --- | --- |
+| REQ-041 | Opt-in "For you" order with reason words | proposed, not built (today: sorts top/new/votes/signal in `storyRows`, `server.js`) | none yet (tasks T050, T051) |
+| REQ-042 | Full-text search on SQLite and Postgres | proposed, not built (today: substring `q` on `GET /api/stories`) | none yet (tasks T010, T011) |
+| REQ-043 | Coverage panel per story group, single-source list | proposed, not built (today: "covered by" table in `public/story.html`) | none yet (tasks T020, T021) |
+| REQ-044 | Source-type labels | proposed, not built (today: source `kind` sets the evidence level in `lib/analysis.js`) | none yet (tasks T002, T022, T023) |
+| REQ-045 | Atom feeds out, "since last visit" | proposed, not built (today: `GET /api/learn/feed.xml` for Learn posts only) | none yet (tasks T001, T030, T031) |
+| REQ-046 | Mute words, tags and sources | proposed, not built | none yet (tasks T012, T013) |
+| REQ-047 | Code, model and dataset links on papers | proposed, not built | none yet (task T040) |
+| REQ-048 | Citation neighbourhood from a free API, cached | proposed, not built | none yet (tasks T080, T041) |
+| REQ-049 | Reader data export, public OPML | proposed, not built (today: admin-only `GET /api/admin/opml`) | none yet (task T032) |
+| REQ-050 | Installable app, offline saved list | proposed, not built | none yet (task T033) |
+| REQ-051 | Public change log of rules and moderation | proposed, not built (today: admin-only `GET /api/admin/audit`) | none yet (task T070) |
+| REQ-052 | Vote cap, new-account weight, separate agree mark | proposed, not built | none yet (tasks T060, T061, T062) |
+
 ## Acceptance suite
 
 `test/spec-acceptance.js` runs every user-story scenario, edge case and success criterion that can be automated, against the **spec version**, with labelled synthetic sources (`test/fixtures/spec`: 9 sources across 7 kinds). Each check names its REQ. The run fails if a testable requirement (REQ-001 to REQ-018, REQ-020) has no passing check (SC-008). Preflight runs the API checks; `npm run test:spec` adds the browser checks at laptop and phone widths. REQ-019 (live two weeks before the presentation) is checked by people.

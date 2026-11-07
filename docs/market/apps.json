@@ -1,0 +1,1793 @@
+{
+ "about": "Public-features survey of 35 AI-news, paper-discovery and feed-reading apps, compared with this project. Each feature claim comes from the app's public pages, documentation, published papers or independent reviews, with the URL in `source`; nothing was decompiled, nothing was scraped from behind a login, and notes are written in our own words (no copied text). `has`: true, \"partial\" or false (false only when absence was confirmed); a missing feature key means not found or not verified. No person's claims are recorded, and no Twitter/X data was used. Our own column (`ours`) was checked against the code; see docs/PARITY.md.",
+ "checked": "2026-11",
+ "dimensions": [
+  {
+   "code": "RSS",
+   "key": "ingest_feeds",
+   "label": "RSS/Atom ingestion"
+  },
+  {
+   "code": "ARX",
+   "key": "ingest_arxiv",
+   "label": "arXiv / paper ingestion"
+  },
+  {
+   "code": "CUS",
+   "key": "custom_sources",
+   "label": "Custom sources"
+  },
+  {
+   "code": "NOF",
+   "key": "no_feed_sites",
+   "label": "Sites without a feed"
+  },
+  {
+   "code": "CLU",
+   "key": "clustering",
+   "label": "Dedup / story grouping"
+  },
+  {
+   "code": "TAG",
+   "key": "topic_tagging",
+   "label": "Topic tagging"
+  },
+  {
+   "code": "EXR",
+   "key": "explainable_ranking",
+   "label": "Explainable ranking"
+  },
+  {
+   "code": "PER",
+   "key": "personalization",
+   "label": "Personalisation"
+  },
+  {
+   "code": "SRC",
+   "key": "search",
+   "label": "Search"
+  },
+  {
+   "code": "FIL",
+   "key": "filters",
+   "label": "Filters / mute"
+  },
+  {
+   "code": "SAV",
+   "key": "saves_lists",
+   "label": "Saves / reading lists"
+  },
+  {
+   "code": "NOT",
+   "key": "notes_highlights",
+   "label": "Notes / highlights"
+  },
+  {
+   "code": "VOT",
+   "key": "votes",
+   "label": "Votes"
+  },
+  {
+   "code": "COM",
+   "key": "comments",
+   "label": "Comments"
+  },
+  {
+   "code": "MOD",
+   "key": "moderation_antigaming",
+   "label": "Moderation / anti-gaming"
+  },
+  {
+   "code": "SUM",
+   "key": "paper_summaries",
+   "label": "Summaries"
+  },
+  {
+   "code": "EVI",
+   "key": "claim_evidence",
+   "label": "Claim / evidence checking"
+  },
+  {
+   "code": "CIT",
+   "key": "citation_graph",
+   "label": "Citations / graph"
+  },
+  {
+   "code": "ALR",
+   "key": "alerts_digests",
+   "label": "Alerts / digests / output feeds"
+  },
+  {
+   "code": "COV",
+   "key": "coverage_comparison",
+   "label": "Coverage comparison"
+  },
+  {
+   "code": "CRD",
+   "key": "source_credibility",
+   "label": "Source-type / credibility labels"
+  },
+  {
+   "code": "API",
+   "key": "export_api",
+   "label": "Export / API"
+  },
+  {
+   "code": "ACC",
+   "key": "minimal_accounts",
+   "label": "Minimal accounts / privacy"
+  },
+  {
+   "code": "MOB",
+   "key": "mobile_offline",
+   "label": "Mobile / PWA / offline"
+  },
+  {
+   "code": "A11",
+   "key": "accessibility",
+   "label": "Accessibility"
+  },
+  {
+   "code": "OSS",
+   "key": "open_source",
+   "label": "Open source / self-host"
+  },
+  {
+   "code": "FRE",
+   "key": "free_tier",
+   "label": "Free tier"
+  },
+  {
+   "code": "AI",
+   "key": "ai_features",
+   "label": "AI features"
+  },
+  {
+   "code": "REP",
+   "key": "reproducibility",
+   "label": "Reproducibility (code links)"
+  },
+  {
+   "code": "FOR",
+   "key": "forecasting_metrics",
+   "label": "Forecasting / benchmark data"
+  },
+  {
+   "code": "ADM",
+   "key": "admin_sources",
+   "label": "Admin / source management"
+  },
+  {
+   "code": "ANL",
+   "key": "analytics",
+   "label": "Analytics / trends"
+  },
+  {
+   "code": "TRN",
+   "key": "transparency",
+   "label": "Public audit trail"
+  }
+ ],
+ "ours": {
+  "name": "Superintelligence Homepage (this repo)",
+  "checked": "2026-11",
+  "verified_against": "code on branch feature/judge-fidelity-rules, 2026-11-07",
+  "features": {
+   "ingest_feeds": {
+    "status": "have",
+    "research_guess": "have",
+    "evidence": "RSS/Atom and JSON Feed parsers (`FORMATS` in lib/feeds.js); scheduled harvest in lib/harvest.js"
+   },
+   "ingest_arxiv": {
+    "status": "have",
+    "research_guess": "have",
+    "evidence": "`arxiv`, `hf-daily` and `semantic-scholar` formats in lib/feeds.js; daily paper watch scripts/watch.js (extended)"
+   },
+   "custom_sources": {
+    "status": "have",
+    "research_guess": "check",
+    "evidence": "admin adds sources, enables catalog entries and imports OPML (POST /api/admin/sources, /api/admin/catalog/enable, /api/admin/opml in modules/admin/routes.js); readers suggest feeds into a pending queue (POST /api/sources/suggest, server.js, extended)"
+   },
+   "no_feed_sites": {
+    "status": "partial",
+    "research_guess": "check",
+    "evidence": "POST /api/admin/sources/discover finds feed links on a page (`discoverFeeds` in lib/feeds.js) and two search APIs act as feeds (`hn-algolia`, `semantic-scholar`); no HTML-to-feed scraping rules"
+   },
+   "clustering": {
+    "status": "have",
+    "research_guess": "have",
+    "evidence": "`storyKeys` (arXiv id, normalised URL, normalised title) in lib/feeds.js; `addItem` in lib/harvest.js; there is no read state to carry across a group"
+   },
+   "topic_tagging": {
+    "status": "have",
+    "research_guess": "have",
+    "evidence": "lib/tagger.js against lib/ontology.json, matched words shown (REQ-005)"
+   },
+   "explainable_ranking": {
+    "status": "have",
+    "research_guess": "have",
+    "evidence": "0-100 significance with a reason per point (lib/analysis.js); feed rank formula in `storyRows` (server.js)"
+   },
+   "personalization": {
+    "status": "missing",
+    "research_guess": "missing",
+    "evidence": "sorts are top, new, votes and signal only (GET /api/stories, server.js); GET /api/knowledge/similar ranks by a typed query, not by the reader's history"
+   },
+   "search": {
+    "status": "partial",
+    "research_guess": "check",
+    "evidence": "`q` on GET /api/stories is a substring LIKE over title and summary (server.js), wired to the search box in public/index.html; embedding similarity at GET /api/knowledge/similar (extended); no full-text index, tags or matched words not searched"
+   },
+   "filters": {
+    "status": "partial",
+    "research_guess": "partial",
+    "evidence": "topic, source kind, organisation, `tag=` (topic/org/benchmark/person), days, minimum significance and saved-only on GET /api/stories (server.js); no mute or negative filters"
+   },
+   "saves_lists": {
+    "status": "have",
+    "research_guess": "have",
+    "evidence": "POST /api/stories/:id/save (server.js); reading lists with follow, /api/lists and public/lists.html (extended)"
+   },
+   "notes_highlights": {
+    "status": "partial",
+    "research_guess": "partial",
+    "evidence": "private or public notes per story, POST /api/stories/:id/notes (server.js, extended); no highlights"
+   },
+   "votes": {
+    "status": "have",
+    "research_guess": "have",
+    "evidence": "one toggle vote per user per story, POST /api/stories/:id/vote (server.js); single axis"
+   },
+   "comments": {
+    "status": "partial",
+    "research_guess": "check",
+    "evidence": "public notes are shown to every reader on the story page and counted on cards (server.js, public/story.html, extended); no replies or threads"
+   },
+   "moderation_antigaming": {
+    "status": "partial",
+    "research_guess": "partial",
+    "evidence": "admin hides stories and disables users (PUT /api/admin/stories/:id, /api/admin/users/:id), rate limits on sign-up, login, submit and suggest (`limit` in server.js), suggestions queued as pending, Review desk guards (modules/review); votes have no rate limit or weighting"
+   },
+   "paper_summaries": {
+    "status": "partial",
+    "research_guess": "partial",
+    "evidence": "feed summary stored (capped, REQ-007); dossiers and explainers (modules/review/dossier.js, modules/learn, extended); no generated per-item summary"
+   },
+   "claim_evidence": {
+    "status": "partial",
+    "research_guess": "partial",
+    "evidence": "Review desk rigor, hype and credibility judges and bands (modules/review/review.js, bands.js, extended)"
+   },
+   "citation_graph": {
+    "status": "partial",
+    "research_guess": "partial",
+    "evidence": "concept graph and knowledge graph (GET /api/knowledge/graph, /m/map, extended); `semantic-scholar` is a search feed only; no citation graph"
+   },
+   "alerts_digests": {
+    "status": "partial",
+    "research_guess": "partial",
+    "evidence": "weekly brief in the app (GET /api/brief, public/brief.html, extended); RSS of published Learn posts only (GET /api/learn/feed.xml); no story feeds out, no email, no 'since last visit'"
+   },
+   "coverage_comparison": {
+    "status": "partial",
+    "research_guess": "partial",
+    "evidence": "story page 'covered by' table lists each source's name, kind and link (public/story.html); independent-source count lifts rank (server.js); `story_links.seen_at` is stored but not shown; no single-source list"
+   },
+   "source_credibility": {
+    "status": "partial",
+    "research_guess": "missing",
+    "evidence": "every source has a kind, shown on cards (`KIND` in public/js/api.js), and the kind sets the evidence level that scores points (`EVIDENCE` in lib/analysis.js: peer-reviewed, independent evaluation, lab, preprint, policy, news, commentary, community); no per-source primary/secondary or vendor/independent label"
+   },
+   "export_api": {
+    "status": "partial",
+    "research_guess": "check",
+    "evidence": "admin OPML export and import (GET/POST /api/admin/opml); JSON-LD export of the knowledge layer (GET /api/knowledge/export.jsonld, signed in); the JSON API needs sign-in; no export of a reader's own saves, lists and notes"
+   },
+   "minimal_accounts": {
+    "status": "have",
+    "research_guess": "have",
+    "evidence": "username and password only, scrypt hashes, 30-day session cookie (server.js, REQ-009..012); tracking parameters stripped from links (`normUrl` in lib/feeds.js)"
+   },
+   "mobile_offline": {
+    "status": "partial",
+    "research_guess": "partial",
+    "evidence": "phone layout with no sideways scroll (public/css/app.css, REQ-018); no web app manifest or service worker"
+   },
+   "accessibility": {
+    "status": "partial",
+    "research_guess": "check",
+    "evidence": "labelled search, tabs with roles and `aria-selected`, alerts with `role=alert` (public/index.html, modules/admin/pages/admin.html); no keyboard shortcuts, no audit recorded"
+   },
+   "open_source": {
+    "status": "partial",
+    "research_guess": "check",
+    "evidence": "public GitHub repo; package.json says ISC but there is no LICENSE file"
+   },
+   "free_tier": {
+    "status": "have",
+    "research_guess": "have",
+    "evidence": "Vercel Hobby and Neon Free, daily cron (vercel.json, docs/DEPLOY.md)"
+   },
+   "ai_features": {
+    "status": "partial",
+    "research_guess": "partial",
+    "evidence": "Learn studio jobs run by a local worker (scripts/learn-worker.js), judges with no model calls; no paid calls by default"
+   },
+   "reproducibility": {
+    "status": "partial",
+    "research_guess": "partial",
+    "evidence": "Lab paper-to-code toys (modules/lab/papers.js, extended); the `hf-daily` parser keeps title, summary and date only, so code and model links are dropped"
+   },
+   "forecasting_metrics": {
+    "status": "partial",
+    "research_guess": "partial",
+    "evidence": "benchmark mentions with values in `story_entities`; capability tracker with highest reported score (GET /api/capabilities, extended); no forecasts"
+   },
+   "admin_sources": {
+    "status": "have",
+    "research_guess": "check",
+    "evidence": "/m/admin: sources, catalog, discovery, test fetch, harvest runs, users, story moderation, ontology, re-tag, audit log (modules/admin)"
+   },
+   "analytics": {
+    "status": "have",
+    "research_guess": "check",
+    "evidence": "capability tracker: activity per area this window against the last (GET /api/capabilities, /m/capabilities, extended); admin overview counts (GET /api/admin/overview); brief compares topics with the week before"
+   },
+   "transparency": {
+    "status": "partial",
+    "research_guess": "partial",
+    "evidence": "admin audit log of who changed what (lib/audit.js, GET /api/admin/audit), admin-only; score reasons on every story; no public log of rule or ontology changes"
+   }
+  }
+ },
+ "apps": [
+  {
+   "name": "Techmeme",
+   "url": "https://www.techmeme.com",
+   "kind": "closed",
+   "status": "active",
+   "status_note": "Running; no shutdown found. Feature details from Wikipedia and older press, not re-checked on the live site.",
+   "checked": "2026-11",
+   "features": {
+    "clustering": {
+     "has": true,
+     "note": "Algorithm ranks headlines; related coverage from other outlets is grouped under each lead story (grouping shown on site; mechanism per Wikipedia: inbound links, age)",
+     "source": "https://en.wikipedia.org/wiki/Techmeme"
+    },
+    "explainable_ranking": {
+     "has": "partial",
+     "note": "Automated ranking by inbound links and age plus human editors; not explained per story",
+     "source": "https://en.wikipedia.org/wiki/Techmeme"
+    },
+    "moderation_antigaming": {
+     "has": true,
+     "note": "Down-weights link bursts from short periods or small groups of people",
+     "source": "https://en.wikipedia.org/wiki/Techmeme"
+    },
+    "search": {
+     "has": true,
+     "note": "Archive search since 2008, plus prospective search that alerts on future headlines",
+     "source": "https://en.wikipedia.org/wiki/Techmeme"
+    },
+    "alerts_digests": {
+     "has": true,
+     "note": "Prospective search notifies when future headlines match",
+     "source": "https://en.wikipedia.org/wiki/Techmeme"
+    },
+    "analytics": {
+     "has": true,
+     "note": "Publishes source / author leaderboards",
+     "source": "https://news.techmeme.com/150520/author-leaderboards"
+    },
+    "transparency": {
+     "has": "partial",
+     "note": "Has explained its headline and source selection publicly",
+     "source": "https://techcrunch.com/2011/10/31/techmeme-opens-the-kimono-on-how-it-chooses-headlines-and-sources/amp/"
+    },
+    "free_tier": {
+     "has": true,
+     "note": "Free to read; sponsor-funded",
+     "source": "https://en.wikipedia.org/wiki/Techmeme"
+    }
+   }
+  },
+  {
+   "name": "Hacker News",
+   "url": "https://news.ycombinator.com",
+   "kind": "closed",
+   "status": "active",
+   "status_note": "Active.",
+   "checked": "2026-11",
+   "features": {
+    "custom_sources": {
+     "has": true,
+     "note": "Users submit any link",
+     "source": "https://news.ycombinator.com/newsfaq.html"
+    },
+    "explainable_ranking": {
+     "has": "partial",
+     "note": "Formula published in outline (points / age^gravity) but penalties, flags and moderator weights are hidden",
+     "source": "https://news.ycombinator.com/newsfaq.html"
+    },
+    "votes": {
+     "has": true,
+     "note": "Upvotes on stories; comment downvotes after karma threshold",
+     "source": "https://news.ycombinator.com/newsfaq.html"
+    },
+    "comments": {
+     "has": true,
+     "note": "Threaded discussion",
+     "source": "https://news.ycombinator.com/newsfaq.html"
+    },
+    "moderation_antigaming": {
+     "has": true,
+     "note": "Flags, vouching, karma thresholds, anti-abuse software drops some votes, overheated-thread demotion",
+     "source": "https://news.ycombinator.com/newsfaq.html"
+    },
+    "clustering": {
+     "has": "partial",
+     "note": "Duplicate reposts within ~a year are buried as dupes; no cross-source grouping",
+     "source": "https://news.ycombinator.com/newsfaq.html"
+    },
+    "minimal_accounts": {
+     "has": true,
+     "note": "Username + password; email optional (only needed for reset)",
+     "source": "https://news.ycombinator.com/newsfaq.html"
+    },
+    "transparency": {
+     "has": "partial",
+     "note": "Undocumented behaviours catalogued by the community, not by the site",
+     "source": "https://github.com/minimaxir/hacker-news-undocumented"
+    },
+    "free_tier": {
+     "has": true,
+     "note": "Free",
+     "source": "https://news.ycombinator.com/newsfaq.html"
+    }
+   }
+  },
+  {
+   "name": "Lobsters",
+   "url": "https://lobste.rs",
+   "kind": "open-source",
+   "licence": "BSD-3-Clause",
+   "repo": "https://github.com/lobsters/lobsters",
+   "status": "active",
+   "status_note": "Active (2026 analysis of its ranking). Its /about page was not reachable in this run.",
+   "checked": "2026-11",
+   "features": {
+    "custom_sources": {
+     "has": true,
+     "note": "Invited users submit links",
+     "source": "https://blog.nilenso.com/blog/2026/01/20/lobsters-front-page/"
+    },
+    "topic_tagging": {
+     "has": true,
+     "note": "Admin-curated tags on every story; tags carry hotness modifiers",
+     "source": "https://blog.nilenso.com/blog/2026/01/20/lobsters-front-page/"
+    },
+    "explainable_ranking": {
+     "has": true,
+     "note": "Open hotness formula: tag modifiers + log(engagement) + age window (22h); readable in source",
+     "source": "https://blog.nilenso.com/blog/2026/01/20/lobsters-front-page/"
+    },
+    "votes": {
+     "has": true,
+     "note": "Story and comment votes",
+     "source": "https://blog.nilenso.com/blog/2026/01/20/lobsters-front-page/"
+    },
+    "comments": {
+     "has": true,
+     "note": "Threaded comments",
+     "source": "https://blog.nilenso.com/blog/2026/01/20/lobsters-front-page/"
+    },
+    "moderation_antigaming": {
+     "has": true,
+     "note": "Invite system, flags lower score, comment votes capped so they can't lift low-scoring stories",
+     "source": "https://blog.nilenso.com/blog/2026/01/20/lobsters-front-page/"
+    },
+    "open_source": {
+     "has": true,
+     "note": "Rails app, BSD-3, SQLite in production, minimal JS",
+     "source": "https://github.com/lobsters/lobsters"
+    },
+    "admin_sources": {
+     "has": true,
+     "note": "Mod dashboard and tag admin",
+     "source": "https://github.com/lobsters/lobsters"
+    },
+    "free_tier": {
+     "has": true,
+     "note": "Free",
+     "source": "https://blog.nilenso.com/blog/2026/01/20/lobsters-front-page/"
+    }
+   }
+  },
+  {
+   "name": "Reddit r/MachineLearning",
+   "url": "https://www.reddit.com/r/MachineLearning/",
+   "kind": "service",
+   "status": "active",
+   "status_note": "Active subreddit.",
+   "checked": "2026-11",
+   "features": {
+    "custom_sources": {
+     "has": true,
+     "note": "User link and text posts",
+     "source": "https://aiexpert.network/r-machinelearning/"
+    },
+    "topic_tagging": {
+     "has": true,
+     "note": "Required title flairs [R] research, [D] discussion, [P] project, [N] news",
+     "source": "https://aiexpert.network/r-machinelearning/"
+    },
+    "votes": {
+     "has": true,
+     "note": "Up/down votes",
+     "source": "https://aiexpert.network/r-machinelearning/"
+    },
+    "comments": {
+     "has": true,
+     "note": "Threaded comments",
+     "source": "https://aiexpert.network/r-machinelearning/"
+    },
+    "moderation_antigaming": {
+     "has": true,
+     "note": "Volunteer moderators, AutoModerator, self-promotion confined to a recurring thread",
+     "source": "https://aiexpert.network/r-machinelearning/"
+    },
+    "free_tier": {
+     "has": true,
+     "note": "Free",
+     "source": "https://aiexpert.network/r-machinelearning/"
+    }
+   }
+  },
+  {
+   "name": "Hugging Face Daily Papers / Trending Papers",
+   "url": "https://huggingface.co/papers",
+   "kind": "service",
+   "status": "active",
+   "status_note": "Active; also the redirect target for paperswithcode.com since July 2025.",
+   "checked": "2026-11",
+   "features": {
+    "ingest_arxiv": {
+     "has": true,
+     "note": "arXiv papers submitted by users who have claimed a paper",
+     "source": "https://huggingface.co/blog/daily-papers"
+    },
+    "votes": {
+     "has": true,
+     "note": "Upvotes per paper",
+     "source": "https://huggingface.co/papers"
+    },
+    "comments": {
+     "has": true,
+     "note": "Per-paper discussion with @author tagging and auto-translation",
+     "source": "https://huggingface.co/blog/daily-papers"
+    },
+    "explainable_ranking": {
+     "has": "partial",
+     "note": "Ranked by upvotes; daily/weekly/monthly tabs",
+     "source": "https://huggingface.co/papers"
+    },
+    "alerts_digests": {
+     "has": true,
+     "note": "Daily email of new papers (no weekends)",
+     "source": "https://huggingface.co/blog/daily-papers"
+    },
+    "reproducibility": {
+     "has": true,
+     "note": "Paper pages link models, datasets, Spaces demos; Trending Papers links GitHub code",
+     "source": "https://hyper.ai/en/news/42900"
+    },
+    "citation_graph": {
+     "has": "partial",
+     "note": "@librarian-bot suggests related papers",
+     "source": "https://huggingface.co/blog/daily-papers"
+    },
+    "moderation_antigaming": {
+     "has": "partial",
+     "note": "Only users with a claimed paper can submit",
+     "source": "https://huggingface.co/blog/daily-papers"
+    },
+    "free_tier": {
+     "has": true,
+     "note": "Free",
+     "source": "https://huggingface.co/papers"
+    }
+   }
+  },
+  {
+   "name": "alphaXiv",
+   "url": "https://www.alphaxiv.org",
+   "kind": "closed",
+   "status": "active",
+   "status_note": "Active in 2026 (news coverage); changelog last entries 2025.",
+   "checked": "2026-11",
+   "features": {
+    "ingest_arxiv": {
+     "has": true,
+     "note": "Mirrors arXiv papers",
+     "source": "https://alphaxiv.org/blog/one-year"
+    },
+    "comments": {
+     "has": true,
+     "note": "Inline comments anchored to paper sections",
+     "source": "https://alphaxiv.org/blog/one-year"
+    },
+    "votes": {
+     "has": true,
+     "note": "Votes on comments",
+     "source": "https://alphaxiv.org/blog/one-year"
+    },
+    "moderation_antigaming": {
+     "has": true,
+     "note": "Comments below -3 hidden (still viewable), user flags, LLM pre-filter for abuse, staff moderators, optional identity verification (ORCID, university email)",
+     "source": "https://alphaxiv.org/blog/one-year"
+    },
+    "ai_features": {
+     "has": true,
+     "note": "Highlight-and-ask AI chat, AI blog posts of papers, voice discussion, deep research",
+     "source": "https://www.alphaxiv.org/changelog"
+    },
+    "paper_summaries": {
+     "has": true,
+     "note": "AI-generated illustrated blog posts in 8 languages",
+     "source": "https://www.alphaxiv.org/changelog"
+    },
+    "reproducibility": {
+     "has": true,
+     "note": "Paper code integration",
+     "source": "https://www.alphaxiv.org/changelog"
+    }
+   }
+  },
+  {
+   "name": "Papers with Code",
+   "url": "https://paperswithcode.com",
+   "kind": "service",
+   "licence": "data CC BY-SA (archive; not re-verified)",
+   "repo": "https://github.com/paperswithcode/paperswithcode-data",
+   "status": "discontinued",
+   "status_note": "Retired by Meta 24-25 July 2025 without notice; domain redirects to Hugging Face Trending Papers; leaderboards frozen as a JSON archive.",
+   "checked": "2026-11",
+   "features": {
+    "reproducibility": {
+     "has": true,
+     "note": "Was the main paper->code index (historical)",
+     "source": "https://www.codesota.com/papers-with-code"
+    },
+    "forecasting_metrics": {
+     "has": true,
+     "note": "SOTA benchmark leaderboards (historical, now frozen)",
+     "source": "https://www.codesota.com/papers-with-code"
+    },
+    "export_api": {
+     "has": true,
+     "note": "Frozen JSON data archive on GitHub",
+     "source": "https://www.codesota.com/papers-with-code"
+    }
+   }
+  },
+  {
+   "name": "arXiv Sanity Lite",
+   "url": "https://arxiv-sanity-lite.com",
+   "kind": "open-source",
+   "licence": "MIT (stated in repo; not re-verified this run)",
+   "repo": "https://github.com/karpathy/arxiv-sanity-lite",
+   "status": "unclear",
+   "status_note": "Code public; the original hosted site's uptime not verified. Community instances exist (e.g. arxiv-sanity.duckdns.org).",
+   "checked": "2026-11",
+   "features": {
+    "ingest_arxiv": {
+     "has": true,
+     "note": "Polls arXiv API for chosen categories",
+     "source": "https://arxiv-sanity.duckdns.org/about"
+    },
+    "personalization": {
+     "has": true,
+     "note": "Per-tag SVM over TF-IDF of abstracts recommends new papers",
+     "source": "https://arxiv-sanity.duckdns.org/about"
+    },
+    "explainable_ranking": {
+     "has": "partial",
+     "note": "Simple, inspectable model (linear SVM) but no per-paper explanation",
+     "source": "https://arxiv-sanity.duckdns.org/about"
+    },
+    "saves_lists": {
+     "has": true,
+     "note": "User tags as collections",
+     "source": "https://arxiv-sanity.duckdns.org/about"
+    },
+    "search": {
+     "has": true,
+     "note": "Search, rank, sort, slice",
+     "source": "https://arxiv-sanity.duckdns.org/about"
+    },
+    "alerts_digests": {
+     "has": true,
+     "note": "Daily recommendation emails",
+     "source": "https://arxiv-sanity.duckdns.org/about"
+    },
+    "open_source": {
+     "has": true,
+     "note": "Self-hostable Flask + SQLite",
+     "source": "https://github.com/karpathy/arxiv-sanity-lite"
+    },
+    "free_tier": {
+     "has": true,
+     "note": "Free",
+     "source": "https://arxiv-sanity.duckdns.org/about"
+    }
+   }
+  },
+  {
+   "name": "Scholar Inbox",
+   "url": "https://www.scholar-inbox.com",
+   "kind": "service",
+   "status": "active",
+   "status_note": "Active (2025 paper; 2026 news mentions). Run by an academic group; pricing not stated.",
+   "checked": "2026-11",
+   "features": {
+    "ingest_arxiv": {
+     "has": true,
+     "note": "arXiv, bioRxiv, chemRxiv, medRxiv and conference proceedings, reconciled with S2ORC",
+     "source": "https://arxiv.org/html/2504.08385v2"
+    },
+    "personalization": {
+     "has": true,
+     "note": "Per-user logistic regression on embeddings, retrained after each thumbs up/down; active learning asks about borderline papers",
+     "source": "https://arxiv.org/html/2504.08385v2"
+    },
+    "explainable_ranking": {
+     "has": "partial",
+     "note": "Shows a relevance score in [-100,100]; reason not itemised",
+     "source": "https://arxiv.org/html/2504.08385v2"
+    },
+    "votes": {
+     "has": true,
+     "note": "Thumbs up / down ratings",
+     "source": "https://arxiv.org/html/2504.08385v2"
+    },
+    "alerts_digests": {
+     "has": true,
+     "note": "Daily digest by email on chosen weekdays; catch-up digest after absence",
+     "source": "https://arxiv.org/html/2504.08385v2"
+    },
+    "search": {
+     "has": true,
+     "note": "Semantic search, title/author search, similar-papers",
+     "source": "https://arxiv.org/html/2504.08385v2"
+    },
+    "citation_graph": {
+     "has": true,
+     "note": "Scholar Maps: zoomable 2D map of ~3M papers with 4-level topic labels",
+     "source": "https://arxiv.org/html/2504.08385v2"
+    },
+    "saves_lists": {
+     "has": true,
+     "note": "Collections, bookmarks, conference poster planner",
+     "source": "https://arxiv.org/html/2504.08385v2"
+    },
+    "export_api": {
+     "has": "partial",
+     "note": "BibTeX export; anonymised ratings dataset released",
+     "source": "https://arxiv.org/html/2504.08385v2"
+    },
+    "free_tier": {
+     "has": true,
+     "note": "Described as open-access / publicly available",
+     "source": "https://arxiv.org/html/2504.08385v2"
+    }
+   }
+  },
+  {
+   "name": "Semantic Scholar (Research Feeds & Alerts)",
+   "url": "https://www.semanticscholar.org",
+   "kind": "service",
+   "status": "active",
+   "status_note": "Active (release notes, 2026 reviews).",
+   "checked": "2026-11",
+   "features": {
+    "ingest_arxiv": {
+     "has": true,
+     "note": "Large academic corpus including arXiv",
+     "source": "https://webflow.semanticscholar.org/faq"
+    },
+    "personalization": {
+     "has": true,
+     "note": "Research Feeds recommend from Library folders, daily, last 3 months",
+     "source": "https://webflow.semanticscholar.org/faq"
+    },
+    "alerts_digests": {
+     "has": true,
+     "note": "Email alerts for authors, papers, topics, feeds",
+     "source": "https://webflow.semanticscholar.org/faq"
+    },
+    "paper_summaries": {
+     "has": true,
+     "note": "TLDRs for CS and biomedicine",
+     "source": "https://webflow.semanticscholar.org/faq"
+    },
+    "citation_graph": {
+     "has": true,
+     "note": "Citations with Highly Influential Citations classifier; Semantic Reader shows citation context",
+     "source": "https://webflow.semanticscholar.org/faq"
+    },
+    "saves_lists": {
+     "has": true,
+     "note": "Library folders",
+     "source": "https://webflow.semanticscholar.org/faq"
+    },
+    "export_api": {
+     "has": true,
+     "note": "Free Academic Graph API and monthly datasets",
+     "source": "https://webflow.semanticscholar.org/faq"
+    },
+    "free_tier": {
+     "has": true,
+     "note": "Free",
+     "source": "https://webflow.semanticscholar.org/faq"
+    },
+    "ai_features": {
+     "has": true,
+     "note": "Semantic Reader (AI-augmented reading)",
+     "source": "https://webflow.semanticscholar.org/faq"
+    }
+   }
+  },
+  {
+   "name": "Google Scholar alerts",
+   "url": "https://scholar.google.com",
+   "kind": "service",
+   "status": "active",
+   "status_note": "Active.",
+   "checked": "2026-11",
+   "features": {
+    "alerts_digests": {
+     "has": true,
+     "note": "Email alerts for searches, new citations of a paper, new articles by an author",
+     "source": "https://guides.library.upenn.edu/googlescholar/alerts"
+    },
+    "export_api": {
+     "has": false,
+     "note": "No RSS for Scholar searches; no public API",
+     "source": "https://guides.library.upenn.edu/googlescholar/alerts"
+    },
+    "free_tier": {
+     "has": true,
+     "note": "Free",
+     "source": "https://guides.library.upenn.edu/googlescholar/alerts"
+    }
+   }
+  },
+  {
+   "name": "ResearchRabbit",
+   "url": "https://www.researchrabbit.ai",
+   "kind": "closed",
+   "status": "active",
+   "status_note": "Active; revamped 2025 and partnered with Litmaps (reported by some as an acquisition).",
+   "checked": "2026-11",
+   "features": {
+    "citation_graph": {
+     "has": true,
+     "note": "Similar / references / citations expansion with configurable graph (year x citations)",
+     "source": "https://aarontay.substack.com/p/researchrabbits-2025-revamp-iterative"
+    },
+    "saves_lists": {
+     "has": true,
+     "note": "Unlimited colour-coded collections",
+     "source": "https://aarontay.substack.com/p/researchrabbits-2025-revamp-iterative"
+    },
+    "filters": {
+     "has": "partial",
+     "note": "Advanced filters (date, SJR quartile, exclude retractions) are paid",
+     "source": "https://aarontay.substack.com/p/researchrabbits-2025-revamp-iterative"
+    },
+    "export_api": {
+     "has": "partial",
+     "note": "BibTeX/CSV/RIS import; export paid",
+     "source": "https://aarontay.substack.com/p/researchrabbits-2025-revamp-iterative"
+    },
+    "free_tier": {
+     "has": "partial",
+     "note": "Free tier capped (<50 inputs, one project)",
+     "source": "https://aarontay.substack.com/p/researchrabbits-2025-revamp-iterative"
+    }
+   }
+  },
+  {
+   "name": "Connected Papers",
+   "url": "https://www.connectedpapers.com",
+   "kind": "closed",
+   "status": "active",
+   "status_note": "Active (2026 comparisons).",
+   "checked": "2026-11",
+   "features": {
+    "citation_graph": {
+     "has": true,
+     "note": "Similarity graph from co-citation + bibliographic coupling; prior and derivative works views",
+     "source": "https://libguides.lmu.edu/AIresearchtools/CP"
+    },
+    "explainable_ranking": {
+     "has": "partial",
+     "note": "Visual encoding explains similarity (edge length, size=citations, colour=recency)",
+     "source": "https://libguides.lmu.edu/AIresearchtools/CP"
+    },
+    "free_tier": {
+     "has": "partial",
+     "note": "2 graphs free, 5/month with account; academic plan $6/mo",
+     "source": "https://libguides.lmu.edu/AIresearchtools/CP"
+    }
+   }
+  },
+  {
+   "name": "Litmaps",
+   "url": "https://www.litmaps.com",
+   "kind": "closed",
+   "status": "active",
+   "status_note": "Active (2026 reviews).",
+   "checked": "2026-11",
+   "features": {
+    "citation_graph": {
+     "has": true,
+     "note": "Seed maps; combine and compare maps",
+     "source": "https://www.casrai.org/guides/litmaps"
+    },
+    "alerts_digests": {
+     "has": true,
+     "note": "Monitor emails new matching articles weekly; all tiers",
+     "source": "https://www.casrai.org/guides/litmaps"
+    },
+    "notes_highlights": {
+     "has": "partial",
+     "note": "Annotate maps",
+     "source": "https://www.casrai.org/guides/litmaps"
+    },
+    "export_api": {
+     "has": true,
+     "note": "Exports to Zotero, Mendeley, EndNote, Paperpile; BibTeX/RIS import",
+     "source": "https://www.casrai.org/guides/litmaps"
+    },
+    "free_tier": {
+     "has": "partial",
+     "note": "Free: 2 maps of 100 articles, fixed monitor schedule",
+     "source": "https://www.casrai.org/guides/litmaps"
+    }
+   }
+  },
+  {
+   "name": "Elicit",
+   "url": "https://elicit.com",
+   "kind": "closed",
+   "status": "active",
+   "status_note": "Active (2026 review).",
+   "checked": "2026-11",
+   "features": {
+    "search": {
+     "has": true,
+     "note": "Semantic search over ~125-138M papers",
+     "source": "https://www.fast.io/resources/elicit-ai-review-2026.md"
+    },
+    "paper_summaries": {
+     "has": true,
+     "note": "Unlimited summaries on free plan",
+     "source": "https://www.fast.io/resources/elicit-ai-review-2026.md"
+    },
+    "claim_evidence": {
+     "has": true,
+     "note": "Extraction tables (design, sample size, outcomes) linked to source text; systematic-review workflow",
+     "source": "https://www.fast.io/resources/elicit-ai-review-2026.md"
+    },
+    "alerts_digests": {
+     "has": "partial",
+     "note": "Topic alerts on Pro",
+     "source": "https://www.fast.io/resources/elicit-ai-review-2026.md"
+    },
+    "ai_features": {
+     "has": true,
+     "note": "Chat with papers, automated reports",
+     "source": "https://www.fast.io/resources/elicit-ai-review-2026.md"
+    },
+    "export_api": {
+     "has": "partial",
+     "note": "API on paid plans",
+     "source": "https://www.fast.io/resources/elicit-ai-review-2026.md"
+    },
+    "free_tier": {
+     "has": "partial",
+     "note": "Free Basic plan; Pro $49/mo",
+     "source": "https://www.fast.io/resources/elicit-ai-review-2026.md"
+    }
+   }
+  },
+  {
+   "name": "Consensus",
+   "url": "https://consensus.app",
+   "kind": "closed",
+   "status": "active",
+   "status_note": "Active (2026 guides).",
+   "checked": "2026-11",
+   "features": {
+    "claim_evidence": {
+     "has": true,
+     "note": "Consensus Meter: yes/no/mixed/possibly distribution across papers; claims-and-evidence table in Deep Search",
+     "source": "https://aarontay.substack.com/p/a-2025-deep-dive-of-consensus-promises"
+    },
+    "source_credibility": {
+     "has": true,
+     "note": "Study-type tags (RCT, meta-analysis) and journal rigour tags",
+     "source": "https://aarontay.substack.com/p/a-2025-deep-dive-of-consensus-promises"
+    },
+    "paper_summaries": {
+     "has": true,
+     "note": "Study Snapshots: population, methods, sample size, outcomes",
+     "source": "https://aarontay.substack.com/p/a-2025-deep-dive-of-consensus-promises"
+    },
+    "filters": {
+     "has": true,
+     "note": "Year, journal rank, citations, exclude preprints, study design, sample size, field, country",
+     "source": "https://aarontay.substack.com/p/a-2025-deep-dive-of-consensus-promises"
+    },
+    "ai_features": {
+     "has": true,
+     "note": "LLM synthesis modes up to Deep Search reports",
+     "source": "https://aarontay.substack.com/p/a-2025-deep-dive-of-consensus-promises"
+    }
+   }
+  },
+  {
+   "name": "scite",
+   "url": "https://scite.ai",
+   "kind": "closed",
+   "status": "active",
+   "status_note": "Active (2026 review).",
+   "checked": "2026-11",
+   "features": {
+    "claim_evidence": {
+     "has": true,
+     "note": "Smart Citations classify each citing statement as supporting, contrasting or mentioning",
+     "source": "https://scite.ai/features"
+    },
+    "source_credibility": {
+     "has": true,
+     "note": "Flags retractions and editorial notices (Reference Check, Collections)",
+     "source": "https://scite.ai/features"
+    },
+    "alerts_digests": {
+     "has": true,
+     "note": "Search alerts; collection alerts on new supporting/contrasting citations",
+     "source": "https://scite.ai/features"
+    },
+    "citation_graph": {
+     "has": true,
+     "note": "Citation statements in context",
+     "source": "https://scite.ai/features"
+    },
+    "ai_features": {
+     "has": true,
+     "note": "Assistant answering from full text with linked sources",
+     "source": "https://scite.ai/features"
+    },
+    "export_api": {
+     "has": true,
+     "note": "API",
+     "source": "https://scite.ai/features"
+    },
+    "free_tier": {
+     "has": "partial",
+     "note": "Free trial only",
+     "source": "https://scite.ai/features"
+    }
+   }
+  },
+  {
+   "name": "Perplexity Discover",
+   "url": "https://www.perplexity.ai/discover",
+   "kind": "closed",
+   "status": "unclear",
+   "status_note": "Perplexity is active; Discover details here date from 2024 and were not re-verified for late 2026.",
+   "checked": "2026-11",
+   "features": {
+    "personalization": {
+     "has": true,
+     "note": "Feed tailored to chosen interests and languages",
+     "source": "https://alternativeto.net/news/2024/9/perplexity-ai-launches-personalized-discover-feed"
+    },
+    "topic_tagging": {
+     "has": "partial",
+     "note": "Topic drop-down (For You, Tech, Sports...)",
+     "source": "https://www.testingcatalog.com/perplexity-plans-web-release-of-updated-discover-feed-with-more-topics"
+    },
+    "ai_features": {
+     "has": "partial",
+     "note": "AI-written pages (summaries not confirmed in sources)",
+     "source": "https://www.testingcatalog.com/perplexity-plans-web-release-of-updated-discover-feed-with-more-topics"
+    }
+   }
+  },
+  {
+   "name": "Ground News",
+   "url": "https://ground.news",
+   "kind": "closed",
+   "status": "active",
+   "status_note": "Active (2026 reviews).",
+   "checked": "2026-11",
+   "features": {
+    "clustering": {
+     "has": true,
+     "note": "NLP groups related stories even with different wording",
+     "source": "https://en.wikipedia.org/wiki/Ground_News"
+    },
+    "coverage_comparison": {
+     "has": true,
+     "note": "Per story: outlets that covered it, labelled by leaning; weekly Blindspot report of stories one side ignored",
+     "source": "https://en.wikipedia.org/wiki/Ground_News"
+    },
+    "source_credibility": {
+     "has": true,
+     "note": "Bias (free) and factuality (paid) ratings averaged from three rating organisations",
+     "source": "https://en.wikipedia.org/wiki/Ground_News"
+    },
+    "free_tier": {
+     "has": "partial",
+     "note": "Freemium: guest, free account, paid",
+     "source": "https://en.wikipedia.org/wiki/Ground_News"
+    }
+   }
+  },
+  {
+   "name": "Feedly (incl. Feedly AI / Leo)",
+   "url": "https://feedly.com",
+   "kind": "closed",
+   "status": "active",
+   "status_note": "Active.",
+   "checked": "2026-11",
+   "features": {
+    "ingest_feeds": {
+     "has": true,
+     "note": "RSS reader",
+     "source": "https://docs.feedly.com/category/728-market-intelligence"
+    },
+    "clustering": {
+     "has": true,
+     "note": "Content-based dedup across sources: >85% overlap within 31 days shows one copy, read-state propagates",
+     "source": "https://docs.feedly.com/article/218-how-does-deduplication-work"
+    },
+    "filters": {
+     "has": true,
+     "note": "Mute filters",
+     "source": "https://docs.feedly.com/category/706-mute-filters"
+    },
+    "topic_tagging": {
+     "has": true,
+     "note": "AI Feeds with natural-language filters",
+     "source": "https://docs.feedly.com/category/728-market-intelligence"
+    },
+    "analytics": {
+     "has": true,
+     "note": "Emerging Trends dashboard",
+     "source": "https://docs.feedly.com/category/728-market-intelligence"
+    },
+    "alerts_digests": {
+     "has": true,
+     "note": "AI automated newsletters",
+     "source": "https://docs.feedly.com/category/728-market-intelligence"
+    },
+    "ai_features": {
+     "has": true,
+     "note": "Ask AI, AI Overviews",
+     "source": "https://docs.feedly.com/category/728-market-intelligence"
+    },
+    "free_tier": {
+     "has": "partial",
+     "note": "Free reader; AI features on paid plans (plan split not verified)",
+     "source": "https://docs.feedly.com/category/728-market-intelligence"
+    }
+   }
+  },
+  {
+   "name": "Inoreader",
+   "url": "https://www.inoreader.com",
+   "kind": "closed",
+   "status": "active",
+   "status_note": "Active.",
+   "checked": "2026-11",
+   "features": {
+    "ingest_feeds": {
+     "has": true,
+     "note": "Up to 150 feeds free",
+     "source": "https://inoreader.com/pricing"
+    },
+    "no_feed_sites": {
+     "has": true,
+     "note": "Web feeds turn pages without RSS into feeds; track changes (Pro)",
+     "source": "https://www.inoreader.com/blog/2020/04/convert-almost-any-webpage-into-rss-feed-with-inoreaders-web-feeds.html"
+    },
+    "clustering": {
+     "has": "partial",
+     "note": "Automatic duplicate removal filter (Pro)",
+     "source": "https://inoreader.com/pricing"
+    },
+    "filters": {
+     "has": true,
+     "note": "Rules and filters (Pro), monitoring feeds for keywords",
+     "source": "https://inoreader.com/pricing"
+    },
+    "search": {
+     "has": true,
+     "note": "Search in feeds; global search",
+     "source": "https://inoreader.com/pricing"
+    },
+    "notes_highlights": {
+     "has": true,
+     "note": "Annotations, Spotlights term highlighting (Pro)",
+     "source": "https://inoreader.com/pricing"
+    },
+    "alerts_digests": {
+     "has": true,
+     "note": "Email digests, push notifications, output feeds (Pro)",
+     "source": "https://inoreader.com/pricing"
+    },
+    "ai_features": {
+     "has": true,
+     "note": "Inoreader Intelligence: summaries, intelligence reports, bring-your-own API key",
+     "source": "https://alternativeto.net/news/2025/3/inoreader-introduces-inoreader-intelligence-with-ai-powered-article-summaries"
+    },
+    "export_api": {
+     "has": true,
+     "note": "API, OPML backups, output feeds (Pro)",
+     "source": "https://inoreader.com/pricing"
+    },
+    "mobile_offline": {
+     "has": true,
+     "note": "Mobile apps; offline reading (Pro)",
+     "source": "https://inoreader.com/pricing"
+    },
+    "accessibility": {
+     "has": "partial",
+     "note": "Text-to-speech (Pro, limited)",
+     "source": "https://inoreader.com/pricing"
+    },
+    "free_tier": {
+     "has": true,
+     "note": "Free plan, 150 feeds",
+     "source": "https://inoreader.com/pricing"
+    }
+   }
+  },
+  {
+   "name": "NewsBlur",
+   "url": "https://newsblur.com",
+   "kind": "open-source",
+   "licence": "MIT",
+   "repo": "https://github.com/samuelclay/NewsBlur",
+   "status": "active",
+   "status_note": "Active. Feature list taken from NewsBlur's own comparison page (vendor-written).",
+   "checked": "2026-11",
+   "features": {
+    "ingest_feeds": {
+     "has": true,
+     "note": "RSS reader; newsletters by forwarding",
+     "source": "https://newsblur.com/compare/inoreader"
+    },
+    "clustering": {
+     "has": true,
+     "note": "Groups duplicate stories across your feeds",
+     "source": "https://newsblur.com/compare/inoreader"
+    },
+    "personalization": {
+     "has": true,
+     "note": "Intelligence trainer: like/dislike author, tag, title words, URL, regex",
+     "source": "https://newsblur.com/compare/inoreader"
+    },
+    "explainable_ranking": {
+     "has": true,
+     "note": "Green/red/neutral classification is directly traceable to the trained rule",
+     "source": "https://newsblur.com/compare/inoreader"
+    },
+    "search": {
+     "has": true,
+     "note": "Full-text search (Elasticsearch)",
+     "source": "https://newsblur.com/compare/inoreader"
+    },
+    "saves_lists": {
+     "has": true,
+     "note": "Saved stories with tags",
+     "source": "https://newsblur.com/compare/inoreader"
+    },
+    "comments": {
+     "has": true,
+     "note": "Blurblogs: share stories publicly with comments",
+     "source": "https://newsblur.com/compare/inoreader"
+    },
+    "ai_features": {
+     "has": true,
+     "note": "Ask AI; Daily Briefing AI summaries (paid)",
+     "source": "https://newsblur.com/compare/inoreader"
+    },
+    "mobile_offline": {
+     "has": true,
+     "note": "iOS and Android apps",
+     "source": "https://newsblur.com/compare/inoreader"
+    },
+    "open_source": {
+     "has": true,
+     "note": "MIT, Docker self-host",
+     "source": "https://newsblur.com/compare/inoreader"
+    },
+    "free_tier": {
+     "has": "partial",
+     "note": "Free up to 64 sites",
+     "source": "https://newsblur.com/compare/inoreader"
+    }
+   }
+  },
+  {
+   "name": "Miniflux",
+   "url": "https://miniflux.app",
+   "kind": "open-source",
+   "licence": "Apache-2.0",
+   "repo": "https://github.com/miniflux/v2",
+   "status": "active",
+   "status_note": "Active (2.3.x README).",
+   "checked": "2026-11",
+   "features": {
+    "ingest_feeds": {
+     "has": true,
+     "note": "Atom, RSS, JSON Feed",
+     "source": "https://codegraph.jelmer.uk/miniflux/2.3.2-1/README.md"
+    },
+    "no_feed_sites": {
+     "has": "partial",
+     "note": "CSS-selector scraper rules fetch full content (feed still needed)",
+     "source": "https://codegraph.jelmer.uk/miniflux/2.3.2-1/README.md"
+    },
+    "filters": {
+     "has": true,
+     "note": "Regex include/exclude filters; rewrite rules",
+     "source": "https://codegraph.jelmer.uk/miniflux/2.3.2-1/README.md"
+    },
+    "search": {
+     "has": true,
+     "note": "Full-text search (PostgreSQL)",
+     "source": "https://codegraph.jelmer.uk/miniflux/2.3.2-1/README.md"
+    },
+    "export_api": {
+     "has": true,
+     "note": "REST API, Fever and Google Reader APIs, OPML, webhooks, 25+ integrations",
+     "source": "https://codegraph.jelmer.uk/miniflux/2.3.2-1/README.md"
+    },
+    "minimal_accounts": {
+     "has": true,
+     "note": "Strips trackers, media proxy, strict CSP, no external JS",
+     "source": "https://codegraph.jelmer.uk/miniflux/2.3.2-1/README.md"
+    },
+    "mobile_offline": {
+     "has": true,
+     "note": "Responsive, add to home screen",
+     "source": "https://codegraph.jelmer.uk/miniflux/2.3.2-1/README.md"
+    },
+    "accessibility": {
+     "has": "partial",
+     "note": "Keyboard shortcuts, custom CSS; no explicit a11y statement",
+     "source": "https://codegraph.jelmer.uk/miniflux/2.3.2-1/README.md"
+    },
+    "open_source": {
+     "has": true,
+     "note": "Apache-2.0, self-host",
+     "source": "https://codegraph.jelmer.uk/miniflux/2.3.2-1/README.md"
+    }
+   }
+  },
+  {
+   "name": "FreshRSS",
+   "url": "https://freshrss.org",
+   "kind": "open-source",
+   "licence": "AGPL-3.0",
+   "repo": "https://github.com/FreshRSS/FreshRSS",
+   "status": "active",
+   "status_note": "Active.",
+   "checked": "2026-11",
+   "features": {
+    "ingest_feeds": {
+     "has": true,
+     "note": "RSS/Atom with WebSub push",
+     "source": "https://github.com/FreshRSS/FreshRSS"
+    },
+    "no_feed_sites": {
+     "has": true,
+     "note": "Scrape HTML via XPath, and JSON documents, into feeds",
+     "source": "https://github.com/FreshRSS/FreshRSS"
+    },
+    "saves_lists": {
+     "has": true,
+     "note": "Custom labels",
+     "source": "https://github.com/FreshRSS/FreshRSS"
+    },
+    "export_api": {
+     "has": true,
+     "note": "Google Reader and Fever APIs",
+     "source": "https://github.com/FreshRSS/FreshRSS"
+    },
+    "mobile_offline": {
+     "has": "partial",
+     "note": "Works on mobile; native apps via APIs",
+     "source": "https://github.com/FreshRSS/FreshRSS"
+    },
+    "open_source": {
+     "has": true,
+     "note": "AGPL-3.0, PHP, multi-user, extensions",
+     "source": "https://github.com/FreshRSS/FreshRSS"
+    },
+    "free_tier": {
+     "has": true,
+     "note": "Free self-host",
+     "source": "https://github.com/FreshRSS/FreshRSS"
+    }
+   }
+  },
+  {
+   "name": "Tiny Tiny RSS",
+   "url": "https://github.com/tt-rss/tt-rss",
+   "kind": "open-source",
+   "licence": "GPL-3.0 (not re-verified this run)",
+   "repo": "https://github.com/tt-rss/tt-rss",
+   "status": "active",
+   "status_note": "Original author shut down tt-rss.org infrastructure on 1 Nov 2025; development continues in a community fork on GitHub.",
+   "checked": "2026-11",
+   "features": {
+    "ingest_feeds": {
+     "has": true,
+     "note": "Self-hosted RSS reader",
+     "source": "https://linuxiac.com/tt-rss-shuts-down-but-the-project-lives-on-under-a-new-fork"
+    },
+    "open_source": {
+     "has": true,
+     "note": "Fork at github.com/tt-rss/tt-rss",
+     "source": "https://linuxiac.com/tt-rss-shuts-down-but-the-project-lives-on-under-a-new-fork"
+    }
+   }
+  },
+  {
+   "name": "Omnivore",
+   "url": "https://omnivore.app",
+   "kind": "open-source",
+   "licence": "AGPL-3.0",
+   "repo": "https://github.com/omnivore-app/omnivore",
+   "status": "discontinued",
+   "status_note": "Hosted service shut down late 2024 when the team joined ElevenLabs; code remains public for self-hosting.",
+   "checked": "2026-11",
+   "features": {
+    "ingest_feeds": {
+     "has": true,
+     "note": "RSS",
+     "source": "https://www.slax.com/reader/alternatives/omnivore/"
+    },
+    "notes_highlights": {
+     "has": true,
+     "note": "Unlimited highlights",
+     "source": "https://www.slax.com/reader/alternatives/omnivore/"
+    },
+    "search": {
+     "has": true,
+     "note": "Full-text search",
+     "source": "https://www.slax.com/reader/alternatives/omnivore/"
+    },
+    "export_api": {
+     "has": true,
+     "note": "Sync to Obsidian, Notion, Logseq",
+     "source": "https://www.slax.com/reader/alternatives/omnivore/"
+    },
+    "accessibility": {
+     "has": true,
+     "note": "Text-to-speech",
+     "source": "https://www.slax.com/reader/alternatives/omnivore/"
+    },
+    "open_source": {
+     "has": true,
+     "note": "AGPL, self-host",
+     "source": "https://www.slax.com/reader/alternatives/omnivore/"
+    }
+   }
+  },
+  {
+   "name": "Readwise Reader",
+   "url": "https://readwise.io/read",
+   "kind": "closed",
+   "status": "active",
+   "status_note": "Active.",
+   "checked": "2026-11",
+   "features": {
+    "ingest_feeds": {
+     "has": true,
+     "note": "RSS subscriptions, newsletters, PDFs, EPUBs, video",
+     "source": "https://docs.readwise.io/reader/docs"
+    },
+    "notes_highlights": {
+     "has": true,
+     "note": "Highlights and annotations synced to Highlights library",
+     "source": "https://docs.readwise.io/reader/docs"
+    },
+    "saves_lists": {
+     "has": true,
+     "note": "Library with queries and filtered views",
+     "source": "https://docs.readwise.io/reader/docs"
+    },
+    "ai_features": {
+     "has": true,
+     "note": "Ghostreader: define, summarise, more",
+     "source": "https://docs.readwise.io/reader/docs"
+    },
+    "accessibility": {
+     "has": true,
+     "note": "Text-to-speech, text size, dark mode",
+     "source": "https://docs.readwise.io/reader/docs"
+    },
+    "comments": {
+     "has": "partial",
+     "note": "Share annotated public documents",
+     "source": "https://docs.readwise.io/reader/docs"
+    }
+   }
+  },
+  {
+   "name": "LessWrong / AI Alignment Forum (ForumMagnum)",
+   "url": "https://www.lesswrong.com",
+   "kind": "open-source",
+   "licence": "not verified",
+   "repo": "https://github.com/ForumMagnum/ForumMagnum",
+   "status": "active",
+   "status_note": "Active.",
+   "checked": "2026-11",
+   "features": {
+    "votes": {
+     "has": true,
+     "note": "Karma-weighted votes (strength ~ log karma) plus a separate agree/disagree axis",
+     "source": "https://www.lesswrong.com/posts/dYwQCFkR6cCbP9Xqk/how-forummagnum-builds-communities-of-inquiry"
+    },
+    "comments": {
+     "has": true,
+     "note": "Threads plus inline reactions on selected text",
+     "source": "https://www.lesswrong.com/posts/dYwQCFkR6cCbP9Xqk/how-forummagnum-builds-communities-of-inquiry"
+    },
+    "moderation_antigaming": {
+     "has": true,
+     "note": "New-user votes weigh less; new-account creation can be paused during attacks; moderators",
+     "source": "https://www.lesswrong.com/posts/dYwQCFkR6cCbP9Xqk/how-forummagnum-builds-communities-of-inquiry"
+    },
+    "open_source": {
+     "has": true,
+     "note": "Codebase public on GitHub (licence not checked)",
+     "source": "https://www.github.com/ForumMagnum/ForumMagnum"
+    },
+    "free_tier": {
+     "has": true,
+     "note": "Free",
+     "source": "https://www.lesswrong.com/posts/dYwQCFkR6cCbP9Xqk/how-forummagnum-builds-communities-of-inquiry"
+    }
+   }
+  },
+  {
+   "name": "Metaculus",
+   "url": "https://www.metaculus.com",
+   "kind": "open-source",
+   "licence": "BSD-2-Clause",
+   "repo": "https://github.com/Metaculus/metaculus",
+   "status": "active",
+   "status_note": "Active. Source page (Longterm Wiki) notes it is no longer maintained since May 2026.",
+   "checked": "2026-11",
+   "features": {
+    "forecasting_metrics": {
+     "has": true,
+     "note": "Questions with community prediction (recency-weighted median); AI forecasting benchmark tournaments",
+     "source": "https://www.longtermwiki.com/wiki/E199"
+    },
+    "transparency": {
+     "has": true,
+     "note": "Public track record / calibration",
+     "source": "https://www.longtermwiki.com/wiki/E199"
+    },
+    "comments": {
+     "has": true,
+     "note": "Question discussion",
+     "source": "https://www.longtermwiki.com/wiki/E199"
+    },
+    "open_source": {
+     "has": true,
+     "note": "Website code released BSD-2 in 2024",
+     "source": "https://www.longtermwiki.com/wiki/E199"
+    },
+    "free_tier": {
+     "has": true,
+     "note": "Free",
+     "source": "https://www.longtermwiki.com/wiki/E199"
+    }
+   }
+  },
+  {
+   "name": "Epoch AI Data Hub",
+   "url": "https://epoch.ai/data",
+   "kind": "service",
+   "licence": "data CC BY 4.0",
+   "status": "active",
+   "status_note": "Active; download page updated 7 Nov 2026.",
+   "checked": "2026-11",
+   "features": {
+    "forecasting_metrics": {
+     "has": true,
+     "note": "Benchmark results and model data over time",
+     "source": "https://epoch.ai/benchmarks/use-this-data"
+    },
+    "export_api": {
+     "has": true,
+     "note": "CSV ZIP, Python client over Airtable API, BibTeX citation",
+     "source": "https://epoch.ai/benchmarks/use-this-data"
+    },
+    "analytics": {
+     "has": true,
+     "note": "Interactive benchmarking explorers",
+     "source": "https://epoch.ai/benchmarks/use-this-data"
+    },
+    "free_tier": {
+     "has": true,
+     "note": "Free, CC BY 4.0",
+     "source": "https://epoch.ai/benchmarks/use-this-data"
+    }
+   }
+  },
+  {
+   "name": "AI Incident Database",
+   "url": "https://incidentdatabase.ai",
+   "kind": "open-source",
+   "licence": "not verified",
+   "repo": "https://github.com/responsible-ai-collaborative/aiid (not verified this run)",
+   "status": "active",
+   "status_note": "Active.",
+   "checked": "2026-11",
+   "features": {
+    "custom_sources": {
+     "has": true,
+     "note": "Public report submission with editor queue",
+     "source": "https://incidentdatabase.ai/about/"
+    },
+    "clustering": {
+     "has": true,
+     "note": "Many reports grouped under one incident",
+     "source": "https://incidentdatabase.ai/about/"
+    },
+    "topic_tagging": {
+     "has": true,
+     "note": "CSET and GMF taxonomies",
+     "source": "https://incidentdatabase.ai/blog/the-first-taxonomy-of-ai-incidents"
+    },
+    "export_api": {
+     "has": true,
+     "note": "Full database snapshots; RSS",
+     "source": "https://incidentdatabase.ai/about/"
+    },
+    "alerts_digests": {
+     "has": "partial",
+     "note": "AI News Digest app, RSS",
+     "source": "https://incidentdatabase.ai/about/"
+    },
+    "analytics": {
+     "has": true,
+     "note": "Leaderboards, spatial view",
+     "source": "https://incidentdatabase.ai/about/"
+    },
+    "admin_sources": {
+     "has": true,
+     "note": "Submission queue, editor's guide",
+     "source": "https://incidentdatabase.ai/about/"
+    },
+    "open_source": {
+     "has": true,
+     "note": "Code on GitHub (licence not checked)",
+     "source": "https://incidentdatabase.ai/about/"
+    }
+   }
+  },
+  {
+   "name": "State of AI Report",
+   "url": "https://www.stateof.ai",
+   "kind": "service",
+   "status": "active",
+   "status_note": "Annual (October); prediction scorecard page dated July 2026.",
+   "checked": "2026-11",
+   "features": {
+    "forecasting_metrics": {
+     "has": true,
+     "note": "~10 checkable predictions per year with event, threshold, deadline",
+     "source": "https://www.stateof.ai/predictions/how-accurate-is-the-state-of-ai-report"
+    },
+    "transparency": {
+     "has": true,
+     "note": "Public scorecard: hit / partial / miss with one-line justification; original wording never edited",
+     "source": "https://www.stateof.ai/predictions/how-accurate-is-the-state-of-ai-report"
+    },
+    "alerts_digests": {
+     "has": "partial",
+     "note": "Annual report",
+     "source": "https://www.stateof.ai/predictions/how-accurate-is-the-state-of-ai-report"
+    }
+   }
+  },
+  {
+   "name": "Import AI (newsletter)",
+   "url": "https://importai.substack.com",
+   "kind": "service",
+   "status": "active",
+   "status_note": "Active. Product features only; no content claims recorded.",
+   "checked": "2026-11",
+   "features": {
+    "alerts_digests": {
+     "has": true,
+     "note": "Weekly email",
+     "source": "https://importai.substack.com/about"
+    },
+    "comments": {
+     "has": "partial",
+     "note": "Comments for paid subscribers",
+     "source": "https://importai.substack.com/about"
+    },
+    "free_tier": {
+     "has": "partial",
+     "note": "Subscription; archive access tied to subscribing",
+     "source": "https://importai.substack.com/about"
+    }
+   }
+  },
+  {
+   "name": "The Batch (DeepLearning.AI)",
+   "url": "https://www.deeplearning.ai/the-batch/",
+   "kind": "service",
+   "status": "active",
+   "status_note": "Active. Product features only.",
+   "checked": "2026-11",
+   "features": {
+    "alerts_digests": {
+     "has": true,
+     "note": "Weekly issue",
+     "source": "https://deeplearning.ai/the-batch/about"
+    },
+    "topic_tagging": {
+     "has": true,
+     "note": "Topic tag pages (ML Research, Business, Science, Hardware...)",
+     "source": "https://deeplearning.ai/the-batch/about"
+    },
+    "search": {
+     "has": true,
+     "note": "Site search",
+     "source": "https://deeplearning.ai/the-batch/about"
+    }
+   }
+  },
+  {
+   "name": "Emergent Mind",
+   "url": "https://www.emergentmind.com",
+   "kind": "closed",
+   "status": "active",
+   "status_note": "Active; trending method and pricing not stated on About page.",
+   "checked": "2026-11",
+   "features": {
+    "ingest_arxiv": {
+     "has": true,
+     "note": "Tracks new arXiv preprints; OpenAlex and Semantic Scholar citation data",
+     "source": "https://www.emergentmind.com/about"
+    },
+    "explainable_ranking": {
+     "has": "partial",
+     "note": "Highlights trending papers; method not explained",
+     "source": "https://www.emergentmind.com/about"
+    },
+    "ai_features": {
+     "has": true,
+     "note": "Q&A grounded in literature; extracts open problems",
+     "source": "https://www.emergentmind.com/about"
+    }
+   }
+  }
+ ]
+}
