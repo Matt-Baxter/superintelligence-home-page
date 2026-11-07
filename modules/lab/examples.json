@@ -593,6 +593,57 @@
      "weight": 20
     }
    ]
+  },
+  {
+   "id": "roleplay-bounded-rsi",
+   "title": "Role-play self-improvement: an updater that fixes its own repair rules",
+   "concept": "concept:recursive-self-improvement",
+   "topics": [
+    "topic:recursive-self-improvement"
+   ],
+   "source": {
+    "title": "Recursive Self-Improvement for Long-Horizon Role-Playing Dialogue",
+    "url": "https://arxiv.org/abs/2611.07469",
+    "via": "daily paper watcher, Nov 7, 2026"
+   },
+   "idea": "A role-play character drifts over a long conversation, so an updater repairs the things that shape its replies: its memory, its persona instructions and the policy for building each turn's prompt. The recursive part is one level up: the updater looks at whether its repairs actually helped and rewrites its own repair rules. Edits are bounded so the loop stays small and checkable.",
+   "reproduce": {
+    "runner": "roleplay-rsi",
+    "params": {
+     "meta": 1,
+     "edit_bound": 3,
+     "judge_noise": 0.2,
+     "rounds": 30,
+     "turns": 200,
+     "seed": 7
+    },
+    "expect": "With the updater refining its own rules, the bad-reply rate falls from about 0.19 in the first rounds to about 0.02, and most repair rules end up aimed at the right artifact. (With fixed rules, meta 0, repairs aimed at the wrong artifact cause drift and the rate rises to about 0.25: repairing alone isn't enough.)"
+   },
+   "hypothesis": {
+    "statement": "Ours: loosening the bound from 3 to 6 repairs per round lets the updater test its rules more often, so the share of rules aimed at the right artifact rises by at least 0.05.",
+    "params": {
+     "edit_bound": 6
+    },
+    "predict": {
+     "metric": "rules_right",
+     "direction": "up",
+     "delta": 0.05
+    }
+   },
+   "criteria": [
+    {
+     "metric": "bad_rate",
+     "weight": 50
+    },
+    {
+     "metric": "rules_right",
+     "weight": 30
+    },
+    {
+     "metric": "side_effects",
+     "weight": 20
+    }
+   ]
   }
  ]
 }
