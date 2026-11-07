@@ -13,7 +13,13 @@ module.exports = function mountLab(app, { db, auth, admin, wrap, str, bad, notFo
     return applied;
   };
   const cache = new Map(); // deterministic results: same example + params -> same answer
-  const runCached = (id, overrides = {}) => { const k = id + JSON.stringify(overrides); if (!cache.has(k)) { if (cache.size > 200) cache.clear(); cache.set(k, L.runExample(id, overrides)); } return cache.get(k); };
+  // Default runs come precomputed (modules/lab/results.json, kept current by preflight), so a cold start doesn't rerun
+  // every experiment; runs with a reader's own parameters are computed live and cached.
+  let PRE = {}; try { PRE = require("./results.json").results || {}; } catch {}
+  const runCached = (id, overrides = {}) => {
+    if (!Object.keys(overrides).length && PRE[id]) return PRE[id];
+    const k = id + JSON.stringify(overrides); if (!cache.has(k)) { if (cache.size > 200) cache.clear(); cache.set(k, L.runExample(id, overrides)); } return cache.get(k);
+  };
   const summary = (r) => ({ id: r.example.id, title: r.example.title, concept: r.example.concept, topics: r.example.topics, idea: r.example.idea, source: r.example.source || null,
     expect: r.example.reproduce.expect, hypothesis: r.example.hypothesis.statement, verdict: r.verdict });
   const scorecard = (input) => { try { return weighted(input); } catch (e) { return { error: e.message }; } };

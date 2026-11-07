@@ -272,7 +272,10 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   const EXN = require('../modules/lab/examples.json').examples.length;
   ok(lx.examples.length === EXN && lx.examples.every((e) => e.idea && e.hypothesis && typeof e.verdict.supported === 'boolean'), `${EXN} examples, each with idea, hypothesis and verdict`);
   const refuted = lx.examples.filter((e) => !e.verdict.supported).map((e) => e.id).sort().join(',');
-  ok(refuted === 'goodhart-oversight,rrsi-edit-budget,sae-dead-latents', `refuted hypotheses are kept and shown (${refuted})`);
+  // The expected set comes from running the deterministic examples here, so new examples (the daily paper watch adds
+  // them) don't need this test edited; it still fails if the server hides or changes a verdict.
+  const L = require('../modules/lab/lab'), expected = L.EX.examples.filter((e) => !L.runExample(e.id).verdict.supported).map((e) => e.id).sort().join(',');
+  ok(refuted === expected && refuted.includes('goodhart-oversight'), `refuted hypotheses are kept and shown (${refuted})`);
   const lg = await j(matt, '/api/lab/examples/rsi-decision-gym');
   ok(lg.variant.metrics.heldout_accuracy > lg.baseline.metrics.heldout_accuracy + 0.2 && lg.variant.metrics.properties_hold === 4, 'decision gym improves itself and keeps its safety properties');
   ok(lg.scorecard.totals.length === 2 && lg.judgeInput.entries.length === 2, 'reproduction and hypothesis are judged (weighted; JEV/CLEF input ready)');
