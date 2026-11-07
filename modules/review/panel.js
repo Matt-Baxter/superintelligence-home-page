@@ -19,8 +19,11 @@
 const { CRITERIA, VERDICTS } = require("./review");
 const { ontology } = require("../../lib/tagger");
 
-const LIMITS = { prestige: 10, wording: 15, agree: 15, minModels: 2 };
+const LIMITS = { prestige: 10, wording: 15, agree: 15, minModels: 2, escalate: 25 };
+// Efficient models from two makers do the judging; a bigger open model advises. Pin exact ids from each provider's
+// current list: free catalogues change.
 const DEFAULT_MODELS = "ollama:gemma3:12b,groq:llama-3.1-8b-instant";
+const DEFAULT_ADVISOR = "groq:openai/gpt-oss-120b";
 
 // ---------- masking ----------
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -71,14 +74,33 @@ async function judgeWith(model, text) {
   const calm = await run(neutralise(masked), rev);
   const prestige = Math.abs(high.credibility - low.credibility), wording = Math.abs(main.credibility - calm.credibility);
   const biased = [prestige > LIMITS.prestige && `prestige sensitivity ${prestige} (limit ${LIMITS.prestige})`, wording > LIMITS.wording && `wording sensitivity ${wording} (limit ${LIMITS.wording})`].filter(Boolean);
-  return { id: model.id, model: model.model, credibility: main.credibility, rigor: main.rigor, hype: main.hype, quotesDropped: main.dropped.length, reason: main.reason, sensitivity: { prestige, wording }, biased };
+  return { id: model.id, model: model.model, kept: main.kept, credibility: main.credibility, rigor: main.rigor, hype: main.hype, quotesDropped: main.dropped.length, reason: main.reason, sensitivity: { prestige, wording }, biased };
 }
 
 const verdictFor = (score, credibility) => VERDICTS.find((v) => v.when(score, credibility));
 
+// ---------- the advisor (a bigger model that guides, never scores) ----------
+// When the efficient models disagree, a bigger model reads the same masked text and each judge's verified checks and
+// says which reading the text supports, quoting the sentences that show it. Its quotes are checked like the judges'.
+// It never sets a score: the piece still goes to a person, who sees the advice next to every judge's number.
+function advisorMessages(text, judges) {
+  const views = judges.map((j) => `- ${j.id}: credibility ${j.credibility}${j.kept ? `; checks it found: ${j.kept.join(", ") || "none"}` : ""}${j.reason ? `; reason: ${j.reason}` : ""}`).join("\n");
+  return [
+    { role: "system", content: "You advise a person deciding how far to believe a text about AI progress. Smaller models judged it and disagreed. Using only the text, say which judge's reading the text supports better, quoting the exact sentences that show it. Do not give a score. Who wrote it and where it appeared are hidden on purpose. Reply with JSON only." },
+    { role: "user", content: `Text:\n"""\n${text}\n"""\n\nJudges:\n${views}\n\nJSON shape: {"prefer": "<judge id or none>", "quotes": ["<exact sentence>", ...], "advice": "<one or two sentences for the person>", "ruleIdea": "<optional: a judging rule worth testing, or empty>"}` },
+  ];
+}
+async function advise(model, text, judges) {
+  const masked = mask(text), out = parse(await model.chat(advisorMessages(masked, judges), { temperature: 0, json: true })) || {};
+  const T = norm(masked), quotes = (Array.isArray(out.quotes) ? out.quotes : []).map(String), kept = quotes.filter((q) => norm(q).length >= 12 && T.includes(norm(q).slice(0, 160)));
+  const ids = judges.map((j) => j.id), prefer = ids.includes(out.prefer) ? out.prefer : "none";
+  return { id: model.id, model: model.model, prefer: kept.length ? prefer : "none", quotes: kept.slice(0, 4), quotesDropped: quotes.length - kept.length,
+    advice: String(out.advice || "").slice(0, 400), ruleIdea: String(out.ruleIdea || "").slice(0, 300) };
+}
+
 // ---------- the panel ----------
 // rules: the review.js result for the same piece (its credibility and guarded significance score).
-async function panel({ text, rules, models }) {
+async function panel({ text, rules, models, advisor = null }) {
   const judges = [{ id: "rules", model: "published rules", credibility: rules.credibility, verdict: rules.verdict, biased: [] }], errors = [];
   for (const m of models) {
     try { const j = await judgeWith(m, text); judges.push({ ...j, verdict: verdictFor(rules.score, j.credibility).id }); }
@@ -95,14 +117,22 @@ async function panel({ text, rules, models }) {
     else { status = "disagreed"; credibility = Math.min(...cs, rules.credibility); needsPerson = true; rule = `models disagree (spread ${spread}${same ? "" : ", different verdicts"}): the most conservative credibility, sent to a person`; }
   }
   const v = verdictFor(rules.score, credibility);
-  return { status, credibility, verdict: v.id, verdictRule: v.rule, rule, needsPerson, judges, setAside, errors, limits: LIMITS, at: new Date().toISOString() };
+  // Escalate to the advisor when the models disagree, or agree with each other but sit far from the rules judge.
+  let advice = null;
+  const far = status === "agreed" && Math.abs(usable.reduce((a, j) => a + j.credibility, 0) / usable.length - rules.credibility) > LIMITS.escalate;
+  if (advisor && (status === "disagreed" || far)) {
+    try { advice = await advise(advisor, text, judges); if (far) needsPerson = true; }
+    catch (e) { errors.push({ id: advisor.id, error: `advisor: ${String(e.message).slice(0, 180)}` }); }
+  }
+  return { status, credibility, verdict: v.id, verdictRule: v.rule, rule, needsPerson, judges, setAside, errors, advice, limits: LIMITS, at: new Date().toISOString() };
 }
 
 // Models named in PANEL_MODELS ("provider:model,provider:model"), created through lib/providers.js.
+function advisorFromEnv(spec = process.env.ADVISOR_MODEL || "") { const m = modelsFromEnv(spec); return m[0] || null; }
 function modelsFromEnv(spec = process.env.PANEL_MODELS || "") {
   if (!spec.trim()) return [];
   const P = require("../../lib/providers");
   return spec.split(",").map((s) => s.trim()).filter(Boolean).map((s) => { const i = s.indexOf(":"); return P.create(i < 0 ? s : s.slice(0, i), i < 0 ? {} : { model: s.slice(i + 1) }); });
 }
 
-module.exports = { panel, judgeWith, mask, neutralise, verify, messages, modelsFromEnv, LIMITS, DEFAULT_MODELS, PRESTIGE };
+module.exports = { advise, advisorMessages, advisorFromEnv, DEFAULT_ADVISOR, panel, judgeWith, mask, neutralise, verify, messages, modelsFromEnv, LIMITS, DEFAULT_MODELS, PRESTIGE };

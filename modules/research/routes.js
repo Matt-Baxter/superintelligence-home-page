@@ -37,11 +37,11 @@ module.exports = function mountResearch(app, { db, wrap, auth, admin }) {
     const due = await db.all(`SELECT e.id, e.sentence, e.due, e.status, e.outlet_label, d.id AS doc_id, d.title FROM review_events e LEFT JOIN review_docs d ON d.qid = e.doc_qid
       WHERE e.status = 'pending' ORDER BY e.due ASC LIMIT 50`).catch(() => []);
     const flagged = (await db.all("SELECT id, title, verdict, credibility, result FROM review_docs WHERE needs_person = 1 AND label IS NULL ORDER BY id DESC LIMIT 50"))
-      .map((d) => { const r = JSON.parse(d.result || "{}"); return { id: d.id, title: d.title, verdict: d.verdict, credibility: d.credibility, reasons: r.reasons || [] }; });
+      .map((d) => { const r = JSON.parse(d.result || "{}"); return { id: d.id, title: d.title, verdict: d.verdict, credibility: d.credibility, reasons: [...(r.reasons || []), ...(r.panel && r.panel.needsPerson && r.panel.status === "disagreed" ? ["the models disagreed"] : [])], advice: r.panel && r.panel.advice ? r.panel.advice.advice : null, judges: r.panel ? r.panel.judges.map((j) => `${j.id === "rules" ? "rules" : j.model} ${j.credibility}`) : [] }; });
     const models = (process.env.PANEL_MODELS || "").split(",").map((x) => x.trim()).filter(Boolean);
     return { today, waiting: W, proposals: proposals().reqs, specStatus: proposals().status, people: CFG.people, forecasts: due.map((e) => ({ ...e, overdue: e.due <= today })), flagged,
       quality: rows.length ? Q.analyse(rows).checks.map(({ id, label, value, ok, why, fix }) => ({ id, label, value, ok, why, fix })) : [],
-      panel: { models, ready: models.length >= 2 }, public: process.env.RESEARCH_PUBLIC === "1" };
+      panel: { models, ready: models.length >= 2, advisor: (process.env.ADVISOR_MODEL || "").trim() || null }, public: process.env.RESEARCH_PUBLIC === "1" };
   }));
 
   app.get("/research", gate, page(async (req) => V.indexPage({ papers: await papers(), topics: await topics() }, base(req))));

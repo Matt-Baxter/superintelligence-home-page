@@ -21,7 +21,7 @@ const SUITES = {
     const good = rs.filter((x) => x.it.credible), bad = rs.filter((x) => !x.it.credible);
     // Pairwise: a credible item should out-rank a non-credible one (ties count half). The AUC of each judge.
     const auc = (key) => { let s = 0; for (const g of good) for (const b of bad) s += g.r[key] > b.r[key] ? 1 : g.r[key] === b.r[key] ? 0.5 : 0; return s / (good.length * bad.length); };
-    const verdictOk = rs.filter((x) => (x.r.verdict === "doubtful") === !x.it.credible).length / rs.length;
+    const verdictOk = rs.filter((x) => ["doubtful", "withdrawn"].includes(x.r.verdict) === !x.it.credible).length / rs.length;
     const flaggedBad = bad.filter((x) => x.r.needsPerson).length / bad.length, flaggedGood = good.filter((x) => x.r.needsPerson).length / good.length;
     // Invariance: edits that add nothing must not raise the guarded score.
     const person = (ontology.people || [])[0]?.label || "Sample Name";
@@ -37,7 +37,7 @@ const SUITES = {
       "review.credibility_auc": { value: r3(auc("credibility")), better: "higher", tol: 0, about: "credible items out-rank doubtful ones on credibility" },
       "review.score_auc": { value: r3(auc("score")), better: "higher", tol: 0.02, about: "...on the guarded score" },
       "review.naive_score_auc": { value: r3(auc("naive")), better: "info", about: "...on the unguarded score (for comparison)" },
-      "review.verdict_accuracy": { value: r3(verdictOk), better: "higher", tol: 0, about: "'doubtful' exactly when the label says not credible" },
+      "review.verdict_accuracy": { value: r3(verdictOk), better: "higher", tol: 0, about: "'doubtful' or 'withdrawn' exactly when the label says not credible" },
       "review.flag_recall": { value: r3(flaggedBad), better: "higher", tol: 0, about: "share of non-credible items sent to a person" },
       "review.flag_false_rate": { value: r3(flaggedGood), better: "lower", tol: 0, about: "share of credible items sent to a person" },
       "review.invariance": { value: r3(inv / invN), better: "higher", tol: 0, about: `padding, stuffing, checklists, name-dropping, unbacked claims and injection don't raise the score (${invN} edits)` },

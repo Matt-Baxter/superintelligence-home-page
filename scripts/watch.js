@@ -55,7 +55,8 @@ async function main() {
   }
   const Panel = require("../modules/review/panel"), panels = {};
   let panelModels = [];
-  try { panelModels = Panel.modelsFromEnv(); } catch (e) { console.log(`panel: ${e.message}`); }
+  let advisor = null;
+  try { panelModels = Panel.modelsFromEnv(); advisor = Panel.advisorFromEnv(); } catch (e) { console.log(`panel: ${e.message}`); }
   if (panelModels.length < Panel.LIMITS.minModels) console.log(`panel: ${panelModels.length} model(s) configured; set PANEL_MODELS to two different models (for example ${Panel.DEFAULT_MODELS}) to compare. Until then each review is marked "panel incomplete" and the rules judge stands.`);
   const rows = []; let stored = 0, already = 0;
   for (const e of entries) {
@@ -68,7 +69,7 @@ async function main() {
     // Judge panel: at least two different models compared with the rules judge, behind identity, prestige and wording
     // masks (modules/review/panel.js). Only here, in the background, and only with PANEL_MODELS set.
     if (!out.existing) {
-      const pr = await Panel.panel({ text: `${x.title}\n${x.text}`, rules: out.review, models: panelModels });
+      const pr = await Panel.panel({ text: `${x.title}\n${x.text}`, rules: out.review, models: panelModels, advisor });
       const res = { ...out.review, panel: pr };
       await db.run("UPDATE review_docs SET credibility = ?, verdict = ?, needs_person = ?, result = ? WHERE id = ?", pr.credibility, pr.verdict, pr.needsPerson || out.review.needsPerson ? 1 : 0, JSON.stringify(res), out.row.id);
       out.review = res; out.review.credibility = pr.credibility; out.review.verdict = pr.verdict;

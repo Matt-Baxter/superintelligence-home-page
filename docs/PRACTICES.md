@@ -34,6 +34,7 @@ One page of the practices this build follows, collected from the research layer'
 | Models from different makers; never one model alone. | In place: at least two models required, or the panel is "incomplete" and the rules judge stands. |
 | Verify every quoted piece of evidence against the text. | In place: unmatched quotes are thrown out and credibility recomputed. |
 | When models disagree, send it to a person rather than averaging. | In place: disagreement takes the most conservative score and flags it for a person. |
+| Efficient models do the bulk; a bigger model guides. Escalate only the hard cases to it, and let it advise, never score. | In place: `ADVISOR_MODEL` is asked only on disagreement (or a large gap to the rules judge); its quotes are verified; `npm run advise` turns its review into proposals a person adopts. |
 | Calibrate against people: 50 to 100 items labelled by both partners, Cohen's kappa (not percent agreement). | Next: label in the control room (`/m/control`), then add kappa to the quality report. |
 | Repeat bias trials several times (judges vary run to run). | Next: run each panel model's counterfactual pair more than once. |
 | Pin model ids and recalibrate after any model change; cache verdicts by content, prompt and model. | Next (when `PANEL_MODELS` is set). |

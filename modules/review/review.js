@@ -120,6 +120,7 @@ const REPORTING = [
 const ASSERT = /\b(is (?:already )?here|already|will (?!not)\w+|now \w+s\b|most of|every|each generation|compounds?|inevitabl\w+|soon)\b/i;
 const HEDGE = /\b(whether|may|might|could|uncertain|unclear|open question|plausible|if )\b/i;
 const CITE = REPORTING[0].re;
+const WITHDRAWN = /\b(this (?:paper|article|preprint|submission|work) (?:has been|was|is being) (?:withdrawn|retracted)|withdrawn by the authors?|has been retracted|retraction notice|retracted (?:by|due to|after))\b/i;
 function hype(text, cl, survey = false, asserts = 0) {
   const hits = [...new Set((String(text).match(HYPE) || []).map((h) => h.toLowerCase()))];
   const unbacked = cl.filter((c) => c.level === "unbacked").length + asserts; cl = { length: cl.length + asserts };
@@ -214,9 +215,14 @@ function review(input) {
   let score = Math.min(base, cap);
   if (fired("prompt-injection")) score = Math.min(score, 30);
   score = Math.max(0, Math.round(score));
-  const credibility = Math.round(0.5 * rg.score + 0.5 * (100 - hp.score));
+  // A paper or article that says it was withdrawn or retracted can't be relied on, however good it looks: scores are
+  // capped, the verdict says so, and a person looks at it (scite shows retraction notices the same way).
+  const withdrawn = WITHDRAWN.test(`${title}\n${text}`);
+  const credibility = withdrawn ? Math.min(10, Math.round(0.5 * rg.score + 0.5 * (100 - hp.score))) : Math.round(0.5 * rg.score + 0.5 * (100 - hp.score));
+  if (withdrawn) score = Math.min(score, 10);
 
   const review_reasons = [];
+  if (withdrawn) review_reasons.push("the text says it was withdrawn or retracted");
   if (fired("prompt-injection")) review_reasons.push("it contains instructions to the judge");
   if (Math.abs(naive.significance - score) >= 25) review_reasons.push(`the guards moved the score by ${naive.significance - score} points`);
   if (hp.unbacked >= 2) review_reasons.push(`${hp.unbacked} claims have nothing backing them`);
@@ -225,7 +231,7 @@ function review(input) {
   // Off-topic is reported (scope) but isn't a reason to send it to a person: the feed's scope rule already handles it.
 
   // Two axes, reported separately: how big a step it claims (score) and how far to believe it (credibility).
-  const v = VERDICTS.find((x) => x.when(score, credibility)), verdict = v.id;
+  const v = VERDICTS.find((x) => x.when(score, credibility, { withdrawn })), verdict = v.id;
   const qid = `doc:${hash(`${title}\n${text}`)}`;
   // Where it comes from (graded by outlet kind and what the piece shows) and what it forecasts (dated events).
   const origin = step("source", "Grade the source", () => SRC.grade({ url: input.url || "", text: `${title}\n${text}`, hype: hp.score, catalogKind: input.sourceKind || null }));
@@ -240,7 +246,7 @@ function review(input) {
   });
 
   return {
-    qid, kind: k.kind, kindWhy: k.why, kindLabel: isSurvey ? "Survey" : KINDS[k.kind].label, verdictRule: v.rule, rubric, source: origin, forecasts, code: codeLink(`${title}\n${text}`), survey: isSurvey, arxiv, title, authors,
+    qid, kind: k.kind, kindWhy: k.why, kindLabel: isSurvey ? "Survey" : KINDS[k.kind].label, verdictRule: v.rule, withdrawn, rubric, source: origin, forecasts, code: codeLink(`${title}\n${text}`), survey: isSurvey, arxiv, title, authors,
     score, naive: naive.significance, credibility, verdict, needsPerson: review_reasons.length > 0, reasons: review_reasons,
     judges: [
       { id: "significance", label: "Significance", score: sig.significance, about: "How big a step toward superintelligence it reports (lib/analysis.js, on the cleaned text)", why: sig.why },
@@ -306,6 +312,7 @@ function codeLink(text) {
 // check and what the code checks can't drift apart (test/review-unit.js compares them).
 // Verdict: the first row whose rule holds. Significance (how big a step) and credibility (how far to believe it) are separate axes.
 const VERDICTS = [
+  { id: "withdrawn", rule: "the text says it was withdrawn or retracted", when: (s, c, f) => !!(f && f.withdrawn) },
   { id: "doubtful", rule: "credibility below 35", when: (s, c) => c < 35 },
   { id: "major and credible", rule: "significance 55 or more and credibility 60 or more", when: (s, c) => s >= 55 && c >= 60 },
   { id: "solid, modest step", rule: "credibility 70 or more", when: (s, c) => c >= 70 },
@@ -333,7 +340,7 @@ const CRITERIA = {
   source: { about: "Each piece gets a grade from A to E. It starts at its outlet's grade below, goes one step up when it cites primary research (a paper or study) and isn't hyped (to B at most: only peer review earns an A), one step down at hype 50 or more, and is an E when it sells its own product. Personal blogs and newsletters are graded as a class, never as the person who writes them.", outlets: SRC.OUTLETS.map(({ kind, grade, label, why }) => ({ kind, grade, label, why })) },
   forecasts: { about: "A forecast is a sentence that looks ahead and names a time (by 2028, within 18 months, next year); questions don't count. Each becomes an event with a due date. A person marks it as happened, did not happen, unclear (reality is ambiguous) or annulled (a premise of the forecast fell away) once it's due; unclear and annulled count for neither side. Outlets get a hit rate from 3 resolved forecasts up. Names a forecast is pinned on are removed: forecasts are never attributed to people." },
   buzz: { about: "How loudly a topic is talked about: news, newsletter, blog, forum and community items in the last 30 days (quiet under 5, loud at 20 or more), with the average hype of reviewed articles. Buzz is shown next to the evidence rating and never changes it; the gap between them is the hype signal." },
-  panel: { about: "Background runs (never a web request) also judge each piece with at least two different models, from different makers, through free or local providers. Before a model reads the text, authors, the outlet, links and every person or organisation name are masked. Each model reads it four times: plainly, with a fake top-journal label, with a fake anonymous-blog label, and with hype words neutralised, each time with the rubric in a different order. A model whose score moves more than 10 with the label or more than 15 with the wording is set aside. Every check a model marks as met must quote its sentence; quotes not in the text are thrown out, and credibility is recomputed with the published formula. Models that agree (within 15, same verdict) are averaged with the rules judge; models that disagree give the most conservative credibility and send the piece to a person. With fewer than two usable models the rules judge's result stands, marked incomplete." },
+  panel: { about: "Background runs (never a web request) also judge each piece with at least two different models, from different makers, through free or local providers. Before a model reads the text, authors, the outlet, links and every person or organisation name are masked. Each model reads it four times: plainly, with a fake top-journal label, with a fake anonymous-blog label, and with hype words neutralised, each time with the rubric in a different order. A model whose score moves more than 10 with the label or more than 15 with the wording is set aside. Every check a model marks as met must quote its sentence; quotes not in the text are thrown out, and credibility is recomputed with the published formula. Models that agree (within 15, same verdict) are averaged with the rules judge; models that disagree give the most conservative credibility and send the piece to a person. With fewer than two usable models the rules judge's result stands, marked incomplete. When the models disagree, or agree with each other but sit more than 25 from the rules judge, a bigger model advises: it reads the same masked text and each judge's checks, says which reading the text supports and quotes the sentences that show it (quotes not in the text are thrown out). It never sets a score; the person deciding sees its advice beside every judge's number." },
   person: { about: "Sent to a person when it addresses the judge, the guards moved its score by 25 points or more, two or more claims have nothing backing them, it has four or more hype words and no backed claim, or it looks written to game the scoring." },
 };
 

@@ -9,13 +9,13 @@
       "about": "credible items out-rank doubtful ones on credibility"
     },
     "review.score_auc": {
-      "value": 0.726,
+      "value": 0.745,
       "better": "higher",
       "tol": 0.02,
       "about": "...on the guarded score"
     },
     "review.naive_score_auc": {
-      "value": 0.333,
+      "value": 0.327,
       "better": "info",
       "about": "...on the unguarded score (for comparison)"
     },
@@ -23,7 +23,7 @@
       "value": 1,
       "better": "higher",
       "tol": 0,
-      "about": "'doubtful' exactly when the label says not credible"
+      "about": "'doubtful' or 'withdrawn' exactly when the label says not credible"
     },
     "review.flag_recall": {
       "value": 1,
@@ -41,7 +41,7 @@
       "value": 1,
       "better": "higher",
       "tol": 0,
-      "about": "padding, stuffing, checklists, name-dropping, unbacked claims and injection don't raise the score (78 edits)"
+      "about": "padding, stuffing, checklists, name-dropping, unbacked claims and injection don't raise the score (84 edits)"
     },
     "review.adversary_gain_guarded": {
       "value": 0,
@@ -56,12 +56,12 @@
       "about": "points an adversary attacking the guarded score gains"
     },
     "review.adversary_gain_naive": {
-      "value": 32.615,
+      "value": 32.857,
       "better": "info",
       "about": "points the same attack gains on the unguarded judge (the attack is real)"
     },
     "review.ms_per_doc": {
-      "value": 12.4,
+      "value": 10.8,
       "better": "info",
       "about": "time to review one item"
     },
