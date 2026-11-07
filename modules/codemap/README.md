@@ -7,4 +7,5 @@ The repo as a graph, built by parsing the code (`scan.js`): pages call routes, r
 - **CLI**: `npm run codemap -- votes` answers from the terminal; `node scripts/codemap.js build` writes `data/codemap.json` (run by `npm run build`, used on Vercel).
 - **Agents**: the MCP tool `codemap_query`.
 - **Checks**: preflight fails when a page calls an API route that no module or core file defines.
+- **What it covers**: every module in `modules/modules.json` whatever `SITE_PROFILE` is (each module node says whether this profile loads it), core, `lib/`, `kernel/`, `scripts/`, `api/` and `public/js/` files, requirements from every `specs/*/spec.md`, and checks named in any `test/*.js`. Calls in `public/js/api.js` count for every page that loads it. Edges whose ends don't exist are dropped and counted (`dangling`). A question can be an exact id (`table:votes`).
 - **Conventions it relies on**: routes are `app.<method>("<path>", …)`; pages call `api("/api/…")` or `fetch("/api/…")`; tables are `CREATE TABLE IF NOT EXISTS`. Code that doesn't follow them is invisible to the map.

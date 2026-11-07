@@ -95,7 +95,8 @@ TOOLS.push(...(REPO ? [{ name: "codemap_query", description: "Ask the codebase m
     return JSON.stringify(trace ? { id, connected: scan.trace(g, id) } : { answer: scan.answer(g, q), problems: g.problems }, null, 1);
   } }] : []));
 function kernel() { return require(path.join(REPO, "kernel", "kernel.js")).createKernel(); }
-function decision() { const m = kernel().modules.find((x) => x.id === "decision"); if (!m) fail("The decision module isn't enabled."); return m; }
+// The kernel's module list holds manifest copies; the live judge registry is on the decision module's own exports.
+function decision() { const m = kernel().modules.find((x) => x.id === "decision"); if (!m) fail("The decision module isn't enabled."); return { ...m, judges: require(path.join(m.dir, "module.js")).judges }; }
 const esm = (rel) => import(require("node:url").pathToFileURL(path.join(REPO, rel)).href);
 
 // ---------- JSON-RPC ----------

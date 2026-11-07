@@ -24,25 +24,31 @@ function balanced(src, idx, open = "{", close = "}") {
 function build() {
   const nodes = new Map(), edges = [], problems = [];
   const node = (id, kind, label, extra = {}) => { if (!nodes.has(id)) nodes.set(id, { id, kind, label, ...extra }); else Object.assign(nodes.get(id), extra); return id; };
-  const edge = (from, to, kind) => { if (from && to && from !== to && !edges.some((e) => e.from === from && e.to === to && e.kind === kind)) edges.push({ from, to, kind }); };
+  const edgeKeys = new Set();
+  const edge = (from, to, kind) => { const k = `${from}\u0000${to}\u0000${kind}`; if (from && to && from !== to && !edgeKeys.has(k)) { edgeKeys.add(k); edges.push({ from, to, kind }); } };
 
   // ---- modules and extension points (kernel) ----
-  const { createKernel } = require(path.join(ROOT, "kernel", "kernel.js"));
-  const kernel = createKernel();
+  // Every module in modules.json is mapped, whatever SITE_PROFILE says (files, routes and pages of every module folder
+  // are scanned too); `enabled` on a module node says whether this profile loads it.
+  const { createKernel, readEnabled } = require(path.join(ROOT, "kernel", "kernel.js"));
+  const all = JSON.parse(read(path.join(ROOT, "modules", "modules.json"))).enabled || [], live = new Set(readEnabled());
+  const kernel = createKernel({ enabled: all });
   for (const p of kernel.describe().points) node(`point:${p.id}`, "point", p.id, { owner: p.owner });
   for (const m of kernel.describe().modules) {
-    node(`module:${m.id}`, "module", m.id, { detail: m.description, version: m.version, file: `modules/${m.id}/module.js` });
+    node(`module:${m.id}`, "module", m.id, { detail: m.description, version: m.version, file: `modules/${m.id}/module.js`, enabled: live.has(m.id) });
     for (const r of m.requires) edge(`module:${m.id}`, `module:${r}`, "requires");
     for (const c of m.contributes) edge(`module:${m.id}`, `point:${c.point}`, "contributes");
   }
   for (const [id, p] of kernel.points) if (p.owner !== "kernel") edge(`module:${p.owner}`, `point:${id}`, "declares");
   for (const v of kernel.store.views.values()) { node(`view:${v.name}`, "view", v.title, { detail: v.description }); edge(`module:${v.module}`, `view:${v.name}`, "contributes"); }
-  const decision = kernel.modules.find((m) => m.id === "decision");
-  if (decision) for (const j of decision.judges.values()) { node(`judge:${j.id}`, "judge", j.name, { detail: j.description }); edge(`module:${j.module}`, `judge:${j.id}`, "contributes"); }
+  // The kernel keeps a copy of each manifest; the decision module's live judge registry is on its own exports.
+  const decision = kernel.modules.find((m) => m.id === "decision"), judges = decision ? require(path.join(decision.dir, "module.js")).judges : null;
+  if (judges) for (const j of judges.values()) { node(`judge:${j.id}`, "judge", j.name, { detail: j.description }); edge(`module:${j.module}`, `judge:${j.id}`, "contributes"); }
 
   // ---- source files and their requires ----
   const codeFiles = [path.join(ROOT, "server.js"), ...walk(path.join(ROOT, "lib"), (p) => p.endsWith(".js")), ...walk(path.join(ROOT, "kernel"), (p) => p.endsWith(".js")),
-    ...walk(path.join(ROOT, "modules"), (p) => /\.(js|mjs)$/.test(p) && !p.includes(`${path.sep}blocks${path.sep}`)), ...walk(path.join(ROOT, "views"), (p) => p.endsWith(".mjs"))];
+    ...walk(path.join(ROOT, "modules"), (p) => /\.(js|mjs)$/.test(p) && !p.includes(`${path.sep}blocks${path.sep}`)), ...walk(path.join(ROOT, "views"), (p) => p.endsWith(".mjs")),
+    ...walk(path.join(ROOT, "scripts"), (p) => p.endsWith(".js")), ...walk(path.join(ROOT, "api"), (p) => p.endsWith(".js")), ...walk(path.join(ROOT, "public", "js"), (p) => p.endsWith(".js") && !p.endsWith(".min.js") && !p.endsWith("jr.js"))];
   for (const f of codeFiles) {
     const r = rel(f), mod = r.match(/^modules\/([^/]+)\//)?.[1];
     node(`file:${r}`, "file", r, { file: r, module: mod || "core" });
@@ -113,14 +119,15 @@ function build() {
   };
 
   // ---- pages and the routes they call ----
+  const apiJs = path.join(ROOT, "public", "js", "api.js"), sharedApi = fs.existsSync(apiJs) ? read(apiJs) : "";
   const pageFiles = [...walk(path.join(ROOT, "public"), (p) => p.endsWith(".html")), ...walk(path.join(ROOT, "modules"), (p) => p.endsWith(".html") && p.includes(`${path.sep}pages${path.sep}`))];
   for (const f of pageFiles) {
     const r = rel(f), src = read(f), mod = r.match(/^modules\/([^/]+)\//)?.[1];
     const url = mod ? `/m/${path.basename(f, ".html")}` : `/${path.basename(f, ".html")}`.replace(/^\/index$/, "/");
     const id = node(`page:${url}`, "page", url, { file: r, module: mod || "core", title: src.match(/<title>([^<·]+)/)?.[1]?.trim() || url });
     if (mod) edge(`module:${mod}`, id, "owns");
-    // Every page that loads api.js signs in through it (GET /api/me) and can sign out (POST /api/logout).
-    const viaShared = src.includes("/js/api.js") ? '\napi("/api/me")\napi("/api/logout", { body: {} })' : "";
+    // A page that loads api.js also makes the calls in api.js itself (sign-in, sign-out, the story card's vote and save).
+    const viaShared = src.includes("/js/api.js") ? "\n" + sharedApi : "";
     callsIn(src + viaShared, r).forEach(({ method, url: u }) => {
       const hits = matchRoute(method, u);
       if (!hits.length) problems.push({ kind: "dangling-call", page: url, file: r, call: `${method || "GET"} ${u}`, message: `${r} calls ${method || "GET"} ${u.replace(/:p/g, "…")}, but no route matches` });
@@ -145,14 +152,16 @@ function build() {
     node(`block:${name}`, "block", name, { file: r, module: mod, detail: desc });
     edge(`module:${mod}`, `block:${name}`, "contributes"); edge(`block:${name}`, "point:ui.blocks", "implements");
   }
-  if ([...nodes.values()].some((n) => n.kind === "block")) node("point:ui.blocks", "point", "ui.blocks", { owner: "kernel" });
 
+  if ([...nodes.values()].some((n) => n.kind === "block")) node("point:ui.blocks", "point", "ui.blocks", { owner: "kernel" }); // blocks are loaded by the kernel, not declared as a point
   // ---- spec requirements, the trace, and tests ----
-  const specFile = path.join(ROOT, "specs", "001-superintelligence-homepage", "spec.md");
-  const testNames = [...read(path.join(ROOT, "test", "e2e.js")).matchAll(/\bok\([^;]*?,\s*(["'`])((?:(?!\1).)+)\1\s*\)/g)].map((m) => m[2]);
-  if (fs.existsSync(specFile)) {
-    const spec = read(specFile);
-    for (const m of spec.matchAll(/\*\*(REQ-\d{3})\*\*:\s*([^\n]+(?:\n {2}[^\n]+)*)/g)) node(`req:${m[1]}`, "req", m[1], { detail: m[2].replace(/\s+/g, " ").trim(), file: "specs/001-superintelligence-homepage/spec.md", line: lineOf(spec, m.index) });
+  // Requirements from every spec (specs/*/spec.md); test names from every check script in test/ (ok(…, "name")).
+  const specFiles = walk(path.join(ROOT, "specs"), (p) => p.endsWith(`${path.sep}spec.md`)).sort();
+  const tests = walk(path.join(ROOT, "test"), (p) => p.endsWith(".js") && path.dirname(p) === path.join(ROOT, "test")).sort().flatMap((f) =>
+    [...read(f).matchAll(/\bok\([^;]*?,\s*(["'`])((?:(?!\1).)+)\1\s*\)/g)].map((m) => ({ name: m[2].replace(/\s*\(?\$\{[^}]*\}\)?/g, "").replace(/[:\s]+$/, "").trim(), file: rel(f) })).filter((t) => t.name));
+  if (specFiles.length) {
+    for (const f of specFiles) { const spec = read(f);
+      for (const m of spec.matchAll(/\*\*(REQ-\d{3})\*\*:\s*([^\n]+(?:\n {2}[^\n]+)*)/g)) node(`req:${m[1]}`, "req", m[1], { detail: m[2].replace(/\s+/g, " ").trim(), file: rel(f), line: lineOf(spec, m.index) }); }
     const traceFile = path.join(ROOT, "docs", "SPEC_TRACE.md");
     if (fs.existsSync(traceFile)) for (const row of read(traceFile).split("\n").filter((l) => /^\| REQ-/.test(l))) {
       const [, reqCell, , where = "", checked = ""] = row.split("|").map((c) => c.trim());
@@ -161,12 +170,14 @@ function build() {
       const checks = [...checked.matchAll(/"([^"]+)"/g)].map((m) => m[1]);
       for (const id of ids) {
         files.forEach((f) => edge(`req:${id}`, f, "met-in"));
-        for (const c of checks) for (const t of testNames.filter((t) => t.startsWith(c) || t.includes(c))) { node(`test:${t}`, "test", t, { file: "test/e2e.js" }); edge(`req:${id}`, `test:${t}`, "checked-by"); }
+        for (const c of checks) for (const t of tests.filter((t) => t.name.startsWith(c) || t.name.includes(c))) { node(`test:${t.name}`, "test", t.name, { file: t.file }); edge(`req:${id}`, `test:${t.name}`, "checked-by"); }
       }
     }
   }
 
-  const out = { generated: new Date().toISOString(), nodes: [...nodes.values()], edges, problems };
+  // Edges whose ends aren't nodes (a trace row naming a REQ no spec defines, say) are dropped and counted, not drawn.
+  const kept = edges.filter((e) => nodes.has(e.from) && nodes.has(e.to)), dangling = edges.length - kept.length;
+  const out = { generated: new Date().toISOString(), nodes: [...nodes.values()], edges: kept, dangling, problems };
   out.counts = out.nodes.reduce((a, n) => ((a[n.kind] = (a[n.kind] || 0) + 1), a), {});
   return out;
 }
@@ -190,6 +201,7 @@ function trace(graph, id, depth = 4) {
   return [...seen];
 }
 function search(graph, q) {
+  const exact = graph.nodes.find((n) => n.id === String(q || "").trim()); if (exact) return [exact]; // "table:votes" etc.
   const terms = String(q || "").toLowerCase().split(/\s+/).filter(Boolean);
   if (!terms.length) return [];
   const score = (n) => terms.reduce((s, t) => s + (n.label.toLowerCase().includes(t) ? 3 : 0) + (String(n.detail || "").toLowerCase().includes(t) ? 1 : 0) + ((n.columns || []).some((c) => c.includes(t)) ? 1 : 0), 0);

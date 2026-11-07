@@ -13,7 +13,7 @@ A modular monolith: one Express app (`server.js`, the core) plus plug-in modules
 | Meaning | `lib/tagger.js` + `lib/ontology.json` (topics, orgs, benchmarks, people) | tune-ontology |
 | Judging | `lib/analysis.js` (type, evidence, benchmarks, significance) | tune-significance |
 | Data | `lib/db.js` (one API over SQLite and Postgres, schema, migrations) | write-portable-sql |
-| Modules | `kernel/kernel.js`, `modules/modules.json`, `modules/<id>/` (blocks-core, generative-ui, decision, capabilities, admin, project) | add-a-module |
+| Modules | `kernel/kernel.js`, `modules/modules.json`, `modules/<id>/` (blocks-core, generative-ui, decision, capabilities, admin, project, codemap, learn, knowledge, lab, review) | add-a-module |
 | Generative UI | `views/catalog.mjs` (blocks from modules), `views/specs.mjs`, `client/jr.jsx`, `modules/generative-ui` | generative-ui |
 | Decisions | `modules/decision` (judges: weighted-criteria, JEV, CLEF) | run-a-judge |
 | Pages | core pages in `public/*.html`; module pages in `modules/<id>/pages/` (served at `/m/<page>`); `public/js/api.js`, `public/css/app.css` | build-a-page |
@@ -35,4 +35,4 @@ Preflight fails when a page calls an API route that doesn't exist, so a renamed 
 
 ## Contract
 
-What to build comes from the shared spec (`specs/001-superintelligence-homepage/spec.md`, REQ IDs) under the constitution; `docs/SPEC_TRACE.md` maps each REQ to code and tests. This build's tables, routes and shapes are in `docs/INTERFACES.md`. Changing either: use the change-the-contract skill.
+What to build comes from the shared spec (`specs/001-superintelligence-homepage/spec.md`, REQ-001..020) and the proposed research layer (`specs/002-research-layer/spec.md`, REQ-021..030, needs both partners) under the constitution; the map reads both; `docs/SPEC_TRACE.md` maps each REQ to code and tests. This build's tables, routes and shapes are in `docs/INTERFACES.md`. Changing either: use the change-the-contract skill.
