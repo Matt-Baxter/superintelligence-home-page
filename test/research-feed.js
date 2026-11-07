@@ -59,6 +59,10 @@ const serve = (port, env) => new Promise((resolve, reject) => {
     const doubt = await fetch("http://localhost:3291/research/paper/2");
     ok(doubt.status === 404, "a doubtful review has no public write-up");
 
+    const data = await (await fetch("http://localhost:3291/research/data.json")).json();
+    ok(data.pieces.length >= 2 && data.pieces.every((p) => p.verdict && p.verdict !== "doubtful" && p.writeup && typeof p.credibility === "number") && !JSON.stringify(data).includes("Sample Author"), "open data: every publishable judgement as JSON with its verdict, scores and write-up link, no writer names, nothing doubtful");
+    const careful = data.pieces.find((p) => /Measuring self-improvement/.test(p.title));
+    ok(careful && careful.code === "https://github.com/sample-org/sample-repo" && /href="https:\/\/github\.com\/sample-org\/sample-repo"/.test(await (await fetch(careful.writeup)).text()), "a paper's own code link is found and shown on its write-up");
     console.log("Research control room (admins)");
     const sign = async (u) => { const x = await fetch("http://localhost:3291/api/signup", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ username: u, password: "correct-horse-9" }) }); return (x.headers.get("set-cookie") || "").split(";")[0]; };
     const adminC = await sign("sample-admin"), readerC = await sign("sample-reader");

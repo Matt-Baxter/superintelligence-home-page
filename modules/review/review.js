@@ -240,7 +240,7 @@ function review(input) {
   });
 
   return {
-    qid, kind: k.kind, kindWhy: k.why, kindLabel: isSurvey ? "Survey" : KINDS[k.kind].label, verdictRule: v.rule, rubric, source: origin, forecasts, survey: isSurvey, arxiv, title, authors,
+    qid, kind: k.kind, kindWhy: k.why, kindLabel: isSurvey ? "Survey" : KINDS[k.kind].label, verdictRule: v.rule, rubric, source: origin, forecasts, code: codeLink(`${title}\n${text}`), survey: isSurvey, arxiv, title, authors,
     score, naive: naive.significance, credibility, verdict, needsPerson: review_reasons.length > 0, reasons: review_reasons,
     judges: [
       { id: "significance", label: "Significance", score: sig.significance, about: "How big a step toward superintelligence it reports (lib/analysis.js, on the cleaned text)", why: sig.why },
@@ -293,6 +293,13 @@ function stress(input, steps = 6) {
     summary: `Gaming the unguarded judge added ${a.gain.naive} points; the guarded score moved ${a.gain.guarded >= 0 ? "+" : ""}${a.gain.guarded} on the same edits. An adversary that targets the guarded score directly gained ${b.gain.guarded}.` };
 }
 
+
+// A link to the piece's own code, data or weights (GitHub, GitLab, Hugging Face), as papers sites show it. The first one
+// found; shown beside the write-up, never scored on its own (the rigor check "Shares code, data or weights" does that).
+function codeLink(text) {
+  const m = String(text).match(/\b(?:https?:\/\/)?((?:github\.com|gitlab\.com|huggingface\.co)\/[\w.-]+\/[\w.-]+)/i);
+  return m ? `https://${m[1].replace(/[.,;:)]+$/, "")}` : null;
+}
 
 // ---------- the published criteria ----------
 // One table, used by the judge above and printed as-is on /research/criteria and the Review desk, so what we say we
