@@ -54,6 +54,13 @@ function analyse({ topic, ids, docs, docEdges, stories, events = [] }, { example
   const byConcept = {};
   for (const e of docEdges) if (e.rel === "explains") (byConcept[e.dst] ||= new Set()).add(e.src);
   const corroboration = Object.entries(byConcept).map(([c, s]) => ({ concept: c, name: (concepts.find((x) => `concept:${x.id}` === c) || {}).name || c.slice(8), papers: s.size })).sort((a, b) => b.papers - a.papers);
+  // Where papers disagree: a concept two or more reviewed papers explain, but judged far apart (credibility 30 or more
+  // apart, or one doubtful or withdrawn beside a credible one). A light version of support-versus-contrast views.
+  const contested = Object.entries(byConcept).filter(([, s]) => s.size >= 2).map(([c, s]) => {
+    const ps = P.filter((p) => s.has(p.qid)), hi = ps.reduce((a, p) => (p.credibility > a.credibility ? p : a), ps[0]), lo = ps.reduce((a, p) => (p.credibility < a.credibility ? p : a), ps[0]);
+    const bad = ps.some((p) => ["doubtful", "withdrawn"].includes(p.verdict)) && ps.some((p) => p.credibility >= 60);
+    return hi && lo && (hi.credibility - lo.credibility >= 30 || bad) ? { concept: c, name: (concepts.find((x) => `concept:${x.id}` === c) || {}).name || c.slice(8), high: { title: hi.title, credibility: hi.credibility, verdict: hi.verdict, n: hi.n }, low: { title: lo.title, credibility: lo.credibility, verdict: lo.verdict, n: lo.n } } : null;
+  }).filter(Boolean).slice(0, 6);
 
   // Our own checks: Lab examples on this topic (or citing a reviewed paper as their source).
   const urls = new Set(papers.map((p) => p.url));
@@ -98,7 +105,7 @@ function analyse({ topic, ids, docs, docEdges, stories, events = [] }, { example
     n: (P.find((p) => p.qid === e.doc_qid) || {}).n })).slice(0, 12);
   return { topic, label: topicLabel(topic), ids, strength, why, at, buzz: talk, grades, forecasts,
     counts: { papers: P.length, primary: primary.length, surveys: P.length - primary.length, credible: credible.length, comments: comments.length, stories: S.length, sources: sourceCount, checks: checks.length, supported, linked },
-    meanCredibility: Math.round(mean(P.map((p) => p.credibility))), papers: P, checks, top, corroboration: corroboration.slice(0, 8), people, orgs,
+    meanCredibility: Math.round(mean(P.map((p) => p.credibility))), papers: P, checks, top, corroboration: corroboration.slice(0, 8), contested, people, orgs,
     comments: { count: comments.length, verdicts: comments.reduce((a, c) => ((a[c.verdict] = (a[c.verdict] || 0) + 1), a), {}) }, weak, refs };
 }
 
@@ -131,6 +138,7 @@ function blog(d, site = "") {
     L.push("");
   }
   if (d.top.length) { L.push("## In the news", ""); for (const s of d.top) L.push(`- ${s.title} ${cite(s.n)}, significance ${s.significance}/100${s.sources.length > 1 ? `, reported by ${pl(s.sources.length, "source")}` : ""}.`); L.push(""); }
+  if (d.contested && d.contested.length) { L.push("## Where papers disagree", "", "Concepts two reviewed papers explain but that we judged far apart; read both before relying on either.", ""); for (const k of d.contested) L.push(`- ${k.name}: "${k.high.title}" ${cite(k.high.n)} (${k.high.verdict}, ${k.high.credibility}) against "${k.low.title}" ${cite(k.low.n)} (${k.low.verdict}, ${k.low.credibility}).`); L.push(""); }
   if (d.corroboration.length) { L.push("## Where papers agree", ""); for (const k of d.corroboration.slice(0, 5)) L.push(`- ${k.name}: ${k.papers >= 2 ? `explained by ${k.papers} reviewed papers (corroborated)` : "explained by one reviewed paper (single source)"}.`); L.push(""); }
   if (d.weak.length) { L.push("## Where the evidence is thin", ""); for (const w of d.weak) L.push(`- ${w.text} ${cite(w.n)}.`); L.push(""); }
   if (d.people.length || d.orgs.length) {

@@ -45,6 +45,16 @@ T = S.trackRecords(docs, [ev(org, "happened"), ev(org, "happened"), ev(org, "did
 ok(o.hitRate === 0.67 && o.pending === 1 && /worth following/.test(o.monitor || ""), "from 3 resolved forecasts the hit rate shows, and a frequent organisational outlet is flagged as worth following");
 ok(T.find((x) => x.id === pool.id).monitor === null, "the pooled personal class is never flagged for monitoring");
 
+console.log("Probabilities and Brier scores");
+ok(S.probabilityIn("a 60% chance that AI builds its successors by 2028") === 0.6 && S.probabilityIn("a probability of 0.3 by 2030") === 0.3 && S.probabilityIn("70 percent likely by 2029") === 0.7 && S.probabilityIn("revenue grew 60% in 2025") === null, "a stated probability is read from the forecast's own sentence, and other percentages are not");
+ok(f("A lab puts a 60% chance on agents automating research by 2028.")[0]?.probability === 0.6 && f("Labs will automate research by 2028.")[0]?.probability === null, "forecasts carry their stated probability, or none");
+ok(Math.abs(S.brier(0.6, true) - 0.16) < 1e-9 && Math.abs(S.brier(0.6, false) - 0.36) < 1e-9, "Brier: (probability - outcome) squared");
+const pe = (status, probability) => ({ outlet: org.id, status, probability });
+let B = S.trackRecords(docs, [pe("happened", 0.8), pe("did-not", 0.3), pe("happened", 0.6)]).find((x) => x.id === org.id);
+ok(B.brier === +((0.04 + 0.09 + 0.16) / 3).toFixed(3) && B.scored === 3, `from 3 scored forecasts the outlet's Brier score shows (${B.brier})`);
+B = S.trackRecords(docs, [pe("happened", 0.8), pe("did-not", null), pe("happened", null)]).find((x) => x.id === org.id);
+ok(B.brier === null && B.scored === 1, "forecasts without a stated probability are not Brier-scored");
+
 console.log("Buzz versus evidence");
 const many = (n, kind = "commentary") => Array.from({ length: n }, () => ({ at, kinds: [kind] }));
 ok(S.buzz({ stories: many(3), at }).level === "quiet" && S.buzz({ stories: many(S.SOME), at }).level === "some" && S.buzz({ stories: many(S.LOUD), at }).level === "loud", `quiet under ${S.SOME}, loud at ${S.LOUD} or more`);

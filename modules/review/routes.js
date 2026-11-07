@@ -62,7 +62,7 @@ module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, no
   // Sources and forecasts: each outlet's grades and track record, and the dated forecasts waiting to be resolved.
   const SRC = require("./sources");
   app.get("/api/review/outlets", auth, wrap(async () => {
-    const docs = await db.all("SELECT credibility, result FROM review_docs ORDER BY id DESC LIMIT 1000"), events = await db.all("SELECT outlet, status FROM review_events");
+    const docs = await db.all("SELECT credibility, result FROM review_docs ORDER BY id DESC LIMIT 1000"), events = await db.all("SELECT outlet, status, probability FROM review_events");
     return { outlets: SRC.trackRecords(docs, events), grades: SRC.OUTLETS, minResolved: SRC.MIN_RESOLVED };
   }));
   app.get("/api/review/events", auth, wrap(async (req) => {

@@ -32,4 +32,11 @@ const long = D.posts({ ...full, label: "Sample topic with a long name (test data
 ok(long.every((p) => (p.text.match(/"/g) || []).length % 2 === 0), "posts keep whole sentences: no quote is cut in half");
 const sb = D.storyboard(full);
 ok(sb.scenes.every((s) => ["title", "say", "bars", "graph"].includes(s.kind) && s.seconds > 0), "the storyboard uses scenes the explainer player knows");
+{
+  const hi = doc(7, 80), lo = { ...doc(8, 20), verdict: "doubtful" };
+  const d2 = D.analyse({ topic: "recursive-self-improvement", ids: ["recursive-self-improvement"], docs: [hi, lo], docEdges: [hi, lo].map((x) => ({ src: x.qid, rel: "explains", dst: "concept:sample" })), stories: [] }, { examples: [], concepts: [{ id: "sample", name: "Sample concept" }] });
+  ok(d2.contested.length === 1 && d2.contested[0].high.credibility === 80 && d2.contested[0].low.verdict === "doubtful" && /## Where papers disagree/.test(D.blog(d2, "")), "a concept two papers explain but we judged far apart is listed as contested, in the blog too");
+  const d3 = D.analyse({ topic: "recursive-self-improvement", ids: ["recursive-self-improvement"], docs: [doc(9, 70), doc(10, 65)], docEdges: [9, 10].map((i) => ({ src: `doc:sample${i}`, rel: "explains", dst: "concept:sample" })), stories: [] }, { examples: [], concepts: [] });
+  ok(d3.contested.length === 0, "papers judged alike are not contested");
+}
 console.log(`\ndossier unit: ${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

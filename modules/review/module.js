@@ -19,6 +19,8 @@ CREATE TABLE IF NOT EXISTS review_events (id \${ID}, qid TEXT NOT NULL UNIQUE, d
   resolved_by INTEGER REFERENCES users(id) ON DELETE SET NULL, resolved_at TEXT, created_at TEXT DEFAULT \${T});
 CREATE INDEX IF NOT EXISTS idx_review_events_outlet ON review_events(outlet);
 `);
+    // A probability the forecast states (0 to 1), Brier-scored once resolved.
+    ctx.point("db.schema").addColumns([["review_events", "probability", "REAL"]]);
     // Free tier: keep the newest 1,000 reviews, and drop graph edges of reviews that are gone.
     ctx.point("db.schema").addPrune(async (db) => {
       await db.run("DELETE FROM review_docs WHERE id NOT IN (SELECT id FROM review_docs ORDER BY id DESC LIMIT 1000)");

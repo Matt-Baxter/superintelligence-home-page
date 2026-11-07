@@ -34,7 +34,7 @@ module.exports = function mountResearch(app, { db, wrap, auth, admin }) {
     const { waiting, proposals } = require("../../scripts/checkin"), Q = require("../../scripts/quality"), CFG = require("../project/sync.json");
     const today = new Date().toISOString().slice(0, 10), W = await waiting(db, today);
     const rows = await db.all("SELECT kind, title, credibility, verdict, result FROM review_docs ORDER BY id DESC LIMIT 500");
-    const due = await db.all(`SELECT e.id, e.sentence, e.due, e.status, e.outlet_label, d.id AS doc_id, d.title FROM review_events e LEFT JOIN review_docs d ON d.qid = e.doc_qid
+    const due = await db.all(`SELECT e.id, e.sentence, e.due, e.status, e.probability, e.outlet_label, d.id AS doc_id, d.title FROM review_events e LEFT JOIN review_docs d ON d.qid = e.doc_qid
       WHERE e.status = 'pending' ORDER BY e.due ASC LIMIT 50`).catch(() => []);
     const flagged = (await db.all("SELECT id, title, verdict, credibility, result FROM review_docs WHERE needs_person = 1 AND label IS NULL ORDER BY id DESC LIMIT 50"))
       .map((d) => { const r = JSON.parse(d.result || "{}"); return { id: d.id, title: d.title, verdict: d.verdict, credibility: d.credibility, reasons: [...(r.reasons || []), ...(r.panel && r.panel.needsPerson && r.panel.status === "disagreed" ? ["the models disagreed"] : [])], advice: r.panel && r.panel.advice ? r.panel.advice.advice : null, judges: r.panel ? r.panel.judges.map((j) => `${j.id === "rules" ? "rules" : j.model} ${j.credibility}`) : [] }; });
@@ -48,7 +48,7 @@ module.exports = function mountResearch(app, { db, wrap, auth, admin }) {
   app.get("/research/outlets", gate, page(async (req) => {
     const S = require("../review/sources");
     const docs = (await db.all("SELECT kind, credibility, verdict, needs_person, label, result FROM review_docs ORDER BY id DESC LIMIT 1000")).filter(V.publishable);
-    const events = await db.all("SELECT outlet, status FROM review_events").catch(() => []);
+    const events = await db.all("SELECT outlet, status, probability FROM review_events").catch(() => []);
     return V.outletsPage(S.trackRecords(docs, events), S.MIN_RESOLVED, base(req));
   }));
   app.get("/research/criteria", gate, page(async (req) => V.criteriaPage(base(req))));
