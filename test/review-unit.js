@@ -86,6 +86,13 @@ const long = R.review({ ...careful, text: `${careful.text} ${"Sample filler for 
 ok(long.truncated?.[0]?.field === "text" && long.truncated[0].kept === 20000 && long.reasons.some((x) => /cut at 20,000/.test(x)), "a cut text is reported as a field and a reason");
 ok(rc.truncated === null, "...and a text that fits reports no cut");
 
+console.log("Bands (REQ-037)");
+const B = require("../modules/review/bands");
+ok([careful, hype, comment].every((s) => { const r = R.review(s); return r.verdict === B.verdictOf(r.score, r.credibility) && r.bands.credibility["60"] === B.band(r.credibility, 60); }), "bands are reported and the verdict string is unchanged");
+const rcm = R.review(comment);
+ok(rcm.credibility !== 70 || (rcm.verdict === "solid, modest step" && /within 5 of 70/.test(rcm.verdictNote)), `a sample exactly on a cutoff keeps its verdict and gets a borderline note: "${rcm.verdictNote}"`);
+ok(rc.verdictNote === null && !rc.borderline, "the careful paper (credibility 100) is far from every cutoff: no note");
+
 console.log("Adversaries");
 for (const s of [careful, hype, comment]) {
   const st = R.stress(s, 5);

@@ -329,7 +329,7 @@ theorem guarded_le_100 (b : Nat) (p : Presence) (inj : Bool) : guarded b (rigor 
 theorem guarded_le_100_of (b r : Nat) (inj : Bool) (hr : r ≤ 100) : guarded b r inj ≤ 100 :=
   Nat.le_trans (guarded_le_cap b r inj) (cap_le_100 r hr)
 
-/-! ## Step 6: bands (REQ-037; not yet in review.js, which uses fixed cutoffs) -/
+/-! ## Step 6: bands (REQ-037; modules/review/bands.js `band`, m = 5; review.js's verdict string keeps fixed cutoffs) -/
 
 inductive Band where
   | low | border | high
@@ -443,9 +443,9 @@ def Rating.rank : Rating → Nat
   | .early => 2
   | .someSupport => 3
 
-/-- credible = `credible.length`: primary (non-survey) papers with credibility ≥ 60 (dossier.js
-    line 44); linked = held-up toy checks whose source is ANY reviewed paper on the topic,
-    credible or not, survey or not (`urls` at line 52 is built from every paper); papers =
+/-- credible = `credible.length`: primary (non-survey) papers in the High band around 60
+    (`band 60 5 c = .high`, credibility ≥ 65; T041); linked = held-up toy checks whose source is a
+    credible paper (T042; before it, any reviewed paper counted); papers =
     `P.length`: every reviewed non-comment document, surveys included (lines 36-37). The model
     takes the three as independent naturals; in the code credible ≤ papers. -/
 def rating (credible linked papers : Nat) : Rating :=
@@ -552,9 +552,8 @@ theorem rating_add_credible (c l n : Nat) : (rating c l n).rank ≤ (rating (c +
   rating_mono (by omega) (Nat.le_refl l) (by omega)
 
 /-- Once there is at least one paper, adding a non-credible (e.g. Border) paper changes nothing,
-    WITH linked HELD FIXED. In dossier.js a new paper of any credibility also joins `urls`
-    (line 52), so a held-up toy check citing it raises `linked`; see
-    `noncredible_paper_with_check_raises` below. -/
+    WITH linked HELD FIXED. Since T042 dossier.js counts only checks of credible papers as linked,
+    so a non-credible paper can't change linked and this is the code's behaviour too. -/
 theorem rating_add_noncredible (c l n : Nat) (hn : 0 < n) : rating c l (n + 1) = rating c l n := by
   by_cases h1 : 2 ≤ c ∧ 1 ≤ l
   · rw [rating_some h1, rating_some h1]
@@ -566,10 +565,10 @@ theorem rating_add_noncredible (c l n : Nat) (hn : 0 < n) : rating c l (n + 1) =
     the plan's "a Border paper never raises it" holds only from one paper on). -/
 theorem first_noncredible_paper_raises : rating 0 0 1 ≠ rating 0 0 0 := by decide
 
-/-- ... and with two credible papers already, a non-credible paper that a held-up toy check cites
-    (linked 0 → 1) lifts "early" to "some support". So "a Border paper never raises the rating"
-    is false for dossier.js even from one paper on, unless checks citing Border papers are
-    excluded from `linked`. -/
+/-- ... and in the model, with two credible papers already, adding a non-credible paper while
+    linked goes 0 → 1 lifts "early" to "some support". Before T042 dossier.js did exactly that when
+    a held-up toy check cited a Border paper; since T042 such a check doesn't count toward linked,
+    so this case can't arise in the code. -/
 theorem noncredible_paper_with_check_raises :
     rating 2 0 2 = .early ∧ rating 2 1 3 = .someSupport := by decide
 

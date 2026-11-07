@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Judge report (REQ-037, spec 003 T006): how many judged items sit near a verdict cutoff, where one marker more or
 // less could change the verdict or the dossier's "credible" test. Read-only: it never writes anything but stdout.
-// Cutoffs come from modules/review/review.js (`verdict`) and modules/review/dossier.js (credible = credibility >= 60).
+// Cutoffs come from modules/review/review.js (`verdict`) and modules/review/dossier.js (credible = High band around 60, credibility >= 65 at m = 5; modules/review/bands.js).
 // The band rule is the spec's half-open one: an item is Border for cutoff T at margin m when T - m <= S < T + m.
 //   node scripts/judge-report.js                    reviewed docs in the database (same DATABASE_URL / DATA_DIR as the
 //                                                    server); with no database, the synthetic samples run through review()
@@ -12,7 +12,7 @@ const fs = require("node:fs"), path = require("node:path");
 
 const CUTOFFS = [
   { field: "credibility", at: 35, why: "below it the verdict is \"doubtful\"" },
-  { field: "credibility", at: 60, why: "\"major and credible\" needs it; the dossier counts a paper as credible from here" },
+  { field: "credibility", at: 60, why: "\"major and credible\" needs it; the dossier counts a paper as credible only from 60 + m (its High band)" },
   { field: "credibility", at: 70, why: "\"solid, modest step\" needs it" },
   { field: "score", at: 40, why: "\"big if true\" needs it" },
   { field: "score", at: 55, why: "\"major and credible\" needs it" },

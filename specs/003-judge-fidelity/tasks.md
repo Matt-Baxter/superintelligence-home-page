@@ -52,8 +52,8 @@ Any agent (Codex, v0, Claude or another) picks up work here. `scripts/project-sy
 ## Phase 5: kinds and bands (REQ-036, REQ-037)
 
 - [x] T040 [rules] [REQ-036] Survey and review title forms; position, dataset/benchmark and negative-result kinds; flips survey-* gaps (done: flips survey-colon-title, survey-review-of; `paperKind` {id, label, why, canShow}; only a survey changes the arithmetic, the other kinds are labels with a note)
-- [ ] T042 [rules] [REQ-037] Count only toy checks that test a credible paper's idea toward the dossier rating: today a non-credible paper with a held-up check can lift "early" to "some support" (Lean: `noncredible_paper_with_check_raises`)
-- [ ] T041 [rules] [REQ-037] `band(S, T, m)` for verdicts and the dossier; Border shown on the Review desk, the digest and the dossier; only High counts as credible (modules/review/review.js, modules/review/dossier.js, scripts/watch.js)
+- [x] T042 [rules] [REQ-037] Count only toy checks that test a credible paper's idea toward the dossier rating: today a non-credible paper with a held-up check can lift "early" to "some support" (Lean: `noncredible_paper_with_check_raises`)
+- [x] T041 [rules] [REQ-037] `band(S, T, m)` for verdicts and the dossier; Border shown on the Review desk, the digest and the dossier; only High counts as credible (modules/review/review.js, modules/review/dossier.js, scripts/watch.js)
 
 ## Phase 6: proofs (REQ-038)
 

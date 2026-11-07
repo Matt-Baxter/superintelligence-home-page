@@ -416,6 +416,7 @@ function review(input) {
   // Two axes, reported separately: how big a step it claims (score) and how far to believe it (credibility).
   const verdict = credibility < 35 ? "doubtful" : score >= 55 && credibility >= 60 ? "major and credible" : credibility >= 70 ? "solid, modest step" : score >= 40 ? "big if true" : "minor";
   // The id comes from the canonical text, so two spellings of one document share it.
+  const band = require("./bands").judge(score, credibility, { kind: k.kind }); // REQ-037: Border near a cutoff, verdict unchanged
   const qid = `doc:${hash(`${title}\n${text}`)}`;
   const edges = step("catalog", "Catalog it in the knowledge graph", () => {
     const rel = (t) => (t.qid.startsWith("topic:") ? "about" : t.qid.startsWith("concept:") ? "explains" : t.qid.startsWith("benchmark:") ? "evaluates-on" : "mentions");
@@ -424,7 +425,7 @@ function review(input) {
 
   return {
     qid, kind: k.kind, kindWhy: k.why, kindLabel: pk ? pk.label : KINDS[k.kind].label, survey: isSurvey, paperKind: pk, arxiv, title, authors,
-    score, naive: naive.significance, credibility, verdict, needsPerson: review_reasons.length > 0, reasons: review_reasons, truncated: cuts.length ? cuts : null,
+    score, naive: naive.significance, credibility, verdict, verdictNote: band.verdictNote, bands: band.bands, borderline: band.borderline, borderlineReasons: band.borderlineReasons, needsPerson: review_reasons.length > 0, reasons: review_reasons, truncated: cuts.length ? cuts : null,
     judges: [
       { id: "significance", label: "Significance", score: sig.significance, about: "How big a step toward superintelligence it reports (lib/analysis.js, on the cleaned text)", why: sig.why },
       { id: "rigor", label: "Rigor", score: rg.score, about: "What its evidence would need: numbers, baselines, method, sample size, uncertainty, held-out tests, limitations, shared artifacts", why: rg.why, missing: rg.missing, notCounted: rg.notCounted },

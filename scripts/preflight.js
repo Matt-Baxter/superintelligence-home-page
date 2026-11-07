@@ -97,8 +97,8 @@ catch (e) { fail("Judge edge cases", String(e.stdout || e.message).trim().split(
 // vectors against review.js, and property tests on 300 generated synthetic texts (known design gaps print, don't fail).
 try { const last = (c) => sh(c).trim().split("\n").pop();
   const props = last("node test/judge-properties.js --n 300").replace(/^judge properties: /, "");
-  sh("node test/fidelity-cases.js"); sh("node test/judge-report-unit.js"); sh("node test/judge-lean-vectors.js");
-  ok("Judge properties", `${props} (300 generated texts; the full run is 1,200); fidelity set well-formed, near-cutoff rule units pass, Lean vectors match review.js`); }
+  sh("node test/fidelity-cases.js"); sh("node test/fidelity-unit.js"); sh("node test/judge-report-unit.js"); sh("node test/judge-lean-vectors.js"); sh("node test/bands-unit.js");
+  ok("Judge properties", `${props} (300 generated texts; the full run is 1,200); fidelity set well-formed, near-cutoff rule and band units pass, Lean vectors match review.js`); }
 catch (e) { fail("Judge properties", String(e.stdout || e.message).trim().split("\n").slice(-3).join(" | ")); }
 
 // 5b8. AGENTS.md is what Codex reads (not CLAUDE.md): it must carry the hard rules itself and fit Codex's 32 KiB default.

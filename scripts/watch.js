@@ -103,8 +103,8 @@ async function main() {
   fs.mkdirSync(OUT, { recursive: true });
   const topicsOf = (r) => r.edges.filter((ed) => ed.rel === "about").map((ed) => ed.dst.slice(6)).join(", ");
   const md = [`# Paper watch, ${day}`, "", `${entries.length} papers found, ${stored} new${dry ? " (dry run: nothing stored)" : ""}, ${already} already in the catalog, ${queued.length} queued for paper-to-code. Scores come from the Review desk's guarded judges; people are matched by name only.`, "",
-    "| Paper | Verdict | Score | Credibility | Topics | New | Read from |", "| --- | --- | --- | --- | --- | --- | --- |",
-    ...rows.sort((a, b) => b.r.credibility - a.r.credibility).map(({ e, r, rd, isNew }) => `| [${e.title.replace(/\|/g, "/")}](${e.url}) | ${r.verdict} | ${r.score} | ${r.credibility} | ${topicsOf(r)} | ${isNew ? "yes" : ""} | ${rd.note} |`), "",
+    "| Paper | Verdict | Score | Credibility | Band | Topics | New | Read from |", "| --- | --- | --- | --- | --- | --- | --- | --- |",
+    ...rows.sort((a, b) => b.r.credibility - a.r.credibility).map(({ e, r, rd, isNew }) => `| [${e.title.replace(/\|/g, "/")}](${e.url}) | ${r.verdict} | ${r.score} | ${r.credibility} | ${require("../modules/review/bands").digest(r)} | ${topicsOf(r)} | ${isNew ? "yes" : ""} | ${rd.note} |`), "",
     ...(rows.some((x) => x.rd.shown || x.rd.withheld) ? ["## Agent summaries", "", "Shown only when they pass the fidelity check against the abstract; they never change a score.", "",
       ...rows.filter((x) => x.rd.shown || x.rd.withheld).map(({ e, rd }) => `- [${e.title}](${e.url}): ${rd.shown ? rd.shown : `summary withheld: ${rd.withheld} (${rd.fidelity.checks.find((c) => c.id === rd.withheld).detail})`}`), ""] : []),
     "## Queued for paper-to-code", "", ...(queued.length ? queued.map((q) => `- ${q.id ? `job #${q.id}: ` : ""}[${q.title}](${q.url})`) : ["- nothing new qualified today"]), ""];

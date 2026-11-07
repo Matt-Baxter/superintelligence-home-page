@@ -34,8 +34,8 @@ injection was found are **inputs**.
 | `credibility r h` | review.js line 197 | `round(0.5R + 0.5(100 - H)) = jsRound (R + (100 - H)) 2` |
 | `cap r` | review.js line 193 | `round(35 + 0.65R) = jsRound (3500 + 65R) 100 = (7100 + 130R) / 200`. In doubles `0.65*R` is inexact for some R (e.g. R = 26 gives 51.900000000000006), but the exact halves (R = 10, 30, 50, 70, 90: 41.5, 54.5, 67.5, 80.5, 93.5) come out exact, and no inexact value is near a half, so the float code equals the model on R 0..100 (checked in node) |
 | `guarded b r inj` | review.js lines 189-196 | `min(b, cap)`, then `min(·, 30)` if injection. `b` is the base clamped at 0: the code applies `max(0, ·)` last, which gives the same number because cap ≥ 0 |
-| `band T m c` | not in code yet (REQ-037, T041) | Low `c < T - m`, Border `T - m ≤ c < T + m`, High `c ≥ T + m`. Natural subtraction: if m > T nothing is Low, same as with integers since c ≥ 0 |
-| `rating c l n` | dossier.js line 75, `const strength =` | `some support` if c ≥ 2 and l ≥ 1; `early` if c ≥ 1; `thin` if n > 0; else `none yet`. c = credible primary (non-survey) papers, credibility ≥ 60 (line 44); l = held-up toy checks whose source is any reviewed paper, credible or not (`urls`, line 52); n = `P.length`, every reviewed non-comment document including surveys |
+| `band T m c` | modules/review/bands.js, `band(score, T, m)` (REQ-037, T041; m = 5) | Low `c < T - m`, Border `T - m ≤ c < T + m`, High `c ≥ T + m`. Natural subtraction: if m > T nothing is Low, same as with integers since c ≥ 0 |
+| `rating c l n` | dossier.js line 75, `const strength =` | `some support` if c ≥ 2 and l ≥ 1; `early` if c ≥ 1; `thin` if n > 0; else `none yet`. c = credible primary (non-survey) papers, those in the High band around 60 (`band(credibility, 60, 5) = high`, credibility ≥ 65; T041); l = held-up toy checks whose source is a credible paper (`tests === "credible"`, T042); n = `P.length`, every reviewed non-comment document including surveys |
 
 ## Theorems
 
@@ -70,9 +70,9 @@ would show up as a proof that cannot be repaired; the statements were checked ag
 | `rating_exhaustive` | one of the four (true of any function into `Rating`; the iffs carry the content) | 7 | written, not yet checked by Lean | low |
 | `rating_mono` | more credible papers, linked checks or papers never lower the rating (`repeat' split`, then `decide` or `omega` on each of 16 leaves) | 7 | written, not yet checked by Lean | medium |
 | `rating_add_credible` | adding a credible paper never lowers it | 7 | written, not yet checked by Lean | low |
-| `rating_add_noncredible` | with at least one paper and **linked held fixed**, a non-credible (Border) paper changes nothing | 7 | written, not yet checked by Lean | low |
+| `rating_add_noncredible` | with at least one paper and **linked held fixed**, a non-credible (Border) paper changes nothing. Since T042 a non-credible paper can't change `linked` in dossier.js, so this is the code's behaviour, not only the model's | 7 | written, not yet checked by Lean | low |
 | `first_noncredible_paper_raises` | but the first one lifts `none yet` to `thin` (`decide`) | 7 | written, not yet checked by Lean | low |
-| `noncredible_paper_with_check_raises` | and with c = 2, a Border paper that a held-up toy check cites (l 0 → 1) lifts `early` to `some support` (`decide`): see gap 9 | 7 | written, not yet checked by Lean | low |
+| `noncredible_paper_with_check_raises` | in the model, raising l from 0 to 1 while adding a non-credible paper lifts `early` to `some support` (`decide`). Before T042 dossier.js did that for a Border paper a held-up check cited; now such a check doesn't count toward l, so the case can't arise in the code (gap 9, closed) | 7 | written, not yet checked by Lean | low |
 
 Summary: 0 high, 4 medium (`rigor_flip`, `jsRound_lt_succ`, the `margin_3_can_jump` group, `rating_mono`), the rest
 low. `lakefile.lean` (an empty `lean_lib Judge where`, as `lake init` writes) is low risk.
@@ -105,16 +105,18 @@ These are things the theorems do **not** say about today's code.
    past the twelfth are invisible to the code, so "one more unbacked claim raises hype" is false there.
 6. **Hype words are a count of distinct words** (`new Set`, line 109): w is the input, so "repeating a hype word
    doesn't raise H" is true by construction in the code and not a theorem here.
-7. **Bands aren't in the code yet.** `verdict` (line 207) uses fixed cutoffs 35, 60, 70 with `>=`; `band` is the
-   REQ-037 rule T041 will add.
+7. **Bands and the verdict.** `band` is modules/review/bands.js (T041). The `verdict` string in review.js still uses
+   fixed cutoffs 35, 60, 70 (credibility) and 40, 55 (score) with `>=`; Border is reported beside it (`bands`,
+   `borderline`, `verdictNote`), not folded into it. The dossier's credible test uses the band (High only).
 8. **Floating point.** The model is exact rational rounding. `test/judge-lean-vectors.js` checks the float code
    equals it on every R 0..100, H 0..100, u ≤ k ≤ 50 and w 0..6, and finds no difference, but that is a test,
    not a proof about IEEE doubles.
-9. **Linked checks come from any reviewed paper.** dossier.js builds `urls` from every reviewed paper (line 52), so
-   adding a non-credible or survey paper can raise `linked` when a held-up toy check cites it, and with c ≥ 2 that
-   lifts `early` to `some support` (`noncredible_paper_with_check_raises`). `rating_add_noncredible` holds l fixed.
-   If the plan's "a Border paper never raises the rating" is meant, `linked` should count only checks citing
-   credible papers; that is a code (and possibly spec) change, not a proof change.
+9. **Linked checks (closed by T042).** dossier.js used to count a held-up toy check citing any reviewed paper, so a
+   non-credible or survey paper could raise `linked` and, with c ≥ 2, lift `early` to `some support`. Since T042
+   `linked` counts only checks whose source is a credible (High) paper, so adding a non-credible paper leaves l
+   unchanged and `rating_add_noncredible` (l fixed) describes the code. The model didn't change: `rating` is a
+   function of the three counts, and only what the counts mean moved. test/bands-unit.js checks the code side
+   (a Border paper, with or without a check citing it, never raises the rating once there is a paper).
 
 ## Vectors for T051
 
