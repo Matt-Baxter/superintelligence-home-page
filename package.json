@@ -18,7 +18,9 @@
     "modules:check": "node scripts/modules.js check",
     "modules:list": "node scripts/modules.js list",
     "codemap": "node scripts/codemap.js",
-    "learn:worker": "node scripts/learn-worker.js"
+    "learn:worker": "node scripts/learn-worker.js",
+    "expr:check": "node scripts/expr-check.js",
+    "schema": "node scripts/schema.js"
   },
   "keywords": [],
   "author": "",

@@ -8,3 +8,4 @@ public/m/
 modules/codemap/data/
 out/
 !modules/learn/data/
+__pycache__/

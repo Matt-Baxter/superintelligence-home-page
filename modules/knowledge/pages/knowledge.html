@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Knowledge · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css">
+<style>
+  .kgrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; }
+  @media (max-width: 860px) { .kgrid { grid-template-columns: 1fr; } }
+  .qid { font: 13px var(--mono); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; cursor: pointer; white-space: nowrap; }
+  .qid:hover { border-color: var(--accent); }
+  .edge { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .rel { color: var(--muted); font-size: 12px; }
+  .bar { height: 4px; background: var(--accent-soft); border-radius: 2px; } .bar > i { display: block; height: 4px; background: var(--accent); border-radius: 2px; }
+  .chunk { padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; } .chunk .tags { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px; }
+  svg.kg { width: 100%; height: auto; display: block; } svg.kg text { fill: var(--fg); font: 12px var(--font); } svg.kg path { fill: none; stroke: var(--line); } svg.kg circle { fill: var(--surface); stroke: var(--accent); }
+</style></head>
+<body>
+<main>
+  <div class="pagehead"><div><h1>Knowledge</h1><p class="muted">Stories split into chunks, tagged by every registered tagger, embedded locally, and linked into a graph of qualified ids (<code>topic:</code>, <code>org:</code>, <code>concept:</code>, <code>benchmark:</code>, <code>person:</code>).</p></div>
+    <div class="actions"><button class="btn primary" id="build" type="button">Build or refresh</button><a class="btn" href="/api/knowledge/export.jsonld">JSON-LD</a></div></div>
+  <p class="small muted" id="stats" role="status"></p>
+  <div class="kgrid">
+    <section class="panel"><h2>Graph</h2>
+      <form class="row" id="gform"><input id="qid" placeholder="topic:alignment or concept:attention" aria-label="Qualified id"><button class="btn" type="submit">Show</button></form>
+      <div id="graph"></div><div id="edges"></div></section>
+    <section class="panel"><h2>Find similar passages</h2>
+      <form class="row" id="sform"><input id="q" placeholder="e.g. models that improve themselves" aria-label="Search text"><button class="btn" type="submit">Search</button></form>
+      <div id="similar"></div>
+      <h2 style="margin-top:18px">Tagged passages</h2><div id="chunks" class="small muted">Pick a node to see the passages that carry it.</div></section>
+  </div>
+  <section class="panel" style="margin-top:22px"><h2>Taggers and embedders</h2><p class="small muted">Adapters registered in <code>lib/taggers</code> (modules add theirs through the <code>knowledge.taggers</code> extension point) and <code>modules/knowledge/knowledge.js</code>.</p><div class="tablewrap"><table><thead><tr><th>Adapter</th><th>Namespace</th><th>From</th><th>What it does</th></tr></thead><tbody id="adapters"></tbody></table></div></section>
+</main>
+<script src="/js/api.js"></script>
+<script>
+const qidBtn = (q) => `<button type="button" class="qid" data-q="${esc(q)}">${esc(q)}</button>`;
+async function stats() {
+  const s = await api("/api/admin/knowledge/stats");
+  $("#stats").textContent = `${s.chunks} chunks · ${s.edges} links`;
+  $("#adapters").innerHTML = s.taggers.map((t) => `<tr><td><code>${esc(t.id)}</code></td><td>${esc(t.namespace)}:</td><td>${esc(t.module)}</td><td class="small">${esc(t.about)}</td></tr>`).join("") + s.embedders.map((e) => `<tr><td><code>${esc(e.id)}</code></td><td>embedding</td><td>knowledge</td><td class="small">${esc(e.about)}</td></tr>`).join("");
+}
+function radial(center, edges) {
+  const W = 520, H = 300, cx = W / 2, cy = H / 2, n = Math.max(1, edges.length), max = Math.max(...edges.map((e) => e.weight), 1);
+  const pts = edges.map((e, i) => { const a = -Math.PI / 2 + (i / n) * 2 * Math.PI; return { ...e, x: cx + 210 * Math.cos(a), y: cy + 115 * Math.sin(a) }; });
+  return `<svg class="kg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Links of ${esc(center)}">${pts.map((p) => `<path d="M${cx},${cy} Q${(cx + p.x) / 2 - (p.y - cy) * 0.15},${(cy + p.y) / 2 + (p.x - cx) * 0.15} ${p.x},${p.y}" style="stroke-width:${1 + 3 * p.weight / max}"/>`).join("")}
+    <circle cx="${cx}" cy="${cy}" r="6"/><text x="${cx}" y="${cy - 12}" text-anchor="middle" font-weight="600">${esc(center)}</text>
+    ${pts.map((p) => `<g data-q="${esc(p.other)}" style="cursor:pointer"><circle cx="${p.x}" cy="${p.y}" r="4"/><text x="${p.x}" y="${p.y + (p.y < cy ? -8 : 16)}" text-anchor="middle">${esc(p.other)}</text></g>`).join("")}</svg>`;
+}
+async function show(q) {
+  $("#qid").value = q;
+  const g = await api(`/api/knowledge/graph?qid=${encodeURIComponent(q)}`);
+  const max = Math.max(1, ...g.edges.map((e) => e.weight));
+  $("#graph").innerHTML = g.edges.length ? radial(q, g.edges.slice(0, 14)) : '<p class="small muted">No links yet. Build the index first.</p>';
+  $("#edges").innerHTML = g.edges.map((e) => `<div class="edge"><span class="rel">${esc(e.src === q ? e.rel : "← " + e.rel)}</span><span>${qidBtn(e.other)}<div class="bar"><i style="width:${(100 * e.weight / max).toFixed(0)}%"></i></div></span><span class="small muted">${e.weight}</span></div>`).join("");
+  const c = await api(`/api/knowledge/chunks?tag=${encodeURIComponent(q)}`);
+  $("#chunks").innerHTML = c.chunks.length ? c.chunks.slice(0, 12).map((x) => `<div class="chunk"><a href="/story?id=${x.story_id}">${esc(x.title)}</a><div class="muted">${esc(x.text)}</div><div class="tags">${x.tags.filter((t) => !t.via).map((t) => qidBtn(t.qid)).join("")}</div></div>`).join("") : "No passages carry this tag.";
+}
+async function topNodes() {
+  const g = await api("/api/knowledge/graph?limit=24");
+  $("#edges").innerHTML = g.nodes.length ? `<p class="small muted">Best-connected nodes:</p><div class="row" style="gap:6px">${g.nodes.map((n) => qidBtn(n.qid)).join("")}</div>` : '<p class="small muted">Nothing indexed yet. Press "Build or refresh".</p>';
+}
+document.addEventListener("click", (e) => { const q = e.target.closest("[data-q]")?.dataset.q; if (q) show(q); });
+$("#gform").onsubmit = (e) => { e.preventDefault(); const q = $("#qid").value.trim(); if (q) show(q).catch((err) => showErr($("#stats"), err)); };
+$("#sform").onsubmit = async (e) => { e.preventDefault(); const r = await api(`/api/knowledge/similar?q=${encodeURIComponent($("#q").value)}`);
+  $("#similar").innerHTML = r.results.length ? r.results.map((x) => `<div class="chunk"><span class="small muted">${x.score}</span> <a href="/story?id=${x.story_id}">${esc(x.title)}</a><div class="muted">${esc(x.text)}</div></div>`).join("") : '<p class="small muted">Nothing similar yet.</p>'; };
+$("#build").onclick = async () => { $("#build").disabled = true; try { const r = await api("/api/admin/knowledge/build", { body: {} }); $("#stats").textContent = `Indexed ${r.stories} stories: ${r.chunks_changed} passages updated, ${r.chunks_kept} unchanged, ${r.edges} links.`; $("#build").classList.add("pulse"); topNodes(); } catch (err) { showErr($("#stats"), err); } finally { $("#build").disabled = false; } };
+requireUser().then(() => { stats(); topNodes(); });
+</script>
+</body></html>

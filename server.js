@@ -297,6 +297,9 @@ function moduleDeps() {
 kernel.mount(app, moduleDeps());
 app.get("/api/admin/modules", auth, admin, wrap(() => kernel.describe()));
 // Module pages live in modules/<id>/pages and are served at /m/<page> (the build copies them into public/m for Vercel).
+// Tag adapters from modules join the core taggers (lib/taggers).
+const taggers = require("./lib/taggers");
+for (const t of kernel.store.taggers) if (!taggers.registry.has(t.id)) taggers.register(t);
 // Only pages of modules in this profile are served (public/m may hold copies from a build with another profile).
 const modulePages = new Set(kernel.modules.flatMap((m) => { const d = path.join(m.dir, "pages"); return require("node:fs").existsSync(d) ? require("node:fs").readdirSync(d).map((f) => f.replace(/\.html$/, "")) : []; }));
 app.use("/m", (req, res, next) => { const name = req.path.slice(1).replace(/\.html$/, ""); return !name || modulePages.has(name) || !/^[\w-]+$/.test(name) ? next() : res.status(404).send("Not part of this version of the site."); });

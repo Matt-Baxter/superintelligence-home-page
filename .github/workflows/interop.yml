@@ -1,0 +1,24 @@
+# Checks that si-expr rules (lib/rules, test/expr-vectors.json) give identical results in Node, Python, Rust and
+# WebAssembly, and that the generated schemas still load in each language. Runs only when those files change. A few minutes.
+name: Interop
+on:
+  push:
+    paths: ["lib/expr/**", "lib/rules/**", "interop/**", "schema/**", "test/expr-vectors.json", "scripts/expr-check.js", "scripts/schema.js", ".github/workflows/interop.yml"]
+  pull_request:
+    paths: ["lib/expr/**", "lib/rules/**", "interop/**", "schema/**", "test/expr-vectors.json", "scripts/expr-check.js", "scripts/schema.js"]
+jobs:
+  interop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: npm ci
+      - run: rustup target add wasm32-unknown-unknown
+      - run: cargo build --release --target wasm32-unknown-unknown --lib
+        working-directory: interop/rust/si-expr
+      - run: node scripts/expr-check.js --require=python,rust,wasm
+      - run: pip install pydantic pyarrow grpcio-tools
+      - run: node scripts/schema.js check --runtimes

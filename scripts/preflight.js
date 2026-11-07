@@ -80,6 +80,14 @@ try {
   bad.length ? fail("Commit trailers", `${bad.length} commit(s) since main carry Co-Authored-By/Claude-Session lines: ${bad.slice(0, 3).join(", ")}`) : ok("Commit trailers", "none");
 } catch { ok("Commit trailers", "skipped (no origin/main)"); }
 
+// 5b6. si-expr (portable rules) and the schema registry: Node vectors, builder/registry units, generated schemas current.
+try {
+  sh("node test/expr-unit.js");
+  const ex = sh("node scripts/expr-check.js --only=node").trim().split("\n")[0].replace(/^✓ node\s+/, "");
+  const sc = sh("node scripts/schema.js check").trim().split("\n")[0].replace(/^✓ up to date\s+/, "");
+  ok("Rules and schemas", `si-expr ${ex} vectors; schema/gen ${sc} current`);
+} catch (e) { fail("Rules and schemas", String(e.stdout || e.stderr || e.message).trim().split("\n").slice(-3).join(" | ")); }
+
 // 5c. Agent kit: skills, subagents, plugin manifests, symlinks, index and MCP handshake
 try { ok("Agent kit", sh("node scripts/agent-kit.js check").trim()); }
 catch (e) { fail("Agent kit", String(e.stderr || e.message).trim().split("\n").slice(0, 4).join(" ")); }

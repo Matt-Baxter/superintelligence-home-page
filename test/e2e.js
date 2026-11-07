@@ -245,6 +245,28 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   const ex = await b.newPage(); await ex.goto(B + '/m/explainer?c=attention&record=1'); await ex.waitForFunction(() => window.__explainerSeconds > 0);
   ok(await ex.$$eval('.scene', (s) => s.length) === 6, 'explainer player builds six scenes'); await ex.waitForTimeout(400); await ex.screenshot({ path: 'shots/explainer.png' }); await ex.close();
 
+  console.log('Knowledge: chunks, tags, graph, JSON-RPC');
+  ok((await j(matt, '/api/admin/knowledge/build', 'POST', {})).status === 403, 'building the index is admins only');
+  const kb = await j(john, '/api/admin/knowledge/build', 'POST', {});
+  ok(kb.chunks_changed > 0 && kb.edges > 0 && kb.taggers.includes('concepts'), 'build chunks, tags (core taggers plus the Learn module\'s) and links the graph');
+  const kb2 = await j(john, '/api/admin/knowledge/build', 'POST', {});
+  ok(kb2.chunks_changed === 0 && kb2.chunks_kept === kb.chunks_changed, 'rebuilding skips unchanged chunks');
+  const kg = await j(matt, '/api/knowledge/graph?qid=topic:alignment');
+  ok(kg.edges.length > 0 && kg.edges.every((e) => /^[a-z]+:[a-z0-9-]+$/.test(e.other)), 'graph neighbours are qualified ids');
+  ok((await j(matt, '/api/knowledge/graph?qid=not-qualified')).status === 400, 'graph refuses ids without a namespace');
+  const kc = await j(matt, '/api/knowledge/chunks?tag=topic:alignment');
+  ok(kc.chunks.length > 0 && kc.chunks.every((c) => c.tags.some((t) => t.qid === 'topic:alignment' && t.matched.length)), 'chunks carry explainable tags');
+  const ks = await j(matt, '/api/knowledge/similar?q=' + encodeURIComponent(kc.chunks[0].text.split('.')[0]));
+  ok(ks.results[0] && ks.results[0].story_id === kc.chunks[0].story_id, 'similar passages find the source chunk first (local hashing embeddings)');
+  const rpc = await j(matt, '/api/knowledge/rpc', 'POST', [{ jsonrpc: '2.0', id: 1, method: 'knowledge.tag', params: { title: 'Sample: recursive self improvement and AGI timelines (test data)', taggers: [] } }, { jsonrpc: '2.0', id: 2, method: 'knowledge.evaluate', params: { rule: { 'si.match': ['The AGI debate', 'agi'] }, data: {} } }, { jsonrpc: '2.0', id: 3, method: 'knowledge.tag', params: { title: 5 } }, { jsonrpc: '2.0', id: 4, method: 'nope' }]);
+  ok(rpc[0].result.tags.some((t) => t.qid === 'topic:recursive-self-improvement') && rpc[0].result.scope.in === true && rpc[1].result.value === 'agi' && rpc[2].error.code === -32602 && rpc[3].error.code === -32601, 'JSON-RPC batch: tag, evaluate, invalid params and unknown method');
+  const tq = await j(john, '/api/stories?tag=topic:alignment'); const tq2 = await j(john, '/api/stories?tag=topic:alignment,org:nobody-at-all');
+  ok(tq.stories.length > 0 && tq2.stories.length === 0 && (await j(john, '/api/stories?tag=alignment')).status === 400, '?tag= filters by qualified ids (all must match)');
+  const ld = await john.evaluate(async () => (await fetch('/api/knowledge/export.jsonld')).json());
+  ok(String(ld['@context']).endsWith('/api/knowledge/context.jsonld') && ld['@graph'].some((n) => n['@type'] === 'Chunk'), 'JSON-LD export uses the generated context');
+  await john.goto(B + '/m/knowledge'); await john.waitForSelector('#adapters tr'); await john.click('.qid'); await john.waitForSelector('#edges .edge');
+  ok((await john.$$('#edges .edge')).length > 0, 'Knowledge page shows a node\'s links'); await john.screenshot({ path: 'shots/knowledge.png', fullPage: true });
+
   console.log('Modules, generative UI and judges');
   const mods = await j(john, '/api/admin/modules');
   ok(['blocks-core', 'generative-ui', 'decision', 'capabilities', 'admin', 'project'].every((id) => mods.modules.some((m) => m.id === id)) && mods.points.some((p) => p.id === 'decision.judges' && p.owner === 'decision'), 'kernel loads every enabled module; decision owns its extension point');
@@ -320,7 +342,7 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   console.log('Phone width');
   const ph = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })).newPage();
   await ph.goto(B); await ph.fill('#username', 'john'); await ph.fill('#password', 'correct-horse-9'); await ph.click('#authBtn'); await ph.waitForSelector('#feed .story');
-  for (const path of ['/', '/story?id=' + sid, '/brief', '/lists', '/sources', '/m/admin', '/m/project', '/m/capabilities', '/m/studio', '/m/decide', '/m/view?name=capability-snapshot', '/m/codemap', '/m/project#/timeline', '/m/learn', '/m/learn#/c/attention', '/m/learn#/how']) { await ph.goto(B + path); await ph.waitForTimeout(600); ok(!(await ph.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'no sideways scroll: ' + path.split('?')[0]); }
+  for (const path of ['/', '/story?id=' + sid, '/brief', '/lists', '/sources', '/m/admin', '/m/project', '/m/capabilities', '/m/studio', '/m/decide', '/m/view?name=capability-snapshot', '/m/codemap', '/m/project#/timeline', '/m/learn', '/m/learn#/c/attention', '/m/learn#/how', '/m/knowledge']) { await ph.goto(B + path); await ph.waitForTimeout(600); ok(!(await ph.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'no sideways scroll: ' + path.split('?')[0]); }
   await ph.goto(B); await ph.waitForSelector('#feed .story'); await ph.screenshot({ path: 'shots/phone-feed.png' });
   await john.goto(B); await john.waitForSelector('#feed .story'); await john.screenshot({ path: 'shots/feed.png', fullPage: true });
   await john.goto(B + '/brief'); await john.waitForSelector('#brief .jr-metric'); await john.screenshot({ path: 'shots/brief.png', fullPage: true });
