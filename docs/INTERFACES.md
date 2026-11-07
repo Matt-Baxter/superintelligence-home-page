@@ -50,6 +50,20 @@ Every interface change gets a row here. Breaking changes bump the major version 
   - `POST /api/knowledge/rpc` (JSON-RPC 2.0, methods `knowledge.tag` and `knowledge.evaluate`, batches up to 20).
 - **Public:** `GET /api/knowledge/context.jsonld`.
 - **Page:** `/m/knowledge` (admins). | logged by John |
+| 1.4 | Nov 7, 2026 | Spec acceptance suite and the Lab (extended version; proposed REQ-026).
+- **Spec version:** sign-up ignores `displayName` (REQ-012); `/api/me` returns top-level `profile` and `features`.
+- **Lab module:** table `lab_runs(id, example_id, kind, proposer, metric, value, result, created_by, created_at)`.
+- **Lab routes (signed in):**
+  - `GET /api/lab/examples`;
+  - `GET /api/lab/examples/:id` returns `{idea, expect, hypothesis, verdict, runner, baseline, variant, judgeInput, scorecard, runs, program}`;
+  - `POST /api/lab/examples/:id/run {params}`;
+  - `GET /api/lab/runs/:id`;
+  - `POST /api/lab/intent {text}` returns `{action, why, plan, spec?, valid?}`;
+  - `GET /api/lab/policy`.
+- **Page:** `/m/lab`.
+- **Worker:** `npm run lab`.
+- **Library:** `lib/providers.js` (OpenAI-compatible presets: ollama, lmstudio, openrouter, vercel-ai-gateway, cloudflare, groq).
+- **Embedder:** the `embeddinggemma` adapter. | logged by John |
 
 **Done means:** a classmate can sign up on the live site, see a grouped, tagged feed from at least 8 sources, and vote on and save stories that are still there the next time they sign in.
 

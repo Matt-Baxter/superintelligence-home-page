@@ -48,6 +48,16 @@ embedders.register({
       } };
   },
 });
+// EmbeddingGemma (Google's small embedding model) served locally by Ollama: `ollama pull embeddinggemma`. Free; 768 dims.
+embedders.register({
+  id: "embeddinggemma", about: "EmbeddingGemma via a local Ollama (Mac mini or any machine); free, needs `ollama pull embeddinggemma`",
+  make: ({ base = process.env.OLLAMA_BASE_URL || "http://localhost:11434", model = "embeddinggemma" } = {}) => ({ id: "embeddinggemma-768", dims: 768, async: true,
+    async embed(text) {
+      const r = await fetch(`${base.replace(/\/v1$/, "")}/api/embed`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ model, input: String(text) }) });
+      if (!r.ok) throw new Error(`Ollama embed ${r.status}: is Ollama running with ${model} pulled?`);
+      return (await r.json()).embeddings[0];
+    } }),
+});
 const cosine = (a, b) => { let s = 0; for (let i = 0; i < Math.min(a.length, b.length); i++) s += a[i] * b[i]; return s; };
 
 // ---------- graph ----------

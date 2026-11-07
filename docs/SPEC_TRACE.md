@@ -30,7 +30,7 @@ The site has two versions (`modules/profiles.json`, `SITE_PROFILE`):
 - **`spec` (the default)** is exactly the shared spec. Preflight's smoke test runs it and checks that the extras answer 404.
 - **`extended`** adds work that serves no REQ (constitution principle III):
   - notes, reading lists, the weekly brief and suggested sources (core, switched by feature);
-  - the capability tracker, the project tracker and timeline, the codebase map, the Learn layer and the knowledge layer (modules; requirements proposed in docs/PLAN_NEXT.md).
+  - the capability tracker, the project tracker and timeline, the codebase map, the Learn layer, the knowledge layer and the Lab (modules; requirements proposed in docs/PLAN_NEXT.md).
 
   The browser test (`npm test`) runs the extended version so every feature stays tested.
 
