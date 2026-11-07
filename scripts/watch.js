@@ -53,6 +53,10 @@ async function main() {
     db.extend({ sql: k.store.schema.join("\n"), columns: k.store.columns }); await db.ready();
     saveReview = require("../modules/review/store").saveReview;
   }
+  const Panel = require("../modules/review/panel"), panels = {};
+  let panelModels = [];
+  try { panelModels = Panel.modelsFromEnv(); } catch (e) { console.log(`panel: ${e.message}`); }
+  if (panelModels.length < Panel.LIMITS.minModels) console.log(`panel: ${panelModels.length} model(s) configured; set PANEL_MODELS to two different models (for example ${Panel.DEFAULT_MODELS}) to compare. Until then each review is marked "panel incomplete" and the rules judge stands.`);
   const rows = []; let stored = 0, already = 0;
   for (const e of entries) {
     // Entries may also be articles or comments (the buzz around a topic): kind, the outlet kind and the publication date.
@@ -61,6 +65,15 @@ async function main() {
     if (stored >= max) break;
     const out = await saveReview(db, x, null);
     if (out.existing) already++; else stored++;
+    // Judge panel: at least two different models compared with the rules judge, behind identity, prestige and wording
+    // masks (modules/review/panel.js). Only here, in the background, and only with PANEL_MODELS set.
+    if (!out.existing) {
+      const pr = await Panel.panel({ text: `${x.title}\n${x.text}`, rules: out.review, models: panelModels });
+      const res = { ...out.review, panel: pr };
+      await db.run("UPDATE review_docs SET credibility = ?, verdict = ?, needs_person = ?, result = ? WHERE id = ?", pr.credibility, pr.verdict, pr.needsPerson || out.review.needsPerson ? 1 : 0, JSON.stringify(res), out.row.id);
+      out.review = res; out.review.credibility = pr.credibility; out.review.verdict = pr.verdict;
+      panels[pr.status] = (panels[pr.status] || 0) + 1;
+    }
     rows.push({ e, r: out.review, isNew: !out.existing, docId: out.row.id });
   }
   // Paper-to-code: the most credible new papers on the watched topics become Learn studio jobs (an agent does them).
@@ -87,6 +100,6 @@ async function main() {
     "## Queued for paper-to-code", "", ...(queued.length ? queued.map((q) => `- ${q.id ? `job #${q.id}: ` : ""}[${q.title}](${q.url})`) : ["- nothing new qualified today"]), ""];
   fs.writeFileSync(path.join(OUT, `${day}.md`), md.join("\n"));
   fs.writeFileSync(path.join(OUT, `${day}.json`), JSON.stringify({ day, found: entries.length, stored, already, queued, papers: rows.map(({ e, r, isNew }) => ({ title: e.title, url: e.url, arxiv: arxivId(e.url), verdict: r.verdict, score: r.score, credibility: r.credibility, topics: topicsOf(r), isNew, qid: r.qid })) }, null, 2));
-  console.log(`watch: ${entries.length} found, ${stored} new, ${already} already catalogued, ${queued.length} queued for paper-to-code -> out/watch/${day}.md`);
+  console.log(`watch: ${entries.length} found, ${stored} new, ${already} already catalogued, ${queued.length} queued for paper-to-code; panel: ${JSON.stringify(panels)} -> out/watch/${day}.md`);
 }
 main().then(() => process.exit(0), (e) => { console.error("watch:", e.message); process.exit(1); });

@@ -16,3 +16,5 @@ Judges plug into the `decision.judges` extension point (decision module). Every 
 5. **Record it**: "Copy result as Markdown" into both bake-off PRs and a change-log row in `CONTRACT.md` (Decision point); both humans tick their boxes. Agents never sign off.
 
 Adding a decision model (for example a pairwise or ranked-choice judge): `references/judges.md`.
+
+**Judging papers, articles and comments:** never trust one model. Run the two-model panel (`modules/review/panel.js`, `PANEL_MODELS` with two different makers' models) next to the rules judge: identity masked, prestige and wording sensitivity measured, rubric order varied, quotes checked. Agreeing models are averaged; disagreeing ones take the most conservative result and go to a person. Report every judge's number, not only the chosen one.

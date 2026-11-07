@@ -50,6 +50,7 @@ function scorecard(row, r) {
 <dt>Credibility</dt><dd>½ × ${rig.score} + ½ × (100 − ${hp.score}) = <b>${row.credibility}</b></dd>
 <dt>Significance</dt><dd>${row.score}, after the guards (${r.naive ?? row.naive} before)</dd>
 <dt>Verdict</dt><dd><b>${esc(row.verdict)}</b>${v ? `, because ${esc(v.rule)}` : ""}</dd>
+${r.panel ? `<dt>Panel</dt><dd>${esc(r.panel.status)}: ${r.panel.judges.map((j) => `${esc(j.id === "rules" ? "rules" : j.model)} ${j.credibility}${j.biased && j.biased.length ? " (set aside)" : ""}`).join(", ")}. ${esc(r.panel.rule)}.</dd>` : `<dt>Panel</dt><dd>not run: judged by the rules alone</dd>`}
 </dl></section>`;
 }
 
@@ -67,6 +68,7 @@ function criteriaPage(base) {
 <section><h2>7. Source grade, A to E</h2><p class="small muted" style="margin:0 0 8px">${esc(CRITERIA.source.about)}</p><table class="card"><tbody>${CRITERIA.source.outlets.map((o) => `<tr><td><b>${esc(o.grade)}</b></td><td>${esc(o.label)}<span class="ev">${esc(o.why)}</span></td></tr>`).join("")}</tbody></table></section>
 <section><h2>8. Forecasts</h2><p>${esc(CRITERIA.forecasts.about)}</p></section>
 <section><h2>9. Buzz</h2><p>${esc(CRITERIA.buzz.about)}</p></section>
+<section><h2>10. Two-model panel and bias masking</h2><p>${esc(CRITERIA.panel.about)}</p></section>
 <section><h2>Guards against gaming</h2><ul>${CRITERIA.guards.map((g) => `<li>${esc(g.label)}</li>`).join("")}</ul></section>
 <section><h2>When a person looks</h2><p>${esc(CRITERIA.person.about)} Doubtful items and anything a person disagreed with are never published here.</p></section>`;
   return shell({ title: "How we judge", base, body, desc: "The published criteria behind every research write-up." });

@@ -97,6 +97,10 @@ Every interface change gets a row here. Breaking changes bump the major version 
 - **Exports:** `CRITERIA` and `VERDICTS` from `modules/review/review.js` (the judge uses them; pages print them). Dossiers gain `buzz`, `grades`, `forecasts`; evidence counts papers only.
 - **Watcher:** `--from` entries may carry `kind`, `sourceKind` and `published`; only papers (not surveys or position papers) are queued for paper-to-code.
 - **Agent check-in:** `npm run checkin` (`scripts/checkin.js`) writes `out/checkin/<date>.md`: proposals awaiting both partners, people checks, forecasts due, reviews sent to a person, unreviewed paper-watch branches, queued agent jobs. `scripts/project-sync.js` adds two follow-on issues (`research:forecasts-due`, `research:reviews-for-a-person`) and the scheduled check-in. | logged by John |
+| 2.0 | Nov 7, 2026 | Two-model judge panel with bias masking (proposed REQ-034; background workers only).
+- **Module:** `modules/review/panel.js`: `panel({text, rules, models})` returns `{status agreed|disagreed|incomplete, credibility, verdict, verdictRule, rule, needsPerson, judges[], setAside[], errors[], limits}`. The watcher stores it as `result.panel` and updates the review's `credibility`, `verdict` and `needs_person`.
+- **Environment:** `PANEL_MODELS=provider:model,provider:model` (lib/providers.js presets; empty means the rules judge stands alone and the panel is marked incomplete).
+- **Criteria:** `CRITERIA.panel` (printed on `/research/criteria`); write-ups show each judge's credibility and the rule that chose. | logged by John |
 
 **Done means:** a classmate can sign up on the live site, see a grouped, tagged feed from at least 8 sources, and vote on and save stories that are still there the next time they sign in.
 
