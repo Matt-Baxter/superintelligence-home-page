@@ -30,4 +30,4 @@ The site has two versions (`modules/profiles.json`, `SITE_PROFILE`):
 
   The browser test (`npm test`) runs the extended version so every feature stays tested.
 
-The admin, generative-UI and decision modules run in both versions: admin runs the site's sources, and decision supports the bake-off comparison. The extended build as it stood before Matt's REQ-020 change is saved as git tag `snapshot/john-extended-2026-11-07`, measured in `docs/snapshots/`. The naming convention (`docs/NAMING.md`) and the unslop check are tooling.
+The admin, generative-UI and decision modules run in both versions: admin runs the site's sources, and decision supports the bake-off comparison. The extended build as it stood before Matt's REQ-020 change is saved as branch `feature/snapshot-john-extended-2026-11-07`, measured in `docs/snapshots/`. The naming convention (`docs/NAMING.md`) and the unslop check are tooling.

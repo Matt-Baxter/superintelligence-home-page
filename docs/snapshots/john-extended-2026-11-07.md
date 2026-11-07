@@ -1,6 +1,6 @@
 # Snapshot: john-extended-2026-11-07
 
-Saved version of the site for later analysis. Ref `snapshot/john-extended-2026-11-07`, commit `69752aa189`, 2026-11-06. Re-create it with `git checkout snapshot/john-extended-2026-11-07`.
+Saved version of the site for later analysis. Branch `feature/snapshot-john-extended-2026-11-07`, commit `69752aa189`, 2026-11-06. Re-create it with `git checkout feature/snapshot-john-extended-2026-11-07`.
 
 | Measure | Value |
 | --- | --- |
