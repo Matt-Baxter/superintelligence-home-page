@@ -6,8 +6,8 @@
   .excard { display: grid; gap: 8px; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); text-decoration: none; color: inherit; }
   .excard:hover { border-color: var(--accent); }
   .excard h3 { margin: 0; font-size: 16px; }
-  .vd { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; justify-self: start; }
-  .vd.yes { background: var(--good-soft); color: var(--good); } .vd.no { background: var(--warn-soft); color: var(--warn); }
+  .vd { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: var(--radius); justify-self: start; }
+  .vd.yes { background: var(--fg); color: var(--surface); } .vd.no { background: var(--warn-soft); color: var(--fg); border: 1px dashed var(--line-strong); }
   .chain { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; counter-reset: c; }
   @media (max-width: 860px) { .chain { grid-template-columns: 1fr; } }
   .step { padding: 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); display: grid; gap: 8px; align-content: start; min-width: 0; }
@@ -18,7 +18,7 @@
   svg.chart .base { fill: none; stroke: var(--muted); stroke-width: 2; stroke-dasharray: 5 4; } svg.chart .var { fill: none; stroke: var(--accent); stroke-width: 2.2; } svg.chart .axis { stroke: var(--line); }
   .params { display: grid; gap: 10px; } .params label { display: grid; grid-template-columns: minmax(0, 1fr) 64px; gap: 4px 10px; align-items: center; font-size: 13px; }
   .params input[type=range] { grid-column: 1 / -1; width: 100%; } .params output { text-align: right; font-variant-numeric: tabular-nums; }
-  pre.code { margin: 0; padding: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; overflow: auto; font: 12px/1.5 var(--mono); max-height: 320px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  pre.code { margin: 0; padding: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); overflow: auto; font: 12px/1.5 var(--mono); max-height: 320px; white-space: pre-wrap; overflow-wrap: anywhere; }
   #view .panel, #view .cols > * { min-width: 0; } .step p, .mt td { overflow-wrap: anywhere; }
   .ask { display: flex; gap: 8px; } .ask input { flex: 1; }
   .why li { font-size: 13px; color: var(--muted); }
