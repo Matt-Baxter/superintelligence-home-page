@@ -1,0 +1,13 @@
+{
+  "about": "What scripts/project-sync.js mirrors into the Project tracker, besides the proposed requirements (read from specs/002-research-layer/spec.md) and the agents' queued jobs (learn_jobs). 'people' are the shared spec's checks only a person can do; scripts/spec-status.js reads the same list.",
+  "milestone": { "name": "Research layer (proposed)", "description": "Work described in specs/002-research-layer/spec.md. Needs both partners' approval before it counts." },
+  "people": {
+    "REQ-019": "Live at a public URL, shared with the class 2 weeks before the presentation: a deployment fact (merge, deploy, share the link).",
+    "SC-001": "A classmate signs up and sees the feed in under 2 minutes: time it with a real classmate on the live site.",
+    "SC-008": "Each partner's build has a passing test for every requirement: this build does (every testable REQ above); run the same suite against Matt's build.",
+    "SC-004": "9 of every 10 stories in a live sample of 20 judged on-topic by both partners: do it on the live feed."
+  },
+  "scheduled": [
+    { "key": "scheduled:paper-watch", "title": "Daily paper watch and paper-to-code (scheduled agent task)", "description": "Every day at 5:47 AM Central a Claude scheduled task finds new papers, runs scripts/watch.js, builds at most one paper-to-code toy and pushes it to a feature/paper-watch-<date> branch (never main). Review those branches; nothing merges on its own. The GitHub Actions workflow .github/workflows/paper-watch.yml runs the watcher with direct arXiv access once it is merged.", "labels": ["agent", "scheduled", "REQ-028"] }
+  ]
+}

@@ -17,6 +17,9 @@ Ideas collected on Nov 6 (Sean Parent on declarative property models and DSL pip
 
 ## Proposed requirements (need both partners; add with `/speckit-specify`)
 
+All of these, plus REQ-028 (daily paper watch), REQ-029 (benchmarks with a ratchet) and REQ-030 (the project tracker mirrors the spec and the agents), are now written up as one draft spec in Spec Kit form: [`specs/002-research-layer/spec.md`](../specs/002-research-layer/spec.md), status Proposed. Nothing in it counts until both partners approve. `node scripts/project-sync.js` puts one "Approve REQ-0xx with Matt" issue per proposal in the Project tracker.
+
+
 - **REQ-021 (proposed, P3):** The system SHOULD offer a "how it works" page that shows one synthetic story passing through each step (fetch, grouping, topic tagging with matched words, superintelligence scope decision, feed placement) with the real values at each step.
   - *Given* the sample data, *When* a visitor opens the page, *Then* each step shows its input and output for the same story, labelled as test data.
 - **REQ-023 (proposed, P3):** The system SHOULD explain the concepts behind superintelligence research in plain language, with an analogy and a self-check, and show how the concepts relate as a graph linked to the stories that mention them.

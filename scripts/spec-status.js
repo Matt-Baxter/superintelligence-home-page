@@ -26,12 +26,7 @@ for (const story of spec.split(/^### User Story /m).slice(1)) {
   const acc = story.split("**Acceptance Scenarios**:")[1] || "";
   for (const m of acc.matchAll(/^(\d+)\. ([\s\S]*?)(?=\n\d+\. |\n\n|$)/gm)) scen.push({ id: `US${n}-${m[1]}`, story: title, text: m[2].replace(/\s+/g, " ").trim() });
 }
-const PEOPLE = {
-  "REQ-019": "Live at a public URL, shared with the class 2 weeks before the presentation: a deployment fact (merge, deploy, share the link).",
-  "SC-001": "A classmate signs up and sees the feed in under 2 minutes: time it with a real classmate on the live site.",
-  "SC-008": "Each partner's build has a passing test for every requirement: this build does (every testable REQ above); run the same suite against Matt's build.",
-  "SC-004": "9 of every 10 stories in a live sample of 20 judged on-topic by both partners: do it on the live feed.",
-};
+const PEOPLE = require("../modules/project/sync.json").people; // shared with scripts/project-sync.js
 // People checks win even when an automated proxy passes (e.g. SC-001's layout check doesn't time a real classmate).
 const state = (id) => (PEOPLE[id] ? "people" : passed(id).length ? "passing" : failed(id).length ? "failing" : "open");
 const icon = { passing: "Pass", people: "People check", failing: "Failing", open: "Open" };

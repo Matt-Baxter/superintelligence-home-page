@@ -19,6 +19,22 @@ How this build meets the shared spec ([specs/001-superintelligence-homepage/spec
 | REQ-019 | Live 2+ weeks before the presentation | `docs/DEPLOY.md` (humans deploy) | not automated |
 | REQ-020 | Human-written agent log in the repo | `AGENT_LOG.md` (the partners write it; agents never do). The app has no agent log page: `/agent-log` redirects to the file; old in-app entries can be exported once from `/api/admin/agent-log.md` | e2e: "Agent log" section; preflight smoke "no in-app agent log" |
 
+
+## Research layer (proposed, `specs/002-research-layer/spec.md`; extended version; needs both partners)
+
+| REQ | What | Where in the code | Checked by |
+| --- | --- | --- | --- |
+| REQ-021 | "How it works" teardown | `modules/learn` (teardown) | e2e: "Learn" section |
+| REQ-022 | Dependent form fields stay consistent | not built (proposed, low priority) | not automated |
+| REQ-023 | Concepts in plain words, graph | `modules/learn/data/concepts.json`, `/m/learn`, `/m/map` | e2e: "Learn" section; review demo: "Map" |
+| REQ-024 | Background studio jobs | `learn_jobs`, `scripts/learn-worker.js`; the watcher queues `paper-to-code` | e2e: "Learn" section; unit: watch "queued for paper-to-code" |
+| REQ-025 | Explainer video and drafts, people publish | `modules/learn` explainer, RSS of published posts | e2e: "Learn" section |
+| REQ-026 | Worked examples, refuted kept, sources, sandbox | `modules/lab` (`examples.json`, `runners.js`, `interp.js`, `papers.js`), `/m/lab`, `/m/arena` | unit: lab, papers; arena demo; e2e: "refuted hypotheses are kept" |
+| REQ-027 | Review desk with anti-gaming guards | `modules/review` (`review.js`, `store.js`), `/m/review` | unit: review (22 checks); review demo; bench `review.*` |
+| REQ-028 | Daily paper watch | `scripts/watch.js`, `modules/review/watch.json`, `.github/workflows/paper-watch.yml` | unit: watch (5 checks) |
+| REQ-029 | Benchmarks with a ratchet | `scripts/bench.js`, `bench/` | preflight "Benchmarks" |
+| REQ-030 | Project tracker mirrors spec and agents | `scripts/project-sync.js`, `modules/project` | unit: project-sync |
+
 ## Acceptance suite
 
 `test/spec-acceptance.js` runs every user-story scenario, edge case and success criterion that can be automated, against the **spec version**, with labelled synthetic sources (`test/fixtures/spec`: 9 sources across 7 kinds). Each check names its REQ. The run fails if a testable requirement (REQ-001 to REQ-018, REQ-020) has no passing check (SC-008). Preflight runs the API checks; `npm run test:spec` adds the browser checks at laptop and phone widths. REQ-019 (live two weeks before the presentation) is checked by people.
