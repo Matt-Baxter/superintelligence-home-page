@@ -58,7 +58,8 @@ One page of the practices this build follows, collected from the research layer'
 | Separate ambiguous from annulled; neither is scored. | In place: outcomes happened, did not, unclear, annulled. |
 | Show a hit rate only above a minimum of resolved forecasts. | In place: 3. |
 | Attribute only a person's own words to them. | In place by not attributing at all: names a forecast is pinned on are removed. |
-| Write resolution criteria at capture time; Brier scores only for stated probabilities. | Next. |
+| Brier scores only for stated probabilities. | In place: probabilities read from the forecast's own sentence; Brier shown from 3 scored forecasts. |
+| Write resolution criteria at capture time. | Next. |
 | Publish scoring and near-miss rules before scoring anyone; offer a corrections channel. | Partly: rules on `/research/criteria`; corrections channel next. |
 
 ## Free models

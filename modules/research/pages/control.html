@@ -45,7 +45,7 @@ async function load() {
 
     <section class="panel" id="forecasts"><h2>Forecasts to resolve</h2>
       <p class="small muted">Mark each once it's due. Unclear (reality is ambiguous) and annulled (a premise fell away) count for neither side. Forecasts carry no names.</p>
-      ${r.forecasts.length ? `<div class="scroll"><table class="t"><thead><tr><th>Due</th><th>Forecast</th><th>From</th><th>Outcome</th></tr></thead><tbody>${r.forecasts.map((f) => `<tr><td class="n">${esc(f.due)}${f.overdue ? "<br><b class=\"small\">due now</b>" : ""}</td><td>${esc(f.sentence)}${f.title ? `<br><a class="small" href="/m/review#/doc/${f.doc_id}">${esc(f.title)}</a>` : ""}</td><td>${esc(f.outlet_label)}</td>
+      ${r.forecasts.length ? `<div class="scroll"><table class="t"><thead><tr><th>Due</th><th>Forecast</th><th>From</th><th>Outcome</th></tr></thead><tbody>${r.forecasts.map((f) => `<tr><td class="n">${esc(f.due)}${f.overdue ? "<br><b class=\"small\">due now</b>" : ""}</td><td>${esc(f.sentence)}${f.probability != null ? ` <span class="small muted">(stated: ${Math.round(f.probability * 100)}%)</span>` : ""}${f.title ? `<br><a class="small" href="/m/review#/doc/${f.doc_id}">${esc(f.title)}</a>` : ""}</td><td>${esc(f.outlet_label)}</td>
         <td>${f.overdue ? `<div class="acts">${OUTCOMES.map(([v, l]) => `<button class="btn" type="button" data-ev="${f.id}" data-v="${v}">${l}</button>`).join("")}</div>` : `<span class="small muted">due ${esc(f.due)}</span>`}</td></tr>`).join("")}</tbody></table></div>` : '<p class="small muted">No pending forecasts.</p>'}</section>
 
     <section class="panel" id="flagged"><h2>Reviews waiting for a person</h2>

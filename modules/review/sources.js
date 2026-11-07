@@ -93,6 +93,13 @@ const HORIZON = [
 const FUTURE = /\b(will|would|could|going to|expect\w*|predict\w*|forecast\w*|likely|chance|probabilit\w+|odds|on track|away from|arrive|reach|achiev\w+|build\w*|plan\w*|aim\w*|possib\w+|soon|arriv\w+)\b/i;
 const NUM = { a: 1, one: 1, two: 2, three: 3, few: 3, five: 5, ten: 10 };
 function addMonths(at, n) { const d = new Date(`${at}T00:00:00Z`); d.setUTCMonth(d.getUTCMonth() + n); return d.toISOString().slice(0, 10); }
+// A stated probability in the forecast's own sentence ("a 60% chance", "probability of 0.3", "70 percent likely"), as
+// 0 to 1; null when none is stated. Only stated probabilities are Brier-scored.
+const PROB = [/\b(\d{1,3}(?:\.\d+)?)\s?(?:%|percent)\s+(?:chance|probability|likel\w*|odds)\b/i, /\b(?:chance|probability|odds|likelihood) of (?:about |roughly |around )?(\d{1,3}(?:\.\d+)?)\s?(?:%|percent)/i, /\bprobability of (0?\.\d+)\b/i];
+function probabilityIn(s) {
+  for (const re of PROB) { const m = String(s).match(re); if (m) { const v = Number(m[1]); const p = v > 1 ? v / 100 : v; if (p >= 0 && p <= 1) return Math.round(p * 1000) / 1000; } }
+  return null;
+}
 function predictions(sentences, at = new Date().toISOString().slice(0, 10)) {
   const out = [];
   for (const raw of sentences) {
@@ -103,7 +110,7 @@ function predictions(sentences, at = new Date().toISOString().slice(0, 10)) {
       if (h.rel) { const n = NUM[String(m[1]).toLowerCase()] || Number(m[1]); due = addMonths(at, /year/i.test(m[2]) ? n * 12 : n); }
       else due = h.due(m, at);
       if (h.needsFuture && due <= at) continue; // "in 2019" is history, not a forecast
-      out.push({ sentence: redact(s).slice(0, 240), due, horizon: m[0] });
+      out.push({ sentence: redact(s).slice(0, 240), due, horizon: m[0], probability: probabilityIn(s) });
       break;
     }
   }
@@ -145,12 +152,13 @@ function trackRecords(docs, events) {
   for (const e of events) {
     const o = by[e.outlet]; if (!o) continue;
     o.forecasts++; if (e.status === "happened") o.happened++; else if (e.status === "did-not") o.didNot++; else if (e.status === "unclear" || e.status === "annulled") o.unclear++; else o.pending++;
+    if ((e.status === "happened" || e.status === "did-not") && e.probability != null) { o.brierN = (o.brierN || 0) + 1; o.brierSum = (o.brierSum || 0) + (Number(e.probability) - (e.status === "happened" ? 1 : 0)) ** 2; }
   }
   return Object.values(by).map((o) => {
     const resolved = o.happened + o.didNot;
-    return { ...o, meanCredibility: Math.round(o.cred / o.pieces), cred: undefined, resolved, hitRate: resolved >= MIN_RESOLVED ? +(o.happened / resolved).toFixed(2) : null,
+    return { ...o, meanCredibility: Math.round(o.cred / o.pieces), cred: undefined, resolved, brier: (o.brierN || 0) >= MIN_RESOLVED ? +(o.brierSum / o.brierN).toFixed(3) : null, scored: o.brierN || 0, brierSum: undefined, brierN: undefined, hitRate: resolved >= MIN_RESOLVED ? +(o.happened / resolved).toFixed(2) : null,
       monitor: o.pieces >= 3 && !o.personal ? "worth following: it publishes often on these topics" : null };
   }).sort((a, b) => b.pieces - a.pieces);
 }
 
-module.exports = { trackRecords, MIN_RESOLVED, BY_KIND, OUTLETS, GRADES, outletKind, outlet, grade, predictions, redact, buzz, hostOf, LOUD, SOME };
+module.exports = { brier: (p, happened) => (p - (happened ? 1 : 0)) ** 2, probabilityIn, trackRecords, MIN_RESOLVED, BY_KIND, OUTLETS, GRADES, outletKind, outlet, grade, predictions, redact, buzz, hostOf, LOUD, SOME };

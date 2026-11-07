@@ -33,7 +33,7 @@ Checked 2026-11-07 against each product's public pages, docs and changelogs (clo
 | Independent re-test of a result | – | – | – | – | – | ✓ | – | – | – | ◐ Lab toy checks of a paper's idea |
 | Retraction or withdrawal notice | – | – | – | – | ✓ | – | – | – | – | ✓ withdrawn verdict (added) |
 | Link to the paper's code | – | – | ✓ | ✓ | – | – | – | – | – | ✓ (added today) |
-| Forecasts tracked and scored | – | – | – | – | – | – | ✓ | – | – | ◐ events, outcomes, hit rate; no probabilities yet |
+| Forecasts tracked and scored | – | – | – | – | – | – | ✓ | – | – | ✓ events, outcomes, hit rate, Brier on stated probabilities |
 | Who is talked about (entities) | – | ✓ pages | – | ◐ authors | – | – | – | – | ◐ org tags | ◐ mention counts only, by design |
 | Email digest | ✓ | – | – | ✓ | ✓ alerts | – | – | – | – | – (RSS instead; email needs a paid sender) |
 | RSS or open feed | – | – | – | – | – | – | – | – | – | ✓ `/research/feed.xml` |
@@ -51,9 +51,8 @@ No app in the matrix judges the judging: published criteria that the code itself
 
 | Gap | Seen in | Cost | Plan |
 | --- | --- | --- | --- |
-| Probabilities on forecasts, Brier scores | Metaculus | small | Record a stated probability when a piece gives one; Brier only for those |
 | Discussion on a write-up | HF Papers, Metaculus | medium | Reuse the extended version's notes; spec change needed for the main app |
-| Support or contrast between papers | scite | medium | Extend "where papers agree" with a "where they disagree" list from reviewed papers on the same concept |
+| Support or contrast between papers | scite | medium | Done in a light form: dossiers list "where papers disagree"; a fuller version would read the papers' citations |
 | Email digest | Ground, HF, scite | needs a sender | Leave to RSS readers until a free sender is approved |
 | Ask a paper a question | alphaXiv, scite | conflicts with "no model on page loads" | Not planned for the web app; agents can do it offline |
 
