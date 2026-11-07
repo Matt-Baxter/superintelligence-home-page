@@ -42,7 +42,7 @@ Any agent (Codex, v0, Claude or another) picks up work here. `scripts/project-sy
 ## Phase 4: wording and negation (REQ-034, REQ-035)
 
 - [x] T030 [rules] [REQ-034] Marker wordings: passive voice, "beats", "release our code", number words, percentage points, "CI", "p =", adjectives between a count and its noun; flips the rw-* gaps (done: 13 catalogue gaps flipped; faithful fidelity rewordings that move credibility 13 of 25 -> 3; "is compared with" stays the baseline marker's only)
-- [ ] T031 [rules] [REQ-035] Negation window for markers and hype words; capitalised names exempt from hype; flips neg-* and hype-benchmark-name
+- [x] T031 [rules] [REQ-035] Negation window for markers and hype words; capitalised names exempt from hype; flips neg-* and hype-benchmark-name (done: 9 gaps flipped; negated families reported in the rigor judge's `notCounted`, skipped hype words in "Hype words not counted")
 - [ ] T032 [rules] [REQ-035] Injection guard on canonical text with confusables mapped, more wordings, and a "describes attacks" exception that is reported, not capped; flips inj-*
 - [ ] T033 [rules] [REQ-034] Don't drop a statement with a verb as a keyword list; flips clean-title-like-sentence
 - [x] T034 [rules] [REQ-032] Sentence splitting that keeps "et al.", "Fig.", "e.g.", "i.e.", "approx." inside a sentence, and splits at semicolons for claim backing (so a claim can't borrow the numbers after a semicolon); flips the seg-* gaps (done: flips seg-et-al, seg-fig-claim, seg-eg-capital, seg-ie-digit, seg-approx, seg-semicolon-borrow; `clauses()` exported)

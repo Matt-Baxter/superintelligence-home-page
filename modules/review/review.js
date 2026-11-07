@@ -87,7 +87,54 @@ const HYPE = /\b(revolutionary|unprecedented|breakthrough|game[- ]chang\w+|incre
 // Text written to the judge rather than the reader: a reward hack against model judges, flagged and capped here too.
 const INJECTION = /\b(ignore (?:all |the )?(?:previous|prior|above) instructions|you are (?:an? )?(?:ai|judge|grader)|(?:rate|score|grade) this (?:paper |article |post )?(?:as |a )?\d+|give (?:this|it) (?:a )?(?:perfect|high|top) score|system prompt)\b/i;
 
-function markersIn(sentence) { const f = fold(sentence); return MARKERS.filter((m) => m.re.test(f)).map((m) => m.id); }
+// ---------- negation (REQ-035, task T031) ----------
+// A marker or hype word is negated when a negator (not, no, without, never, neither, nor, cannot, n't, fail(s) to)
+// sits within the 5 words before it in the same clause (a comma, semicolon, colon, bracket, "and", "but", "while",
+// "although", "yet", "however" ends the clause). Two negators cancel ("not without limitations"). The marker's own
+// words don't count, so a limitation phrase that is itself negative ("fails to generalise", "does not show") keeps its
+// credit. Not negators: "no more/less/fewer/better..." (a comparison) and "not only" unless the phrase is "only on ...".
+const NEGATOR = /^(?:not|no|without|never|neither|nor|cannot|none)$|n't$/;
+const CLAUSE_END = /[,;:()[\]]|\b(?:and|but|while|whereas|although|though|yet|however)\b/gi;
+function negatedAt(text, index, phrase = "", from = 0) {
+  let pre = String(text).slice(from, index);
+  const cuts = [...pre.matchAll(CLAUSE_END)];
+  if (cuts.length) { const c = cuts.at(-1); pre = pre.slice(c.index + c[0].length); }
+  const w = words(pre).slice(-5), first = words(phrase)[0] || "";
+  let n = 0;
+  w.forEach((t, i) => {
+    const next = i + 1 < w.length ? w[i + 1] : first;
+    if (t === "no" && /^(?:more|less|fewer|worse|better|longer|later|sooner|doubt)$/.test(next)) return;
+    if (t === "not" && /^(?:only|just|merely)$/.test(next) && !(i === w.length - 1 && next === "only")) return;
+    if (NEGATOR.test(t) || (/^fail(?:s|ed)?$/.test(t) && next === "to")) n++;
+  });
+  return n % 2 === 1;
+}
+// Matches of a negated comparison ("does not outperform the baseline") still report a comparison, and a negated
+// contamination check ("no leakage") is still a held-out check: those families keep credit for such matches.
+const KEEP_NEGATED = { baseline: /^(?:outperform|beat|surpass|match|improv|than|over the prior)/i, "held-out": /^(?:contaminat|leakage)/i };
+const globalRe = new Map();
+// Families a sentence earns, and the families whose every match there is negated (reported, not counted).
+// A negator binds to the nearest evidence phrase after it: in "no held-out test set across 3 seeds" the "no" negates
+// the held-out phrase, not the seeds after it. So the window starts after the last other family's phrase before the
+// match, unless "or"/"nor" joins them ("no held-out set or baseline" negates both).
+function markersDetail(sentence) {
+  const f = fold(sentence), found = [], negated = [];
+  const all = MARKERS.map((m) => {
+    if (!globalRe.has(m.id)) globalRe.set(m.id, new RegExp(m.re.source, m.re.flags.includes("g") ? m.re.flags : `${m.re.flags}g`));
+    return [...f.matchAll(globalRe.get(m.id))].map((h) => ({ id: m.id, index: h.index, end: h.index + h[0].length, text: h[0] }));
+  });
+  const flat = all.flat();
+  const startOf = (h) => { const prev = flat.filter((o) => o.id !== h.id && o.end <= h.index).sort((a, b) => b.end - a.end)[0];
+    return prev && !/\b(?:or|nor)\b/i.test(f.slice(prev.end, h.index)) ? prev.end : 0; };
+  for (const [k, m] of MARKERS.entries()) {
+    const hits = all[k];
+    if (!hits.length) continue;
+    const live = hits.filter((h) => !negatedAt(f, h.index, h.text, startOf(h)) || KEEP_NEGATED[m.id]?.test(h.text));
+    if (live.length) found.push(m.id); else negated.push({ id: m.id, phrase: sentence.slice(Math.max(0, hits[0].index - 30), hits[0].end) });
+  }
+  return { found, negated };
+}
+function markersIn(sentence) { return markersDetail(sentence).found; }
 // Backing = two or more marker categories near the claim, at least one of them quantitative. Words alone ("we
 // evaluated it against the baseline") can be added for free; a number, a sample size or an interval is harder to fake.
 const QUANT = new Set(["numbers", "sample", "uncertainty"]);
@@ -119,7 +166,11 @@ function rigor(sents) {
   sents.forEach((s, i) => { for (const id of markersIn(s)) if (!found.has(id)) found.set(id, i); });
   const why = MARKERS.filter((m) => found.has(m.id)).map((m) => ({ factor: m.label, points: m.points, detail: sents[found.get(m.id)].slice(0, 140) }));
   const missing = MARKERS.filter((m) => !found.has(m.id)).map((m) => m.label);
-  return { score: why.reduce((a, w) => a + w.points, 0), why, missing };
+  // Negated mentions earn nothing, and say so: "We do not compare with a baseline" is listed here with 0 points.
+  const neg = new Map();
+  for (const s of sents) for (const n of markersDetail(s).negated) if (!found.has(n.id) && !neg.has(n.id)) neg.set(n.id, n.phrase);
+  const notCounted = MARKERS.filter((m) => neg.has(m.id)).map((m) => ({ factor: m.label, points: 0, detail: `negated: "${neg.get(m.id).trim()}"` }));
+  return { score: why.reduce((a, w) => a + w.points, 0), why, missing, notCounted };
 }
 function claims(sents) {
   const out = [];
@@ -143,12 +194,34 @@ const COVERAGE = [
   { label: "Compares findings across them", points: 20, re: /\b(compar\w+|follow(?:s)? this ordering|across (?:the )?(?:studies|papers|works))\b/i },
   { label: "States gaps or open problems", points: 20, re: /\b(open (?:questions|problems)|least[- ]studied|gaps?|remaining (?:questions|problems)|limitations?)\b/i },
 ];
-function hype(text, cl, survey = false) {
-  const hits = [...new Set((String(text).match(HYPE) || []).map((h) => h.toLowerCase()))];
+// Hype words count once each, and not when negated ("we do not claim a breakthrough") or when they are part of a
+// capitalised name in the body ("the Sample Massive Multitask benchmark"; titles are often in title case, so a title's
+// capitals exempt nothing). The words skipped are reported.
+const titleCase = (t) => /^\p{Lu}\p{Ll}/u.test(t || "");
+function hypeHits(text, isTitle = false) {
+  const hits = [], skipped = [];
+  for (const s of isTitle ? [String(text)] : sentences(text)) {
+    const toks = [...s.matchAll(/\S+/g)];
+    for (const h of s.matchAll(HYPE)) {
+      const word = h[0].toLowerCase();
+      if (negatedAt(s, h.index, h[0])) { skipped.push({ word, why: "negated" }); continue; }
+      if (!isTitle) {
+        const i = toks.findIndex((t) => t.index <= h.index && h.index < t.index + t[0].length), name = (j) => j > 0 && titleCase(toks[j]?.[0]);
+        if (i > 0 && titleCase(h[0]) && (name(i - 1) || name(i + 1))) { skipped.push({ word, why: "part of a name" }); continue; }
+      }
+      hits.push(word);
+    }
+  }
+  return { hits, skipped };
+}
+function hype(text, cl, survey = false, title = "") {
+  const a = hypeHits(title, true), b = hypeHits(text);
+  const hits = [...new Set([...a.hits, ...b.hits])];
+  const skipped = [...a.skipped, ...b.skipped].filter((x) => !hits.includes(x.word));
   const unbacked = cl.filter((c) => c.level === "unbacked").length;
   // In a survey, claims are summaries of other work, so only hype words count.
   const score = Math.min(100, Math.round((cl.length && !survey ? (unbacked / cl.length) * 60 : 0) + Math.min(40, hits.length * 10)));
-  return { score, words: hits, unbacked, claims: cl.length };
+  return { score, words: hits, skipped: [...new Map(skipped.map((x) => [x.word, x])).values()], unbacked, claims: cl.length };
 }
 
 // ---------- the whole review ----------
@@ -183,7 +256,7 @@ function review(input) {
   const sigText = sents.filter((s) => !unbackedSet.has(s.slice(0, 200))).join(" ");
   const sig = step("judge-significance", "Significance on the cleaned text, without unbacked claims", () => analysis.analyze({ title, summary: sigText, authors }, { kinds: [source] }));
   const isSurvey = k.kind === "paper" && SURVEY.test(`${title} ${sents[0] || ""}`);
-  const hp = step("judge-hype", "Hype: unbacked claims and hype words", () => hype(`${title} ${text}`, cl, isSurvey));
+  const hp = step("judge-hype", "Hype: unbacked claims and hype words", () => hype(text, cl, isSurvey, title));
   if (isSurvey) { const cov = COVERAGE.filter((c) => c.re.test(cleaned.text)); const sv = cov.reduce((a, c) => a + c.points, 0);
     if (sv > rg.score) { rg.score = sv; rg.why = cov.map((c) => ({ factor: c.label, points: c.points, detail: "survey coverage" })); rg.missing = COVERAGE.filter((c) => !cov.includes(c)).map((c) => c.label); } }
 
@@ -260,8 +333,9 @@ function review(input) {
     score, naive: naive.significance, credibility, verdict, needsPerson: review_reasons.length > 0, reasons: review_reasons, truncated: cuts.length ? cuts : null,
     judges: [
       { id: "significance", label: "Significance", score: sig.significance, about: "How big a step toward superintelligence it reports (lib/analysis.js, on the cleaned text)", why: sig.why },
-      { id: "rigor", label: "Rigor", score: rg.score, about: "What its evidence would need: numbers, baselines, method, sample size, uncertainty, held-out tests, limitations, shared artifacts", why: rg.why, missing: rg.missing },
-      { id: "hype", label: "Hype", score: hp.score, about: "Share of unbacked claims and hype words (lower is better)", why: [{ factor: "Unbacked claims", points: hp.unbacked, detail: `${hp.unbacked} of ${hp.claims}` }, { factor: "Hype words", points: hp.words.length, detail: hp.words.join(", ") }] },
+      { id: "rigor", label: "Rigor", score: rg.score, about: "What its evidence would need: numbers, baselines, method, sample size, uncertainty, held-out tests, limitations, shared artifacts", why: rg.why, missing: rg.missing, notCounted: rg.notCounted },
+      { id: "hype", label: "Hype", score: hp.score, about: "Share of unbacked claims and hype words (lower is better)", why: [{ factor: "Unbacked claims", points: hp.unbacked, detail: `${hp.unbacked} of ${hp.claims}` }, { factor: "Hype words", points: hp.words.length, detail: hp.words.join(", ") },
+        ...(hp.skipped.length ? [{ factor: "Hype words not counted", points: 0, detail: hp.skipped.map((x) => `${x.word} (${x.why})`).join(", ") }] : [])] },
     ],
     guarded: { base, cap, removed, scoreRule: "min(significance on cleaned text - removed factors, 35 + 0.65 x rigor); 30 at most if it addresses the judge" },
     guards, claims: cl, dropped: cleaned.dropped.map((d) => ({ ...d, sentence: d.sentence.slice(0, 160) })),
@@ -309,4 +383,4 @@ function stress(input, steps = 6) {
     summary: `Gaming the unguarded judge added ${a.gain.naive} points; the guarded score moved ${a.gain.guarded >= 0 ? "+" : ""}${a.gain.guarded} on the same edits. An adversary that targets the guarded score directly gained ${b.gain.guarded}.` };
 }
 
-module.exports = { canonical, fold, clauses, KINDS, MARKERS, detectKind, clean, rigor, claims, hype, review, attack, stress, bank, sentences };
+module.exports = { canonical, fold, clauses, negatedAt, markersIn, KINDS, MARKERS, detectKind, clean, rigor, claims, hype, review, attack, stress, bank, sentences };

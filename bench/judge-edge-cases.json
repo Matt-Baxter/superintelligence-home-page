@@ -412,7 +412,7 @@
     "metric": "credibility",
     "rel": "le"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "neg-held-out",
@@ -435,7 +435,7 @@
     "metric": "credibility",
     "rel": "le"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "neg-code",
@@ -481,7 +481,7 @@
     "metric": "credibility",
     "rel": "le"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "neg-not-breakthrough",
@@ -496,7 +496,7 @@
     "metric": "hype",
     "rel": "le"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "hype-control-word",
@@ -534,7 +534,7 @@
     "metric": "hype",
     "rel": "eq"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "hype-repeat-word",
@@ -1105,7 +1105,7 @@
     "metric": "credibility",
     "rel": "le"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "neg-never-fails",
@@ -1128,7 +1128,7 @@
     "metric": "credibility",
     "rel": "le"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "neg-fail-to-limitation",
@@ -1174,7 +1174,7 @@
     "metric": "credibility",
     "rel": "le"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "neg-without-baseline",
@@ -1197,7 +1197,7 @@
     "metric": "credibility",
     "rel": "le"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "neg-scope-control",

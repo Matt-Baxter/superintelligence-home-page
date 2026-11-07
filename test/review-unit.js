@@ -39,6 +39,14 @@ ok(score({ ...careful, text: careful.text.toUpperCase(), title: careful.title.to
 const sents = R.sentences(careful.text); const shuffled = [...sents.slice(1), sents[0]].join(" ");
 ok(Math.abs(score({ ...careful, text: shuffled }) - rc.score) <= 5, "moving a sentence changes the score by at most 5");
 
+console.log("Negation (REQ-035)");
+ok(R.markersIn("We do not compare with a baseline.").length === 0 && R.markersIn("We compare with a baseline.").includes("baseline"), "a negated marker earns nothing");
+ok(R.markersIn("There is no held-out test set across 3 seeds.").includes("uncertainty"), "a negator binds to the phrase right after it, not the next one");
+ok(R.markersIn("The method is not without limitations.").includes("limitations") && R.markersIn("It fails to generalise.").includes("limitations"), "double negation and negative limitation phrases keep credit");
+ok(R.markersIn("It does not outperform the baseline.").includes("baseline"), "a negative comparison still compares with a baseline");
+const negRev = R.review({ kind: "paper", title: "Sample (test data)", text: "We do not compare with a baseline. We do not claim a breakthrough on the Sample Massive Multitask benchmark." });
+ok(negRev.judges[1].notCounted.some((n) => /baseline/.test(n.factor)) && negRev.judges[2].why.some((w) => /not counted/.test(w.factor)), "negated markers and skipped hype words are reported");
+
 console.log("Canonical text (REQ-032)");
 const variants = ["Accuracy rises by $4\\%$ on  12 tasks.", "Accuracy rises by ４% on 12 tasks.", "Accu​racy rises by 4% on 12 tasks.﻿", "Accuracy rises by 4% on\n12 tasks."];
 ok(variants.every((v) => R.canonical(v) === "Accuracy rises by 4% on 12 tasks."), "spacing, NFKC, zero-width and LaTeX variants have one canonical form");
