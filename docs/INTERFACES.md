@@ -36,6 +36,20 @@ Every interface change gets a row here. Breaking changes bump the major version 
   - `PUT /api/sources/:id` and `POST /api/sources/fetch` are removed; use `PUT /api/admin/sources/:id` and `POST /api/admin/harvest`.
 - **RSS:** `/learn/feed.xml` became `/api/learn/feed.xml`, so it works on Vercel.
 - **Tags:** every tag carries `qid` (`topic:alignment`, `org:openai`). `GET /api/stories?tag=` takes qualified ids, and all of them must match. | logged by John |
+| 1.3 | Nov 7, 2026 | Portable rules, schema registry and the knowledge module (extended version; tooling and proposed REQ-023).
+- **Rules:** REQ-003's scope rule is now data, `lib/rules/scope.json` (si-expr, `lib/expr`), with the same results in Node, Python and Rust.
+- **Types:** `schema/types.json` generates `schema/gen/` (JSON Schema, zod, pydantic, proto3 with gRPC `Knowledge`, Arrow, JSON-LD context, OpenRPC, Rust serde, vocabulary).
+- **Extension point:** kernel `knowledge.taggers` (`{id, about, namespace, tag(text), edges?()}`).
+- **Knowledge module tables:** `knowledge_chunks(story_id, ord, text, hash, tags, model, vector)` and `knowledge_edges(src, rel, dst, weight, evidence)`.
+- **Routes for admins:** `POST /api/admin/knowledge/build {limit?}` returns `{stories, chunks_changed, chunks_kept, edges, taggers, embedder}`; `GET /api/admin/knowledge/stats`.
+- **Routes for signed-in users:**
+  - `GET /api/knowledge/graph?qid=&limit=`;
+  - `GET /api/knowledge/chunks?tag=`;
+  - `GET /api/knowledge/similar?q=`;
+  - `GET /api/knowledge/export.jsonld`;
+  - `POST /api/knowledge/rpc` (JSON-RPC 2.0, methods `knowledge.tag` and `knowledge.evaluate`, batches up to 20).
+- **Public:** `GET /api/knowledge/context.jsonld`.
+- **Page:** `/m/knowledge` (admins). | logged by John |
 
 **Done means:** a classmate can sign up on the live site, see a grouped, tagged feed from at least 8 sources, and vote on and save stories that are still there the next time they sign in.
 

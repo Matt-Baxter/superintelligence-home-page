@@ -63,13 +63,15 @@ function createKernel({ enabled, modulesDir = MODULES_DIR, extraPoints = {} } = 
   };
 
   // Kernel-owned extension points. Each keeps its contributions in a list the kernel (or core code) reads.
-  const store = { routes: [], nav: [], views: new Map(), schema: [], columns: [], prune: [], formats: [], signals: [], starts: [] };
+  const store = { routes: [], nav: [], views: new Map(), schema: [], columns: [], prune: [], formats: [], signals: [], taggers: [], starts: [] };
   declare("kernel", "http.routes", (mod) => ({ add: (mount) => store.routes.push({ module: mod, mount }) }));
   declare("kernel", "ui.nav", (mod) => ({ add: (item) => store.nav.push({ order: 50, ...item, module: mod }) }));
   declare("kernel", "ui.views", (mod) => ({ add: (name, view) => { if (store.views.has(name)) throw new Error(`View "${name}" registered twice`); store.views.set(name, { title: name, admin: false, ...view, name, module: mod }); } }));
   declare("kernel", "db.schema", (mod) => ({ addSql: (sql) => store.schema.push(sql), addColumns: (cols) => store.columns.push(...cols), addPrune: (fn) => store.prune.push(fn) }));
   declare("kernel", "feeds.formats", (mod) => ({ add: (id, format) => store.formats.push({ id, format, module: mod }) }));
   declare("kernel", "analysis.signals", (mod) => ({ add: (signal) => store.signals.push({ ...signal, module: mod }) }));
+  // Tag adapters ({ id, about, namespace, tag(text) -> Tag[] }) added to lib/taggers' registry when the server starts.
+  declare("kernel", "knowledge.taggers", (mod) => ({ add: (adapter) => store.taggers.push({ ...adapter, module: mod }) }));
   for (const [id, make] of Object.entries(extraPoints)) declare("kernel", id, make);
 
   // 1. register: modules declare the extension points they own.

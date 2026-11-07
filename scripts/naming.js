@@ -26,7 +26,7 @@ function check() {
   for (const r of g.nodes.filter((n) => n.kind === "route")) {
     const p = r.path;
     if (!p.startsWith("/api/")) continue; // pages and redirects
-    for (const seg of p.split("/").slice(1)) if (!(KEBAB.test(seg) || /^:[a-z]+$/.test(seg) || /^[a-z0-9-]+\.(xml|md|json|opml)$/.test(seg))) add("route-segment", `${r.label}: segment "${seg}" isn't kebab-case or :param (${r.file})`);
+    for (const seg of p.split("/").slice(1)) if (!(KEBAB.test(seg) || /^:[a-z]+$/.test(seg) || /^[a-z0-9-]+\.(xml|md|json|jsonld|opml)$/.test(seg))) add("route-segment", `${r.label}: segment "${seg}" isn't kebab-case or :param (${r.file})`);
     if (r.admin && !p.startsWith("/api/admin/") && p !== "/api/admin") add("route-admin", `${r.label}: admin-only route should live under /api/admin/ (${r.file})`);
     if (!r.admin && p.startsWith("/api/admin/")) add("route-admin", `${r.label}: under /api/admin/ but doesn't require an admin (${r.file})`);
     if (r.module && r.module !== "core") {

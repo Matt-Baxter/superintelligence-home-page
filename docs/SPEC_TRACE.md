@@ -26,8 +26,8 @@ The site has two versions (`modules/profiles.json`, `SITE_PROFILE`):
 - **`spec` (the default)** is exactly the shared spec. Preflight's smoke test runs it and checks that the extras answer 404.
 - **`extended`** adds work that serves no REQ (constitution principle III):
   - notes, reading lists, the weekly brief and suggested sources (core, switched by feature);
-  - the capability tracker, the project tracker and timeline, the codebase map and the Learn layer (modules; requirements proposed in docs/PLAN_NEXT.md).
+  - the capability tracker, the project tracker and timeline, the codebase map, the Learn layer and the knowledge layer (modules; requirements proposed in docs/PLAN_NEXT.md).
 
   The browser test (`npm test`) runs the extended version so every feature stays tested.
 
-The admin, generative-UI and decision modules run in both versions: admin runs the site's sources, and decision supports the bake-off comparison. The extended build as it stood before Matt's REQ-020 change is saved as branch `feature/snapshot-john-extended-2026-11-07`, measured in `docs/snapshots/`. The naming convention (`docs/NAMING.md`) and the unslop check are tooling.
+The admin, generative-UI and decision modules run in both versions: admin runs the site's sources, and decision supports the bake-off comparison. The extended build as it stood before Matt's REQ-020 change is saved as branch `feature/snapshot-john-extended-2026-11-07`, measured in `docs/snapshots/`. The naming convention (`docs/NAMING.md`), the unslop check, the portable rule language (`lib/expr`; REQ-003's rule is `lib/rules/scope.json`) and the schema registry (`schema/`) are tooling.

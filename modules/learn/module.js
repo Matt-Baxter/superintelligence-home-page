@@ -19,6 +19,12 @@ CREATE INDEX IF NOT EXISTS idx_learn_jobs_status ON learn_jobs(status, id);
       await db.run("DELETE FROM learn_jobs WHERE status IN ('done','failed','needs-agent') AND published_at IS NULL AND updated_at < ?", cut);
     });
     ctx.point("http.routes").add((app, deps) => require("./routes")(app, deps));
+    // Concepts become tags too: concept:<id>, with the words that matched.
+    ctx.point("knowledge.taggers").add({ id: "concepts", namespace: "concept", about: "Learn concepts (modules/learn/data/concepts.json terms)",
+      tag: (text) => require("./learn").conceptsIn(text).map((c) => ({ qid: `concept:${c.id}`, label: c.name, matched: c.matched, method: "concept-term" })),
+      // Curated links for the knowledge graph: each concept is about a topic, plus the concept-to-concept relations.
+      edges: () => require("./learn").DATA.concepts.flatMap((c) => [{ src: `concept:${c.id}`, rel: "about", dst: `topic:${c.topic}`, weight: 1, evidence: ["modules/learn/data/concepts.json"] },
+        ...(c.relations || []).map((r) => ({ src: `concept:${c.id}`, rel: r.kind, dst: `concept:${r.to}`, weight: 1, evidence: ["modules/learn/data/concepts.json"] }))]) });
     ctx.point("ui.nav").add({ href: "/m/learn", label: "Learn", order: 18 });
   },
 };

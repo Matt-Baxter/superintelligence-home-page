@@ -1,0 +1,56 @@
+{
+  "openrpc": "1.3.2",
+  "info": {
+    "title": "si.v1 knowledge API",
+    "version": "1.0.0",
+    "description": "JSON-RPC 2.0 at POST /api/knowledge/rpc (signed-in users). Generated from schema/types.json."
+  },
+  "servers": [
+    {
+      "name": "site",
+      "url": "/api/knowledge/rpc"
+    }
+  ],
+  "methods": [
+    {
+      "name": "knowledge.tag",
+      "summary": "Tag text with the registered taggers and decide scope",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "params",
+          "required": true,
+          "schema": {
+            "$ref": "si.schema.json#/$defs/TagRequest"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "si.schema.json#/$defs/TagResult"
+        }
+      }
+    },
+    {
+      "name": "knowledge.evaluate",
+      "summary": "Evaluate an si-expr rule",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "params",
+          "required": true,
+          "schema": {
+            "$ref": "si.schema.json#/$defs/EvalRequest"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "si.schema.json#/$defs/EvalResult"
+        }
+      }
+    }
+  ]
+}

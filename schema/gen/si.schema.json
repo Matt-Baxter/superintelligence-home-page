@@ -1,0 +1,390 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:si.v1",
+  "title": "si.v1",
+  "description": "Generated from schema/types.json; do not edit.",
+  "$defs": {
+    "Namespace": {
+      "description": "Namespaces of qualified ids (lib/ids.js)",
+      "enum": [
+        "topic",
+        "org",
+        "benchmark",
+        "person",
+        "concept",
+        "req",
+        "module",
+        "source",
+        "story"
+      ]
+    },
+    "TagMethod": {
+      "description": "How a tag was made",
+      "enum": [
+        "ontology-term",
+        "entity",
+        "concept-term",
+        "embedding",
+        "rule",
+        "human"
+      ]
+    },
+    "ScopeRule": {
+      "description": "Which part of the REQ-003 rule decided",
+      "enum": [
+        "strong",
+        "topics",
+        "none"
+      ]
+    },
+    "Tag": {
+      "type": "object",
+      "description": "A label on a story or chunk that explains itself: what it is (qid), the words that matched, and how it was made.",
+      "properties": {
+        "qid": {
+          "type": "string",
+          "pattern": "^[a-z]+:[A-Za-z0-9-]+$",
+          "description": "Qualified id, e.g. topic:alignment"
+        },
+        "label": {
+          "type": "string",
+          "description": "Readable label"
+        },
+        "matched": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Words in the text that produced the tag"
+        },
+        "via": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Child topic that implied this parent topic"
+        },
+        "method": {
+          "$ref": "#/$defs/TagMethod",
+          "description": "How the tag was made"
+        },
+        "score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Confidence 0-1 when the method gives one (embedding similarity)"
+        }
+      },
+      "required": [
+        "qid",
+        "label",
+        "matched",
+        "method"
+      ],
+      "additionalProperties": false
+    },
+    "ScopeDecision": {
+      "type": "object",
+      "description": "REQ-003 verdict from lib/rules/scope.json.",
+      "properties": {
+        "in": {
+          "type": "boolean",
+          "description": "Shown in the superintelligence feed"
+        },
+        "rule": {
+          "$ref": "#/$defs/ScopeRule",
+          "description": "Which branch decided"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Plain-language reason"
+        },
+        "term": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The strong term that matched"
+        },
+        "topics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Top-level topic ids that matched"
+        }
+      },
+      "required": [
+        "in",
+        "rule",
+        "reason",
+        "topics"
+      ],
+      "additionalProperties": false
+    },
+    "Story": {
+      "type": "object",
+      "description": "One story, grouped across sources.",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Row id; qualified as story:<id>"
+        },
+        "title": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "published_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Tag"
+          },
+          "description": "Topics, organisations, benchmarks, people, concepts"
+        },
+        "scope": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ScopeDecision"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Why it is (or isn't) in the feed"
+        },
+        "significance": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "0-100, explained in lib/analysis.js"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "url",
+        "tags"
+      ],
+      "additionalProperties": false
+    },
+    "Chunk": {
+      "type": "object",
+      "description": "A passage of a story's text, the unit that gets tagged and embedded.",
+      "properties": {
+        "story_id": {
+          "type": "integer"
+        },
+        "ord": {
+          "type": "integer",
+          "description": "Position in the story, from 0"
+        },
+        "text": {
+          "type": "string"
+        },
+        "hash": {
+          "type": "string",
+          "description": "sha1 of the text, so unchanged chunks aren't redone"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Tag"
+          }
+        }
+      },
+      "required": [
+        "story_id",
+        "ord",
+        "text",
+        "hash",
+        "tags"
+      ],
+      "additionalProperties": false
+    },
+    "Embedding": {
+      "type": "object",
+      "description": "A vector for a chunk or concept. The default model is a free local hashing embedding; others can be plugged in as adapters.",
+      "properties": {
+        "subject": {
+          "type": "string",
+          "description": "What is embedded: chunk:<story>:<ord> or concept:<id>"
+        },
+        "model": {
+          "type": "string",
+          "description": "Adapter id, e.g. hash-256"
+        },
+        "dims": {
+          "type": "integer"
+        },
+        "vector": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "subject",
+        "model",
+        "dims",
+        "vector"
+      ],
+      "additionalProperties": false
+    },
+    "Edge": {
+      "type": "object",
+      "description": "A link in the knowledge graph between two qualified ids, with the evidence for it.",
+      "properties": {
+        "src": {
+          "type": "string",
+          "description": "Qualified id"
+        },
+        "rel": {
+          "type": "string",
+          "description": "Relation, e.g. co-occurs, needs, part-of"
+        },
+        "dst": {
+          "type": "string",
+          "description": "Qualified id"
+        },
+        "weight": {
+          "type": "number",
+          "description": "Strength (co-occurring chunks, or 1 for curated links)"
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Chunk or story ids that support it"
+        }
+      },
+      "required": [
+        "src",
+        "rel",
+        "dst",
+        "weight",
+        "evidence"
+      ],
+      "additionalProperties": false
+    },
+    "TagRequest": {
+      "type": "object",
+      "description": "Input to the tagging service.",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "taggers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Adapter ids to run; empty means all"
+        }
+      },
+      "required": [
+        "title",
+        "taggers"
+      ],
+      "additionalProperties": false
+    },
+    "TagResult": {
+      "type": "object",
+      "description": "Output of the tagging service.",
+      "properties": {
+        "tags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Tag"
+          }
+        },
+        "scope": {
+          "$ref": "#/$defs/ScopeDecision"
+        }
+      },
+      "required": [
+        "tags",
+        "scope"
+      ],
+      "additionalProperties": false
+    },
+    "EvalRequest": {
+      "type": "object",
+      "description": "Evaluate an si-expr rule (lib/expr) on data.",
+      "properties": {
+        "rule": {
+          "description": "An si-expr AST, or the name of a rule in lib/rules"
+        },
+        "data": {}
+      },
+      "required": [
+        "rule",
+        "data"
+      ],
+      "additionalProperties": false
+    },
+    "EvalResult": {
+      "type": "object",
+      "description": "Result of an si-expr evaluation.",
+      "properties": {
+        "value": {}
+      },
+      "required": [
+        "value"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

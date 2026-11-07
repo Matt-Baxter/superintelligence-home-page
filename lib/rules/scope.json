@@ -1,0 +1,134 @@
+{
+  "about": "REQ-003: is a story about superintelligence? In when the text has a strong term (lib/ontology.json scope.strong) or matches at least min_topics of the spec's top-level topics. Portable si-expr (lib/expr), written with the builder in lib/expr/build.js; runs in Node, Python and Rust.",
+  "version": "1.0.0",
+  "input": {
+    "text": "title and summary",
+    "strong": "scope.strong terms",
+    "tops": "top-level topic ids matched directly (not via a child)",
+    "top_labels": "their labels, same order",
+    "min_topics": "scope.min_topics"
+  },
+  "output": "{in, rule, reason, term?, topics?}",
+  "rule": {
+    "si.let": [
+      {
+        "term": {
+          "si.first_match": [
+            {
+              "var": "text"
+            },
+            {
+              "var": "strong"
+            }
+          ]
+        },
+        "n": {
+          "si.count": {
+            "var": "tops"
+          }
+        }
+      },
+      {
+        "if": [
+          {
+            "var": "term"
+          },
+          {
+            "si.obj": {
+              "in": true,
+              "rule": "strong",
+              "term": {
+                "var": "term"
+              },
+              "reason": {
+                "si.tpl": [
+                  "Superintelligence term: \"{{term}}\"",
+                  {
+                    "si.obj": {
+                      "term": {
+                        "var": "term"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            ">=": [
+              {
+                "var": "n"
+              },
+              {
+                "var": "min_topics"
+              }
+            ]
+          },
+          {
+            "si.obj": {
+              "in": true,
+              "rule": "topics",
+              "topics": {
+                "var": "tops"
+              },
+              "reason": {
+                "si.tpl": [
+                  "{{n}} superintelligence topics: {{labels}}",
+                  {
+                    "si.obj": {
+                      "n": {
+                        "var": "n"
+                      },
+                      "labels": {
+                        "var": "top_labels"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "==": [
+              {
+                "var": "n"
+              },
+              1
+            ]
+          },
+          {
+            "si.obj": {
+              "in": false,
+              "rule": "none",
+              "topics": {
+                "var": "tops"
+              },
+              "reason": {
+                "si.tpl": [
+                  "Only one topic ({{label}}) and no superintelligence term",
+                  {
+                    "si.obj": {
+                      "label": {
+                        "var": "top_labels"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "si.obj": {
+              "in": false,
+              "rule": "none",
+              "topics": {
+                "var": "tops"
+              },
+              "reason": "No superintelligence topic matched"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
