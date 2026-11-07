@@ -1,5 +1,5 @@
 {
-  "about": "Which version of the site runs. 'spec' (the default) is exactly what the shared spec requires (specs/001-superintelligence-homepage): the superintelligence feed, grouping, explainable tags, accounts, votes, saves, sources, topic filter, and the admin tools needed to run the site. 'extended' adds John's extra work (notes, reading lists, weekly brief, source suggestions, the capability tracker, project tracker, codebase map, Learn layer and generative UI studio). Choose with SITE_PROFILE=spec|extended. The extended build is also saved as git tag snapshot/john-extended-2026-11-07 (docs/snapshots).",
+  "about": "Which version of the site runs. 'spec' (the default) is exactly what the shared spec requires (specs/001-superintelligence-homepage): the superintelligence feed, grouping, explainable tags, accounts, votes, saves, sources, topic filter, and the admin tools needed to run the site. 'extended' adds John's extra work (notes, reading lists, weekly brief, source suggestions, the capability tracker, project tracker, codebase map, Learn layer and generative UI studio). Choose with SITE_PROFILE=spec|extended. The extended build is also saved as branch feature/snapshot-john-extended-2026-11-07 (docs/snapshots).",
   "default": "spec",
   "profiles": {
     "spec": {

@@ -44,5 +44,5 @@ One way to name routes, tables, labels, tags and metadata, so people, agents and
 
 - **Every data file has an `about`** saying what it is and who may change it, and the ontology and the Learn concepts carry a `version` **(checked)**. This covers `lib/ontology.json`, `lib/sources.json`, `modules/*/data/*.json`, `modules/profiles.json` and `modules/project/starter.json`.
 - **Every module manifest has `id`** (equal to its folder), **`version`** (semver) and **`description`** **(checked)**.
-- **Branches:** `feature/`, `fix/`, `bakeoff/`. **Tags:** `snapshot/<who>-<what>-<yyyy-mm-dd>` for saved versions (see `docs/snapshots/`).
+- **Branches:** `feature/`, `fix/`, `bakeoff/`. **Saved versions:** branch `feature/snapshot-<who>-<what>-<yyyy-mm-dd>` (GitHub tags can't be pushed from agent sessions) (see `docs/snapshots/`).
 - **Commits and pull requests name the REQ ids they serve** (spec first).
