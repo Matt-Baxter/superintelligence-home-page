@@ -1,6 +1,6 @@
 # Manifest: everything the handoff points at
 
-Until the humans merge it, this folder and spec 003 live on branch `feature/judge-fidelity-spec`; the MoE toy lives on `feature/paper-watch-2026-11-07-b`. Both start from `fix/sync-with-main`.
+Until the humans merge it, this folder, specs 003 and 004, the hub and the Specs view live on branch `feature/judge-fidelity-rules` (which contains `feature/judge-fidelity-spec`); the MoE toy lives on `feature/paper-watch-2026-11-07-b`. Both start from `fix/sync-with-main`.
 
 | Group | Files |
 | --- | --- |
