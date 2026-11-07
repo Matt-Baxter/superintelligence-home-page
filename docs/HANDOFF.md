@@ -71,7 +71,7 @@ Results at handoff: preflight passed; browser test 182 passed, 0 failed; spec ac
 
 ## 5. Waiting on people
 
-Most of these are visible and actionable in the research control room (`/m/control`). [PRACTICES.md](PRACTICES.md) lists what to adopt next (calibration with kappa, skill trigger tests, forecast resolution criteria).
+Most of these are visible and actionable in the research control room (`/m/control`). [PRACTICES.md](PRACTICES.md) lists what to adopt next and [PARITY.md](PARITY.md) compares us with comparable apps (calibration with kappa, skill trigger tests, forecast resolution criteria).
 
 
 - John and Matt: approve or drop REQ-021 to REQ-033 (spec 002), contract 0.6 and constitution 1.2.0.

@@ -9,7 +9,7 @@ The same codebase run as `SITE_PROFILE=research`. It publishes, at `/research`:
 - a plain-language write-up of each reviewed paper or article that wasn't judged doubtful: what it claims, how far to believe it and why, the guards that fired, what the abstract doesn't show, and its trace (`doc:<hash>`);
 - a page per topic dossier rated above "none yet" (the rating ladder stops at "some support");
 - `/research/criteria`, the published judging rules, and `/research/outlets`, each outlet's grades and forecast track record (personal blogs pooled, never by writer);
-- `/research/feed.xml`, an RSS 2.0 feed of the write-ups and topic pages.
+- `/research/feed.xml`, an RSS 2.0 feed of the write-ups and topic pages, and `/research/data.json`, the same judgements as open data.
 
 The research version switches on the catalog's checked buzz feeds (Medium tag feeds, Hacker News) at start, so its buzz measure has something to count; an admin can pause them.
 
@@ -17,7 +17,7 @@ Every page is tagged **Research preview**, sends `noindex, nofollow`, and has no
 
 ## How it feeds the feed
 
-The spec version adds `https://<research host>/research/feed.xml` as an ordinary RSS source (admin → Sources). Its own scope rule judges each item, and because each item keeps the paper's own title, a write-up about a paper already in the feed joins that paper's story as one more source instead of making a second story. The spec version needs no code change. `npm run test:research` proves this on synthetic data (22 checks, also in preflight).
+The spec version adds `https://<research host>/research/feed.xml` as an ordinary RSS source (admin → Sources). Its own scope rule judges each item, and because each item keeps the paper's own title, a write-up about a paper already in the feed joins that paper's story as one more source instead of making a second story. The spec version needs no code change. `npm run test:research` proves this on synthetic data (24 checks, also in preflight).
 
 ## Hidden until you opt in
 

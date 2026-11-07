@@ -109,7 +109,7 @@ ${desc ? `<meta name="description" content="${esc(desc)}">` : ""}<link rel="styl
 </style></head><body><main class="rx">
 <span class="flag">Research preview</span>
 ${body}
-<footer>Judged by rules from the abstract, not by a person and not by a model: a draft to read alongside the paper, not instead of it. Real people appear only as mention counts. <a href="${esc(base)}/research/criteria">How we judge</a> · <a href="${esc(base)}/research/outlets">Track records</a> · <a href="${esc(base)}/research">All write-ups</a> · <a href="${esc(base)}/research/feed.xml">RSS</a></footer>
+<footer>Judged by rules from the abstract, not by a person and not by a model: a draft to read alongside the paper, not instead of it. Real people appear only as mention counts. <a href="${esc(base)}/research/criteria">How we judge</a> · <a href="${esc(base)}/research/outlets">Track records</a> · <a href="${esc(base)}/research/data.json">Open data</a> · <a href="${esc(base)}/research">All write-ups</a> · <a href="${esc(base)}/research/feed.xml">RSS</a></footer>
 </main></body></html>`;
 }
 
@@ -128,7 +128,7 @@ ${r.source ? `<section><h2>Source grade: ${esc(r.source.grade)}</h2><ul>${r.sour
 ${(r.forecasts || []).length ? `<section><h2>Forecasts in it</h2><p class="small muted" style="margin:0 0 8px">Dated predictions, tracked as events and marked by a person once due.</p><ul>${r.forecasts.map((f) => `<li>${esc(f.sentence)} <span class="lv">(due ${esc(f.due)})</span></li>`).join("")}</ul></section>` : ""}
 ${topics.length ? `<section><h2>Where it fits</h2><div class="chips">${topics.map((t) => `<span><a href="${esc(base)}/research/topic/${esc(t.qid.slice(6))}">${esc(t.label)}</a></span>`).join("")}</div></section>` : ""}
 <section><h2>Source</h2>${row.excerpt ? `<blockquote>${esc(row.excerpt)}${row.excerpt.length >= 400 ? "…" : ""}</blockquote>` : ""}
-<p class="small" style="margin:8px 0 0">${row.url ? `<a href="${esc(row.url)}" rel="noopener">${row.kind === "paper" ? "Read the paper" : "Read the original"}</a> · ` : ""}Trace <code>${esc(row.qid)}</code>, reviewed ${esc(String(row.created_at || "").slice(0, 10))}</p></section>`;
+<p class="small" style="margin:8px 0 0">${row.url ? `<a href="${esc(row.url)}" rel="noopener">${row.kind === "paper" ? "Read the paper" : "Read the original"}</a> · ` : ""}${r.code ? `<a href="${esc(r.code)}" rel="noopener">Code</a> · ` : ""}Trace <code>${esc(row.qid)}</code>, reviewed ${esc(String(row.created_at || "").slice(0, 10))}</p></section>`;
   return shell({ title: row.title, base, body, desc: plain(row, r) });
 }
 
@@ -183,10 +183,22 @@ function feedXml({ papers, topics }, base) {
   const item = (title, link, guid, date, text, c = {}) => `<item><title>${x(title)}</title>${cats(c)}<link>${x(link)}</link><guid isPermaLink="false">${x(guid)}</guid>${date ? `<pubDate>${new Date(date).toUTCString()}</pubDate>` : ""}<description>${x(text)}</description></item>`;
   const R = (p) => (typeof p.result === "string" ? JSON.parse(p.result || "{}") : p.result || {});
   const items = [
-    ...papers.map((p) => item(p.title, `${base}/research/paper/${p.id}`, `si-research-${p.qid}`, p.created_at, plain(p, R(p)), { verdict: p.verdict, credibility: p.credibility, grade: (R(p).source || {}).grade, panel: (R(p).panel || {}).status || "none" })),
+    ...papers.map((p) => item(p.title, `${base}/research/paper/${p.id}`, `si-research-${p.qid}`, p.created_at, plain(p, R(p)), { verdict: p.verdict, credibility: p.credibility, grade: (R(p).source || {}).grade, panel: (R(p).panel || {}).status || "none", code: R(p).code })),
     ...topics.map((t) => item(`${t.label}: what the evidence on this superintelligence topic says`, `${base}/research/topic/${t.topic}`, `si-research-topic:${t.topic}`, t.at, `Rated ${t.strength}: ${t.why}.`, { evidence: t.strength })),
   ].join("");
   return `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>Superintelligence research write-ups (preview)</title><link>${x(base)}/research</link><description>Plain-language, traced write-ups of papers on the path to superintelligence. Judged from abstracts by rules; a preview.</description>${items}</channel></rss>`;
 }
 
-module.exports = { outletsPage, scorecard, criteriaPage, publishable, plain, paperPage, topicPage, indexPage, feedXml, md };
+// Open data: every publishable judgement as JSON, the way evaluation hubs publish their results, so anyone can check or
+// reuse them. Titles, links, scores and rules only; excerpts stay on the pages; forecasts carry no names.
+function dataJson({ papers, topics }, base) {
+  const R = (p) => (typeof p.result === "string" ? JSON.parse(p.result || "{}") : p.result || {});
+  return { about: "Judgements of the Superintelligence Homepage research layer (preview): rule-based, from abstracts and paraphrases. Criteria: " + base + "/research/criteria", generated: new Date().toISOString(),
+    pieces: papers.map((p) => { const r = R(p), J = Object.fromEntries((r.judges || []).map((j) => [j.id, j])); return { id: p.qid, title: p.title, url: p.url || null, kind: p.kind, reviewed: String(p.created_at || "").slice(0, 10),
+      verdict: p.verdict, verdictRule: r.verdictRule || null, credibility: p.credibility, significance: p.score, rigor: (J.rigor || {}).score ?? null, hype: (J.hype || {}).score ?? null, rubric: r.rubric || null,
+      grade: (r.source || {}).grade || null, outlet: r.source && !r.source.outlet.personal ? r.source.outlet.label : r.source ? "personal blogs and newsletters (pooled)" : null, code: r.code || null,
+      panel: (r.panel || {}).status || "none", forecasts: (r.forecasts || []).map((f) => ({ id: f.qid, due: f.due, sentence: f.sentence })), writeup: `${base}/research/paper/${p.id}` }; }),
+    topics: topics.map((t) => ({ id: t.topic, label: t.label, evidence: t.strength, why: t.why, page: `${base}/research/topic/${t.topic}` })) };
+}
+
+module.exports = { dataJson, outletsPage, scorecard, criteriaPage, publishable, plain, paperPage, topicPage, indexPage, feedXml, md };

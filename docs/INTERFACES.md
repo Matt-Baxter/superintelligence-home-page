@@ -110,7 +110,9 @@ Every interface change gets a row here. Breaking changes bump the major version 
 | 2.2 | Nov 7, 2026 | Research control room (REQ-030, REQ-033; extended and research versions).
 - **Route:** `GET /api/admin/research/status` (admins) returns `{today, waiting, proposals, specStatus, people, forecasts[], flagged[], quality[], panel {models, ready}, public}`.
 - **Page:** `/m/control`, nav entry "Research" (admins): forecasts due with outcome buttons, flagged reviews with agree/disagree, quality checks, proposals, people checks, links.
-- **Forecast outcomes:** `annulled` added beside `unclear` (both count for neither side); `POST /api/admin/review/events/:id` accepts it. | logged by John |
+- **Forecast outcomes:** `annulled` added beside `unclear` (both count for neither side); `POST /api/admin/review/events/:id` accepts it.
+- **Open data:** `GET /research/data.json` (same gate as `/research`): `{about, generated, pieces[{id, title, url, kind, reviewed, verdict, verdictRule, credibility, significance, rigor, hype, rubric, grade, outlet, code, panel, forecasts[], writeup}], topics[]}`; no excerpts, no writer names.
+- **Code link:** review results gain `code` (first GitHub, GitLab or Hugging Face repository link in the text); shown on the write-up and sent as `si:code` in the feed. | logged by John |
 | 2.1 | Nov 7, 2026 | Rigor badge in the main app (proposed REQ-035; branch `feature/rigor-badge`; on only in the extended version until approved).
 - **Core table:** `story_links` gains `rigor TEXT DEFAULT ''` (added by the migration list in `lib/db.js`; empty for every non-research source).
 - **Feed parsing:** `lib/feeds.js` reads `<category domain="si:verdict|si:credibility|si:grade|si:panel|si:evidence">` into `item.rigor`; other categories are ignored. `lib/harvest.js` stores it on the story link.
