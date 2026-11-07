@@ -52,7 +52,7 @@
 
 - **Agents may do unattended:** read code, run tests, write code on a branch, draft pull requests and docs.
 - **A human must review:** every merge to `main`, changes to shared documents, auth and security code, database schema changes, deployments, anything that spends money. Agents never merge to `main`, deploy, handle real secrets or spend money.
-- **Agent log:** each of us writes our own entries in the app's Agent log page, in our own words, within a day of the session: what the agent got wrong, how we caught it, and the fix. Not AI-generated, and we don't write each other's.
+- **Agent log:** [`AGENT_LOG.md`](AGENT_LOG.md) in the repo. Each of us adds our own entries within a day of a session: what the agent got wrong and how we caught it, in our own words, never AI-generated.
 
 ## Disagreements
 
