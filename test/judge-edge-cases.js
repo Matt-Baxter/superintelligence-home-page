@@ -36,7 +36,8 @@ function metric(name, input, r) {
     case "notMajor": return r.verdict !== "major and credible" ? 1 : 0;
     // The review has no truncation flag today; a fix would add r.truncated (and a guard or reason saying so).
     case "truncatedReported": return r.truncated || (r.reasons || []).some((x) => /cut|truncat/i.test(x)) ? 1 : 0;
-    default: throw new Error(`unknown metric ${name}`);
+    // band:<field>:<cutoff>, e.g. band:credibility:60: "low" | "border" | "high" from review()'s bands (REQ-037, m = 5).
+    default: { const m = /^band:(credibility|score):(\d+)$/.exec(name); if (m && r.bands && m[2] in r.bands[m[1]]) return r.bands[m[1]][m[2]]; throw new Error(`unknown metric ${name}`); }
   }
 }
 const REL = { eq: (a, b) => a === b, le: (a, b) => a <= b, lt: (a, b) => a < b, ge: (a, b) => a >= b, gt: (a, b) => a > b };

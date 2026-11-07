@@ -181,8 +181,8 @@ for (const c of cases) for (const p of (memo.clear(), P)) {
 }
 
 // ---------- rating (dossier rule, step 7) ----------
-// Mirror of modules/review/dossier.js: credible = primary papers with credibility >= 60, linked = toy checks of their
-// ideas that held up, papers = every reviewed paper or article (surveys too).
+// Mirror of modules/review/dossier.js: credible = primary papers in the High band around 60 (credibility >= 65 at
+// m = 5, modules/review/bands.js), linked = held-up toy checks of a credible paper's idea (T042), papers = every reviewed paper or article (surveys too).
 const strength = (credible, linked, papers) => (credible >= 2 && linked >= 1 ? "some support" : credible >= 1 ? "early" : papers ? "thin" : "none yet");
 const RANK = { "none yet": 0, thin: 1, early: 2, "some support": 3 };
 const src = fs.readFileSync(path.join(__dirname, "../modules/review/dossier.js"), "utf8").match(/const strength = ([^;]+);/);
@@ -200,7 +200,7 @@ for (let c = 0; c <= 6; c++) for (let p = c; p <= 8; p++) for (let l = 0; l <= 4
   if (RANK[strength(c + 1, l, p + 1)] < RANK[s]) ratingFails.push(`adding a credible paper lowers the rating at credible=${c}, linked=${l}, papers=${p}`);
   if (RANK[strength(c, l + 1, p)] < RANK[s]) ratingFails.push(`adding a linked check lowers the rating at credible=${c}, linked=${l}, papers=${p}`);
 }
-// Not credible papers today count only toward "thin" (no Border band yet): note how far they can lift a rating.
+// Papers that aren't credible (Low or Border) count only toward "thin": note how far they can lift a rating.
 const nonCredibleLift = [];
 for (let c = 0; c <= 6; c++) for (let p = c; p <= 8; p++) for (let l = 0; l <= 4; l++) if (RANK[strength(c, l, p + 1)] > RANK[strength(c, l, p)]) nonCredibleLift.push(`${strength(c, l, p)}->${strength(c, l, p + 1)}`);
 P.push({ id: "rating", label: "dossier rating: four cases exclusive and exhaustive, the mirror equals dossier.js, adding a credible paper (or a linked check) never lowers it", critical: true,
@@ -224,7 +224,7 @@ else {
   }
   console.log(`note   credibility fell on ${credFalls} of ${credFallTried} appends of a new marker family (hype or claims moved)`);
   console.log(`note   credibility changed on ${credShuffled} of ${credShuffleTried} shuffles`);
-  console.log(`note   a paper that isn't credible can still lift the rating: ${[...new Set(nonCredibleLift)].join(", ") || "never"} (plan step 7 wants Border papers never to raise it, once bands exist)`);
+  console.log(`note   a paper that isn't credible can still lift the rating: ${[...new Set(nonCredibleLift)].join(", ") || "never"} (only none yet -> thin is expected: from one paper on, a Border paper never raises it)`);
   console.log(`time   ${(ms / 1000).toFixed(1)} s`);
   console.log(`judge properties: ${hold} hold, ${fail} fail`);
 }

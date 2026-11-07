@@ -37,6 +37,13 @@ ok(score({ ...careful, text: careful.text.toUpperCase(), title: careful.title.to
 const sents = R.sentences(careful.text); const shuffled = [...sents.slice(1), sents[0]].join(" ");
 ok(Math.abs(score({ ...careful, text: shuffled }) - rc.score) <= 5, "moving a sentence changes the score by at most 5");
 
+console.log("Bands (REQ-037)");
+const B = require("../modules/review/bands");
+ok([careful, hype, comment].every((s) => { const r = R.review(s); return r.verdict === B.verdictOf(r.score, r.credibility) && r.bands.credibility["60"] === B.band(r.credibility, 60); }), "bands are reported and the verdict string is unchanged");
+const rcm = R.review(comment);
+ok(rcm.credibility !== 70 || (rcm.verdict === "solid, modest step" && /within 5 of 70/.test(rcm.verdictNote)), `a sample exactly on a cutoff keeps its verdict and gets a borderline note: "${rcm.verdictNote}"`);
+ok(rc.verdictNote === null && !rc.borderline, "the careful paper (credibility 100) is far from every cutoff: no note");
+
 console.log("Adversaries");
 for (const s of [careful, hype, comment]) {
   const st = R.stress(s, 5);

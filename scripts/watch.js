@@ -81,8 +81,8 @@ async function main() {
   fs.mkdirSync(OUT, { recursive: true });
   const topicsOf = (r) => r.edges.filter((ed) => ed.rel === "about").map((ed) => ed.dst.slice(6)).join(", ");
   const md = [`# Paper watch, ${day}`, "", `${entries.length} papers found, ${stored} new${dry ? " (dry run: nothing stored)" : ""}, ${already} already in the catalog, ${queued.length} queued for paper-to-code. Scores come from the Review desk's guarded judges; people are matched by name only.`, "",
-    "| Paper | Verdict | Score | Credibility | Topics | New |", "| --- | --- | --- | --- | --- | --- |",
-    ...rows.sort((a, b) => b.r.credibility - a.r.credibility).map(({ e, r, isNew }) => `| [${e.title.replace(/\|/g, "/")}](${e.url}) | ${r.verdict} | ${r.score} | ${r.credibility} | ${topicsOf(r)} | ${isNew ? "yes" : ""} |`), "",
+    "| Paper | Verdict | Score | Credibility | Band | Topics | New |", "| --- | --- | --- | --- | --- | --- | --- |",
+    ...rows.sort((a, b) => b.r.credibility - a.r.credibility).map(({ e, r, isNew }) => `| [${e.title.replace(/\|/g, "/")}](${e.url}) | ${r.verdict} | ${r.score} | ${r.credibility} | ${require("../modules/review/bands").digest(r)} | ${topicsOf(r)} | ${isNew ? "yes" : ""} |`), "",
     "## Queued for paper-to-code", "", ...(queued.length ? queued.map((q) => `- ${q.id ? `job #${q.id}: ` : ""}[${q.title}](${q.url})`) : ["- nothing new qualified today"]), ""];
   fs.writeFileSync(path.join(OUT, `${day}.md`), md.join("\n"));
   fs.writeFileSync(path.join(OUT, `${day}.json`), JSON.stringify({ day, found: entries.length, stored, already, queued, papers: rows.map(({ e, r, isNew }) => ({ title: e.title, url: e.url, arxiv: arxivId(e.url), verdict: r.verdict, score: r.score, credibility: r.credibility, topics: topicsOf(r), isNew, qid: r.qid })) }, null, 2));

@@ -9,6 +9,7 @@
 // Every sentence in the outputs carries numbered references, and every reference has a trace (doc:, story:, lab:,
 // concept:) back to the record it came from. Publishing is a person's action; nothing is posted (no Twitter/X).
 const analysis = require("../../lib/analysis");
+const B = require("./bands");
 const { ontology } = require("../../lib/tagger");
 const round = (x, d = 2) => Math.round(x * 10 ** d) / 10 ** d;
 const mean = (a) => (a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0);
@@ -37,11 +38,14 @@ function analyse({ topic, ids, docs, docEdges, stories }, { examples = [], conce
   const P = papers.map((d) => {
     const cl = d.result.claims || [], backed = cl.filter((c) => c.level === "backed").length, unbacked = cl.filter((c) => c.level === "unbacked").length;
     const strongest = cl.find((c) => c.level === "backed") || cl.find((c) => c.level === "partly backed") || null;
-    return { id: d.id, qid: d.qid, title: d.title, url: d.url, survey: !!d.result.survey, verdict: d.verdict, credibility: d.credibility, score: d.score,
+    return { id: d.id, qid: d.qid, title: d.title, url: d.url, survey: !!d.result.survey, verdict: d.verdict, credibility: d.credibility, score: d.score, band: B.band(d.credibility, B.CREDIBLE_AT),
       claims: cl.length, backed, unbacked, needsPerson: !!d.needs_person, personLabel: d.label, strongest: strongest ? strongest.sentence : null,
       n: ref({ type: d.kind === "paper" ? "paper" : "article", title: d.title, url: d.url, trace: d.qid, note: `${d.verdict}, credibility ${d.credibility}` }) };
   }).sort((a, b) => b.credibility - a.credibility);
-  const primary = P.filter((p) => !p.survey), credible = primary.filter((p) => p.credibility >= 60);
+  // Credible = High band around 60 (REQ-037): credibility 65 or more at the default margin 5. A Border paper (55 to 64)
+  // is listed as borderline and never counted, so a marker or two can't flip the rating.
+  const primary = P.filter((p) => !p.survey), credible = primary.filter((p) => p.band === "high"), borderline = primary.filter((p) => p.band === "border");
+  const lo = B.CREDIBLE_AT - B.MARGIN, hi = B.CREDIBLE_AT + B.MARGIN, credibleUrls = new Set(credible.map((p) => p.url));
 
   // Corroboration: a concept counts as corroborated when two or more reviewed papers explain it.
   const byConcept = {};
@@ -51,7 +55,8 @@ function analyse({ topic, ids, docs, docEdges, stories }, { examples = [], conce
   // Our own checks: Lab examples on this topic (or citing a reviewed paper as their source).
   const urls = new Set(papers.map((p) => p.url));
   const checks = examples.filter((x) => (x.topics || []).some((t) => ids.includes(t.replace(/^topic:/, ""))) || (x.source && urls.has(x.source.url)))
-    .map((x) => ({ id: x.id, title: x.title, supported: x.verdict.supported, text: x.verdict.text, source: x.source || null, n: ref({ type: "lab check", title: x.title, url: `/m/lab#/x/${x.id}`, trace: `lab:${x.id}`, note: x.verdict.supported ? "supported at toy scale" : "not supported at toy scale" }) }));
+    .map((x) => ({ id: x.id, title: x.title, supported: x.verdict.supported, text: x.verdict.text, source: x.source || null,
+      tests: !x.source || !urls.has(x.source.url) ? null : credibleUrls.has(x.source.url) ? "credible" : "not credible", n: ref({ type: "lab check", title: x.title, url: `/m/lab#/x/${x.id}`, trace: `lab:${x.id}`, note: x.verdict.supported ? "supported at toy scale" : "not supported at toy scale" }) }));
 
   // Feed coverage: stories on the topic, their sources, and the most significant ones.
   const S = stories.map((s) => { const a = analysis.analyze({ title: s.title, summary: s.summary || "" }); return { id: s.id, title: s.title, url: s.url, sources: s.sources, significance: a.significance }; })
@@ -68,14 +73,17 @@ function analyse({ topic, ids, docs, docEdges, stories }, { examples = [], conce
 
   // How strong is the evidence? Rule-based and stated, so it can be argued with.
   const supported = checks.filter((c) => c.supported).length;
-  // Only toy checks that test an idea from one of these reviewed papers count toward the rating; general checks on the
-  // topic are reported but don't lift it. We judge from abstracts and toy experiments, so the top rating is "some
-  // support", never "strong" or "proven".
-  const linked = checks.filter((c) => c.supported && c.source && urls.has(c.source.url)).length;
+  // Only toy checks that test an idea from one of the credible (High) papers count toward the rating (T042); general
+  // checks on the topic, and checks of papers that aren't credible, are reported but don't lift it. We judge from
+  // abstracts and toy experiments, so the top rating is "some support", never "strong" or "proven".
+  const linked = checks.filter((c) => c.supported && c.tests === "credible").length, linkedOther = checks.filter((c) => c.supported && c.tests === "not credible").length;
   const strength = credible.length >= 2 && linked >= 1 ? "some support" : credible.length >= 1 ? "early" : P.length ? "thin" : "none yet";
-  const why = strength === "some support" ? `${pl(credible.length, "credible primary paper")} (judged from their abstracts) and ${pl(linked, "toy check")} of their ideas that held up`
-    : strength === "early" ? `${pl(credible.length, "credible primary paper")}, and ${linked ? `${pl(linked, "toy check")} that held up` : "no toy check of their ideas has held up yet"}`
-    : strength === "thin" ? "reviewed papers, none both primary and credible (credibility 60 or more)" : "nothing reviewed on this topic yet";
+  const notCounted = [...(borderline.length ? [`${pl(borderline.length, "borderline paper")} (credibility ${lo} to ${hi - 1}) not counted`] : []),
+    ...(linkedOther ? [`${pl(linkedOther, "toy check")} of a paper that isn't credible not counted`] : [])];
+  const why = (strength === "some support" ? `${pl(credible.length, "credible primary paper")} (judged from their abstracts) and ${pl(linked, "toy check")} of their ideas that held up`
+    : strength === "early" ? `${pl(credible.length, "credible primary paper")}, and ${linked ? `${pl(linked, "toy check")} of their ideas that held up` : "no toy check of their ideas has held up yet"}`
+    : strength === "thin" ? `reviewed papers, none both primary and credible (credibility ${hi} or more)` : "nothing reviewed on this topic yet")
+    + (strength !== "none yet" && notCounted.length ? `; ${notCounted.join(", ")}` : "");
   const weak = [
     ...P.filter((p) => p.unbacked > 0).map((p) => ({ text: `${p.title}: ${pl(p.unbacked, "claim")} with no number, sample or interval in the same sentence`, n: p.n })),
     ...P.filter((p) => p.needsPerson && !p.personLabel).map((p) => ({ text: `${p.title}: the guards sent it to a person, who hasn't looked yet`, n: p.n })),
@@ -83,8 +91,8 @@ function analyse({ topic, ids, docs, docEdges, stories }, { examples = [], conce
   ].slice(0, 8);
 
   return { topic, label: topicLabel(topic), ids, strength, why, at: new Date().toISOString().slice(0, 10),
-    counts: { papers: P.length, primary: primary.length, surveys: P.length - primary.length, credible: credible.length, comments: comments.length, stories: S.length, sources: sourceCount, checks: checks.length, supported, linked },
-    meanCredibility: Math.round(mean(P.map((p) => p.credibility))), papers: P, checks, top, corroboration: corroboration.slice(0, 8), people, orgs,
+    counts: { papers: P.length, primary: primary.length, surveys: P.length - primary.length, credible: credible.length, borderline: borderline.length, comments: comments.length, stories: S.length, sources: sourceCount, checks: checks.length, supported, linked, linkedOther },
+    meanCredibility: Math.round(mean(P.map((p) => p.credibility))), papers: P, borderline: borderline.map((p) => ({ id: p.id, title: p.title, url: p.url, credibility: p.credibility, n: p.n })), credibleAt: { cutoff: B.CREDIBLE_AT, margin: B.MARGIN, from: hi }, checks, top, corroboration: corroboration.slice(0, 8), people, orgs,
     comments: { count: comments.length, verdicts: comments.reduce((a, c) => ((a[c.verdict] = (a[c.verdict] || 0) + 1), a), {}) }, weak, refs };
 }
 
@@ -97,12 +105,17 @@ function blog(d, site = "") {
   L.push(`We reviewed ${pl(c.papers, "paper or article", "papers and articles")} from their abstracts (${pl(c.surveys, "survey")}), ${pl(c.stories, "feed story", "feed stories")} from ${pl(c.sources, "source")}, ${pl(c.comments, "reader comment")}, and ran ${pl(c.checks, "toy experiment")} of our own. Every judgement below links to its source; numbers in brackets are references.`, "");
   if (d.papers.length) {
     L.push("## What the papers say", "");
-    for (const p of d.papers.slice(0, 6)) L.push(`- **${p.title}** ${cite(p.n)}: ${p.verdict}, credibility ${p.credibility}/100${p.survey ? " (a survey)" : ""}; ${p.claims ? `${p.backed} of ${pl(p.claims, "headline claim")} carry their own evidence` : "no headline claims detected"}.${p.strongest ? ` Its best-supported claim: "${p.strongest.slice(0, 160)}${p.strongest.length > 160 ? "…" : ""}"` : ""}`);
+    for (const p of d.papers.slice(0, 6)) L.push(`- **${p.title}** ${cite(p.n)}: ${p.verdict}, credibility ${p.credibility}/100${p.survey ? " (a survey)" : p.band === "border" ? " (borderline)" : ""}; ${p.claims ? `${p.backed} of ${pl(p.claims, "headline claim")} carry their own evidence` : "no headline claims detected"}.${p.strongest ? ` Its best-supported claim: "${p.strongest.slice(0, 160)}${p.strongest.length > 160 ? "…" : ""}"` : ""}`);
+    L.push("");
+  }
+  if (d.borderline.length) {
+    L.push("## Borderline papers", "", `Credibility within ${d.credibleAt.margin} of ${d.credibleAt.cutoff}: one evidence marker more or less could move them across, so they are not counted as credible (that needs ${d.credibleAt.from} or more).`, "");
+    for (const p of d.borderline) L.push(`- **${p.title}** ${cite(p.n)}: credibility ${p.credibility}/100.`);
     L.push("");
   }
   if (d.checks.length) {
     L.push("## What we checked ourselves", "", "Small deterministic experiments that test an idea's logic, not a paper's numbers:", "");
-    for (const x of d.checks) L.push(`- **${x.title}** ${cite(x.n)}${x.source ? ` (idea from ${x.source.title})` : ""}: ${x.text.replace(/^(Supported|Not supported) at toy scale: /, "").replace(/\.$/, "")}: ${x.supported ? "supported" : "not supported"} at toy scale.`);
+    for (const x of d.checks) L.push(`- **${x.title}** ${cite(x.n)}${x.source ? ` (idea from ${x.source.title}${x.tests === "not credible" ? ", a paper we don't count as credible" : ""})` : ""}: ${x.text.replace(/^(Supported|Not supported) at toy scale: /, "").replace(/\.$/, "")}: ${x.supported ? "supported" : "not supported"} at toy scale.`);
     L.push("");
   }
   if (d.top.length) { L.push("## In the news", ""); for (const s of d.top) L.push(`- ${s.title} ${cite(s.n)}, significance ${s.significance}/100${s.sources.length > 1 ? `, reported by ${pl(s.sources.length, "source")}` : ""}.`); L.push(""); }
@@ -122,16 +135,17 @@ function blog(d, site = "") {
 }
 const fit = (parts, max) => { let out = ""; for (const p of parts.filter(Boolean)) { const next = out ? `${out} ${p}` : p; if (next.length <= max) out = next; } return out || parts[0].slice(0, max - 1) + "…"; };
 function posts(d, link = "") {
-  const urls = new Set(d.papers.map((p) => p.url)), best = d.papers.find((p) => !p.survey) || d.papers[0];
-  const check = d.checks.find((c) => c.supported && c.source && urls.has(c.source.url)) || d.checks.find((c) => c.supported) || d.checks[0];
+  const best = d.papers.find((p) => !p.survey) || d.papers[0];
+  const check = d.checks.find((c) => c.supported && c.tests === "credible") || d.checks.find((c) => c.supported) || d.checks[0];
   const base = `${d.label}: the evidence is ${d.strength === "some support" ? "showing some support" : d.strength} (${d.why}).`;
   const one = best ? ` Most credible paper by our reading of its abstract: "${best.title}" (${best.credibility}/100).` : "";
   const two = check ? ` Our toy check: ${check.title}, ${check.supported ? "supported" : "not supported"}.` : "";
+  const border = d.borderline.length ? ` Borderline, not counted as credible: ${d.borderline.slice(0, 2).map((p) => `"${p.title}" (${p.credibility}/100)`).join(", ")}${d.borderline.length > 2 ? ` and ${d.borderline.length - 2} more` : ""}.` : "";
   return [
-    { channel: "LinkedIn", text: `${base}${one}${two}\n\nEvery claim is sourced and traced: ${pl(d.refs.length, "reference")}.${link ? `\n\n${link}` : ""}` },
+    { channel: "LinkedIn", text: `${base}${one}${two}${border}\n\nEvery claim is sourced and traced: ${pl(d.refs.length, "reference")}.${link ? `\n\n${link}` : ""}` },
     // Short posts keep whole sentences: drop the extra sentence rather than cut one off mid-quote.
-    { channel: "Bluesky / Threads / Mastodon", text: fit([base, one.trim()], 280 - (link ? link.length + 1 : 0)) + (link ? ` ${link}` : "") },
-    { channel: "Substack note", text: `${base}${two}${link ? ` ${link}` : ""}` },
+    { channel: "Bluesky / Threads / Mastodon", text: fit([base, one.trim(), border.trim()], 280 - (link ? link.length + 1 : 0)) + (link ? ` ${link}` : "") },
+    { channel: "Substack note", text: `${base}${two}${border}${link ? ` ${link}` : ""}` },
   ];
 }
 function storyboard(d) {

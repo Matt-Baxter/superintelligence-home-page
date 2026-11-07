@@ -1340,6 +1340,86 @@
     "to": 0
    },
    "status": "gap"
+  },
+  {
+   "id": "band-on-cutoff-60",
+   "stage": "bands",
+   "req": "REQ-037",
+   "about": "Credibility exactly 60 is Border for the cutoff 60, not High (T041; scripts/judge-report.js found one real paper at exactly 60)",
+   "a": {
+    "title": "Sample Paper (test data)",
+    "text": "Sample abstract (test data). It is compared with a baseline. We trained it. Error bars are shown. Revolutionary and unprecedented."
+   },
+   "check": {
+    "metric": "band:credibility:60",
+    "rel": "eq",
+    "to": "border"
+   },
+   "status": "ok"
+  },
+  {
+   "id": "band-t-minus-m",
+   "stage": "bands",
+   "req": "REQ-037",
+   "about": "Credibility 55 (T - m) is Border, the low edge of the half-open band",
+   "a": {
+    "title": "Sample Paper (test data)",
+    "text": "Sample abstract (test data). Accuracy rose 4%."
+   },
+   "check": {
+    "metric": "band:credibility:60",
+    "rel": "eq",
+    "to": "border"
+   },
+   "status": "ok"
+  },
+  {
+   "id": "band-below-t-minus-m",
+   "stage": "bands",
+   "req": "REQ-037",
+   "about": "Credibility 54 (one under T - m) is Low",
+   "a": {
+    "title": "Sample Paper (test data)",
+    "text": "Sample abstract (test data). It is compared with a baseline. We trained it. There were 50 tasks. Revolutionary, unprecedented and incredible."
+   },
+   "check": {
+    "metric": "band:credibility:60",
+    "rel": "eq",
+    "to": "low"
+   },
+   "status": "ok"
+  },
+  {
+   "id": "band-t-plus-m",
+   "stage": "bands",
+   "req": "REQ-037",
+   "about": "Credibility 65 (T + m) is High: the dossier counts it as credible",
+   "a": {
+    "title": "Sample Paper (test data)",
+    "text": "Sample abstract (test data). It is compared with a baseline. We trained it. Error bars are shown. Revolutionary."
+   },
+   "check": {
+    "metric": "band:credibility:60",
+    "rel": "eq",
+    "to": "high"
+   },
+   "status": "ok"
+  },
+  {
+   "id": "band-on-cutoff-70",
+   "stage": "bands",
+   "req": "REQ-037",
+   "about": "Credibility exactly 70 is Border for 70, though the verdict says \"solid, modest step\" (it gets a borderline note, the verdict string is unchanged)",
+   "a": {
+    "title": "Sample Paper (test data)",
+    "text": "Sample abstract (test data). It is compared with a baseline. We trained it. Error bars are shown."
+   },
+   "check": {
+    "metric": "band:credibility:70",
+    "rel": "eq",
+    "to": "border"
+   },
+   "status": "ok"
   }
  ]
 }
