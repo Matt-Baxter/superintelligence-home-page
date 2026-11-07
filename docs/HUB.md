@@ -330,7 +330,7 @@ Quoted from the repo's own pitfall, trap, troubleshooting and habits sections (n
 
 - [handoff/MANIFEST.md](../handoff/MANIFEST.md): Until the humans merge it, this folder and spec 003 live on branch `feature/judge-fidelity-spec`; the MoE toy lives on…
 - [handoff/README.md](../handoff/README.md): Written 2026-11-07 (on branch `feature/judge-fidelity-spec` until merged), so the work can move between agents.
-- [handoff/STATE.md](../handoff/STATE.md): Sections: Branches with agent work (none merged by an agent); Today's paper watch (second run); What we learned about the judges; Waiting for the…
+- [handoff/STATE.md](../handoff/STATE.md): Sections: Branches with agent work (none merged by an agent); Today's paper watch (second run); What we learned about the judges; Market parity;…
 - [handoff/prompts/codex.md](../handoff/prompts/codex.md): Sections: If you're building John's bake-off version with Codex.
 - [handoff/prompts/v0.md](../handoff/prompts/v0.md): Set up the import first ([`docs/V0.md`](V0.md)): **Base Branch** `bakeoff/v0-john`, never `main`.
 - [handoff/routines/paper-watch.md](../handoff/routines/paper-watch.md): What the Claude scheduled task does each morning, written so any agent (Claude, Codex or another) can run it; it stays on the Claude task for now.
@@ -348,7 +348,7 @@ Quoted from the repo's own pitfall, trap, troubleshooting and habits sections (n
 
 From [handoff/STATE.md](../handoff/STATE.md) (2026-11-07), "Waiting for the humans". Agents don't decide these.
 
-1. **Approve, change or drop** REQ-021..REQ-031 (spec 002) and REQ-032..REQ-040 (spec 003). Until then they are extended-version only.
+1. **Approve, change or drop** REQ-021..REQ-031 (spec 002), REQ-032..REQ-040 (spec 003, now built on `feature/judge-fidelity-rules`) and REQ-041..REQ-052 (spec 004, the parity gaps, not built). Until then they are extended-version only. The Specs view (`/m/project#/specs`) lists every REQ with its status, trace and open tasks.
 2. **CONTRACT.md names the platforms** ("Matt: Claude Code", "John: v0"). Matt stays on Claude Code. If John also uses Codex, add it to his line ("John: v0 or Codex") with a change-log row; both partners agree, and agents don't edit it.
 3. **Bake-off branches**: Matt's Claude Code build on `bakeoff/claude-matt`, John's v0 or Codex build on `bakeoff/v0-john` (Codex works on that same branch, or one the humans name). Keep the two builds apart until both are submitted (bakeoff-entry skill).
 4. **The daily paper watch** stays on its Claude scheduled task (5:47 AM Central) for now. If Codex or the GitHub Actions workflow takes it over later, turn the Claude task off first so two agents don't push watch branches on the same day.
