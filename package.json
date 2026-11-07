@@ -26,7 +26,8 @@
     "spec:status": "node scripts/spec-status.js",
     "bench": "node scripts/bench.js --record",
     "watch": "node scripts/watch.js",
-    "project:sync": "node scripts/project-sync.js"
+    "project:sync": "node scripts/project-sync.js",
+    "lab:results": "node scripts/lab-results.js"
   },
   "keywords": [],
   "author": "",

@@ -88,6 +88,10 @@ try {
   ok("Rules and schemas", `si-expr ${ex} vectors; schema/gen ${sc} current`);
 } catch (e) { fail("Rules and schemas", String(e.stdout || e.stderr || e.message).trim().split("\n").slice(-3).join(" | ")); }
 
+// 5b6. Lab results precomputed for cold starts (scripts/lab-results.js) must match the current examples and runners.
+try { ok("Lab results current", sh("node scripts/lab-results.js --check").trim().replace(/^lab results: /, "")); }
+catch (e) { fail("Lab results current", String(e.stdout || e.message).trim()); }
+
 // 5b7. Benchmarks with a ratchet (scripts/bench.js): no metric may get worse than bench/baseline.json allows.
 try {
   const out = sh("node scripts/bench.js").trim().split("\n").at(-1).replace(/^bench: /, "");
