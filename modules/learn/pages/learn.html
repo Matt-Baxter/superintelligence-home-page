@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Learn · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css">
-<link rel="alternate" type="application/rss+xml" title="Learn explainers" href="/learn/feed.xml">
+<link rel="alternate" type="application/rss+xml" title="Learn explainers" href="/api/learn/feed.xml">
 <style>
   .ltabs { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
   .ltabs a { padding: 8px 12px; text-decoration: none; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; font-size: 15px; }
@@ -46,7 +46,7 @@
 <main>
   <div class="pagehead">
     <div><h1>Learn</h1><p class="muted">The ideas behind superintelligence research in plain words, how they connect, and how this site turns a feed item into a story.</p></div>
-    <a class="btn" href="/learn/feed.xml">RSS of explainers</a>
+    <a class="btn" href="/api/learn/feed.xml">RSS of explainers</a>
   </div>
   <nav class="ltabs" aria-label="Learn sections">
     <a href="#/" data-tab="map">Concept map</a><a href="#/how" data-tab="how">How it works</a><a href="#/jobs" data-tab="jobs" id="jobsTab" hidden>Studio jobs</a>
@@ -56,8 +56,8 @@
 <script src="/js/api.js"></script>
 <script>
 let ME, G = null;
-const TOPIC_ORDER = ["capabilities", "compute", "forecasting", "alignment", "safety", "interpretability", "policy"];
-const TOPIC_LABEL = { capabilities: "Capabilities", compute: "Compute & scaling", forecasting: "Forecasting", alignment: "Alignment", safety: "Safety & risk", interpretability: "Interpretability", policy: "Governance" };
+const TOPIC_ORDER = ["capabilities", "automating-ai-research", "recursive-self-improvement", "compute", "forecasting", "alignment", "safety", "interpretability", "policy"];
+const TOPIC_LABEL = { capabilities: "Capabilities", "automating-ai-research": "Automating AI research", "recursive-self-improvement": "Self-improvement", compute: "Compute & scaling", forecasting: "Forecasting", alignment: "Alignment", safety: "Safety & risk", interpretability: "Interpretability", policy: "Governance" };
 const LEVEL = { 1: "Basics", 2: "Intermediate", 3: "Advanced" };
 
 async function graph() { if (!G) G = await api("/api/learn/concepts"); return G; }

@@ -5,7 +5,7 @@ description: Add a feature as a plug-in module of the modular monolith (modules/
 
 # Add a module
 
-Everything beyond the core (accounts, stories, lists, agent log, feeds, tagging, analysis) is a module in `modules/<id>/`, loaded by `kernel/kernel.js` from `modules/modules.json`. Read `modules/README.md` for the picture.
+Everything beyond the core (accounts, stories, lists, feeds, tagging, analysis) is a module in `modules/<id>/`, loaded by `kernel/kernel.js` from `modules/modules.json`. Read `modules/README.md` for the picture.
 
 1. **Pick the extension points** the feature needs (routes, nav, blocks, views, schema, formats, signals, judges). The table with the exact call for each, and the lifecycle, is in `references/extension-points.md`.
 2. **Scaffold** `modules/<id>/module.js` from the template in `references/module-template.md`, plus a `README.md` (what it does, the points it uses, routes, pages, tables).

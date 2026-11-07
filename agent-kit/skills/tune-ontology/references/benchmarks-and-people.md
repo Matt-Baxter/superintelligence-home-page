@@ -2,7 +2,7 @@
 
 ## Benchmarks (`benchmarks` in lib/ontology.json)
 `{ "id", "label", "measures": <topic id>, "terms": [...], "unit"?: "time", "generic"?: true }`
-- `measures` must be a topic id (coding, math, reasoning, science, agents, long-horizon, ai-rnd, multimodal, security, economics, capabilities). The Capabilities page groups by it.
+- `measures` must be a topic id (coding, math, reasoning, science, agents, long-horizon, automating-ai-research, multimodal, security, economics, capabilities). The Capabilities page groups by it.
 - `lib/analysis.js` reads the number closest to the name within about 70 characters: a percentage by default, or a duration converted to hours when `unit` is `time`. A number larger than 100 isn't treated as a percentage.
 - Put specific variants before the generic one and mark the generic one `"generic": true` (SWE-bench Verified before SWE-bench), so a story isn't counted twice.
 - Add a unit check in `test/analysis-unit.js` with a synthetic sentence for any new score pattern.

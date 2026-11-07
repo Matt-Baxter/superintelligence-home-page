@@ -21,7 +21,7 @@
 <script src="/js/api.js"></script>
 <script>
 let days = 7, ME;
-const MEAS = { coding: "Coding", math: "Math", reasoning: "Reasoning", science: "Science", agents: "Agents", "long-horizon": "Long-horizon autonomy", "ai-rnd": "AI R&D automation", economics: "Economic tasks", multimodal: "Multimodal", security: "Security", capabilities: "General" };
+const MEAS = { coding: "Coding", math: "Math", reasoning: "Reasoning", science: "Science", agents: "Agents", "long-horizon": "Long-horizon autonomy", "automating-ai-research": "AI R&D automation", economics: "Economic tasks", multimodal: "Multimodal", security: "Security", capabilities: "General" };
 async function load() {
   const d = await api(`/api/capabilities?days=${days}`);
   $("#areaNote").textContent = `Stories tagged with each area in the last ${days} days, compared with the ${days} days before. The small number is the highest significance score in the area.`;

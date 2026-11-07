@@ -1,4 +1,4 @@
-// Kernel of the modular monolith. Everything beyond the core (accounts, stories, lists, agent log) is a module
+// Kernel of the modular monolith. Everything beyond the core (accounts, stories, lists) is a module
 // in modules/<id>/ that plugs into named extension points. Ideas taken from Backstage (owners declare extension
 // points; modules contribute; owners read the contributions when they start) and BlockSuite (one provider per
 // feature, string keys, headless parts separate from view parts).
@@ -16,7 +16,9 @@ const MODULES_DIR = path.join(ROOT, "modules");
 
 function readEnabled(dir = MODULES_DIR) {
   const file = path.join(dir, "modules.json");
-  const list = JSON.parse(fs.readFileSync(file, "utf8")).enabled || [];
+  const all = JSON.parse(fs.readFileSync(file, "utf8")).enabled || [];
+  // The site profile (lib/profile.js) narrows the real module list; test module folders are left alone.
+  const list = dir === MODULES_DIR ? require("../lib/profile").modulesFor(all) : all;
   const off = new Set(String(process.env.MODULES_DISABLED || "").split(",").map((s) => s.trim()).filter(Boolean));
   return list.filter((id) => !off.has(id));
 }

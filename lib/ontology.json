@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "about": "Topics for tracking progress toward advanced AI. Each topic lists match terms (case-insensitive, whole-word unless a term ends in *). An item gets a topic when its title or summary matches at least one term; the matched terms are stored so every tag can explain itself. Version 2 adds superintelligence signals, finer capability areas, a benchmark registry (lib/analysis.js reads the reported score next to a benchmark name) and a watchlist of people whose names are matched in titles, summaries and author lists. Version 3 follows the shared spec (specs/001-superintelligence-homepage): the top level is exactly its seven superintelligence topics, finer topics are children, and 'scope' decides which stories make the superintelligence-only feed (REQ-003).",
   "topics": [
     {
@@ -277,9 +277,6 @@
         "superintelligen*",
         "asi",
         "transformative ai",
-        "intelligence explosion",
-        "recursive self-improvement",
-        "recursively self-improv*",
         "human-level ai",
         "superhuman",
         "takeoff"
@@ -335,20 +332,36 @@
       ]
     },
     {
-      "id": "ai-rnd",
-      "label": "AI R&D automation",
-      "parent": "capabilities",
+      "id": "automating-ai-research",
+      "label": "Automating AI research",
       "terms": [
         "automated ai research",
         "ai r&d",
-        "self-improv*",
-        "recursive self-improvement",
         "ai scientist*",
         "research automation",
         "re-bench",
         "mle-bench",
         "paperbench",
-        "automating ai research"
+        "automating ai research",
+        "automated alignment research",
+        "ai research agent*",
+        "research agent*",
+        "automating research"
+      ]
+    },
+    {
+      "id": "recursive-self-improvement",
+      "label": "Recursive self improvement",
+      "terms": [
+        "recursive self-improvement",
+        "recursive self improvement",
+        "recursively self-improv*",
+        "self-improv*",
+        "intelligence explosion",
+        "seed ai",
+        "self-modif*",
+        "improves itself",
+        "improve themselves"
       ]
     }
   ],
@@ -657,7 +670,7 @@
     {
       "id": "re-bench",
       "label": "RE-Bench",
-      "measures": "ai-rnd",
+      "measures": "automating-ai-research",
       "terms": [
         "re-bench"
       ]
@@ -665,7 +678,7 @@
     {
       "id": "mle-bench",
       "label": "MLE-bench",
-      "measures": "ai-rnd",
+      "measures": "automating-ai-research",
       "terms": [
         "mle-bench"
       ]
@@ -673,7 +686,7 @@
     {
       "id": "paperbench",
       "label": "PaperBench",
-      "measures": "ai-rnd",
+      "measures": "automating-ai-research",
       "terms": [
         "paperbench"
       ]
@@ -1004,7 +1017,7 @@
     }
   ],
   "scope": {
-    "about": "REQ-003 (superintelligence only). A story is in the feed when it contains a strong term below, or matches at least min_topics of the seven top-level topics. Everything else is stored but left out of the feed (admins can see it with the reason). When in doubt, leave it out.",
+    "about": "REQ-003 (superintelligence only). A story is in the feed when it contains a strong term below, or matches at least min_topics of the nine top-level topics (the spec's fixed list). Everything else is stored but left out of the feed (admins can see it with the reason). When in doubt, leave it out.",
     "min_topics": 2,
     "strong": [
       "superintelligen*",
@@ -1046,7 +1059,8 @@
       "ai 2027",
       "automated ai research",
       "ai r&d",
-      "self-improv*"
+      "self-improv*",
+      "recursive self improvement"
     ]
   }
 }

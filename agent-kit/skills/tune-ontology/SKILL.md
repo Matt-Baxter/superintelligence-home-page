@@ -7,7 +7,7 @@ description: Change how stories are tagged - topics, organizations, the benchmar
 
 Everything lives in `lib/ontology.json`: `topics` (with optional `parent`), `scope`, `organizations`, `benchmarks` and `people`. Every tag stores the words that matched, so the UI can explain it.
 
-The top level is fixed by the shared spec: exactly seven topics (Capabilities & AGI progress, Alignment, Interpretability, Safety & risk, Forecasting & timelines, Compute & scaling, Governance & policy). Add finer topics as children; changing the seven needs both partners and a spec change. `scope` decides the superintelligence-only feed (REQ-003): a story is in when it has a `strong` term or matches `min_topics` top-level topics; when in doubt, leave it out.
+The top level is fixed by the shared spec: exactly nine topics (Capabilities & AGI progress, Automating AI research, Recursive self improvement, Alignment, Interpretability, Safety & risk, Forecasting & timelines, Compute & scaling, Governance & policy). Add finer topics as children; changing the nine needs both partners and a spec change. `scope` decides the superintelligence-only feed (REQ-003): a story is in when it has a `strong` term or matches `min_topics` top-level topics; when in doubt, leave it out.
 
 1. **Reproduce first**: `node -e "console.log(JSON.stringify(require('./lib/tagger').tag('<title>','<summary>'),null,1))"` on the real titles that went wrong.
 2. **Edit the smallest thing**: add or remove a term, or add an entry. Term rules and known false positives are in `references/term-syntax.md`; read it before adding short or ambiguous terms.

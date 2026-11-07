@@ -62,13 +62,13 @@ $("#title").onchange = () => { state.title = $("#title").value; save(); };
 [["#extRec", "recommendation"], ["#extBy", "ranBy"], ["#extAt", "runAt"], ["#extWhy", "rationale"]].forEach(([s, k]) => ($(s).onchange = () => { state.external[k] = $(s).value; save(); }));
 $("#addCrit").onclick = () => { state.criteria.push({ id: `criterion-${state.criteria.length + 1}`, label: `Criterion ${state.criteria.length + 1}`, weight: 0 }); draw(); };
 $("#addEnt").onclick = () => { state.entries.push({ id: `entry-${state.entries.length + 1}`, label: `Entry ${state.entries.length + 1}` }); draw(); };
-$("#loadSample").onclick = async () => { const r = await api("/api/judges"); state = { external: {}, ...JSON.parse(JSON.stringify(r.sample)) }; save(); draw(); };
+$("#loadSample").onclick = async () => { const r = await api("/api/admin/decision/judges"); state = { external: {}, ...JSON.parse(JSON.stringify(r.sample)) }; save(); draw(); };
 $("#run").onclick = async () => {
   $("#err").textContent = "";
   try {
     const j = JUDGES.find((x) => x.id === $("#judge").value);
     const body = { ...state, external: j.method === "external" ? state.external : undefined };
-    const r = await api(`/api/judges/${j.id}/run`, { body });
+    const r = await api(`/api/admin/decision/judges/${j.id}/run`, { body });
     last = { judge: j, r }; $("#copyMd").disabled = false;
     JR.render($("#result"), r.spec, jrHandlers()); $("#result").scrollIntoView({ behavior: "smooth" });
   } catch (e) { showErr($("#err"), e); }
@@ -85,7 +85,7 @@ $("#copyMd").onclick = (e) => {
 };
 requireUser().then(async (u) => {
   if (!u.admin) { $("main").innerHTML = '<div class="panel"><h1>Decide</h1><p>Deciding is for admins.</p></div>'; return; }
-  const r = await api("/api/judges"); JUDGES = r.judges;
+  const r = await api("/api/admin/decision/judges"); JUDGES = r.judges;
   $("#judge").innerHTML = JUDGES.map((j) => `<option value="${esc(j.id)}">${esc(j.name)}${j.method === "external" ? " (external)" : ""}</option>`).join("");
   let draft = null; try { draft = JSON.parse(localStorage.getItem(KEY) || "null"); } catch {}
   if (draft?.state?.criteria) { state = { external: {}, ...draft.state }; if (JUDGES.some((j) => j.id === draft.judge)) $("#judge").value = draft.judge; }

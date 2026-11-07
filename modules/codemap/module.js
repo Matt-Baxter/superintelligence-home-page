@@ -18,9 +18,9 @@ module.exports = {
   setup(ctx) {
     ctx.point("http.routes").add((app, { auth, admin, wrap, str, bad }) => {
       const scan = require("./scan");
-      app.get("/api/codemap", auth, admin, wrap((req) => { if (req.query.fresh === "1") cache = null; return graph(); }));
-      app.get("/api/codemap/trace", auth, admin, wrap((req) => { const id = str(req.query.id, 200); if (!id) bad("Give a node id."); return { id, nodes: scan.trace(graph(), id, Number(req.query.depth) || 4) }; }));
-      app.get("/api/codemap/ask", auth, admin, wrap((req) => ({ q: str(req.query.q, 200), answer: scan.answer(graph(), req.query.q) })));
+      app.get("/api/admin/codemap", auth, admin, wrap((req) => { if (req.query.fresh === "1") cache = null; return graph(); }));
+      app.get("/api/admin/codemap/trace", auth, admin, wrap((req) => { const id = str(req.query.id, 200); if (!id) bad("Give a node id."); return { id, nodes: scan.trace(graph(), id, Number(req.query.depth) || 4) }; }));
+      app.get("/api/admin/codemap/ask", auth, admin, wrap((req) => ({ q: str(req.query.q, 200), answer: scan.answer(graph(), req.query.q) })));
     });
     ctx.point("ui.nav").add({ href: "/m/codemap", label: "Map", admin: true, order: 88 });
   },

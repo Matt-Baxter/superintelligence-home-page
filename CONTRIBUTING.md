@@ -88,4 +88,4 @@ It runs on `git push` locally, and in GitHub Actions on every push and pull requ
 
 ## Commit messages
 
-One line saying what changed, then a blank line and why if it isn't obvious. If an agent wrote most of the change, say so in the commit body (for example "Co-Authored-By: Claude …" or "Generated with v0").
+One line saying what changed, then a blank line and why if it isn't obvious. Name the REQ ids it serves. Don't add co-author or session trailers (no `Co-Authored-By` lines).

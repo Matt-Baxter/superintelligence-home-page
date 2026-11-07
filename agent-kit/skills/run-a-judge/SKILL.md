@@ -9,7 +9,7 @@ Judges plug into the `decision.judges` extension point (decision module). Every 
 
 1. **Agree on criteria and weights before scoring** (both humans; record them in `CONTRACT.md` → Decision point → Comparison criteria, as the constitution requires). Never invent the criteria for them.
 2. **Score with evidence**: each entry 0-10 per criterion, with a link or a measured fact (test lines, timings, line counts). Missing evidence becomes a warning.
-3. **Pick the judge** on `/m/decide` (or `POST /api/judges/:id/run`, or the `run_judge` MCP tool):
+3. **Pick the judge** on `/m/decide` (or `POST /api/admin/decision/judges/:id/run`, or the `run_judge` MCP tool):
    - `weighted-criteria`: computed here; recommends a merge when the top two are within 3 points.
    - `jev`, `clef`: external models. Run them as their owners define; enter their recommendation and rationale. This app only records and cross-checks them. Never make up a JEV or CLEF result or describe how they work.
 4. **Read the warnings and the agreement line** before anyone signs off. If an external judge disagrees with the weighted totals, re-check scores and evidence.

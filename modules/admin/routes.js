@@ -29,7 +29,6 @@ module.exports = function mountAdmin(app, { db, feeds, tagger, auth, admin, wrap
         untagged: await c("SELECT COUNT(*) AS n FROM stories WHERE topics = '[]'"),
         offTopic: await c("SELECT COUNT(*) AS n FROM stories WHERE COALESCE(in_scope, 1) = 0"),
         votes: await c("SELECT COUNT(*) AS n FROM votes"), notes: await c("SELECT COUNT(*) AS n FROM notes"), lists: await c("SELECT COUNT(*) AS n FROM lists"),
-        agentLog: await c("SELECT COUNT(*) AS n FROM agent_log WHERE status = 'submitted'"),
       },
       sources: Object.fromEntries(sources.map((r) => [r.status, r.n])), failing, kindsThisWeek: kinds, lastRuns,
       freeTier: {
@@ -166,11 +165,22 @@ module.exports = function mountAdmin(app, { db, feeds, tagger, auth, admin, wrap
     return { added, skipped, status: req.body.activate ? "active" : "pending" };
   }));
 
+  /* --------------------------------------------- old in-app agent log (REQ-020) */
+  // The agent log moved to AGENT_LOG.md. This one-time export lets the authors copy any entries they wrote in the
+  // old in-app page into that file themselves. Read-only; the entries are the authors' own words.
+  app.get("/api/admin/agent-log.md", ...A, wrap(async (req, res) => {
+    const rows = await db.all("SELECT a.*, u.display_name FROM agent_log a JOIN users u ON u.id = a.author_id WHERE a.status = 'submitted' ORDER BY a.session_date, a.id");
+    const md = ["# Old in-app agent log entries", "", "Exported for copying into AGENT_LOG.md by their authors.", ""];
+    for (const e of rows) md.push(`## ${e.session_date} · ${e.display_name} · ${e.agent || ""}`, "", `**What went wrong:** ${e.went_wrong || ""}`, "", `**How we caught it:** ${e.caught_how || ""}`, "", `**Fix:** ${e.fix || ""}`, "");
+    if (!rows.length) md.push("No entries.");
+    res.type("text/markdown").set("Content-Disposition", 'attachment; filename="old-agent-log.md"').send(md.join("\n"));
+    return undefined;
+  }));
+
   /* ------------------------------------------------------------------- users */
   app.get("/api/admin/users", ...A, wrap(async () => ({
     users: (await db.all(`SELECT u.id, u.username, u.display_name, u.is_admin, u.disabled, u.created_at,
       (SELECT COUNT(*) FROM votes v WHERE v.user_id = u.id) AS votes, (SELECT COUNT(*) FROM notes n WHERE n.user_id = u.id) AS notes,
-      (SELECT COUNT(*) FROM agent_log a WHERE a.author_id = u.id AND a.status = 'submitted') AS log_entries,
       (SELECT COUNT(*) FROM sessions s WHERE s.user_id = u.id AND s.expires_at > ?) AS sessions
       FROM users u ORDER BY u.id`, Date.now())).map((u) => ({ ...u, is_admin: bool(u.is_admin), disabled: bool(u.disabled) })),
   })));

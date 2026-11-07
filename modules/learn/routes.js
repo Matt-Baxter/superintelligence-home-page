@@ -69,7 +69,7 @@ module.exports = function mountLearn(app, { db, auth, admin, wrap, str, bad, not
   app.delete("/api/admin/learn/jobs/:id", auth, admin, wrap(async (req) => { await db.run("DELETE FROM learn_jobs WHERE id = ?", Number(req.params.id)); return { ok: true }; }));
 
   // Published explainers as RSS 2.0: a blog reader or Substack's "import from RSS" can pull these (a person sets that up).
-  app.get("/learn/feed.xml", wrap(async (req, res) => {
+  app.get("/api/learn/feed.xml", wrap(async (req, res) => {
     const rows = await db.all("SELECT id, concept_id, output, published_at FROM learn_jobs WHERE status = 'published' AND kind = 'post' ORDER BY published_at DESC LIMIT 30");
     const base = (process.env.PUBLIC_URL || `${req.protocol}://${req.get("host")}`).replace(/\/$/, "");
     const items = rows.map((r) => {

@@ -18,11 +18,16 @@ async function api(path, opts = {}) {
 }
 
 // Core pages; modules add theirs through the "ui.nav" extension point (returned with /api/me as user.nav).
-const NAV = [["/", "Feed"], ["/brief", "Weekly brief"], ["/lists", "Reading lists"], ["/sources", "Sources"], ["/agent-log", "Agent log"]];
+// Core pages; [href, label, feature]: a page with a feature shows only when this version of the site has it (lib/profile.js).
+const NAV = [["/", "Feed"], ["/brief", "Weekly brief", "brief"], ["/lists", "Reading lists", "lists"], ["/sources", "Sources"]];
+const PAGE_FEATURE = { "/brief": "brief", "/lists": "lists" };
 async function requireUser() {
   const { user } = await api("/api/me", { allow401: true });
   if (!user) { location.href = "/?next=" + encodeURIComponent(location.pathname + location.search); throw new Error("Not signed in"); }
-  topbar(user); return user;
+  topbar(user);
+  const need = PAGE_FEATURE[location.pathname.replace(/\.html$/, "")];
+  if (need && !(user.features || []).includes(need)) { const m = document.querySelector("main"); if (m) m.innerHTML = `<div class="panel"><h1>Not in this version</h1><p class="muted">This page is an extra beyond the shared spec. It runs when the site uses the extended profile (SITE_PROFILE=extended).</p><p><a href="/">Back to the feed</a></p></div>`; return new Promise(() => {}); } // stop here: the page stays on the notice
+  return user;
 }
 function topbar(user) {
   const here = location.pathname.replace(/\.html$/, "").replace(/\/index$/, "/") || "/";
@@ -30,7 +35,8 @@ function topbar(user) {
   // Module links from "ui.nav": reader-facing ones sit in the bar; admin tools go in one Admin menu.
   const nav = user?.nav || [], isHere = (h) => (h === "/" ? here === "/" : here.startsWith(h));
   const mod = nav.filter((n) => !n.admin), tools = nav.filter((n) => n.admin);
-  const links = [NAV[0], ...mod.filter((n) => (n.order ?? 50) < 20).map((n) => [n.href, n.label]), ...NAV.slice(1), ...mod.filter((n) => (n.order ?? 50) >= 20).map((n) => [n.href, n.label])];
+  const core = NAV.filter(([, , f]) => !f || (user?.features || []).includes(f));
+  const links = [core[0], ...mod.filter((n) => (n.order ?? 50) < 20).map((n) => [n.href, n.label]), ...core.slice(1), ...mod.filter((n) => (n.order ?? 50) >= 20).map((n) => [n.href, n.label])];
   const menu = tools.length ? `<details class="navmenu"${tools.some((n) => isHere(n.href)) ? ' data-here=""' : ""}><summary>Admin</summary><div>${tools.map((n) => `<a href="${n.href}"${isHere(n.href) ? ' aria-current="page"' : ""}>${n.label}</a>`).join("")}</div></details>` : "";
   bar.innerHTML = `<div class="in"><a class="brand" href="/">Superintelligence Homepage</a><nav class="nav">${links.map(([h, t]) => `<a href="${h}"${isHere(h) ? ' aria-current="page"' : ""}>${t}</a>`).join("")}${menu}</nav>
     <div class="who">${user ? `<span>${esc(user.name)}</span><button class="btn" id="logout" type="button">Sign out</button>` : ""}</div></div>`;
