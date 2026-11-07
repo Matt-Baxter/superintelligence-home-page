@@ -18,7 +18,7 @@
     "metric": "credibility",
     "rel": "eq"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "rw-beats-previous",
@@ -35,7 +35,7 @@
     "metric": "credibility",
     "rel": "eq"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "rw-number-words",
@@ -52,7 +52,7 @@
     "metric": "credibility",
     "rel": "eq"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "rw-percentage-points",
@@ -69,7 +69,7 @@
     "metric": "credibility",
     "rel": "eq"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "rw-seeds-words",
@@ -92,7 +92,7 @@
     "metric": "credibility",
     "rel": "eq"
    },
-   "status": "gap",
+   "status": "ok",
    "b": {
     "replace": [
      [
@@ -123,7 +123,7 @@
     "metric": "credibility",
     "rel": "eq"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "rw-p-equals",
@@ -146,7 +146,7 @@
     "metric": "credibility",
     "rel": "eq"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "rw-release-code",
@@ -163,7 +163,7 @@
     "metric": "credibility",
     "rel": "eq"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "rw-count-words",
@@ -186,7 +186,7 @@
     "metric": "credibility",
     "rel": "eq"
    },
-   "status": "gap",
+   "status": "ok",
    "b": {
     "replace": [
      [
@@ -229,7 +229,7 @@
     "metric": "credibility",
     "rel": "eq"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "rw-thousands",
@@ -982,7 +982,7 @@
     "metric": "credibility",
     "rel": "eq"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "num-approx-tilde",
@@ -1036,7 +1036,7 @@
     "metric": "credibility",
     "rel": "eq"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "num-hyphen-points",
@@ -1059,7 +1059,7 @@
     "metric": "credibility",
     "rel": "eq"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "neg-double-not-without",

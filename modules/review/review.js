@@ -64,15 +64,21 @@ function detectKind({ kind, title = "", text = "", url = "" }) {
 
 // ---------- 2. evidence markers: what a claim would need to be believable ----------
 // Each category counts once per text (presence, not repetition), so repeating a marker earns nothing.
+// Number words, so "four percent", "twelve tasks" and "three seeds" count like digits (REQ-034, task T030).
+const NUMW = "(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|million|billion)(?:[- ](?:one|two|three|four|five|six|seven|eight|nine|hundred|thousand|million|billion))*";
+// A count, then up to two describing words that aren't "of", "the", "a"... ("12 synthetic tasks", "five random seeds").
+const COUNT = `(?:\\d[\\d,]*|${NUMW})(?: (?!(?:of|the|a|an|in|on|for|to|and|or|from|with)\\b)[a-z][a-z-]*){0,2}`;
 const MARKERS = [
-  { id: "numbers", label: "Reports numbers", points: 10, re: /\b\d+(?:\.\d+)?\s?(?:%|x\b|×|points?\b|pp\b|percent\b)/i },
-  { id: "baseline", label: "Compares with a baseline", points: 14, re: /\b(compared (?:to|with)|baselines?|versus|vs\.?|relative to|than (?:the |a )?(?:previous|prior|best|existing|strong|human)|over the prior|match(?:es)? or exceed|outperform\w*)\b/i },
-  { id: "method", label: "Describes the method", points: 12, re: /\b((?:we|the authors) (?:train|trained|fine-tune|fine-tuned|evaluate|evaluated|measure|measured|test|tested|ablate|sample|sampled|collect|collected|run|ran|present|propose|introduce|build|built|design|benchmark|survey|classify)|ablations?|experimental setup|our method)\b/i },
-  { id: "sample", label: "Says how much was tested", points: 12, re: /\b(n\s?=\s?\d+|\d[\d,]* (?:tasks|problems|samples|runs|seeds|participants|models|prompts|episodes|questions|papers|studies|benchmarks|rounds|language models))\b/i },
-  { id: "uncertainty", label: "Gives uncertainty", points: 14, re: /(confidence intervals?|±|\+\/-|standard (?:error|deviation)|error bars?|p\s?<\s?0?\.\d+|across \d+ seeds)/i },
+  { id: "numbers", label: "Reports numbers", points: 10, re: new RegExp(`\\b(?:\\d+(?:\\.\\d+)?\\s?(?:%|x\\b|×|points?\\b|pp\\b|percent(?:age points?)?\\b|per cent\\b)|\\d+(?:\\.\\d+)?-points?\\b|${NUMW} (?:percent(?:age points?)?|per cent)\\b)`, "i") },
+  { id: "baseline", label: "Compares with a baseline", points: 14, re: /\b(compared (?:to|with)|baselines?|versus|vs\.?|relative to|than (?:the |a )?(?:previous|prior|best|existing|strong|human)|over the prior|match(?:es)? or exceed|outperform\w*|(?:beat(?:s|ing)?|improv(?:es|ed|ing)? (?:on|over|upon)) (?:the |a |an )?(?:previous|prior|best|existing|strong|earlier|original))\b/i },
+  // Passive voice counts ("a model is trained", "a model evaluated on"), except "is compared with": that phrase is the
+  // baseline marker's, and counting it twice would give one phrase two families.
+  { id: "method", label: "Describes the method", points: 12, re: /\b((?:we|the authors) (?:train|trained|fine-tune|fine-tuned|evaluate|evaluated|measure|measured|test|tested|ablate|sample|sampled|collect|collected|run|ran|present|propose|introduce|build|built|design|benchmark|survey|classify)|(?:is|are|was|were|been|being) (?:then |first |each )?(?:trained|fine-tuned|evaluated|tested|measured|benchmarked|ablated|presented|proposed|introduced)|(?:trained|fine-tuned|evaluated|tested|benchmarked) (?:on|against)|ablations?|experimental setup|our method)\b/i },
+  { id: "sample", label: "Says how much was tested", points: 12, re: new RegExp(`\\b(n\\s?=\\s?\\d+|${COUNT} (?:tasks|problems|samples|runs|seeds|participants|models|prompts|episodes|questions|papers|studies|benchmarks|rounds|language models))\\b`, "i") },
+  { id: "uncertainty", label: "Gives uncertainty", points: 14, re: new RegExp(`(confidence intervals?|\\bCIs?\\b|±|\\+\\/-|standard (?:error|deviation)|error bars?|\\bp\\s?[<=≤]\\s?0?\\.\\d+|\\b(?:across|over) (?:\\d+(?:\\s?[–-]\\s?\\d+)?|${NUMW}) (?:random |different )?seeds)`, "i") },
   { id: "held-out", label: "Uses held-out or unseen tests", points: 14, re: /\b(held[- ]out|out[- ]of[- ]distribution|unseen|private test|test set|contaminat\w*|leakage)\b/i },
   { id: "limitations", label: "States limitations", points: 14, re: /\b(limitations?|caveats?|we do not (?:claim|show)|does not (?:show|imply)|fails? (?:on|to|when)|only (?:on|in|for)|may not generali[sz]e)\b/i },
-  { id: "artifacts", label: "Shares code, data or weights", points: 10, re: /(github\.com|huggingface\.co|\b(?:code|weights|data(?:set)?) (?:is|are) (?:available|released|open)|\bopen[- ]sourced?\b)/i },
+  { id: "artifacts", label: "Shares code, data or weights", points: 10, re: /(github\.com|huggingface\.co|\b(?:code|weights|data(?:set)?) (?:is|are) (?:available|released|open)|\bopen[- ]sourced?\b|\b(?:release|publish|share)(?:s|d)? (?:our |the |all )?(?:source )?(?:code|weights|data(?:sets?)?|checkpoints)\b)/i },
 ];
 const CLAIM = /\b(we (?:show|find|found|demonstrate|prove)|demonstrat\w+|achiev\w+|outperform\w*|surpass\w*|state[- ]of[- ]the[- ]art|sota|first (?:ai|model|system|time)|breakthrough|solv(?:es|ed)|superhuman|human[- ]level|will (?:soon|replace|surpass)|(?:superintelligen\w*|agi|recursive(?:ly)? self[- ]improv\w*) (?:is|are|has|have|will|was)\b|(?:reach|achiev|buil|creat)\w* (?:agi|superintelligen\w*))\b/i;
 // A title or sentence that only names a topic ("Recursive self-improvement of research agents") is a subject, not a claim:

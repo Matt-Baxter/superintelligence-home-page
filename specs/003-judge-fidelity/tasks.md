@@ -41,7 +41,7 @@ Any agent (Codex, v0, Claude or another) picks up work here. `scripts/project-sy
 
 ## Phase 4: wording and negation (REQ-034, REQ-035)
 
-- [ ] T030 [rules] [REQ-034] Marker wordings: passive voice, "beats", "release our code", number words, percentage points, "CI", "p =", adjectives between a count and its noun; flips the rw-* gaps
+- [x] T030 [rules] [REQ-034] Marker wordings: passive voice, "beats", "release our code", number words, percentage points, "CI", "p =", adjectives between a count and its noun; flips the rw-* gaps (done: 13 catalogue gaps flipped; faithful fidelity rewordings that move credibility 13 of 25 -> 3; "is compared with" stays the baseline marker's only)
 - [ ] T031 [rules] [REQ-035] Negation window for markers and hype words; capitalised names exempt from hype; flips neg-* and hype-benchmark-name
 - [ ] T032 [rules] [REQ-035] Injection guard on canonical text with confusables mapped, more wordings, and a "describes attacks" exception that is reported, not capped; flips inj-*
 - [ ] T033 [rules] [REQ-034] Don't drop a statement with a verb as a keyword list; flips clean-title-like-sentence
