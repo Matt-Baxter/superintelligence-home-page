@@ -93,11 +93,11 @@ const cite = (...ns) => ns.filter(Boolean).map((n) => `[${n}]`).join("");
 function blog(d, site = "") {
   const c = d.counts, L = [];
   L.push(`# ${d.label}: what the evidence says (${d.at})`, "");
-  L.push(`**In one line:** the evidence on ${d.label.toLowerCase()}: **${d.strength}**, ${d.why}.`, "");
+  L.push(`**In one line:** the evidence on ${d.label}: **${d.strength}**, ${d.why}.`, "");
   L.push(`We reviewed ${pl(c.papers, "paper or article", "papers and articles")} from their abstracts (${pl(c.surveys, "survey")}), ${pl(c.stories, "feed story", "feed stories")} from ${pl(c.sources, "source")}, ${pl(c.comments, "reader comment")}, and ran ${pl(c.checks, "toy experiment")} of our own. Every judgement below links to its source; numbers in brackets are references.`, "");
   if (d.papers.length) {
     L.push("## What the papers say", "");
-    for (const p of d.papers.slice(0, 6)) L.push(`- **${p.title}** ${cite(p.n)}: ${p.verdict}, credibility ${p.credibility}/100${p.survey ? " (a survey)" : ""}; ${p.claims ? `${p.backed} of ${pl(p.claims, "headline claim")} carry their own evidence` : "no headline claims detected"}.${p.strongest ? ` Its best-supported claim: "${p.strongest.slice(0, 160)}${p.strongest.length > 160 ? "…" : ""}"` : ""}`);
+    for (const p of d.papers.slice(0, 6)) L.push(`- **${p.title}** ${cite(p.n)}: ${p.verdict}, credibility ${p.credibility}/100${p.survey ? " (a survey)" : ""}; ${p.claims ? `${p.backed} of ${pl(p.claims, "headline claim")} ${p.backed === 1 ? "carries its" : "carry their"} own evidence` : "no headline claims detected"}.${p.strongest ? ` Its best-supported claim: "${p.strongest.slice(0, 160)}${p.strongest.length > 160 ? "…" : ""}"` : ""}`);
     L.push("");
   }
   if (d.checks.length) {

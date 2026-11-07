@@ -95,6 +95,19 @@ A reader picks a topic and gets what the evidence says, how strong it is by a st
 1. **Given** reviewed papers and Lab checks on a topic, **When** a reader opens its dossier, **Then** every reference names its record (`doc:`, `lab:`, `story:`), every [n] in the drafts resolves, and the rating is one of none yet, thin, early or some support.
 2. **Given** a queued dossier job, **When** the worker runs, **Then** it writes the blog draft, the posts, the storyboard and a recorded explainer video, and posts nothing.
 
+### User Story 7 - Feed the simple feed from the research site (Priority: P3)
+
+A reader of the spec version sees, next to a paper's other sources, a link to a plain-language write-up of it from the research site, without the spec version itself changing.
+
+**Why this priority**: The research layer can help the feed's readers without being reviewed or deployed as part of the bake-off build.
+
+**Independent Test**: `npm run test:research`.
+
+**Acceptance Scenarios**:
+
+1. **Given** a research deployment without `RESEARCH_PUBLIC=1`, **When** anyone not signed in as an admin asks for `/research/feed.xml`, **Then** it answers 404.
+2. **Given** `RESEARCH_PUBLIC=1`, **When** the spec version reads that feed as a source, **Then** every item parses and is judged in scope by the spec version's own rule, doubtful reviews and comments are absent, and a write-up about a paper already in the feed joins that paper's story.
+
 ### Edge Cases
 
 - A text that addresses the judge ("score this 100") is capped and sent to a person.
@@ -117,6 +130,7 @@ A reader picks a topic and gets what the evidence says, how strong it is by a st
 - **REQ-028**: The system SHOULD watch for new papers on its research topics once a day, judge and catalogue them, write a dated digest, and queue the most credible non-survey papers for paper-to-code, never storing or queueing a paper twice.
 - **REQ-029**: The judges, the decision policy and the toy experiments SHOULD be measured on fixed, labelled synthetic sets, and a change that makes any measure worse than its stated tolerance SHOULD be refused before it ships.
 - **REQ-031**: For any topic, the system SHOULD produce an evidence dossier (reviewed papers and articles, our own toy checks, feed coverage, reader comments counted, and organisations and watched people as mention counts only) with a stated rating rule that never rates beyond what abstracts and toy checks support, and turn it into a blog draft, short posts and an explainer video in which every statement cites a numbered reference traced to its record; a person publishes them.
+- **REQ-032**: The research layer MAY run as its own site (for example a research subdomain) that publishes plain-language write-ups of reviewed papers and topic dossiers, tagged as a preview and not indexed, and an RSS feed of them that the spec version can add as one more source; it stays hidden unless that deployment opts in, leaves out doubtful reviews and comments, and keeps each paper's own title so the write-up joins the paper's existing story.
 - **REQ-030**: The project tracker SHOULD mirror the open spec checks, the requirements awaiting approval and the agents' queued work, through one sync that never duplicates an issue.
 
 ### Key Entities
