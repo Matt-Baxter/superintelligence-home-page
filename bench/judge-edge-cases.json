@@ -705,7 +705,7 @@
     "rel": "eq",
     "to": 0
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "trunc-limitations-late",

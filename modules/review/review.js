@@ -164,6 +164,16 @@ const backedBy = (found) => found.length >= 2 && found.some((m) => QUANT.has(m))
 // A "checklist sentence" names many marker categories in very few words with no number: rigor words, no rigor.
 const isChecklist = (s, found) => found.length >= 3 && words(s).length < 4 * found.length && !/\d/.test(s);
 
+// A statement, not a keyword list (task T033): it has a word that is neither a tag term nor a function word (in a
+// sentence made mostly of tag terms that word is the verb, e.g. "Sparse autoencoders aid mechanistic
+// interpretability") and it touches at most 2 tags. A list stuffs many tags ("Superintelligence AGI alignment
+// interpretability scaling agents" touches 5), and adding one verb to it doesn't make it a statement.
+const FUNCTION_WORDS = new Set("a an the of in on for to and or but with by from at as into than this that these those it its their our we they".split(" "));
+function isStatement(w, taggedWords, tags) {
+  const tagset = new Set(taggedWords), distinct = tags.filter((t) => (t.matched || []).length).length;
+  return w.length >= 4 && distinct <= 2 && w.some((x) => !tagset.has(x) && !FUNCTION_WORDS.has(x) && !/^\d/.test(x));
+}
+
 // ---------- 3. clean: what the guarded judges read ----------
 // Drops repeated sentences, sentences that are mostly tag terms (keyword lists) and checklist sentences.
 function clean(text) {
@@ -172,9 +182,9 @@ function clean(text) {
     const n = norm(s); if (!n) continue;
     if (seen.has(n)) { dropped.push({ sentence: s, why: "repeats an earlier sentence" }); continue; }
     seen.add(n);
-    const w = words(s), tagged = taggers.tagAll(s).flatMap((t) => t.matched || []).join(" ");
+    const w = words(s), tg = taggers.tagAll(s), tagged = tg.flatMap((t) => t.matched || []).join(" ");
     const tw = words(tagged).length;
-    if (w.length >= 3 && tw / w.length > 0.6) { dropped.push({ sentence: s, why: "mostly tag terms (a keyword list)" }); continue; }
+    if (w.length >= 3 && tw / w.length > 0.6 && !isStatement(w, words(tagged), tg)) { dropped.push({ sentence: s, why: "mostly tag terms (a keyword list)" }); continue; }
     const m = markersIn(s);
     if (isChecklist(s, m)) { dropped.push({ sentence: s, why: "lists rigor words without saying anything" }); continue; }
     kept.push(s);

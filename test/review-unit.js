@@ -39,6 +39,10 @@ ok(score({ ...careful, text: careful.text.toUpperCase(), title: careful.title.to
 const sents = R.sentences(careful.text); const shuffled = [...sents.slice(1), sents[0]].join(" ");
 ok(Math.abs(score({ ...careful, text: shuffled }) - rc.score) <= 5, "moving a sentence changes the score by at most 5");
 
+console.log("Keyword lists (T033)");
+ok(R.clean("Sparse autoencoders aid mechanistic interpretability.").dropped.length === 0, "a short on-topic statement with a verb is kept");
+ok(R.clean("Superintelligence AGI is alignment interpretability scaling agents.").dropped.length === 1, "...but a keyword list with one verb added is still dropped");
+
 console.log("Negation (REQ-035)");
 ok(R.markersIn("We do not compare with a baseline.").length === 0 && R.markersIn("We compare with a baseline.").includes("baseline"), "a negated marker earns nothing");
 ok(R.markersIn("There is no held-out test set across 3 seeds.").includes("uncertainty"), "a negator binds to the phrase right after it, not the next one");
