@@ -82,6 +82,19 @@ Admins see, in the Project tracker, the spec checks that still need people, the 
 1. **Given** open spec checks, proposals and agent jobs, **When** the sync runs, **Then** each has one issue, labelled with its REQ or `agent`.
 2. **Given** a job that finished since the last sync, **When** the sync runs again, **Then** its issue moves to Done and no issue is duplicated.
 
+### User Story 6 - Explain a topic with its sources (Priority: P3)
+
+A reader picks a topic and gets what the evidence says, how strong it is by a stated rule, where it is thin, and who is being talked about (as counts), with a blog draft, short posts and an explainer video that cite every statement.
+
+**Why this priority**: It turns the review desk, the watcher and the Lab into something a person can read, watch and share, without overclaiming.
+
+**Independent Test**: Open the dossier for a topic with reviewed papers, then run the worker on a queued dossier job.
+
+**Acceptance Scenarios**:
+
+1. **Given** reviewed papers and Lab checks on a topic, **When** a reader opens its dossier, **Then** every reference names its record (`doc:`, `lab:`, `story:`), every [n] in the drafts resolves, and the rating is one of none yet, thin, early or some support.
+2. **Given** a queued dossier job, **When** the worker runs, **Then** it writes the blog draft, the posts, the storyboard and a recorded explainer video, and posts nothing.
+
 ### Edge Cases
 
 - A text that addresses the judge ("score this 100") is capped and sent to a person.
@@ -103,6 +116,7 @@ Admins see, in the Project tracker, the spec checks that still need people, the 
 - **REQ-027**: A signed-in reader SHOULD be able to submit a paper, article or comment and get an explained judgement (significance, rigor, hype) that resists the gaming listed in User Story 1, catalogued in the knowledge graph and open to a person's agree or disagree label.
 - **REQ-028**: The system SHOULD watch for new papers on its research topics once a day, judge and catalogue them, write a dated digest, and queue the most credible non-survey papers for paper-to-code, never storing or queueing a paper twice.
 - **REQ-029**: The judges, the decision policy and the toy experiments SHOULD be measured on fixed, labelled synthetic sets, and a change that makes any measure worse than its stated tolerance SHOULD be refused before it ships.
+- **REQ-031**: For any topic, the system SHOULD produce an evidence dossier (reviewed papers and articles, our own toy checks, feed coverage, reader comments counted, and organisations and watched people as mention counts only) with a stated rating rule that never rates beyond what abstracts and toy checks support, and turn it into a blog draft, short posts and an explainer video in which every statement cites a numbered reference traced to its record; a person publishes them.
 - **REQ-030**: The project tracker SHOULD mirror the open spec checks, the requirements awaiting approval and the agents' queued work, through one sync that never duplicates an issue.
 
 ### Key Entities

@@ -49,6 +49,12 @@ const signup = (p, who) => p.evaluate((u) => fetch("/api/signup", { method: "POS
   ok((await p.$$(".docs li")).length >= 1, "reviewed docs appear under their areas");
   await p.screenshot({ path: `${S}/review-4-map.png`, fullPage: true });
 
+  console.log("Dossier");
+  await p.goto(B + "/m/dossier#recursive-self-improvement"); await until(p, /references/);
+  ok(/none yet|thin|early|some support/.test(await p.textContent(".rating .lv")), `a rating by the stated rule: ${await p.textContent(".rating .lv")}`);
+  ok((await p.$$(".refs li")).length >= 1 && (await p.$$eval(".refs code", (c) => c.every((x) => /^(doc|lab|story|concept):/.test(x.textContent)))), "every reference is traced to its record");
+  await p.screenshot({ path: `${S}/review-7-dossier.png`, fullPage: true });
+
   console.log("Phone");
   const ph = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })).newPage();
   ph.on("pageerror", (e) => errs.push(e.message));

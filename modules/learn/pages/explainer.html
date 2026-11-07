@@ -22,6 +22,10 @@
   svg.g .lab { fill: var(--muted); font: 14px var(--font); }
   svg.g path { fill: none; stroke: var(--accent); stroke-width: 2.2; stroke-linecap: round; }
   svg.g rect { fill: none; stroke: var(--fg); stroke-width: 2; }
+  .evbars { display: grid; gap: 1.6vh; width: min(1000px, 84vw); text-align: left; }
+  .evrow { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 4fr) 3ch minmax(0, 2fr); gap: 1.4vw; align-items: center; font-size: clamp(13px, 1.6vw, 19px); }
+  .evrow .bl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .evrow .bv { font-variant-numeric: tabular-nums; text-align: right; } .evrow .bn { color: var(--muted); }
+  .evrow .bt { height: 10px; background: var(--line); border-radius: 4px; overflow: hidden; } .evrow .bt i { display: block; height: 100%; background: var(--accent); }
   .q { font-size: clamp(20px, 3vw, 36px); max-width: 32ch; margin: 0 auto; }
   .opts { display: grid; gap: 1.4vh; justify-items: start; margin: 0 auto; text-align: left; }
   .opt { font-size: clamp(16px, 2.2vw, 26px); padding: .4em .8em; border: 1.5px solid var(--line); border-radius: 10px; }
@@ -71,8 +75,9 @@ function sceneHtml(s) {
   if (s.kind === "title") return `<div class="title reveal">${esc(s.text)}</div><div class="sub rise" style="--d:500">${esc(s.sub)}</div>`;
   if (s.kind === "analogy") return `<div class="kicker rise">An analogy</div><div class="say reveal" style="--d:200">${esc(s.text)}</div>`;
   if (s.kind === "graph") return `<div class="kicker rise">How it connects</div>${s.nodes.length ? graphSvg(s) : `<div class="say">${esc(s.center)}</div>`}`;
+  if (s.kind === "bars") return `<div class="kicker rise">${esc(s.title)}</div><div class="evbars">${s.bars.map((b, i) => `<div class="evrow rise" style="--d:${200 + i * 160}"><span class="bl">${esc(b.label)}</span><span class="bt"><i style="width:${Math.max(2, Math.min(100, b.value))}%"></i></span><span class="bv">${b.value}</span><span class="bn">${esc(b.note || "")}</span></div>`).join("")}</div>`;
   if (s.kind === "question") return `<div class="kicker rise">Check yourself</div><div class="q rise" style="--d:150">${esc(s.text)}</div><div class="opts">${s.options.map((o, i) => `<div class="opt rise" data-i="${i}" style="--d:${400 + i * 120}">${String.fromCharCode(65 + i)}. ${esc(o)}</div>`).join("")}</div><div class="why" hidden>${esc(s.why)}</div>`;
-  return `${s.small ? '<div class="kicker rise">A little deeper</div>' : ""}<div class="say ${s.small ? "small" : ""} reveal" style="--d:150">${esc(s.text)}</div>`;
+  return `${s.kicker ? `<div class="kicker rise">${esc(s.kicker)}</div>` : s.small ? '<div class="kicker rise">A little deeper</div>' : ""}<div class="say ${s.small ? "small" : ""} reveal" style="--d:150">${esc(s.text)}</div>`;
 }
 function show(i) {
   clearTimeout(timer); idx = i;
@@ -84,8 +89,9 @@ function show(i) {
 }
 function finish() { done = true; window.__explainerDone = true; document.getElementById("play").textContent = "Play"; playing = false; }
 async function load() {
-  const id = P.get("c") || "attention";
-  const r = await fetch(`/api/learn/explainer/${encodeURIComponent(id)}`); if (!r.ok) { document.getElementById("stage").innerHTML = `<div class="say">That concept wasn't found.</div>`; return; }
+  // ?c=<concept> plays a concept's storyboard; ?d=<topic> plays a topic dossier's (modules/review/dossier.js).
+  const id = P.get("c") || "attention", topic = P.get("d");
+  const r = await fetch(topic ? `/api/review/dossier/${encodeURIComponent(topic)}/storyboard` : `/api/learn/explainer/${encodeURIComponent(id)}`); if (!r.ok) { document.getElementById("stage").innerHTML = `<div class="say">${topic ? "That topic wasn't found." : "That concept wasn't found."}</div>`; return; }
   SB = (await r.json()).storyboard; document.title = `${SB.title} · Explainer`;
   document.getElementById("stage").innerHTML = SB.scenes.map((s) => `<section class="scene">${sceneHtml(s)}</section>`).join("");
   document.getElementById("dots").innerHTML = SB.scenes.map(() => "<i></i>").join("");

@@ -12,7 +12,9 @@ const feeds = require("../lib/feeds");
 (async () => {
   await boot();
   const add = async (name, kind, format, file) => {
-    const id = await db.insert("INSERT INTO sources (name, kind, format, url, home, status) VALUES (?, ?, ?, ?, '', 'active')", name, kind, format, "fixture://" + file);
+    // Re-runnable on an existing DATA_DIR: reuse the fixture source if this database already has it.
+    const have = await db.get("SELECT id FROM sources WHERE url = ?", "fixture://" + file);
+    const id = have ? have.id : await db.insert("INSERT INTO sources (name, kind, format, url, home, status) VALUES (?, ?, ?, ?, '', 'active')", name, kind, format, "fixture://" + file);
     const items = feeds.parse(format, fs.readFileSync(path.join(__dirname, "fixtures", file), "utf8"));
     await ingestItems(id, items);
     await db.run("UPDATE sources SET last_ok = ?, last_count = ? WHERE id = ?", db.now(), items.length, id);
