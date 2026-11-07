@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -31,8 +31,8 @@
 
 ## Notes
 
-- One open question remains: REQ-020 (agent log in the app or as a repo file). Answer it, or run
-  `/speckit-clarify`, before `/speckit-plan`.
+- REQ-020 resolved 2026-11-07: the agent log is `AGENT_LOG.md` in the repo. No open questions
+  remain; the spec is ready for `/speckit-plan`.
 - Requirement IDs use REQ-NNN (as in the course slides) instead of the template's FR-NNN.
 - 2026-11-06: re-validated after the superintelligence amendment (feed limited to
   superintelligence stories, new REQ-003, requirements renumbered to REQ-001..REQ-020).

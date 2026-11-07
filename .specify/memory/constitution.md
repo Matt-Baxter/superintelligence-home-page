@@ -1,4 +1,4 @@
-<!-- Sync Impact Report: 1.1.0 → 1.2.0 (MINOR). Development Workflow: review is encouraged, not required (John and Matt agreed review is optional); PRs name REQ IDs and the trace in docs/SPEC_TRACE.md. Proposed by John on 2026-11-06; Matt to confirm in CONTRACT.md (v0.5 row). -->
+<!-- Sync Impact Report: 1.1.2 → 1.2.0 (MINOR, proposed, not yet in effect). Development Workflow: review is encouraged, not required (John and Matt agreed review is optional); PRs name REQ IDs and the trace in docs/SPEC_TRACE.md. Proposed by John on 2026-11-06; Matt to confirm in CONTRACT.md (v0.6 row). -->
 # Superintelligence Homepage Constitution
 
 The Superintelligence Homepage is a home page for articles about superintelligence: progress
@@ -11,9 +11,9 @@ governed. It is not a general AI news site.
 
 Every story on the site MUST be relevant to superintelligence.
 
-- In scope: progress toward AGI and superintelligence, frontier capabilities, alignment and
-  safety of superintelligent systems, interpretability, forecasts and timelines, compute and
-  scaling, and governance of frontier AI.
+- In scope: progress toward AGI and superintelligence, frontier capabilities, automating AI
+  research, recursive self-improvement, alignment and safety of superintelligent systems,
+  interpretability, forecasts and timelines, compute and scaling, and governance of frontier AI.
 - Out of scope: general AI news, such as product launches, everyday AI apps, and AI applied to a
   particular industry, unless it bears directly on the path to superintelligence.
 - Readers MUST be able to see why each story counts as superintelligence-related.
@@ -95,11 +95,11 @@ and merge the best parts.
 ## Development Workflow
 
 - Work happens on branches; `main` stays deployable.
-- Review by the other partner is helpful and encouraged, not required: a partner may merge their own pull request once the automated checks (preflight) pass. Agents never merge to `main`.
+- **[Proposed in 1.2.0, Matt to confirm]** Review by the other partner is helpful and encouraged, not required: a partner may merge their own pull request once the automated checks (preflight) pass. Agents never merge to `main`.
 - Pull requests name the REQ IDs they serve, and `docs/SPEC_TRACE.md` maps every requirement to the code and tests that meet it.
 - Agents MAY read code, run tests, write code on a branch and draft pull requests.
 - Agents MUST NOT merge to `main`, deploy, handle real secrets or spend money.
-- Each partner keeps an agent log in their own words: what the agent got wrong, how it was
+- Each partner keeps an agent log in their own words in `AGENT_LOG.md`: what the agent got wrong, how it was
   caught, and the fix. Partners do not write each other's entries, and entries are not
   AI-generated.
 
@@ -112,4 +112,4 @@ and merge the best parts.
 - Every spec, plan and pull request review checks compliance with these principles, starting
   with the superintelligence focus; any exception must be written down with its reason.
 
-**Version**: 1.2.0 | **Ratified**: 2026-11-06 | **Last Amended**: 2026-11-06
+**Version**: 1.1.2 ratified; 1.2.0 proposed (see the Sync Impact Report above) | **Ratified**: 2026-11-06 | **Last Amended**: 2026-11-07
