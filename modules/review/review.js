@@ -68,6 +68,10 @@ function detectKind({ kind, title = "", text = "", url = "" }) {
 const NUMW = "(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|million|billion)(?:[- ](?:one|two|three|four|five|six|seven|eight|nine|hundred|thousand|million|billion))*";
 // A count, then up to two describing words that aren't "of", "the", "a"... ("12 synthetic tasks", "five random seeds").
 const COUNT = `(?:\\d[\\d,]*|${NUMW})(?: (?!(?:of|the|a|an|in|on|for|to|and|or|from|with)\\b)[a-z][a-z-]*){0,2}`;
+// Weights (task T012, decided 2026-11-07): unchanged, largest 14, sum 100. One family flip moves credibility by at most
+// ceil(14 / 2) = 7 with hype held fixed, so verdict and dossier bands use a margin m = 5 (2m = 10 >= 7: one flip can't
+// skip the Border band). Capping every weight at 10 can't sum to 100 over 8 families, and a 12/13 split still has a
+// largest weight of 13 (7 points per flip), so rebalancing would change every score for no gain in the bound.
 const MARKERS = [
   { id: "numbers", label: "Reports numbers", points: 10, re: new RegExp(`\\b(?:\\d+(?:\\.\\d+)?\\s?(?:%|x\\b|×|points?\\b|pp\\b|percent(?:age points?)?\\b|per cent\\b)|\\d+(?:\\.\\d+)?-points?\\b|${NUMW} (?:percent(?:age points?)?|per cent)\\b)`, "i") },
   { id: "baseline", label: "Compares with a baseline", points: 14, re: /\b(compared (?:to|with)|baselines?|versus|vs\.?|relative to|than (?:the |a )?(?:previous|prior|best|existing|strong|human)|over the prior|match(?:es)? or exceed|outperform\w*|(?:beat(?:s|ing)?|improv(?:es|ed|ing)? (?:on|over|upon)) (?:the |a |an )?(?:previous|prior|best|existing|strong|earlier|original))\b/i },

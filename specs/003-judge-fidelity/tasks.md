@@ -32,7 +32,7 @@ Any agent (Codex, v0, Claude or another) picks up work here. `scripts/project-sy
 
 - [x] T010 [rules] [REQ-032] `canonical(text)`: NFKC, zero-width and format characters removed, whitespace collapsed, common LaTeX rewritten; `qid` from canonical text; flips rw-whitespace-id, rw-fullwidth-digits, rw-latex-percent, inj-zero-width (modules/review/review.js) (done: `canonical()` and `fold()` exported; flips rw-whitespace-id, rw-fullwidth-digits, rw-latex-percent, inj-zero-width and, through the confusables map on the guard, inj-homoglyph)
 - [x] T011 [rules] [REQ-032] Report truncation as a reason and a field; flips trunc-limitations-late (modules/review/review.js) (done: `truncated` = null or [{field, length, kept}], one reason per cut, so a cut item is sent to a person)
-- [ ] T012 [rules] [REQ-037] Cap any single marker weight at 10, or raise the band margin, so one flip moves credibility by at most 5; flips band-one-marker (modules/review/review.js, bench/baseline.json)
+- [x] T012 [rules] [REQ-037] Cap any single marker weight at 10, or raise the band margin, so one flip moves credibility by at most 5; flips band-one-marker (modules/review/review.js, bench/baseline.json) (done, second option: weights unchanged, bands use m = 5 since 2m = 10 ≥ ceil(14/2) = 7; band-one-marker stays a gap because its ≤ 5 target needs every weight ≤ 10, which 8 whole weights summing to 100 can't meet; see plan.md step 6)
 
 ## Phase 3: score the source (REQ-033)
 
