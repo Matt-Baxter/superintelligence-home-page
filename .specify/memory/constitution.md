@@ -10,9 +10,9 @@ governed. It is not a general AI news site.
 
 Every story on the site MUST be relevant to superintelligence.
 
-- In scope: progress toward AGI and superintelligence, frontier capabilities, alignment and
-  safety of superintelligent systems, interpretability, forecasts and timelines, compute and
-  scaling, and governance of frontier AI.
+- In scope: progress toward AGI and superintelligence, frontier capabilities, automating AI
+  research, recursive self-improvement, alignment and safety of superintelligent systems,
+  interpretability, forecasts and timelines, compute and scaling, and governance of frontier AI.
 - Out of scope: general AI news, such as product launches, everyday AI apps, and AI applied to a
   particular industry, unless it bears directly on the path to superintelligence.
 - Readers MUST be able to see why each story counts as superintelligence-related.
@@ -110,4 +110,4 @@ and merge the best parts.
 - Every spec, plan and pull request review checks compliance with these principles, starting
   with the superintelligence focus; any exception must be written down with its reason.
 
-**Version**: 1.1.1 | **Ratified**: 2026-11-06 | **Last Amended**: 2026-11-07
+**Version**: 1.1.2 | **Ratified**: 2026-11-06 | **Last Amended**: 2026-11-07
