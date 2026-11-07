@@ -69,11 +69,14 @@ function storyCard(s, opts = {}) {
   const orgs = s.orgs.slice(0, 2).map((o) => `<a class="tag org" href="/?org=${o.id}">${esc(o.label)}</a>`).join("");
   const kinds = [...new Set(s.sources.map((x) => KIND[x.kind] || x.kind))];
   const an = s.analysis || {}, sig = s.significance || 0;
+  // A research write-up among the sources carries its judgement (the "rigor-badges" feature): verdict, credibility, grade.
+  const rg = (s.sources.find((x) => x.rigor && x.rigor.verdict) || {}).rigor;
+  const rigorBadge = rg ? `<a class="rigor${rg.verdict === "doubtful" ? " low" : ""}" href="${esc((s.sources.find((x) => x.rigor === rg) || {}).url || "#")}" target="_blank" rel="noopener noreferrer" title="Research write-up: ${esc(rg.verdict)}, credibility ${esc(rg.credibility || "?")}/100, source grade ${esc(rg.grade || "?")}${rg.panel && rg.panel !== "none" ? `, model panel ${esc(rg.panel)}` : ""}">${esc(rg.verdict)} · ${esc(rg.credibility || "?")}${rg.grade ? ` · ${esc(rg.grade)}` : ""}</a>` : "";
   const sigBadge = `<span class="sig ${sig >= 60 ? "hi" : sig >= 35 ? "mid" : ""}" title="${esc(sigWhy(an))}">${sig}</span>`;
   const bench = (an.benchmarks || []).slice(0, 3).map((b) => `<a class="tag bench" href="/?benchmark=${esc(b.id)}" title="Benchmark${b.score ? `: reported ${esc(b.score.raw)}` : ""}">${esc(b.label)}${b.score ? ` <b>${esc(fmtScore(b.score))}</b>` : ""}</a>`).join("");
   li.innerHTML = `<button class="vote ${s.voted ? "on" : ""}" type="button" aria-pressed="${s.voted}" aria-label="Upvote"><span aria-hidden="true">▲</span><b>${s.votes}</b></button>
     <div class="body"><a class="title" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.title)}</a>
-    <div class="meta">${sigBadge}${an.type ? `<span class="utype">${esc(an.type.label)}</span>` : ""}<span>${esc(s.sources[0]?.name || "")}${s.nsources > 1 ? ` <span class="multi">+ ${s.nsources - 1} more source${s.nsources > 2 ? "s" : ""}</span>` : ""}</span><span>${kinds.map(esc).join(" · ")}</span><span>${ago(s.published_at || s.first_seen)}</span></div>
+    <div class="meta">${sigBadge}${rigorBadge}${an.type ? `<span class="utype">${esc(an.type.label)}</span>` : ""}<span>${esc(s.sources[0]?.name || "")}${s.nsources > 1 ? ` <span class="multi">+ ${s.nsources - 1} more source${s.nsources > 2 ? "s" : ""}</span>` : ""}</span><span>${kinds.map(esc).join(" · ")}</span><span>${ago(s.published_at || s.first_seen)}</span></div>
     ${s.summary && !opts.compact ? `<p class="sum">${esc(s.summary.slice(0, 260))}${s.summary.length > 260 ? "…" : ""}</p>` : ""}
     ${opts.listNote ? `<p class="listnote">“${esc(opts.listNote)}”</p>` : ""}
     <div class="row2"><div class="tags">${bench}${tags}${orgs}</div><div class="acts"><a href="/story?id=${s.id}">${s.notes ? `${s.notes} note${s.notes > 1 ? "s" : ""}` : "Notes"}</a><button type="button" class="save linkish">${s.saved ? "Saved ✓" : "Save"}</button></div></div></div>`;

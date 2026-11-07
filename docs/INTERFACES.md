@@ -106,6 +106,11 @@ Every interface change gets a row here. Breaking changes bump the major version 
 - **Rigor in the feed:** each `/research/feed.xml` item carries `<category domain="si:verdict|si:credibility|si:grade|si:panel">` (papers) or `si:evidence` (topics). Readers that don't know them ignore them; the spec version parses the feed unchanged.
 - **Article rubric and verdict:** articles are judged on reporting (`CRITERIA.reporting`: cites the study, gives its numbers or size, says what was not shown, keeps forecasts apart) when that scores higher; review results gain `rubric` (paper, survey, reporting). New verdict `plausible, worth checking` (credibility 55 or more, below big-if-true). Unsupported assertions in articles count as unbacked claims.
 - **Quality report:** `npm run quality` (`scripts/quality.js`) writes `out/quality/<date>.md` from real reviews: verdict spread, article spread, grade versus credibility, hype versus credibility, papers judged minor, panel coverage. The watcher workflow runs it. | logged by John |
+| 2.1 | Nov 7, 2026 | Rigor badge in the main app (proposed REQ-035; branch `feature/rigor-badge`; on only in the extended version until approved).
+- **Core table:** `story_links` gains `rigor TEXT DEFAULT ''` (added by the migration list in `lib/db.js`; empty for every non-research source).
+- **Feed parsing:** `lib/feeds.js` reads `<category domain="si:verdict|si:credibility|si:grade|si:panel|si:evidence">` into `item.rigor`; other categories are ignored. `lib/harvest.js` stores it on the story link.
+- **API:** `GET /api/stories` returns `sources[].rigor {verdict, credibility, grade, panel}` only when the profile has the `rigor-badges` feature (extended); the spec version's response is unchanged.
+- **Pages:** the story card shows a badge (verdict · credibility · grade) linking to the write-up; the story page shows it beside that source. | logged by John |
 
 **Done means:** a classmate can sign up on the live site, see a grouped, tagged feed from at least 8 sources, and vote on and save stories that are still there the next time they sign in.
 

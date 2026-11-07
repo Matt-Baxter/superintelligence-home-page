@@ -37,6 +37,7 @@ How this build meets the shared spec ([specs/001-superintelligence-homepage/spec
 | REQ-032 | Research site that feeds the feed: public write-ups and an RSS feed another site adds as a source | `modules/research/`, `SITE_PROFILE=research`, `/research`, `/research/feed.xml`, `RESEARCH_PUBLIC` | test: research feed (16 checks, in preflight) |
 | REQ-033 | Source grades, forecasts as events with track records, buzz versus evidence, published criteria | `modules/review/sources.js`, `CRITERIA` in `modules/review/review.js`, `review_events`, `/api/review/outlets`, `/api/review/events`, `/research/criteria`, `/research/outlets` | unit: sources (26 checks), review (criteria checks); bench item `b-hype-press-words` |
 | REQ-034 | Two-model judge panel with identity, prestige and wording masks | `modules/review/panel.js`, `scripts/watch.js`, `PANEL_MODELS`, `CRITERIA.panel` | unit: panel (16 checks, stand-in models) |
+| REQ-035 | Rigor badge on stories from the research feed (extended only until approved) | `lib/feeds.js`, `lib/harvest.js`, `story_links.rigor`, `sources[].rigor`, `public/js/api.js`, feature `rigor-badges` | test: rigor badge (6 checks, end to end, in preflight) |
 | REQ-030 | Project tracker mirrors spec and agents | `scripts/project-sync.js`, `modules/project` | unit: project-sync; `scripts/checkin.js` (`npm run checkin`), run daily by the scheduled agent task |
 
 ## Acceptance suite

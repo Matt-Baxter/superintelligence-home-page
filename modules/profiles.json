@@ -16,7 +16,8 @@
         "lists",
         "brief",
         "suggest-sources",
-        "display-name"
+        "display-name",
+        "rigor-badges"
       ],
       "modules": "*"
     },
