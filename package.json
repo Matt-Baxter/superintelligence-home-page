@@ -31,7 +31,8 @@
     "dossier": "node scripts/dossier.js",
     "test:research": "node --no-warnings test/research-feed.js",
     "checkin": "node scripts/checkin.js",
-    "quality": "node scripts/quality.js"
+    "quality": "node scripts/quality.js",
+    "advise": "node scripts/advise.js"
   },
   "keywords": [],
   "author": "",

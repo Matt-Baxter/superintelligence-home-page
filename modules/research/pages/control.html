@@ -35,7 +35,7 @@ async function load() {
       <a href="#flagged" class="${r.flagged.length ? "due" : ""}"><b>${r.flagged.length}</b><span>reviews waiting for a person</span></a>
       <a href="#approvals"><b>${r.proposals.length}</b><span>proposed requirements to approve</span></a>
       <a href="#quality"><b>${r.quality.filter((q) => q.ok).length}/${r.quality.length}</b><span>quality checks holding</span></a>
-      <div><b>${r.panel.ready ? "on" : "off"}</b><span>two-model panel ${r.panel.ready ? `(${r.panel.models.map(esc).join(", ")})` : "(set PANEL_MODELS)"}</span></div>
+      <div><b>${r.panel.ready ? "on" : "off"}</b><span>two-model panel ${r.panel.ready ? `(${r.panel.models.map(esc).join(", ")})` : "(set PANEL_MODELS)"}; advisor ${r.panel.advisor ? esc(r.panel.advisor) : "off (set ADVISOR_MODEL)"}</span></div>
       <div><b>${W.jobsQueued}</b><span>agent jobs queued${W.jobsFailed ? `, ${W.jobsFailed} failed` : ""}</span></div>
     </div></section>
 
@@ -50,7 +50,7 @@ async function load() {
 
     <section class="panel" id="flagged"><h2>Reviews waiting for a person</h2>
       <p class="small muted">The guards sent these to a person. Agree or disagree with the verdict; your labels are how the judges are calibrated.</p>
-      ${r.flagged.length ? `<div class="scroll"><table class="t"><thead><tr><th>Piece</th><th>Verdict</th><th>Why it was flagged</th><th></th></tr></thead><tbody>${r.flagged.map((d) => `<tr><td><a href="/m/review#/doc/${d.id}">${esc(d.title)}</a></td><td class="n">${esc(d.verdict)}, ${d.credibility}</td><td class="small">${d.reasons.map(esc).join("; ")}</td>
+      ${r.flagged.length ? `<div class="scroll"><table class="t"><thead><tr><th>Piece</th><th>Verdict</th><th>Why it was flagged</th><th></th></tr></thead><tbody>${r.flagged.map((d) => `<tr><td><a href="/m/review#/doc/${d.id}">${esc(d.title)}</a></td><td class="n">${esc(d.verdict)}, ${d.credibility}</td><td class="small">${d.reasons.map(esc).join("; ")}${d.judges.length ? `<br><span class="muted">Judges: ${d.judges.map(esc).join(", ")}</span>` : ""}${d.advice ? `<br><b>Advisor:</b> ${esc(d.advice)}` : ""}</td>
         <td><div class="acts"><button class="btn" type="button" data-doc="${d.id}" data-l="agree">Agree</button><button class="btn" type="button" data-doc="${d.id}" data-l="disagree">Disagree</button></div></td></tr>`).join("")}</tbody></table></div>` : '<p class="small muted">Nothing waiting.</p>'}</section>
 
     <section class="panel" id="quality"><h2>Judging quality on real reviews</h2>

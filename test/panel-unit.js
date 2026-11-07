@@ -59,6 +59,23 @@ const rules = R.review({ kind: "paper", title: "Sample (test data)", text: TEXT 
   ok(P.modelsFromEnv("").length === 0, "no models are called unless PANEL_MODELS is set");
   ok(/two different models/.test((R.CRITERIA.panel || {}).about || "") && /more than 10/.test(R.CRITERIA.panel.about), "the panel rule and its limits are published with the criteria");
 
+  console.log("Advisor (a bigger model that guides)");
+  const advisorStub = (reply) => { const seen = []; return { id: "advisor", model: "advisor-stub", seen, async chat(msgs) { seen.push(msgs[1].content); return JSON.stringify(reply); } }; };
+  const good = advisorStub({ prefer: "model-a", quotes: [S.numbers, "A sentence that is not in the text at all, invented."], advice: "Model A found the interval and the held-out set.", ruleIdea: "" });
+  const adv = await P.panel({ text: TEXT, rules, models: [model("model-a"), model("model-c", { meet: ["numbers"], hype: 60 })], advisor: good });
+  ok(adv.status === "disagreed" && adv.advice && adv.advice.prefer === "model-a" && adv.advice.quotes.length === 1 && adv.advice.quotesDropped === 1, "on disagreement the advisor is asked, names the reading the text supports, and invented quotes are dropped");
+  ok(adv.credibility === split.credibility && adv.needsPerson, "the advisor never sets the score: the most conservative result stands and a person decides");
+  ok(good.seen.every((u) => !/Jane Sample|OpenAI|substack/.test(u)), "the advisor sees only the masked text");
+  const quiet = advisorStub({ prefer: "model-a", quotes: [S.numbers], advice: "x" });
+  const calm = await P.panel({ text: TEXT, rules, models: [model("model-a"), model("model-b", { hype: 20 })], advisor: quiet });
+  ok(calm.status === "agreed" && !calm.advice && quiet.seen.length === 0, "when the efficient models agree near the rules judge, the bigger model isn't called (cost stays low)");
+  const noQuotes = await P.panel({ text: TEXT, rules, models: [model("model-a"), model("model-c", { meet: ["numbers"], hype: 60 })], advisor: advisorStub({ prefer: "model-c", quotes: ["Nothing like this is in the text, so it fails."], advice: "y" }) });
+  ok(noQuotes.advice.prefer === "none", "an advisor preference without a verified quote counts as no preference");
+  const A = require("../scripts/advise");
+  const v = A.vet({ items: [{ id: "b-x", credible: false, kind: "article", title: "Sample: hype with no source (test data)", text: "A sample article that asserts big progress without any source or number at all." }, { id: "b-y", credible: true, kind: "paper", title: "Real-looking title", text: "Long enough text that is not labelled as test data in its title at all here." }], ruleIdeas: ["Count unsourced superlatives."] });
+  ok(v.items.length === 1 && v.items[0].id === "b-x" && v.ruleIdeas.length === 1, "advisor proposals are vetted: only labelled test data passes, and nothing is added to the benchmark without a person");
+  ok(/at most 3 synthetic test items/.test(A.prompt([{ ok: false, label: "x", value: 1, why: "y" }], [])[0].content), "the advisor's review prompt asks for synthetic items and rule ideas only");
+
   console.log(`\npanel unit: ${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })();

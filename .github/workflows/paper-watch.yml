@@ -30,6 +30,7 @@ jobs:
           # example "groq:llama-3.1-8b-instant,openrouter:google/gemma-3-12b-it:free"; each provider's key is a secret.
           # Unset, every review is marked "panel incomplete" and the rules judge stands alone.
           PANEL_MODELS: ${{ vars.PANEL_MODELS }}
+          ADVISOR_MODEL: ${{ vars.ADVISOR_MODEL }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       - name: Judging quality on real reviews
@@ -37,6 +38,14 @@ jobs:
         env:
           SITE_PROFILE: extended
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - name: Advisor's review (proposals only)
+        run: node scripts/advise.js
+        env:
+          SITE_PROFILE: extended
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ADVISOR_MODEL: ${{ vars.ADVISOR_MODEL }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       - name: Check in
         run: node scripts/checkin.js
         env:
@@ -49,4 +58,5 @@ jobs:
             out/watch/*.md
             out/checkin/*.md
             out/quality/*.md
+            out/advice/*.md
           retention-days: 14

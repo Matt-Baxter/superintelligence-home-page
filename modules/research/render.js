@@ -50,7 +50,7 @@ function scorecard(row, r) {
 <dt>Credibility</dt><dd>½ × ${rig.score} + ½ × (100 − ${hp.score}) = <b>${row.credibility}</b></dd>
 <dt>Significance</dt><dd>${row.score}, after the guards (${r.naive ?? row.naive} before)</dd>
 <dt>Verdict</dt><dd><b>${esc(row.verdict)}</b>${v ? `, because ${esc(v.rule)}` : ""}</dd>
-${r.panel ? `<dt>Panel</dt><dd>${esc(r.panel.status)}: ${r.panel.judges.map((j) => `${esc(j.id === "rules" ? "rules" : j.model)} ${j.credibility}${j.biased && j.biased.length ? " (set aside)" : ""}`).join(", ")}. ${esc(r.panel.rule)}.</dd>` : `<dt>Panel</dt><dd>not run: judged by the rules alone</dd>`}
+${r.panel ? `<dt>Panel</dt><dd>${esc(r.panel.status)}: ${r.panel.judges.map((j) => `${esc(j.id === "rules" ? "rules" : j.model)} ${j.credibility}${j.biased && j.biased.length ? " (set aside)" : ""}`).join(", ")}. ${esc(r.panel.rule)}.${r.panel.advice && r.panel.advice.advice ? ` Advisor (${esc(r.panel.advice.model)}): ${esc(r.panel.advice.advice)}` : ""}</dd>` : `<dt>Panel</dt><dd>not run: judged by the rules alone</dd>`}
 </dl></section>`;
 }
 
