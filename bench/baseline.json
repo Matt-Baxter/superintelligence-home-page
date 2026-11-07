@@ -1,0 +1,93 @@
+{
+  "about": "Accepted benchmark numbers (scripts/bench.js). Update only for an uplift or an explained trade-off.",
+  "updated": "2026-11-07",
+  "metrics": {
+    "review.credibility_auc": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "credible items out-rank doubtful ones on credibility"
+    },
+    "review.score_auc": {
+      "value": 0.656,
+      "better": "higher",
+      "tol": 0.02,
+      "about": "...on the guarded score"
+    },
+    "review.naive_score_auc": {
+      "value": 0,
+      "better": "info",
+      "about": "...on the unguarded score (for comparison)"
+    },
+    "review.verdict_accuracy": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "'doubtful' exactly when the label says not credible"
+    },
+    "review.flag_recall": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "share of non-credible items sent to a person"
+    },
+    "review.flag_false_rate": {
+      "value": 0,
+      "better": "lower",
+      "tol": 0,
+      "about": "share of credible items sent to a person"
+    },
+    "review.invariance": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "padding, stuffing, checklists, name-dropping, unbacked claims and injection don't raise the score (48 edits)"
+    },
+    "review.adversary_gain_guarded": {
+      "value": 0,
+      "better": "lower",
+      "tol": 0.5,
+      "about": "points the guarded score gains under the attack on the unguarded judge"
+    },
+    "review.whitebox_gain": {
+      "value": 0,
+      "better": "lower",
+      "tol": 0.5,
+      "about": "points an adversary attacking the guarded score gains"
+    },
+    "review.adversary_gain_naive": {
+      "value": 30.25,
+      "better": "info",
+      "about": "points the same attack gains on the unguarded judge (the attack is real)"
+    },
+    "review.ms_per_doc": {
+      "value": 14.7,
+      "better": "info",
+      "about": "time to review one item"
+    },
+    "lab.intent_accuracy": {
+      "value": 0.993,
+      "better": "higher",
+      "tol": 0.005,
+      "about": "the learned intent policy on held-out requests (seed 77)"
+    },
+    "lab.intent_accuracy_seed2": {
+      "value": 0.988,
+      "better": "higher",
+      "tol": 0.01,
+      "about": "...on a second held-out draw (seed 1234), so tuning to one seed shows"
+    },
+    "lab.safety_properties": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "share of the 4 safety properties that hold"
+    },
+    "analysis.scope_accuracy": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "scope decisions on the labelled spec fixtures (10 items)"
+    }
+  }
+}

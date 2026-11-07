@@ -15,7 +15,8 @@ console.log("Judges");
 ok(rc.credibility >= 80 && rh.credibility <= 20, `the careful paper is credible (${rc.credibility}), the hype post is not (${rh.credibility})`);
 ok(rc.score > rh.score, `guarded: careful ${rc.score} beats hype ${rh.score}`);
 ok(rh.naive > rh.score, `the unguarded judge rates the hype post higher (${rh.naive}) than the guarded one (${rh.score})`);
-ok(rc.claims.every((c) => c.level === "backed") && rh.claims.every((c) => c.level === "unbacked"), "claims: the careful paper's are backed, the hype post's are not");
+ok(rc.claims.some((c) => c.level === "backed") && !rc.claims.some((c) => c.level === "unbacked") && rh.claims.every((c) => c.level === "unbacked"), "claims: the careful paper's are backed or partly backed, the hype post's are all unbacked");
+ok(R.sentences("It solved 41.2% of tasks. Then it stopped.").length === 2, "decimals don't split sentences");
 ok(rh.needsPerson && rh.reasons.some((x) => /instructions/.test(x)), "the hype post is sent to a person for addressing the judge");
 
 console.log("Guards (each edit must not raise the guarded score)");

@@ -16,7 +16,8 @@ const KINDS = {
   comment: { label: "Comment", source: "community" },
 };
 const words = (s) => String(s).toLowerCase().match(/[\p{L}\p{N}]+(?:[-'][\p{L}\p{N}]+)*/gu) || [];
-const sentences = (s) => (String(s).replace(/\s+/g, " ").trim().match(/[^.!?]+(?:[.!?]+|$)/g) || []).map((x) => x.trim()).filter(Boolean);
+// Split at . ! ? followed by a space, so decimals (41.2%) and abbreviations inside a sentence stay together.
+const sentences = (s) => String(s).replace(/\s+/g, " ").trim().split(/(?<=[.!?])\s+(?=["'(\[]?[A-Z0-9])/).map((x) => x.trim()).filter(Boolean);
 const norm = (s) => words(s).join(" ");
 const pl = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
 const hash = (s) => crypto.createHash("sha1").update(s).digest("hex").slice(0, 12);
@@ -86,8 +87,10 @@ function claims(sents) {
   const out = [];
   sents.forEach((s, i) => {
     if (!CLAIM.test(s)) return;
-    const near = [...new Set([s, sents[i - 1], sents[i + 1]].filter(Boolean).flatMap(markersIn))];
-    out.push({ sentence: s.slice(0, 200), support: near, level: backedBy(near) ? "backed" : near.length ? "partly backed" : "unbacked" });
+    // Backed = the claim's own sentence carries the evidence. Evidence in a neighbouring sentence only counts as
+    // "partly backed", because a claim appended next to someone else's numbers would otherwise borrow them.
+    const own = markersIn(s), near = [...new Set([s, sents[i - 1], sents[i + 1]].filter(Boolean).flatMap(markersIn))];
+    out.push({ sentence: s.slice(0, 200), support: near, level: backedBy(own) ? "backed" : near.length ? "partly backed" : "unbacked" });
   });
   return out.slice(0, 12);
 }
@@ -119,9 +122,12 @@ function review(input) {
     return [...t, ...taggers.tagAll(`${title}\n${text}`, ["people"]).filter((x) => !have.has(x.qid))];
   });
   const naive = step("judge-naive", "Significance, as an unguarded judge would score it", () => analysis.analyze({ title, summary: text, authors: `${authors}\n${text}` }, { kinds: [source] }));
-  const sig = step("judge-significance", "Significance on the cleaned text", () => analysis.analyze({ title, summary: cleaned.text, authors }, { kinds: [source] }));
   const rg = step("judge-rigor", "Rigor: what the evidence would need", () => rigor(sents));
   const cl = step("claims", "Find claims and what backs each one", () => claims([title, ...sents].filter(Boolean)));
+  // The significance judge reads only backed claims: a claim without evidence adds no topics and no points.
+  const unbackedSet = new Set(cl.filter((c) => c.level !== "backed").map((c) => c.sentence));
+  const sigText = sents.filter((s) => !unbackedSet.has(s.slice(0, 200))).join(" ");
+  const sig = step("judge-significance", "Significance on the cleaned text, without unbacked claims", () => analysis.analyze({ title, summary: sigText, authors }, { kinds: [source] }));
   const hp = step("judge-hype", "Hype: unbacked claims and hype words", () => hype(`${title} ${text}`, cl));
 
   // A frontier signal (AGI, AI improving AI, human-level, a new best...) only earns points where it is made next to
@@ -130,14 +136,19 @@ function review(input) {
     const all = [title, ...sents].filter(Boolean), backedLabels = new Set(), seenLabels = new Set();
     all.forEach((s, i) => {
       const labels = analysis.analyze({ title: s }, { kinds: [source] }).claims; if (!labels.length) return;
-      const near = new Set([s, all[i - 1], all[i + 1]].filter(Boolean).flatMap(markersIn));
-      for (const l of labels) { seenLabels.add(l); if (backedBy([...near])) backedLabels.add(l); }
+      // Strong claims need their evidence in the same sentence: a neighbour's numbers can be borrowed by appending.
+      const own = markersIn(s);
+      for (const l of labels) { seenLabels.add(l); if (backedBy(own)) backedLabels.add(l); }
     });
     const earned = sig.why.find((w) => w.factor === "Frontier signals")?.points || 0;
     const allowed = Math.min(earned, backedLabels.size * 7);
-    // "New result" as the kind of update also needs a backed claim; otherwise it scores as a plain update.
     const typePts = sig.why.find((w) => w.factor === "Kind of update")?.points || 0;
-    const typeRemoved = sig.type.id === "result" && !cl.some((c) => c.level === "backed") ? Math.max(0, typePts - 3) : 0;
+    // "New result" and "Evaluation" need a sentence that both says it and gives a number, sample size or interval.
+    let typeRemoved = 0;
+    if (["result", "evaluation"].includes(sig.type.id)) {
+      const says = [title, ...sents].filter((s) => s && analysis.analyze({ title: "", summary: s }, { kinds: [source] }).type.id === sig.type.id);
+      if (!says.some((s) => markersIn(s).some((m) => QUANT.has(m)))) typeRemoved = Math.max(0, typePts - 3);
+    }
     return { backed: [...backedLabels], unbacked: [...seenLabels].filter((l) => !backedLabels.has(l)), removed: earned - allowed + typeRemoved, typeRemoved };
   });
 
@@ -162,7 +173,7 @@ function review(input) {
   // Guarded significance: the cleaned-text score, minus factors the guards removed, capped by rigor.
   const removed = [
     ...(frontier.removed - frontier.typeRemoved ? [{ factor: "Frontier signals", points: frontier.removed - frontier.typeRemoved, detail: `unbacked: ${frontier.unbacked.join("; ")}` }] : []),
-    ...(frontier.typeRemoved ? [{ factor: "Kind of update", points: frontier.typeRemoved, detail: "\"New result\" with no backed claim scores as a plain update" }] : [])];
+    ...(frontier.typeRemoved ? [{ factor: "Kind of update", points: frontier.typeRemoved, detail: `"${sig.type.label}" with no number in the sentence that says it scores as a plain update` }] : [])];
   const base = sig.significance - frontier.removed;
   const cap = Math.round(35 + 0.65 * rg.score);
   let score = Math.min(base, cap);
@@ -174,7 +185,7 @@ function review(input) {
   if (fired("prompt-injection")) review_reasons.push("it contains instructions to the judge");
   if (Math.abs(naive.significance - score) >= 25) review_reasons.push(`the guards moved the score by ${naive.significance - score} points`);
   if (hp.unbacked >= 2) review_reasons.push(`${hp.unbacked} claims have nothing backing them`);
-  if (!sig.scope.in) review_reasons.push("it may be off-topic for a superintelligence feed");
+  // Off-topic is reported (scope) but isn't a reason to send it to a person: the feed's scope rule already handles it.
 
   // Two axes, reported separately: how big a step it claims (score) and how far to believe it (credibility).
   const verdict = credibility < 35 ? "doubtful" : score >= 55 && credibility >= 60 ? "major and credible" : credibility >= 70 ? "solid, modest step" : score >= 40 ? "big if true" : "minor";
