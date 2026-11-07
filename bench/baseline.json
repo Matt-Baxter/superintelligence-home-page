@@ -125,6 +125,12 @@
       "tol": 1,
       "about": "extra true features a cosine-scored SAE recovers when input sizes vary (arXiv 2606.15054 toy)"
     },
+    "papers.roleplay_meta_bad_drop": {
+      "value": 0.231,
+      "better": "higher",
+      "tol": 0.02,
+      "about": "drop in the bad-reply rate when a role-play updater refines its own repair rules (arXiv 2611.07469 toy)"
+    },
     "analysis.scope_accuracy": {
       "value": 1,
       "better": "higher",

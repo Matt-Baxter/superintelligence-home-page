@@ -7,6 +7,9 @@
 //   research-oversight       "Reward Hacking Challenges Oversight of Autonomous Research Agents" (arXiv 2609.28614):
 //                            a research agent picks methods; a reviewer sees code and score; feedback can teach
 //                            evasion; recomputing results independently takes the metric out of the agent's hands.
+//   roleplay-rsi             "Recursive Self-Improvement for Long-Horizon Role-Playing Dialogue" (arXiv 2611.07469): an
+//                            updater repairs a character's artifacts after bad replies and, one level up, refines its
+//                            own repair rules from how those repairs turned out, within a bound on edits per round.
 function rng(seed = 1) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 const gauss = (r) => { const u = Math.max(1e-12, r()), v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
 const round = (x, d = 3) => Math.round(x * 10 ** d) / 10 ** d;
@@ -80,6 +83,39 @@ function oversight({ feedback = 0, recompute = 0, rounds = 30, seed = 5 }) {
     notes: [`${exploits} of ${rounds} rounds used an exploit; ${undetected} went undetected.`, recompute ? "Results were recomputed independently on exploit-exposing data." : feedback ? "Reviewers gave detailed feedback." : "Reviewers gave generic rejections."] };
 }
 
+// ---------- bounded two-level self-improvement for role-play ----------
+// A character has 3 artifacts (memory, persona instructions, the prompt-building policy) and 6 kinds of bad reply. Each
+// kind has one artifact that really fixes it (hidden from the updater). After each round of replies the updater repairs
+// the most frequent kinds, at most edit_bound per round, by editing the artifact its rule names: the right artifact cuts
+// that failure's rate; the wrong one fixes nothing and nudges a neighbouring failure up (drift). With meta on, the
+// updater also refines its own rules: a judge (noisy by judge_noise) scores each repair by the drop in that failure next
+// round, and a rule whose recent repairs don't help is switched to an artifact it hasn't tried.
+function rolePlayRSI({ meta = 1, edit_bound = 3, judge_noise = 0.2, rounds = 30, turns = 200, seed = 7 }) {
+  const r = rng(seed), F = 6, A = 3;
+  const target = Array.from({ length: F }, (_, f) => f % A); for (let i = F - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [target[i], target[j]] = [target[j], target[i]]; }
+  const p = Array.from({ length: F }, () => 0.02 + 0.03 * r());
+  const rule = Array.from({ length: F }, () => Math.floor(r() * A)); // the updater's starting guesses (about a third right)
+  const tried = rule.map((a) => new Set([a])), hist = Array.from({ length: F }, () => []);
+  let prev = null, side = 0, switches = 0; const pts = [], badBy = [];
+  for (let t = 1; t <= rounds; t++) {
+    const cnt = new Array(F).fill(0); let bad = 0;
+    for (let k = 0; k < turns; k++) { let b = false; for (let f = 0; f < F; f++) if (r() < p[f]) { cnt[f]++; b = true; } if (b) bad++; }
+    badBy.push(bad / turns); pts.push([t, round(bad / turns)]);
+    if (prev) for (const f of prev.fixed) hist[f].push((prev.cnt[f] - cnt[f]) / Math.max(1, prev.cnt[f]) + judge_noise * gauss(r));
+    if (meta) for (let f = 0; f < F; f++) { const h = hist[f]; if (h.length >= 2 && mean(h.slice(-3)) < 0.05) {
+      if (tried[f].size >= A) tried[f].clear();
+      const next = [...Array(A).keys()].find((a) => !tried[f].has(a) && a !== rule[f]) ?? (rule[f] + 1) % A;
+      rule[f] = next; tried[f].add(next); hist[f] = []; switches++; } }
+    const order = [...Array(F).keys()].filter((f) => cnt[f] > 0).sort((a, b) => cnt[b] - cnt[a] || a - b).slice(0, edit_bound);
+    for (const f of order) { if (rule[f] === target[f]) p[f] *= 0.6; else { p[(f + 1) % F] += 0.003; side++; } }
+    prev = { cnt, fixed: order };
+  }
+  const right = rule.filter((a, f) => a === target[f]).length / F;
+  return { metrics: { bad_rate: round(mean(badBy.slice(-5))), start_rate: round(mean(badBy.slice(0, 3))), rules_right: round(right), side_effects: side, switches },
+    series: [{ name: "bad-reply rate by round", points: pts }],
+    notes: [`${meta ? "The updater refined its own rules" : "The updater's rules were fixed"}; ${switches} rule switches, ${side} repairs hit the wrong artifact.`, `${Math.round(right * F)} of ${F} repair rules point at the artifact that really fixes that failure.`] };
+}
+
 const runnersList = [
   { id: "self-improve-selection", about: "An agent edits itself and keeps the best version, judged on visible tests or hidden evaluations (with an edit budget)",
     params: {
@@ -101,6 +137,17 @@ const runnersList = [
     },
     metrics: [{ id: "evasion", label: "Rounds with an undetected exploit", better: "lower" }, { id: "exploit_rate", label: "Rounds that used an exploit", better: "lower" }, { id: "true_quality", label: "Real quality per round", better: "higher" }, { id: "caught", label: "Rounds with a caught exploit", better: "higher" }],
     run: (p) => oversight(p) },
+  { id: "roleplay-rsi", about: "A role-play updater repairs a character's memory, persona and prompt policy, and refines its own repair rules from the outcomes",
+    params: {
+      meta: { default: 1, min: 0, max: 1, step: 1, about: "1 = the updater refines its own repair rules from repair outcomes, 0 = fixed rules" },
+      edit_bound: { default: 3, min: 1, max: 6, step: 1, about: "Repairs allowed per round (the bound)" },
+      judge_noise: { default: 0.2, min: 0, max: 1, step: 0.1, about: "Noise in how the judge scores a repair's outcome" },
+      rounds: { default: 30, min: 5, max: 60, step: 5, about: "Improvement rounds" },
+      turns: { default: 200, min: 50, max: 500, step: 50, about: "Replies per round" },
+      seed: { default: 7, min: 1, max: 999, step: 1, about: "Random seed" },
+    },
+    metrics: [{ id: "bad_rate", label: "Bad-reply rate (last 5 rounds)", better: "lower" }, { id: "rules_right", label: "Share of repair rules aimed at the right artifact", better: "higher" }, { id: "side_effects", label: "Repairs that hit the wrong artifact", better: "lower" }],
+    run: (p) => rolePlayRSI(p) },
 ];
 // Averaging over seeds, so a verdict doesn't hang on one lucky draw (the Lab's examples pass seeds via "seeds").
 function averaged(fn, p, seeds = 10) {
@@ -110,4 +157,4 @@ function averaged(fn, p, seeds = 10) {
 }
 for (const r of runnersList) { const raw = r.run; r.run = (p) => averaged(raw, p, 10); }
 
-module.exports = { runners: runnersList, selfImprove, oversight };
+module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI };
