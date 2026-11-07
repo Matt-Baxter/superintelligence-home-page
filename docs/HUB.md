@@ -4,7 +4,7 @@
 
 One page that points at every skill, spec, check, measure and pitfall in the repo. It is generated from the files it links to, so it can't drift: [scripts/hub.js](../scripts/hub.js) reads them, `npm run hub` rewrites this page, and preflight's **Hub** check fails when it is stale or a link breaks.
 
-**Contents:** [Start here](#start-here) · [Specs](#specs) · [Skills (17)](#skills) · [Subagents (3)](#subagents) · [Spec Kit (9)](#spec-kit-commands) · [Checks (24)](#checks) · [Measures (24)](#measures) · [Tips and pitfalls (43)](#tips-and-pitfalls) · [Where things live](#where-things-live) · [Open decisions](#open-decisions-for-the-humans)
+**Contents:** [Start here](#start-here) · [Specs](#specs) · [Skills (17)](#skills) · [Subagents (3)](#subagents) · [Spec Kit (9)](#spec-kit-commands) · [Checks (24)](#checks) · [Measures (25)](#measures) · [Tips and pitfalls (43)](#tips-and-pitfalls) · [Where things live](#where-things-live) · [Open decisions](#open-decisions-for-the-humans)
 
 ## Start here
 
@@ -217,6 +217,7 @@ Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/READM
 | `papers.recompute_evasion` | lower | 0 | undetected exploits with independent recomputation (arXiv 2609.28614 toy) |
 | `papers.cosine_sae_gain` | higher (tol 1) | 8 | extra true features a cosine-scored SAE recovers when input sizes vary (arXiv 2606.15054 toy) |
 | `papers.roleplay_meta_bad_drop` | higher (tol 0.02) | 0.231 | drop in the bad-reply rate when a role-play updater refines its own repair rules (arXiv 2611.07469 toy) |
+| `papers.moe_contrib_advantage` | higher (tol 0.05) | 0.288 | how much more often crediting SAE latents by per-expert contribution, rather than gate weight, names the owning expert (arXiv 2611.08089 toy) |
 | `analysis.scope_accuracy` | higher | 1 | scope decisions on the labelled spec fixtures (10 items) |
 
 **Labelled sets** (synthetic test data)
