@@ -4,7 +4,7 @@
 // Loop (a ratchet, like autoresearch): train a tree -> generate fresh test requests (property-based, seeded) ->
 // add the ones it got wrong to its own training data -> retrain -> keep the new tree only if held-out accuracy rises.
 // Safety properties must hold in every kept round (e.g. a Twitter/X link is always refused).
-const { evaluate, match } = require("../../lib/expr");
+const { evaluate, match } = require("../../lib/expr/eval"); // the pure interpreter: also bundled for the browser sandbox
 
 // ---------- the request grammar (synthetic; the oracle label comes from the template) ----------
 const ACTIONS = {

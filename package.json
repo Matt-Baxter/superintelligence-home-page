@@ -22,7 +22,8 @@
     "expr:check": "node scripts/expr-check.js",
     "schema": "node scripts/schema.js",
     "test:spec": "node test/spec-acceptance.js --browser",
-    "lab": "node scripts/lab.js"
+    "lab": "node scripts/lab.js",
+    "spec:status": "node scripts/spec-status.js"
   },
   "keywords": [],
   "author": "",

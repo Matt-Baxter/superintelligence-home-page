@@ -34,7 +34,17 @@ function gen() {
       seen.set(f, id); fs.copyFileSync(path.join(dir, f), path.join(out, f)); pages++;
     }
   }
-  return { blocks: blocks.length, pages };
+  // Browser bundles: modules/<id>/client/<name>.js -> public/m/<id>-<name>.js (e.g. a Web Worker sandbox), only for
+  // enabled modules. Bundled with esbuild, so client code can reuse the module's own pure files.
+  let bundles = 0;
+  for (const id of readEnabled()) {
+    const dir = path.join(MODULES_DIR, id, "client"); if (!fs.existsSync(dir)) continue;
+    for (const f of fs.readdirSync(dir).filter((x) => x.endsWith(".js"))) {
+      require("esbuild").buildSync({ entryPoints: [path.join(dir, f)], bundle: true, minify: true, format: "iife", platform: "browser", outfile: path.join(out, `${id}-${f}`), logLevel: "error" });
+      bundles++;
+    }
+  }
+  return { blocks: blocks.length, pages, bundles };
 }
 
 async function check() {
