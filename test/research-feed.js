@@ -21,14 +21,15 @@ if (process.argv[2] === "--serve") {
     await boot();
     for (const s of S.samples || S) await saveReview(db, s);
     await saveReview(db, PAPER);
-    app.listen(Number(process.env.PORT), () => console.log("ready"));
+    const buzz = (await db.get("SELECT COUNT(*) AS n FROM sources WHERE name LIKE ?", "%(buzz)%")).n;
+    app.listen(Number(process.env.PORT), () => console.log(`ready buzz=${buzz}`));
   })().catch((e) => { console.error(e); process.exit(1); });
   return;
 }
 
 const serve = (port, env) => new Promise((resolve, reject) => {
   const p = spawn(process.execPath, ["--no-warnings", __filename, "--serve"], { env: { ...process.env, PORT: String(port), ...env }, stdio: ["ignore", "pipe", "inherit"] });
-  p.stdout.on("data", (b) => { if (/ready/.test(String(b))) resolve(p); });
+  p.stdout.on("data", (b) => { const m = String(b).match(/ready buzz=(\d+)/); if (m) { p.buzz = Number(m[1]); resolve(p); } });
   p.on("exit", (c) => reject(new Error(`research server exited ${c}`)));
 });
 
@@ -36,6 +37,7 @@ const serve = (port, env) => new Promise((resolve, reject) => {
   const open = await serve(3291, { RESEARCH_PUBLIC: "1" }), closed = await serve(3292, { RESEARCH_PUBLIC: "" });
   try {
     console.log("Research site (SITE_PROFILE=research)");
+    ok(open.buzz === require("../lib/source-catalog.json").sources.filter((x) => /\(buzz\)/.test(x.name)).length && open.buzz >= 3, `the research version switches on the catalog's checked buzz feeds (${open.buzz})`);
     const hidden = await fetch("http://localhost:3292/research/feed.xml");
     ok(hidden.status === 404 && /noindex/.test(hidden.headers.get("x-robots-tag") || ""), "without RESEARCH_PUBLIC=1 the feed is hidden (404, noindex) from anyone not signed in as admin");
     const r = await fetch("http://localhost:3291/research/feed.xml"), xml = await r.text();
