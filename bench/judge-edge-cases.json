@@ -675,7 +675,7 @@
     "rel": "eq",
     "to": 1
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "inj-security-paper",
@@ -690,7 +690,7 @@
     "rel": "eq",
     "to": 0
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "clean-title-like-sentence",
@@ -1339,7 +1339,7 @@
     "rel": "eq",
     "to": 0
    },
-   "status": "gap"
+   "status": "ok"
   }
  ]
 }

@@ -85,7 +85,29 @@ const CLAIM = /\b(we (?:show|find|found|demonstrate|prove)|demonstrat\w+|achiev\
 // topic words count as a claim only with an asserting verb ("AGI is here", "achieved superintelligence").
 const HYPE = /\b(revolutionary|unprecedented|breakthrough|game[- ]chang\w+|incredible|massive|insane|mind[- ]blowing|world[- ]changing|definitely|guaranteed|inevitabl\w+|imminent|everything changes|no one is talking about)\b/gi;
 // Text written to the judge rather than the reader: a reward hack against model judges, flagged and capped here too.
-const INJECTION = /\b(ignore (?:all |the )?(?:previous|prior|above) instructions|you are (?:an? )?(?:ai|judge|grader)|(?:rate|score|grade) this (?:paper |article |post )?(?:as |a )?\d+|give (?:this|it) (?:a )?(?:perfect|high|top) score|system prompt)\b/i;
+// Two kinds (REQ-035, task T032), matched on the canonical text with confusables folded (so hidden characters and
+// look-alike letters don't hide them):
+//   - OVERRIDE: telling a model to drop its instructions or casting the reader as the judge;
+//   - SCORE_DEMAND: asking for a score. A paper has no reason to ask its reader for a score, so this always caps.
+// A topical mention ("how the system prompt changes accuracy") is neither.
+const OVERRIDE = /\b(?:(?:ignore|disregard|forget|override|bypass) (?:all |any |the |your )?(?:of )?(?:the |your )?(?:previous|prior|above|earlier|preceding|former|original) (?:instructions?|prompts?|rules|directions|guidelines)|you are (?:now )?(?:an? |the )?(?:ai |llm |language model )?(?:judge|grader|reviewer|evaluator|scorer)|you are an? ai\b|(?:reveal|print|output|repeat) (?:your|the) system prompt|new instructions:)/i;
+const SCORE_DEMAND = /\b(?:(?:rate|score|grade) this (?:paper |article |post |work |submission )?(?:as |a |an )?\d+|give (?:this|it)(?: paper| article| post| work| submission)? (?:a |an |the )?(?:perfect|high|higher|top|maximum|max|highest|full|best) (?:score|rating|grade|marks?)|(?:give|assign|award) (?:this|it)(?: paper| article| post)? (?:a |the )?(?:score|rating|grade) of \d+)/i;
+// "Describes attacks": an override phrase reported as the object of study, not addressed to the reader: "attacks that
+// tell a model to ignore previous instructions", "we study prompt injection ...", or the phrase in quotation marks.
+// Reported as a guard note, not capped. It never excuses a SCORE_DEMAND, so wrapping a score request in a description
+// doesn't get it through.
+const DESCRIBES = /\b(?:attacks?|injections?|jailbreaks?|prompts?|inputs?|instructions?|messages?|payloads?|strings?|examples?|attackers?|adversaries)\s+(?:that|which|telling|asking|instructing)\b|\b(?:such as|like|e\.g\.)\s*["'“‘]?\s*$/i;
+const STUDIES_ATTACKS = /\b(?:we|this (?:paper|work|study)|the authors) (?:study|studies|analy[sz]es?|measures?|evaluates?|detects?|tests?|benchmarks?|defends?|classif(?:y|ies)|collects?|catalogu?es?|survey)\b.*\b(?:prompt[- ]injections?|jailbreak\w*|injection attacks?|adversarial (?:prompts?|instructions?))\b/i;
+function injection(title, text) {
+  const hits = [], described = [];
+  for (const s of [...sentences(fold(title)), ...sentences(fold(text))]) {
+    const d = SCORE_DEMAND.exec(s); if (d) hits.push(d[0]);
+    const o = OVERRIDE.exec(s); if (!o) continue;
+    const before = s.slice(0, o.index), quoted = /["“‘]\s*$/.test(before);
+    if (DESCRIBES.test(before) || STUDIES_ATTACKS.test(s) || quoted) described.push(o[0]); else hits.push(o[0]);
+  }
+  return { fired: hits.length > 0, hits, described };
+}
 
 // ---------- negation (REQ-035, task T031) ----------
 // A marker or hype word is negated when a negator (not, no, without, never, neither, nor, cannot, n't, fail(s) to)
@@ -294,8 +316,10 @@ function review(input) {
       detail: frontier.unbacked.length ? `"${frontier.unbacked.join("; ")}" with no evidence in the same or next sentence: ${frontier.removed} points removed` : "every frontier signal is backed where it is made, or there are none" });
     const dropped_names = mentioned.filter((id) => !byAuthors.has(id));
     g.push({ id: "name-dropping", label: "Naming watched people only counts for authors", fired: dropped_names.length > 0, detail: dropped_names.length ? `${pl(dropped_names.length, "watchlist name")} in the text but not the authors: catalogued as mentions, no points` : "no names outside the author list" });
-    const inj = INJECTION.test(fold(`${title}\n${text}`));
-    g.push({ id: "prompt-injection", label: "Text addressed to the judge is flagged and capped", fired: inj, detail: inj ? "instructions to a judge or grader found: score capped at 30 and sent to a person" : "none found" });
+    const inj = injection(title, text);
+    g.push({ id: "prompt-injection", label: "Text addressed to the judge is flagged and capped", fired: inj.fired,
+      detail: inj.fired ? `instructions to a judge or grader found ("${inj.hits[0]}"): score capped at 30 and sent to a person` : "none found",
+      ...(inj.described.length ? { note: `describes attacks: "${inj.described[0]}" is reported as the subject of the text, not addressed to the judge, so it isn't capped` } : {}) });
     return g;
   });
   const fired = (id) => guards.find((g) => g.id === id).fired;
@@ -383,4 +407,4 @@ function stress(input, steps = 6) {
     summary: `Gaming the unguarded judge added ${a.gain.naive} points; the guarded score moved ${a.gain.guarded >= 0 ? "+" : ""}${a.gain.guarded} on the same edits. An adversary that targets the guarded score directly gained ${b.gain.guarded}.` };
 }
 
-module.exports = { canonical, fold, clauses, negatedAt, markersIn, KINDS, MARKERS, detectKind, clean, rigor, claims, hype, review, attack, stress, bank, sentences };
+module.exports = { canonical, fold, clauses, negatedAt, markersIn, injection, KINDS, MARKERS, detectKind, clean, rigor, claims, hype, review, attack, stress, bank, sentences };
