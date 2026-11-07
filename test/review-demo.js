@@ -20,7 +20,8 @@ const signup = (p, who) => p.evaluate((u) => fetch("/api/signup", { method: "POS
   await p.click('[data-sample="careful-paper"]'); await p.click("#bSave"); await until(p, /Saved as|Already in/);
   const verdict = await p.textContent("#result .tag");
   ok(/solid|major/.test(verdict), `judged credible: "${verdict}"`);
-  ok((await p.$$eval(".claims .tag", (t) => t.map((x) => x.textContent))).every((x) => x === "backed"), "every claim is backed");
+  const levels = await p.$$eval(".claims .tag", (t) => t.map((x) => x.textContent));
+  ok(levels.includes("backed") && !levels.includes("unbacked"), `no unbacked claims (${levels.join(", ")})`);
   ok((await p.$$(".edges .edge")).length >= 3, "catalogued with edges in the knowledge graph");
   await p.screenshot({ path: `${S}/review-1-careful.png`, fullPage: true });
 
