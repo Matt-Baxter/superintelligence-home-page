@@ -2,7 +2,7 @@
 
 [CLAUDE.md](CLAUDE.md) holds the rules and applies to every agent. In short: work on a branch and never push to or merge into `main`; never deploy; never write agent log entries; no secrets; no Twitter/X sources; build from the shared spec (`specs/001-superintelligence-homepage/spec.md`) and name the REQ IDs you serve; the spec, constitution, CONTRACT.md and WORKING_AGREEMENT.md need both humans; this build's tables and routes are logged in `docs/INTERFACES.md`; stay on the free tiers; test data is synthetic. Run `npm run preflight` (and `npm test` for bigger changes) and report the exact result.
 
-**Picking this up?** Read [docs/HANDOFF.md](docs/HANDOFF.md) first: the branch state, what's built, how to run it, what's waiting on people, and the daily task as a prompt.
+**Picking this up?** Read [docs/HANDOFF.md](docs/HANDOFF.md) first: the branch state, what's built, how to run it, what's waiting on people, and the daily task as a prompt. [docs/PRACTICES.md](docs/PRACTICES.md) lists the practices to keep and the ones still to do.
 
 Skills are plain Markdown and work in any tool: open the one that fits the task in `agent-kit/skills/<name>/SKILL.md`, and its `references/` only when it says to. MCP clients can load them on demand from `agent-kit/mcp/server.js`; see [agent-kit/README.md](agent-kit/README.md) for every runtime.
 

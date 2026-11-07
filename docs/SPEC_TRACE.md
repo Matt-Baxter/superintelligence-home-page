@@ -34,10 +34,10 @@ How this build meets the shared spec ([specs/001-superintelligence-homepage/spec
 | REQ-028 | Daily paper watch | `scripts/watch.js`, `modules/review/watch.json`, `.github/workflows/paper-watch.yml` | unit: watch (5 checks) |
 | REQ-029 | Benchmarks with a ratchet | `scripts/bench.js`, `bench/` | preflight "Benchmarks"; real-data quality report `scripts/quality.js` (unit: quality, 3 checks) |
 | REQ-031 | Topic dossier: traced analysis, blog, posts, video | `modules/review/dossier.js`, `/m/dossier`, `/api/review/dossier/:topic`, worker job `dossier`, `/m/explainer?d=<topic>` | unit: dossier (14 checks); review demo: "Dossier" |
-| REQ-032 | Research site that feeds the feed: public write-ups and an RSS feed another site adds as a source | `modules/research/`, `SITE_PROFILE=research`, `/research`, `/research/feed.xml`, `RESEARCH_PUBLIC` | test: research feed (17 checks, in preflight) |
+| REQ-032 | Research site that feeds the feed: public write-ups and an RSS feed another site adds as a source | `modules/research/`, `SITE_PROFILE=research`, `/research`, `/research/feed.xml`, `RESEARCH_PUBLIC` | test: research feed (22 checks, in preflight) |
 | REQ-033 | Source grades, forecasts as events with track records, buzz versus evidence, published criteria | `modules/review/sources.js`, `CRITERIA` in `modules/review/review.js`, `review_events`, `/api/review/outlets`, `/api/review/events`, `/research/criteria`, `/research/outlets` | unit: sources (26 checks), review (criteria checks); bench item `b-hype-press-words` |
 | REQ-034 | Two-model judge panel with identity, prestige and wording masks | `modules/review/panel.js`, `scripts/watch.js`, `PANEL_MODELS`, `CRITERIA.panel` | unit: panel (15 checks, stand-in models) |
-| REQ-030 | Project tracker mirrors spec and agents | `scripts/project-sync.js`, `modules/project` | unit: project-sync; `scripts/checkin.js` (`npm run checkin`), run daily by the scheduled agent task |
+| REQ-030 | Project tracker mirrors spec and agents | `scripts/project-sync.js`, `modules/project` | unit: project-sync; `scripts/checkin.js` (`npm run checkin`), run daily by the scheduled agent task; research control room `/m/control` (research feed test: control room checks) |
 
 ## Acceptance suite
 

@@ -6,7 +6,7 @@ const V = require("./render");
 const { ontology } = require("../../lib/tagger");
 const D = require("../review/dossier");
 
-module.exports = function mountResearch(app, { db, wrap }) {
+module.exports = function mountResearch(app, { db, wrap, auth, admin }) {
   const CONCEPTS = (() => { try { return require("../learn/data/concepts.json").concepts; } catch { return []; } })();
   const labExamples = () => { try { const L = require("../lab/lab"), pre = require("../lab/results.json").results; return L.EX.examples.filter((e) => pre[e.id]).map((e) => ({ ...e, verdict: pre[e.id].verdict })); } catch { return []; } };
   const base = (req) => (process.env.SITE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/$/, "");
@@ -27,6 +27,22 @@ module.exports = function mountResearch(app, { db, wrap }) {
     }
     return out;
   };
+
+  // Research control room (admins): everything waiting on a person, the judging quality on real reviews, the panel's
+  // set-up and links to every research page, in one call, so the layer is run from the web app rather than scripts.
+  app.get("/api/admin/research/status", auth, admin, wrap(async () => {
+    const { waiting, proposals } = require("../../scripts/checkin"), Q = require("../../scripts/quality"), CFG = require("../project/sync.json");
+    const today = new Date().toISOString().slice(0, 10), W = await waiting(db, today);
+    const rows = await db.all("SELECT kind, title, credibility, verdict, result FROM review_docs ORDER BY id DESC LIMIT 500");
+    const due = await db.all(`SELECT e.id, e.sentence, e.due, e.status, e.outlet_label, d.id AS doc_id, d.title FROM review_events e LEFT JOIN review_docs d ON d.qid = e.doc_qid
+      WHERE e.status = 'pending' ORDER BY e.due ASC LIMIT 50`).catch(() => []);
+    const flagged = (await db.all("SELECT id, title, verdict, credibility, result FROM review_docs WHERE needs_person = 1 AND label IS NULL ORDER BY id DESC LIMIT 50"))
+      .map((d) => { const r = JSON.parse(d.result || "{}"); return { id: d.id, title: d.title, verdict: d.verdict, credibility: d.credibility, reasons: r.reasons || [] }; });
+    const models = (process.env.PANEL_MODELS || "").split(",").map((x) => x.trim()).filter(Boolean);
+    return { today, waiting: W, proposals: proposals().reqs, specStatus: proposals().status, people: CFG.people, forecasts: due.map((e) => ({ ...e, overdue: e.due <= today })), flagged,
+      quality: rows.length ? Q.analyse(rows).checks.map(({ id, label, value, ok, why, fix }) => ({ id, label, value, ok, why, fix })) : [],
+      panel: { models, ready: models.length >= 2 }, public: process.env.RESEARCH_PUBLIC === "1" };
+  }));
 
   app.get("/research", gate, page(async (req) => V.indexPage({ papers: await papers(), topics: await topics() }, base(req))));
   app.get("/research/outlets", gate, page(async (req) => {

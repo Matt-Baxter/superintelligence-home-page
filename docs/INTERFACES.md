@@ -107,6 +107,10 @@ Every interface change gets a row here. Breaking changes bump the major version 
 - **Article rubric and verdict:** articles are judged on reporting (`CRITERIA.reporting`: cites the study, gives its numbers or size, says what was not shown, keeps forecasts apart) when that scores higher; review results gain `rubric` (paper, survey, reporting). New verdict `plausible, worth checking` (credibility 55 or more, below big-if-true). Unsupported assertions in articles count as unbacked claims.
 - **Quality report:** `npm run quality` (`scripts/quality.js`) writes `out/quality/<date>.md` from real reviews: verdict spread, article spread, grade versus credibility, hype versus credibility, papers judged minor, panel coverage. The watcher workflow runs it.
 - **Buzz feeds in the research version:** at start, the research module adds the catalog's checked buzz feeds (entries marked "(buzz)") as active sources if missing, only when `SITE_PROFILE=research`. | logged by John |
+| 2.2 | Nov 7, 2026 | Research control room (REQ-030, REQ-033; extended and research versions).
+- **Route:** `GET /api/admin/research/status` (admins) returns `{today, waiting, proposals, specStatus, people, forecasts[], flagged[], quality[], panel {models, ready}, public}`.
+- **Page:** `/m/control`, nav entry "Research" (admins): forecasts due with outcome buttons, flagged reviews with agree/disagree, quality checks, proposals, people checks, links.
+- **Forecast outcomes:** `annulled` added beside `unclear` (both count for neither side); `POST /api/admin/review/events/:id` accepts it. | logged by John |
 
 **Done means:** a classmate can sign up on the live site, see a grouped, tagged feed from at least 8 sources, and vote on and save stories that are still there the next time they sign in.
 
