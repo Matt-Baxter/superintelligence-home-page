@@ -204,7 +204,7 @@ function review(input) {
   // Off-topic is reported (scope) but isn't a reason to send it to a person: the feed's scope rule already handles it.
 
   // Two axes, reported separately: how big a step it claims (score) and how far to believe it (credibility).
-  const verdict = credibility < 35 ? "doubtful" : score >= 55 && credibility >= 60 ? "major and credible" : credibility >= 70 ? "solid, modest step" : score >= 40 ? "big if true" : "minor";
+  const v = VERDICTS.find((x) => x.when(score, credibility)), verdict = v.id;
   const qid = `doc:${hash(`${title}\n${text}`)}`;
   const edges = step("catalog", "Catalog it in the knowledge graph", () => {
     const rel = (t) => (t.qid.startsWith("topic:") ? "about" : t.qid.startsWith("concept:") ? "explains" : t.qid.startsWith("benchmark:") ? "evaluates-on" : "mentions");
@@ -212,7 +212,7 @@ function review(input) {
   });
 
   return {
-    qid, kind: k.kind, kindWhy: k.why, kindLabel: isSurvey ? "Survey" : KINDS[k.kind].label, survey: isSurvey, arxiv, title, authors,
+    qid, kind: k.kind, kindWhy: k.why, kindLabel: isSurvey ? "Survey" : KINDS[k.kind].label, verdictRule: v.rule, survey: isSurvey, arxiv, title, authors,
     score, naive: naive.significance, credibility, verdict, needsPerson: review_reasons.length > 0, reasons: review_reasons,
     judges: [
       { id: "significance", label: "Significance", score: sig.significance, about: "How big a step toward superintelligence it reports (lib/analysis.js, on the cleaned text)", why: sig.why },
@@ -265,4 +265,35 @@ function stress(input, steps = 6) {
     summary: `Gaming the unguarded judge added ${a.gain.naive} points; the guarded score moved ${a.gain.guarded >= 0 ? "+" : ""}${a.gain.guarded} on the same edits. An adversary that targets the guarded score directly gained ${b.gain.guarded}.` };
 }
 
-module.exports = { KINDS, MARKERS, detectKind, clean, rigor, claims, hype, review, attack, stress, bank, sentences };
+
+// ---------- the published criteria ----------
+// One table, used by the judge above and printed as-is on /research/criteria and the Review desk, so what we say we
+// check and what the code checks can't drift apart (test/review-unit.js compares them).
+// Verdict: the first row whose rule holds. Significance (how big a step) and credibility (how far to believe it) are separate axes.
+const VERDICTS = [
+  { id: "doubtful", rule: "credibility below 35", when: (s, c) => c < 35 },
+  { id: "major and credible", rule: "significance 55 or more and credibility 60 or more", when: (s, c) => s >= 55 && c >= 60 },
+  { id: "solid, modest step", rule: "credibility 70 or more", when: (s, c) => c >= 70 },
+  { id: "big if true", rule: "significance 40 or more", when: (s) => s >= 40 },
+  { id: "minor", rule: "anything else", when: () => true },
+];
+const CRITERIA = {
+  rigor: { about: "What the evidence needs. Each check counts only when a sentence shows it; the points add up to 100.", checks: MARKERS.map(({ id, label, points }) => ({ id, label, points })) },
+  survey: { about: "A survey is judged on coverage instead, and only when its title or first sentence says it is one.", checks: COVERAGE.map(({ label, points }) => ({ label, points })) },
+  claims: { about: "A claim is backed when its own sentence carries a number, a sample size or an uncertainty; partly backed when a neighbouring sentence does; otherwise unbacked." },
+  hype: { about: "Lower is better: up to 60 for the share of unbacked claims, plus 10 per hype word up to 40 (a survey's summaries of other work aren't counted as its claims)." },
+  credibility: { about: "Half rigor plus half (100 minus hype)." },
+  significance: { about: "How big a step the text reports (lib/analysis.js), worked out on the cleaned text, minus frontier claims with no evidence in their own sentence, and capped at 35 + 0.65 × rigor; capped at 30 if the text addresses the judge." },
+  verdicts: VERDICTS.map(({ id, rule }) => ({ id, rule })),
+  guards: [
+    { id: "repetition", label: "Repeated sentences don't count twice" },
+    { id: "keyword-stuffing", label: "Keyword lists don't earn tags or points" },
+    { id: "rigor-words", label: "Rigor words without content don't earn rigor" },
+    { id: "unbacked-frontier", label: "Each frontier claim needs its own evidence to earn points" },
+    { id: "name-dropping", label: "Naming watched people only counts for authors" },
+    { id: "prompt-injection", label: "Text addressed to the judge is flagged and capped" },
+  ],
+  person: { about: "Sent to a person when it addresses the judge, the guards moved its score by 25 points or more, two or more claims have nothing backing them, or it looks written to game the scoring." },
+};
+
+module.exports = { CRITERIA, VERDICTS, KINDS, MARKERS, detectKind, clean, rigor, claims, hype, review, attack, stress, bank, sentences };

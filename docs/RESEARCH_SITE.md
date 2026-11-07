@@ -14,7 +14,7 @@ Every page is tagged **Research preview**, sends `noindex, nofollow`, and has no
 
 ## How it feeds the feed
 
-The spec version adds `https://<research host>/research/feed.xml` as an ordinary RSS source (admin → Sources). Its own scope rule judges each item, and because each item keeps the paper's own title, a write-up about a paper already in the feed joins that paper's story as one more source instead of making a second story. The spec version needs no code change. `npm run test:research` proves this on synthetic data (12 checks, also in preflight).
+The spec version adds `https://<research host>/research/feed.xml` as an ordinary RSS source (admin → Sources). Its own scope rule judges each item, and because each item keeps the paper's own title, a write-up about a paper already in the feed joins that paper's story as one more source instead of making a second story. The spec version needs no code change. `npm run test:research` proves this on synthetic data (14 checks, also in preflight).
 
 ## Hidden until you opt in
 

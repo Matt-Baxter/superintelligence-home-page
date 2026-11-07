@@ -26,7 +26,45 @@ function plain(row, r) {
   return s.join(" ");
 }
 
-const LEVEL = { backed: "backed in the same sentence", partial: "partly backed", unbacked: "nothing backing it" };
+const LEVEL = { backed: "backed in the same sentence", "partly backed": "backed by a neighbouring sentence", unbacked: "nothing backing it" };
+const { CRITERIA, VERDICTS } = require("../review/review");
+
+// The scorecard: every published criterion, whether this text met it and the points it earned, then the arithmetic
+// from rigor and hype to credibility and the verdict rule that applied. Nothing on it is hidden or extra.
+function scorecard(row, r) {
+  const J = Object.fromEntries((r.judges || []).map((j) => [j.id, j]));
+  const rig = J.rigor || { score: 0, why: [] }, hp = J.hype || { score: 0, why: [] };
+  const list = r.survey ? CRITERIA.survey.checks : CRITERIA.rigor.checks;
+  const got = Object.fromEntries((rig.why || []).map((w) => [w.factor, w]));
+  const rows = list.map((c) => { const w = got[c.label]; return `<tr class="${w ? "met" : ""}"><td class="mk">${w ? "✓" : "–"}</td><td>${esc(c.label)}${w && w.detail ? `<span class="ev">${esc(w.detail)}${w.detail.length >= 140 ? "…" : ""}</span>` : ""}</td><td class="n">${w ? w.points : 0} / ${c.points}</td></tr>`; }).join("");
+  const unb = (hp.why || []).find((w) => w.factor === "Unbacked claims") || {}, words = (hp.why || []).find((w) => w.factor === "Hype words") || {};
+  const v = VERDICTS.find((x) => x.id === row.verdict);
+  return `<section><h2>How it was judged</h2>
+<p class="small muted" style="margin:0 0 8px">${esc(r.survey ? CRITERIA.survey.about : CRITERIA.rigor.about)} <a href="/research/criteria">All criteria</a></p>
+<table class="card sc"><tbody>${rows}<tr class="tot"><td></td><td>Rigor</td><td class="n">${rig.score} / 100</td></tr></tbody></table>
+<dl class="sum">
+<dt>Hype</dt><dd>${hp.score} (lower is better): ${esc(unb.detail || "0 of 0")} claims unbacked${words.detail ? `; hype words: ${esc(words.detail)}` : "; no hype words"}</dd>
+<dt>Credibility</dt><dd>½ × ${rig.score} + ½ × (100 − ${hp.score}) = <b>${row.credibility}</b></dd>
+<dt>Significance</dt><dd>${row.score}, after the guards (${r.naive ?? row.naive} before)</dd>
+<dt>Verdict</dt><dd><b>${esc(row.verdict)}</b>${v ? `, because ${esc(v.rule)}` : ""}</dd>
+</dl></section>`;
+}
+
+function criteriaPage(base) {
+  const tbl = (checks) => `<table class="card"><tbody>${checks.map((c) => `<tr><td>${esc(c.label)}</td><td class="n">${c.points}</td></tr>`).join("")}</tbody></table>`;
+  const body = `<h1>How we judge a paper</h1>
+<p class="lede">Every write-up is scored by the same published rules, from the abstract, with no model and no hidden weights. Two separate questions: how big a step it reports (significance) and how far to believe it (credibility).</p>
+<section><h2>1. Rigor, out of 100</h2><p class="small muted" style="margin:0 0 8px">${esc(CRITERIA.rigor.about)}</p>${tbl(CRITERIA.rigor.checks)}</section>
+<section><h2>Surveys instead</h2><p class="small muted" style="margin:0 0 8px">${esc(CRITERIA.survey.about)}</p>${tbl(CRITERIA.survey.checks)}</section>
+<section><h2>2. Claims</h2><p>${esc(CRITERIA.claims.about)}</p></section>
+<section><h2>3. Hype, out of 100</h2><p>${esc(CRITERIA.hype.about)}</p></section>
+<section><h2>4. Credibility</h2><p>${esc(CRITERIA.credibility.about)}</p></section>
+<section><h2>5. Significance</h2><p>${esc(CRITERIA.significance.about)}</p></section>
+<section><h2>6. Verdict</h2><p class="small muted" style="margin:0 0 8px">The first rule that holds, top to bottom.</p><table class="card"><tbody>${CRITERIA.verdicts.map((v) => `<tr><td><b>${esc(v.id)}</b></td><td>${esc(v.rule)}</td></tr>`).join("")}</tbody></table></section>
+<section><h2>Guards against gaming</h2><ul>${CRITERIA.guards.map((g) => `<li>${esc(g.label)}</li>`).join("")}</ul></section>
+<section><h2>When a person looks</h2><p>${esc(CRITERIA.person.about)} Doubtful items and anything a person disagreed with are never published here.</p></section>`;
+  return shell({ title: "How we judge", base, body, desc: "The published criteria behind every research write-up." });
+}
 
 function shell({ title, base, body, desc = "" }) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -42,9 +80,11 @@ ${desc ? `<meta name="description" content="${esc(desc)}">` : ""}<link rel="styl
   .rx section { border-top: 1px solid var(--line); padding-top: 14px; }
   .rx ul, .rx ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 15px; line-height: 1.5; }
   .rx .lv { font-size: 12px; color: var(--muted); white-space: nowrap; }
-  .rx .meter { display: grid; grid-template-columns: 9ch 1fr 4ch; gap: 8px; align-items: center; font-size: 13px; }
-  .rx .meter i { display: block; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; } .rx .meter i b { display: block; height: 100%; background: var(--fg); }
-  .rx .meter span:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  .rx table.card { width: 100%; border-collapse: collapse; font-size: 14px; } .rx table.card td { padding: 7px 8px 7px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .rx table.card td.n { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; } .rx table.card td.mk { width: 1.5em; color: var(--muted); }
+  .rx table.card tr.met td.mk { color: var(--fg); font-weight: 600; } .rx table.sc tr:not(.met):not(.tot) td:nth-child(2) { color: var(--muted); }
+  .rx table.card .ev { display: block; font-size: 12px; color: var(--muted); overflow-wrap: anywhere; } .rx table.card tr.tot td { font-weight: 600; border-bottom: 0; }
+  .rx dl.sum { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 12px 0 0; font-size: 14px; } .rx dl.sum dt { color: var(--muted); } .rx dl.sum dd { margin: 0; font-variant-numeric: tabular-nums; }
   .rx .chips { display: flex; flex-wrap: wrap; gap: 6px; } .rx .chips span { font-size: 13px; padding: 2px 8px; border: 1px solid var(--line); border-radius: var(--radius); }
   .rx blockquote { margin: 0; padding-left: 12px; border-left: 2px solid var(--line); color: var(--muted); font-size: 14px; }
   .rx .md p { margin: 0 0 10px; line-height: 1.6; } .rx .md h2 { margin-top: 16px; } .rx .md code { font-size: 12px; }
@@ -54,11 +94,9 @@ ${desc ? `<meta name="description" content="${esc(desc)}">` : ""}<link rel="styl
 </style></head><body><main class="rx">
 <span class="flag">Research preview</span>
 ${body}
-<footer>Judged by rules from the abstract, not by a person and not by a model: a draft to read alongside the paper, not instead of it. Real people appear only as mention counts. <a href="${esc(base)}/research">All write-ups</a> · <a href="${esc(base)}/research/feed.xml">RSS</a></footer>
+<footer>Judged by rules from the abstract, not by a person and not by a model: a draft to read alongside the paper, not instead of it. Real people appear only as mention counts. <a href="${esc(base)}/research/criteria">How we judge</a> · <a href="${esc(base)}/research">All write-ups</a> · <a href="${esc(base)}/research/feed.xml">RSS</a></footer>
 </main></body></html>`;
 }
-
-const meter = (label, v, invert = false) => `<div class="meter"><span>${esc(label)}</span><i><b style="width:${Math.max(0, Math.min(100, v))}%"></b></i><span>${v}${invert ? "" : ""}</span></div>`;
 
 function paperPage(row, base) {
   const r = typeof row.result === "string" ? JSON.parse(row.result || "{}") : row.result || {};
@@ -68,8 +106,7 @@ function paperPage(row, base) {
   const body = `<h1>${esc(row.title)}</h1>
 ${row.authors ? `<p class="small muted" style="margin:0">${esc(row.authors)}</p>` : ""}
 <p class="lede">${esc(plain(row, r))}</p>
-<section><h2>The three judges</h2>${meter("Credibility", row.credibility)}${meter("Rigor", (J.rigor || {}).score ?? 0)}${meter("Hype", (J.hype || {}).score ?? 0)}
-<p class="small muted" style="margin:8px 0 0">Significance, how big a step it reports: ${row.score} after the guards (${r.naive ?? row.naive} before). Hype is lower-is-better.</p></section>
+${scorecard(row, r)}
 ${(r.claims || []).length ? `<section><h2>What it claims</h2><ul>${r.claims.slice(0, 6).map((c) => `<li>${esc(c.sentence)} <span class="lv">(${esc(LEVEL[c.level] || c.level)})</span></li>`).join("")}</ul></section>` : ""}
 ${fired.length || (J.rigor && J.rigor.missing && J.rigor.missing.length) ? `<section><h2>What to keep in mind</h2><ul>${fired.map((g) => `<li>${esc(g.label)}: ${esc(g.detail)}</li>`).join("")}${(J.rigor && J.rigor.missing ? J.rigor.missing : []).map((m) => `<li>Not shown in the abstract: ${esc(m.toLowerCase())}</li>`).join("")}</ul></section>` : ""}
 ${topics.length ? `<section><h2>Where it fits</h2><div class="chips">${topics.map((t) => `<span><a href="${esc(base)}/research/topic/${esc(t.qid.slice(6))}">${esc(t.label)}</a></span>`).join("")}</div></section>` : ""}
@@ -117,4 +154,4 @@ function feedXml({ papers, topics }, base) {
   return `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>Superintelligence research write-ups (preview)</title><link>${x(base)}/research</link><description>Plain-language, traced write-ups of papers on the path to superintelligence. Judged from abstracts by rules; a preview.</description>${items}</channel></rss>`;
 }
 
-module.exports = { publishable, plain, paperPage, topicPage, indexPage, feedXml, md };
+module.exports = { scorecard, criteriaPage, publishable, plain, paperPage, topicPage, indexPage, feedXml, md };

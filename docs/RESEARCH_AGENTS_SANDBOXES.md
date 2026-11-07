@@ -5,7 +5,7 @@ Research from Nov 7, 2026 for John's request: run agents in the background to an
 ## Recommendation
 
 1. **Do the bulk work for free, locally or in CI, and keep the web server thin.** The knowledge module's chunking, tagging (the `lib/taggers` registry), hashing embeddings and co-occurrence graph are pure JavaScript with no API calls. An admin runs them on demand (`POST /api/admin/knowledge/build`), and unchanged chunks are skipped, so this fits Vercel Hobby and Neon Free.
-2. **Use a model only where judgement is needed:** plain-language explainers, paper-to-code and reverse-engineering. Those go through the Learn studio jobs: the worker writes a brief, and a person's Claude Code session or a cheap model does the work.
+2. **Use a model only where judgement is needed:** plain-language explainers, paper-to-code and reverse-engineering. Those go through the Learn studio jobs: the worker writes a brief, and a person's coding agent or a cheap model does the work.
 3. **For a model**, start with a free tier and fall back to the cheapest paid ones:
    - Free: Groq (llama-3.1-8b-instant, about 14,400 requests a day), the Gemini API free tier, OpenRouter's `:free` models (about 50 a day), Cloudflare Workers AI (10,000 Neurons a day).
    - Cheapest paid: Groq Llama 3.1 8B at $0.05 / $0.08 per million tokens in / out; Gemini 2.5 Flash-Lite at $0.10 / $0.40.

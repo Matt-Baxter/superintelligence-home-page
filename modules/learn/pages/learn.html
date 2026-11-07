@@ -175,7 +175,7 @@ async function showJobs() {
   if (!ME.admin) { $("#view").innerHTML = '<p class="muted">Admins only.</p>'; return; }
   const [{ jobs, kinds }, g] = await Promise.all([api("/api/admin/learn/jobs"), graph()]);
   $("#view").innerHTML = `<div class="cols side">
-    <section class="panel"><h2>Studio jobs</h2><p class="small muted">Background work runs off the server, so the free tier never pays for it: <code>npm run learn:worker</code> does drafts, videos and Lean checks; agent jobs wait for Claude Code (the teach-a-concept skill). Nothing is posted anywhere automatically: a person publishes.</p>
+    <section class="panel"><h2>Studio jobs</h2><p class="small muted">Background work runs off the server, so the free tier never pays for it: <code>npm run learn:worker</code> does drafts, videos and Lean checks; agent jobs wait for a coding agent (the teach-a-concept skill). Nothing is posted anywhere automatically: a person publishes.</p>
       <div id="jobs">${jobs.length ? jobs.map((j) => `<div class="jobrow" data-job="${j.id}"><div style="min-width:0"><b>#${j.id} ${esc((kinds.find((k) => k.id === j.kind) || {}).label || j.kind)}</b>${j.concept ? ` · <a href="#/c/${j.concept_id}">${esc(j.concept)}</a>` : ""}${j.note ? `<div class="small muted">${esc(j.note.slice(0, 160))}</div>` : ""}
         ${j.error ? `<div class="small" style="color:var(--bad)">${esc(j.error.slice(0, 300))}</div>` : ""}
         ${j.files.length ? `<div class="small muted">Files: ${j.files.map(esc).join(", ")}</div>` : ""}

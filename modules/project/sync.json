@@ -15,7 +15,7 @@
     {
       "key": "scheduled:paper-watch",
       "title": "Daily paper watch and paper-to-code (scheduled agent task)",
-      "description": "Every day at 5:47 AM Central a Claude scheduled task finds new papers, runs scripts/watch.js, builds at most one paper-to-code toy and pushes it to a feature/paper-watch-<date> branch (never main). Review those branches; nothing merges on its own. The GitHub Actions workflow .github/workflows/paper-watch.yml runs the watcher with direct arXiv access once it is merged.",
+      "description": "Every day at 5:47 AM Central a scheduled agent task finds new papers, runs scripts/watch.js, builds at most one paper-to-code toy and pushes it to a feature/paper-watch-<date> branch (never main). Review those branches; nothing merges on its own. The GitHub Actions workflow .github/workflows/paper-watch.yml runs the watcher with direct arXiv access once it is merged.",
       "labels": [
         "agent",
         "scheduled",
