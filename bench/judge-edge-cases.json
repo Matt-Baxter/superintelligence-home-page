@@ -1230,7 +1230,7 @@
     "metric": "claims",
     "rel": "eq"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "hedge-may",
@@ -1245,7 +1245,7 @@
     "metric": "claims",
     "rel": "eq"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "hedge-suggests",
@@ -1260,7 +1260,7 @@
     "metric": "claims",
     "rel": "eq"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "hedge-control-assert",
@@ -1291,7 +1291,7 @@
     "rel": "eq",
     "to": 0
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "title-topic-only",
@@ -1324,7 +1324,7 @@
     "metric": "hype",
     "rel": "gt"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "inj-system-prompt-topic",

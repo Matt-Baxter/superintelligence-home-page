@@ -204,19 +204,42 @@ function rigor(sents) {
   const notCounted = MARKERS.filter((m) => neg.has(m.id)).map((m) => ({ factor: m.label, points: 0, detail: `negated: "${neg.get(m.id).trim()}"` }));
   return { score: why.reduce((a, w) => a + w.points, 0), why, missing, notCounted };
 }
+// Not claims (REQ-035, task T035): a question ("Can models achieve ...?"), and a claim phrase that is negated ("we do
+// not demonstrate") or hedged: may, might, could, would, suggest(s), appear(s), seem(s), possibly, perhaps,
+// potentially, likely, if, whether, hypothesise, aim(s), hope within 6 words before it in the same clause. A sentence is a
+// claim when at least one claim phrase in it is neither.
+const HEDGE = /^(?:may|might|could|would|suggests?|suggested|suggesting|appears?|seems?|possibly|perhaps|potentially|likely|unlikely|plausibly|conceivably|if|whether|hypothesi[sz]e[sd]?|aims?|hopes?)$/;
+const CLAIM_G = new RegExp(CLAIM.source, "gi");
+function hedgedAt(text, index) {
+  let pre = String(text).slice(0, index);
+  const cuts = [...pre.matchAll(CLAUSE_END)];
+  if (cuts.length) { const c = cuts.at(-1); pre = pre.slice(c.index + c[0].length); }
+  return words(pre).slice(-6).some((t) => HEDGE.test(t));
+}
+function liveClaims(s) {
+  const f = fold(s);
+  if (/\?["')\]]*\s*$/.test(f)) return { live: [], skipped: "a question" };
+  const hits = [...f.matchAll(CLAIM_G)];
+  const live = hits.filter((h) => !negatedAt(f, h.index, h[0]) && !hedgedAt(f, h.index));
+  return { live, skipped: hits.length && !live.length ? (hits.some((h) => hedgedAt(f, h.index)) ? "hedged" : "negated") : null };
+}
+const isClaim = (s) => liveClaims(s).live.length > 0;
+// Every claim is returned (hype counts all of them); review() shows the first 12.
 function claims(sents) {
   const out = [];
   sents.forEach((s, i) => {
-    if (!CLAIM.test(s)) return;
+    if (!isClaim(s)) return;
     // Backed = the claim's own sentence carries the evidence. Evidence in a neighbouring sentence only counts as
     // "partly backed", because a claim appended next to someone else's numbers would otherwise borrow them.
     // Backed needs every clause that makes a claim to carry its own evidence (clauses split at semicolons).
-    const own = clauses(s).filter((c) => CLAIM.test(c)), near = [...new Set([s, sents[i - 1], sents[i + 1]].filter(Boolean).flatMap(markersIn))];
+    const own = clauses(s).filter(isClaim), near = [...new Set([s, sents[i - 1], sents[i + 1]].filter(Boolean).flatMap(markersIn))];
     const backed = (own.length ? own : [s]).every((c) => backedBy(markersIn(c)));
     out.push({ sentence: s.slice(0, 200), support: near, level: backed ? "backed" : near.length ? "partly backed" : "unbacked" });
   });
-  return out.slice(0, 12);
+  return out;
 }
+// Claim phrases that were not read as claims, and why (reported on the review).
+const notClaims = (sents) => sents.map((s) => ({ sentence: s.slice(0, 200), why: liveClaims(s).skipped })).filter((x) => x.why);
 // A survey's evidence is its coverage, not experiments: how many works, a taxonomy, comparisons, stated gaps.
 // Only a paper that says so in its title or first sentence is read as a survey (the stress test tries to fake it).
 const SURVEY = /\b((?:we|the authors) (?:survey|review)|this survey|a survey of|survey of \d|systematic review|literature review)\b/i;
@@ -372,7 +395,7 @@ function review(input) {
         ...(hp.skipped.length ? [{ factor: "Hype words not counted", points: 0, detail: hp.skipped.map((x) => `${x.word} (${x.why})`).join(", ") }] : [])] },
     ],
     guarded: { base, cap, removed, scoreRule: "min(significance on cleaned text - removed factors, 35 + 0.65 x rigor); 30 at most if it addresses the judge" },
-    guards, claims: cl, dropped: cleaned.dropped.map((d) => ({ ...d, sentence: d.sentence.slice(0, 160) })),
+    guards, claims: cl.slice(0, 12), claimCount: cl.length, notClaims: notClaims([title, ...sents].filter(Boolean)).slice(0, 12), dropped: cleaned.dropped.map((d) => ({ ...d, sentence: d.sentence.slice(0, 160) })),
     scope: sig.scope, type: sig.type, evidence: sig.evidence, benchmarks: sig.benchmarks,
     tags: tags.map(({ qid: q, label, matched, method, via }) => ({ qid: q, label, matched, method, ...(via ? { via } : {}) })),
     edges, trace, ms: Number(process.hrtime.bigint() - t0) / 1e6,
@@ -417,4 +440,4 @@ function stress(input, steps = 6) {
     summary: `Gaming the unguarded judge added ${a.gain.naive} points; the guarded score moved ${a.gain.guarded >= 0 ? "+" : ""}${a.gain.guarded} on the same edits. An adversary that targets the guarded score directly gained ${b.gain.guarded}.` };
 }
 
-module.exports = { canonical, fold, clauses, negatedAt, markersIn, injection, KINDS, MARKERS, detectKind, clean, rigor, claims, hype, review, attack, stress, bank, sentences };
+module.exports = { canonical, fold, clauses, negatedAt, markersIn, injection, isClaim, KINDS, MARKERS, detectKind, clean, rigor, claims, hype, review, attack, stress, bank, sentences };

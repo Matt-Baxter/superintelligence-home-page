@@ -39,6 +39,12 @@ ok(score({ ...careful, text: careful.text.toUpperCase(), title: careful.title.to
 const sents = R.sentences(careful.text); const shuffled = [...sents.slice(1), sents[0]].join(" ");
 ok(Math.abs(score({ ...careful, text: shuffled }) - rc.score) <= 5, "moving a sentence changes the score by at most 5");
 
+console.log("Claims (T035)");
+ok(!R.isClaim("The model may achieve human-level accuracy.") && !R.isClaim("We do not demonstrate human-level reasoning.") && !R.isClaim("Can Sample models achieve human-level reasoning?"), "hedged, negated and question sentences are not claims");
+ok(R.isClaim("We show the model achieves human-level accuracy."), "...an asserted one is");
+const many = R.review({ kind: "paper", title: "Sample (test data)", text: Array.from({ length: 14 }, (_, i) => `We achieve superhuman reasoning on Sample task ${i + 1}.`).join(" ") });
+ok(many.claims.length === 12 && many.claimCount === 14 && many.judges[2].why[0].detail === "14 of 14", "every claim counts for hype; the list shows 12");
+
 console.log("Keyword lists (T033)");
 ok(R.clean("Sparse autoencoders aid mechanistic interpretability.").dropped.length === 0, "a short on-topic statement with a verb is kept");
 ok(R.clean("Superintelligence AGI is alignment interpretability scaling agents.").dropped.length === 1, "...but a keyword list with one verb added is still dropped");
