@@ -63,7 +63,7 @@ catch (e) { fail("Unslop", String(e.stdout || e.stderr || e.message).trim().spli
 
 // 5b3. Nothing the code needs is git-ignored (a fresh clone in CI must have every module file).
 try {
-  const GENERATED = [/^modules\/codemap\/data\//, /\/node_modules\//];
+  const GENERATED = [/^modules\/codemap\/data\//, /^modules\/project\/data\//, /\/node_modules\//];
   const ignored = sh("git ls-files --others --ignored --exclude-standard -- modules lib kernel scripts agent-kit").split("\n").filter((f) => f && !GENERATED.some((r) => r.test(f)));
   ignored.length ? fail("No ignored source files", `git-ignored but needed: ${ignored.slice(0, 5).join(", ")} (fix .gitignore)`) : ok("No ignored source files");
 } catch { ok("No ignored source files", "skipped (no git)"); }
@@ -82,11 +82,30 @@ try {
 
 // 5b6. si-expr (portable rules) and the schema registry: Node vectors, builder/registry units, generated schemas current.
 try {
-  sh("node test/expr-unit.js"); sh("node test/lab-unit.js"); sh("node test/review-unit.js"); sh("node test/papers-unit.js"); sh("node test/watch-unit.js"); sh("node test/project-sync-unit.js"); sh("node test/dossier-unit.js"); sh("node test/sources-unit.js"); sh("node test/panel-unit.js"); sh("node test/quality-unit.js"); sh("node --no-warnings test/research-feed.js");
+  sh("node test/expr-unit.js"); sh("node test/lab-unit.js"); sh("node test/review-unit.js"); sh("node test/papers-unit.js"); sh("node test/watch-unit.js"); sh("node test/project-sync-unit.js"); sh("node test/dossier-unit.js"); sh("node test/sources-unit.js"); sh("node test/panel-unit.js"); sh("node test/quality-unit.js"); sh("node --no-warnings test/research-feed.js"); sh("node --no-warnings test/rigor-badge.js");
+  sh("node test/project-specs-unit.js");
   const ex = sh("node scripts/expr-check.js --only=node").trim().split("\n")[0].replace(/^✓ node\s+/, "");
   const sc = sh("node scripts/schema.js check").trim().split("\n")[0].replace(/^✓ up to date\s+/, "");
   ok("Rules and schemas", `si-expr ${ex} vectors; schema/gen ${sc} current`);
 } catch (e) { fail("Rules and schemas", String(e.stdout || e.stderr || e.message).trim().split("\n").slice(-3).join(" | ")); }
+
+// 5b7. Judge edge cases (bench/judge-edge-cases.json, proposed REQ-032..REQ-037): a case marked "ok" that breaks fails;
+// known gaps are reported, not failed, so the backlog is visible and can only shrink.
+try { ok("Judge edge cases", sh("node test/judge-edge-cases.js").trim().split("\n").pop().replace(/^judge edge cases: /, "")); }
+catch (e) { fail("Judge edge cases", String(e.stdout || e.message).trim().split("\n").filter((l) => /✗|regression/.test(l)).slice(0, 4).join(" | ")); }
+
+// 5b7b. Judge fixtures and properties (spec 003, T003-T006): fidelity set shape, near-cutoff report, the Lean model's
+// vectors against review.js, and property tests on 300 generated synthetic texts (known design gaps print, don't fail).
+try { const last = (c) => sh(c).trim().split("\n").pop();
+  const props = last("node test/judge-properties.js --n 300").replace(/^judge properties: /, "");
+  sh("node test/fidelity-cases.js"); sh("node test/fidelity-unit.js"); sh("node test/judge-report-unit.js"); sh("node test/judge-lean-vectors.js"); sh("node test/bands-unit.js");
+  ok("Judge properties", `${props} (300 generated texts; the full run is 1,200); fidelity set well-formed, near-cutoff rule and band units pass, Lean vectors match review.js`); }
+catch (e) { fail("Judge properties", String(e.stdout || e.message).trim().split("\n").slice(-3).join(" | ")); }
+
+// 5b8. AGENTS.md is what Codex reads (not CLAUDE.md): it must carry the hard rules itself and fit Codex's 32 KiB default.
+try { const a = fs.readFileSync(path.join(root, "AGENTS.md"), "utf8"), need = ["Never push to `main`", "No Twitter/X", "No co-author trailers", "npm run preflight"].filter((x) => !a.includes(x));
+  const kb = Buffer.byteLength(a) / 1024; need.length || kb > 32 ? fail("AGENTS.md", [need.length && `missing: ${need.join(", ")}`, kb > 32 && `${kb.toFixed(1)} KiB, over Codex's 32 KiB`].filter(Boolean).join("; ")) : ok("AGENTS.md", `rules and commands present, ${kb.toFixed(1)} KiB`); }
+catch (e) { fail("AGENTS.md", e.message); }
 
 // 5b6. Lab results precomputed for cold starts (scripts/lab-results.js) must match the current examples and runners.
 try { ok("Lab results current", sh("node scripts/lab-results.js --check").trim().replace(/^lab results: /, "")); }
@@ -101,6 +120,10 @@ try {
 // 5c. Agent kit: skills, subagents, plugin manifests, symlinks, index and MCP handshake
 try { ok("Agent kit", sh("node scripts/agent-kit.js check").trim()); }
 catch (e) { fail("Agent kit", String(e.stderr || e.message).trim().split("\n").slice(0, 4).join(" ")); }
+
+// 5c2. Hub (docs/HUB.md): generated from the repo by scripts/hub.js, so it fails when stale or when a relative link in it breaks (test/hub-unit.js first)
+try { sh("node test/hub-unit.js"); ok("Hub", sh("node scripts/hub.js --check").trim().replace(/^hub: /, "")); }
+catch (e) { fail("Hub", String(e.stderr || e.message).trim().split("\n").slice(0, 4).join(" ") + " (run npm run hub)"); }
 
 // 6. Spec trace: every REQ in the shared spec(s) appears in docs/SPEC_TRACE.md, and the trace cites no unknown REQ
 {

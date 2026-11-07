@@ -59,7 +59,7 @@ async function load() {
 
     <section class="panel" id="approvals"><h2>Waiting on both partners</h2>
       <p class="small muted">${esc(r.specStatus.replace(/\*\*|`/g, ""))}</p>
-      <ol class="reqs">${r.proposals.map((p) => `<li><b>${esc(p.id)}</b> ${esc(p.text)}…</li>`).join("")}</ol>
+      <ol class="reqs">${r.proposals.map((p) => `<li><b>${esc(p.spec || "002")}/${esc(p.id)}</b> ${esc(p.text)}…</li>`).join("")}</ol>
       <h3 style="font-size:15px;margin:14px 0 6px">People checks in the shared spec</h3>
       <ul class="small">${Object.entries(r.people).map(([id, t]) => `<li><b>${esc(id)}</b>: ${esc(t)}</li>`).join("")}</ul></section>`;
     $$("[data-ev]").forEach((b) => (b.onclick = async () => { try { await api(`/api/admin/review/events/${b.dataset.ev}`, { body: { status: b.dataset.v } }); flash($("#status"), `Forecast marked ${b.dataset.v}.`); load(); } catch (e) { showErr($("#status"), e); } }));

@@ -174,6 +174,25 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   await john.goto(B + '/m/project#/board'); await john.waitForSelector('.board .card'); await john.screenshot({ path: 'shots/project-board.png' });
   await john.goto(B + '/m/project#/active'); await john.waitForSelector('#body .irow'); await john.screenshot({ path: 'shots/project-list.png' });
 
+  console.log('Project specs (REQ-030)');
+  const scoped002 = await j(john, '/api/admin/project/issues', 'POST', { title: 'Sample research approval (test data)', labels: ['REQ-032', 'spec:002'] });
+  const scoped003 = await j(john, '/api/admin/project/issues', 'POST', { title: 'Sample fidelity approval (test data)', labels: ['REQ-032', 'spec:003'] });
+  const specs = await j(john, '/api/admin/project/specs');
+  const r002 = specs.reqs.find((r) => r.id === 'REQ-032' && r.spec === '002'), r003 = specs.reqs.find((r) => r.id === 'REQ-032' && r.spec === '003');
+  ok(r002.issues.includes(scoped002.issue.number) && !r002.issues.includes(scoped003.issue.number) && r003.issues.includes(scoped003.issue.number) && !r003.issues.includes(scoped002.issue.number), 'overlapping REQ IDs link only the issues from their own spec');
+  const want = Array.from({ length: 40 }, (_, i) => `REQ-${String(i + 1).padStart(3, '0')}`);
+  ok(want.every((id) => specs.reqs.some((r) => r.id === id)) && specs.reqs.every((r) => r.status === (r.spec === '001' ? 'approved' : 'proposed')), 'specs API lists REQ-001..REQ-040: 001 approved, the rest proposed');
+  ok(specs.specs.length >= 3 && specs.reqs.every((r) => r.trace && Array.isArray(r.tasks) && Array.isArray(r.issues)) && specs.reqs.find((r) => r.id === 'REQ-020').issues.length > 0, 'each REQ carries its trace, tasks and the tracker issues labelled with it');
+  ok((await j(matt, '/api/admin/project/specs')).status === 403, 'specs API is admins only');
+  await john.goto(B + '/m/project#/specs'); await john.waitForSelector('#spList tr[data-req="REQ-040"]');
+  ok((await john.$$('#spList tr[data-req]')).length === specs.reqs.length && (await john.textContent('#spList')).includes('Approved') && (await john.textContent('#body')).includes('node scripts/project-sync.js'), 'Specs view shows every REQ with status chips and the sync command');
+  await john.selectOption('#spStatus', 'approved'); ok((await john.$$('#spList tr[data-req]')).length === 20, 'status filter: 20 approved');
+  await john.selectOption('#spStatus', ''); await john.check('#spOpen'); const openRows = await john.$$eval('#spList tr[data-req]', (x) => x.map((t) => t.dataset.req));
+  ok(openRows.length === specs.reqs.filter((r) => r.open > 0).length && openRows.length > 0, 'has-open-tasks filter');
+  await john.uncheck('#spOpen'); await john.selectOption('#spWho', 'people'); ok((await john.$$('#spList tr[data-req="REQ-019"]')).length === 1, 'who filter: people includes the REQ-019 people check');
+  await john.selectOption('#spWho', ''); await john.click('#spList tr[data-req="REQ-020"] [data-open]'); await john.waitForSelector('.drawer'); ok((await john.textContent('.drawer .dh')).includes(`SI-${specs.reqs.find((r) => r.id === 'REQ-020').issues[0]}`), 'a linked issue opens in the drawer'); await john.keyboard.press('Escape');
+  await matt.goto(B + '/m/project#/specs'); await matt.waitForSelector('#noaccess:not([hidden])'); ok(await matt.$('#spList') === null, 'Specs view is refused for a non-admin');
+
   console.log('Capability analysis');
   const cl = await j(john, '/api/admin/sources', 'POST', { url: 'fixture://sample-claims.xml', name: 'Sample capability claims (test data)', kind: 'lab', format: 'rss' });
   ok(cl.run && cl.run.stored === 3, 'a source with capability claims is harvested');
@@ -367,7 +386,7 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   console.log('Phone width');
   const ph = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })).newPage();
   await ph.goto(B); await ph.fill('#username', 'john'); await ph.fill('#password', 'correct-horse-9'); await ph.click('#authBtn'); await ph.waitForSelector('#feed .story');
-  for (const path of ['/', '/story?id=' + sid, '/brief', '/lists', '/sources', '/m/admin', '/m/project', '/m/capabilities', '/m/studio', '/m/decide', '/m/view?name=capability-snapshot', '/m/codemap', '/m/project#/timeline', '/m/learn', '/m/learn#/c/attention', '/m/learn#/how', '/m/knowledge', '/m/lab', '/m/lab#/x/rsi-decision-gym']) { await ph.goto(B + path); await ph.waitForTimeout(600); ok(!(await ph.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'no sideways scroll: ' + path.split('?')[0]); }
+  for (const path of ['/', '/story?id=' + sid, '/brief', '/lists', '/sources', '/m/admin', '/m/project', '/m/capabilities', '/m/studio', '/m/decide', '/m/view?name=capability-snapshot', '/m/codemap', '/m/project#/timeline', '/m/project#/specs', '/m/learn', '/m/learn#/c/attention', '/m/learn#/how', '/m/knowledge', '/m/lab', '/m/lab#/x/rsi-decision-gym']) { await ph.goto(B + path); await ph.waitForTimeout(600); ok(!(await ph.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'no sideways scroll: ' + path.split('?')[0]); }
   await ph.goto(B); await ph.waitForSelector('#feed .story'); await ph.screenshot({ path: 'shots/phone-feed.png' });
   await john.goto(B); await john.waitForSelector('#feed .story'); await john.screenshot({ path: 'shots/feed.png', fullPage: true });
   await john.goto(B + '/brief'); await john.waitForSelector('#brief .jr-metric'); await john.screenshot({ path: 'shots/brief.png', fullPage: true });

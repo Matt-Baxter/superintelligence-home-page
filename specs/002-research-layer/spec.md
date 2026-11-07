@@ -1,5 +1,7 @@
 # Feature Specification: Research layer (extended version)
 
+> Numbering collision: REQ-032..034 identify different proposals in specs 002 and 003. Refer to the spec number with the REQ ID until both partners agree the renumbering in [the handoff](../../handoff/SI-HANDOFF-2026-11-07.md#2-requirement-numbers-collide). No requirement has been renumbered.
+
 **Feature Branch**: `fix/sync-with-main`
 
 **Created**: 2026-11-07

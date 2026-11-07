@@ -22,10 +22,9 @@ async function waiting(db, today = new Date().toISOString().slice(0, 10)) {
 }
 
 function proposals() {
-  const f = path.join(root, "specs", "002-research-layer", "spec.md");
-  if (!fs.existsSync(f)) return { status: "", reqs: [] };
-  const t = fs.readFileSync(f, "utf8");
-  return { status: (t.match(/\*\*Status\*\*:\s*([^\n]+)/) || [, ""])[1], reqs: [...t.matchAll(/^- \*\*(REQ-\d{3})\*\*: ([^\n]+)/gm)].map((m) => ({ id: m[1], text: m[2].slice(0, 140) })) };
+  const data = require("../modules/project/specs").collect();
+  return { status: data.specs.filter((s) => s.status === "proposed").map((s) => `${s.id}: ${s.statusLine}`).join("; "),
+    reqs: data.reqs.filter((r) => r.status === "proposed").map((r) => ({ id: r.id, spec: r.spec, text: r.text.slice(0, 140) })) };
 }
 function branches() {
   try {
@@ -41,8 +40,8 @@ async function main() {
   db.extend({ sql: k.store.schema.join("\n"), columns: k.store.columns }); await db.ready();
   const W = await waiting(db, today), P = proposals(), CFG = require("../modules/project/sync.json"), B = branches();
   const L = [`# Agent check-in, ${today}`, "", "What is waiting, on whom, and the next action. Agents do the agent rows; people rows need John or Matt. Nothing here approves, merges or deploys.", ""];
-  L.push("## Waiting on both partners", "", `Spec 002 status: ${(P.status || "unknown").replace(/\.$/, "")}.`, "");
-  for (const r of P.reqs) L.push(`- **${r.id}** awaiting approval: ${r.text}… Next: John and Matt approve it or drop it.`);
+  L.push("## Waiting on both partners", "", `Proposal status: ${(P.status || "unknown").replace(/\.$/, "")}.`, "");
+  for (const r of P.reqs) L.push(`- **${r.spec}/${r.id}** awaiting approval: ${r.text}… Next: John and Matt approve it or drop it.`);
   L.push("", "## Waiting on a person", "");
   for (const [id, text] of Object.entries(CFG.people)) L.push(`- **${id}**: ${text}`);
   L.push(`- **Forecasts due:** ${W.forecastsDue} of ${W.forecastsPending} pending. Next: mark each on its topic's dossier (/m/dossier).`);

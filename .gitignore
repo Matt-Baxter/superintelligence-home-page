@@ -6,6 +6,10 @@ dist/
 client/blocks.gen.jsx
 public/m/
 modules/codemap/data/
+modules/project/data/
 out/
 !modules/learn/data/
 __pycache__/
+
+# Lean build output (proofs/, REQ-038)
+proofs/.lake/

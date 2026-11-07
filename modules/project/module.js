@@ -1,8 +1,8 @@
 // Project workspace: a Linear-style tracker for running the project itself (issues, milestones, comments, activity).
 module.exports = {
   id: "project",
-  version: "1.1.0",
-  description: "Linear-style project workspace for admins: issues, board, timeline with dependencies, milestones, activity, command menu.",
+  version: "1.2.0",
+  description: "Linear-style project workspace for admins: issues, board, timeline with dependencies, milestones, activity, command menu, specs view.",
   setup(ctx) {
     // Tables owned by this module. ${ID} and ${T} become the engine's id and timestamp types.
     ctx.point("db.schema").addSql(`
