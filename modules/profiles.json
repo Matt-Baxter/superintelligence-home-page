@@ -3,12 +3,9 @@
   "default": "spec",
   "profiles": {
     "spec": {
-      "about": "Matt's shared spec, REQ-001 to REQ-020. The spec lists notes, reading lists, a weekly brief, user-suggested sources and an in-app agent log as out of scope.",
+      "about": "Matt's shared spec, REQ-001 to REQ-020, and nothing else: only the admin module, which running the site needs (sources, fetch status). The generative UI, blocks and decision judges are extended-only, since no spec requirement needs them (constitution II). The spec lists notes, reading lists, a weekly brief, user-suggested sources and an in-app agent log as out of scope.",
       "features": [],
       "modules": [
-        "blocks-core",
-        "generative-ui",
-        "decision",
         "admin"
       ]
     },

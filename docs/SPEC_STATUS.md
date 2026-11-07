@@ -6,11 +6,11 @@ Measured on 2026-11-07 by `scripts/spec-status.js`, from the spec acceptance sui
 
 | Part of the spec | Automated and passing | Needs people | Open or failing |
 | --- | --- | --- | --- |
-| Functional requirements (20) | 19 (95%) | 1 | 0 |
+| Functional requirements (20) | 18 (90%) | 2 | 0 |
 | Acceptance scenarios (19) | 19 (100%) | 0 | 0 |
 | Success criteria (8) | 5 (63%) | 3 | 0 |
 
-**What's left is delivery, not building:** REQ-019, SC-001, SC-004, SC-008 can only be confirmed by people on the live site. That needs this branch merged, deployed and shared with the class. Everything else in the spec passes an automated check.
+**What's left is delivery, not building:** REQ-019, REQ-020, SC-001, SC-004, SC-008 can only be confirmed by people on the live site. That needs this branch merged, deployed and shared with the class. Everything else in the spec passes an automated check.
 
 ## Requirements
 
@@ -35,7 +35,7 @@ Measured on 2026-11-07 by `scripts/spec-status.js`, from the spec acceptance sui
 | REQ-017 | Pass | 5 | Readers MUST be able to filter the feed by superintelligence topic. |
 | REQ-018 | Pass | 4 | The feed MUST be usable on a laptop and a phone without sideways scrolling. |
 | REQ-019 | People check | — | The Superintelligence Homepage MUST be live at a public URL and shared with the class at least 2 weeks before our presentation. *(Live at a public URL, shared with the class 2 weeks before the presentation: a deployment fact (merge, deploy, share the link).)* |
-| REQ-020 | Pass | 1 | Each partner MUST keep a human-written agent log in the repository (`AGENT_LOG.md`) answering "What did the agent get wrong & how did you ca… |
+| REQ-020 | People check | 1 | Each partner MUST keep a human-written agent log in the repository (`AGENT_LOG.md`) answering "What did the agent get wrong & how did you ca… *(Each partner keeps a human-written agent log in AGENT_LOG.md: the file exists (the automated check), but it has no entries yet. Only Matt and John can write them; agents must not.)* |
 
 ## Acceptance scenarios
 

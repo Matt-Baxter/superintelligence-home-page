@@ -1,6 +1,9 @@
 // Fast checks of the module kernel (run by preflight). Uses the real modules and synthetic fixture modules.
 const assert = require("node:assert");
 const path = require("node:path");
+// The dependency-order checks need every real module, so they run against the extended version (the spec version
+// loads only the admin module).
+process.env.SITE_PROFILE = process.env.SITE_PROFILE || "extended";
 const { createKernel } = require("../kernel/kernel");
 const FIX = path.join(__dirname, "fixtures", "modules");
 let n = 0; const t = (name, fn) => { fn(); n++; };
