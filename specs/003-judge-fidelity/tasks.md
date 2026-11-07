@@ -45,7 +45,7 @@ Any agent (Codex, v0, Claude or another) picks up work here. `scripts/project-sy
 - [ ] T031 [rules] [REQ-035] Negation window for markers and hype words; capitalised names exempt from hype; flips neg-* and hype-benchmark-name
 - [ ] T032 [rules] [REQ-035] Injection guard on canonical text with confusables mapped, more wordings, and a "describes attacks" exception that is reported, not capped; flips inj-*
 - [ ] T033 [rules] [REQ-034] Don't drop a statement with a verb as a keyword list; flips clean-title-like-sentence
-- [ ] T034 [rules] [REQ-032] Sentence splitting that keeps "et al.", "Fig.", "e.g.", "i.e.", "approx." inside a sentence, and splits at semicolons for claim backing (so a claim can't borrow the numbers after a semicolon); flips the seg-* gaps
+- [x] T034 [rules] [REQ-032] Sentence splitting that keeps "et al.", "Fig.", "e.g.", "i.e.", "approx." inside a sentence, and splits at semicolons for claim backing (so a claim can't borrow the numbers after a semicolon); flips the seg-* gaps (done: flips seg-et-al, seg-fig-claim, seg-eg-capital, seg-ie-digit, seg-approx, seg-semicolon-borrow; `clauses()` exported)
 - [ ] T035 [rules] [REQ-035] Hedged claims ("may", "suggests"), negated claims and question titles are not claims; count every claim, not only the first 12, for hype; flips hedge-*, neg-negated-claim, title-question, claims-past-twelve
 - [ ] T036 [rules] [REQ-036] Survey detection that doesn't depend on which sentence comes first (the T004 order property)
 

@@ -38,8 +38,16 @@ function canonical(x) {
 const CONFUSABLE = Object.fromEntries([..."аеорсухіјѕԁһԛԝАВЕКМНОРСТХУІЈЅαορνικτυχΑΒΕΖΗΙΚΜΝΟΡΤΥΧ"].map((c, i) => [c, "aeopcyxijsdhqwABEKMHOPCTXYIJSaopvikTuxABEZHIKMNOPTYX"[i]]));
 const fold = (x) => String(x).replace(/[\u0370-\u03ff\u0400-\u052f]/g, (c) => CONFUSABLE[c] || c);
 const words = (s) => String(s).toLowerCase().match(/[\p{L}\p{N}]+(?:[-'][\p{L}\p{N}]+)*/gu) || [];
-// Split at . ! ? followed by a space, so decimals (41.2%) and abbreviations inside a sentence stay together.
-const sentences = (s) => String(s).replace(/\s+/g, " ").trim().split(/(?<=[.!?])\s+(?=["'(\[]?[A-Z0-9])/).map((x) => x.trim()).filter(Boolean);
+// Split at . ! ? followed by a space and a capital or digit, so decimals (41.2%) stay together, and never right after a
+// common abbreviation ("et al.", "e.g.", "i.e.", "Fig.", "approx.", "cf.", "vs.", "Eq.", "Sec.", "Tab."), so a citation or
+// a figure reference doesn't cut a claim off from its own evidence (REQ-032, task T034). The cost: a sentence that
+// really ends in "et al." joins the next one.
+const ABBREV = /(?<!\b(?:et al|[Ee]\.g|[Ii]\.e|[Ff]igs?|[Aa]pprox|[Cc]f|[Vv]s|[Ee]qs?|[Ss]ecs?|[Tt]ab|[Rr]esp|[Cc]a)\.)/;
+const SPLIT = new RegExp(`${ABBREV.source}(?<=[.!?])\\s+(?=["'(\\[]?[A-Z0-9])`);
+const sentences = (s) => String(s).replace(/\s+/g, " ").trim().split(SPLIT).map((x) => x.trim()).filter(Boolean);
+// Clauses: a sentence split at semicolons. Used for claim backing only, so a claim can't borrow the numbers of
+// another clause joined to it by a semicolon (the rest of the judges still read whole sentences).
+const clauses = (s) => String(s).split(/\s*;\s*/).filter(Boolean);
 const norm = (s) => words(s).join(" ");
 const pl = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
 const hash = (s) => crypto.createHash("sha1").update(s).digest("hex").slice(0, 12);
@@ -113,8 +121,10 @@ function claims(sents) {
     if (!CLAIM.test(s)) return;
     // Backed = the claim's own sentence carries the evidence. Evidence in a neighbouring sentence only counts as
     // "partly backed", because a claim appended next to someone else's numbers would otherwise borrow them.
-    const own = markersIn(s), near = [...new Set([s, sents[i - 1], sents[i + 1]].filter(Boolean).flatMap(markersIn))];
-    out.push({ sentence: s.slice(0, 200), support: near, level: backedBy(own) ? "backed" : near.length ? "partly backed" : "unbacked" });
+    // Backed needs every clause that makes a claim to carry its own evidence (clauses split at semicolons).
+    const own = clauses(s).filter((c) => CLAIM.test(c)), near = [...new Set([s, sents[i - 1], sents[i + 1]].filter(Boolean).flatMap(markersIn))];
+    const backed = (own.length ? own : [s]).every((c) => backedBy(markersIn(c)));
+    out.push({ sentence: s.slice(0, 200), support: near, level: backed ? "backed" : near.length ? "partly backed" : "unbacked" });
   });
   return out.slice(0, 12);
 }
@@ -293,4 +303,4 @@ function stress(input, steps = 6) {
     summary: `Gaming the unguarded judge added ${a.gain.naive} points; the guarded score moved ${a.gain.guarded >= 0 ? "+" : ""}${a.gain.guarded} on the same edits. An adversary that targets the guarded score directly gained ${b.gain.guarded}.` };
 }
 
-module.exports = { canonical, fold, KINDS, MARKERS, detectKind, clean, rigor, claims, hype, review, attack, stress, bank, sentences };
+module.exports = { canonical, fold, clauses, KINDS, MARKERS, detectKind, clean, rigor, claims, hype, review, attack, stress, bank, sentences };

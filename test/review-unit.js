@@ -17,6 +17,8 @@ ok(rc.score > rh.score, `guarded: careful ${rc.score} beats hype ${rh.score}`);
 ok(rh.naive > rh.score, `the unguarded judge rates the hype post higher (${rh.naive}) than the guarded one (${rh.score})`);
 ok(rc.claims.some((c) => c.level === "backed") && !rc.claims.some((c) => c.level === "unbacked") && rh.claims.every((c) => c.level === "unbacked"), "claims: the careful paper's are backed or partly backed, the hype post's are all unbacked");
 ok(R.sentences("It solved 41.2% of tasks. Then it stopped.").length === 2, "decimals don't split sentences");
+ok(R.sentences("We follow Sample et al. 2025 and Fig. 2, e.g. Sample Probe, i.e. 3 runs, approx. 4% vs. Sample Ridge (cf. Sample). Then it stopped.").length === 2, "abbreviations (et al., Fig., e.g., i.e., approx., vs., cf.) don't split sentences");
+ok(R.claims(["We demonstrate a breakthrough; accuracy rises by 4% on a held-out test set across 3 seeds."])[0].level !== "backed", "a claim can't borrow the evidence of another clause after a semicolon");
 ok(rh.needsPerson && rh.reasons.some((x) => /instructions/.test(x)), "the hype post is sent to a person for addressing the judge");
 
 console.log("Guards (each edit must not raise the guarded score)");

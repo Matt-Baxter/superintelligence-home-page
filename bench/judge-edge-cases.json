@@ -791,7 +791,7 @@
     "metric": "sentences",
     "rel": "eq"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "seg-fig-claim",
@@ -814,7 +814,7 @@
     "metric": "backedClaims",
     "rel": "eq"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "seg-decimal",
@@ -855,7 +855,7 @@
     "metric": "sentences",
     "rel": "eq"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "seg-ie-digit",
@@ -878,7 +878,7 @@
     "metric": "sentences",
     "rel": "eq"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "seg-approx",
@@ -896,7 +896,7 @@
     "metric": "sentences",
     "rel": "eq"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "seg-semicolon-same",
@@ -936,7 +936,7 @@
     "metric": "backedClaims",
     "rel": "eq"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "num-range-dash",
