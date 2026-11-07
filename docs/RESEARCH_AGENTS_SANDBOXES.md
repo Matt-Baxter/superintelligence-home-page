@@ -18,6 +18,19 @@ Research from Nov 7, 2026 for John's request: run agents in the background to an
    - **Default:** the free `hash-256` adapter (feature hashing). It's deterministic, has no download, and is good for near-duplicates and related passages.
    - **Upgrade:** for real semantic search, install `@huggingface/transformers` and switch to the `minilm` adapter, which runs all-MiniLM-L6-v2 locally in the worker (384 dimensions). For more than a few thousand chunks, move the vectors to pgvector on Neon instead of JSON text.
 
+## Autoresearch, Cline and the Lab
+
+- **karpathy/autoresearch** (MIT, March 2026) is a loop:
+  - an agent reads a human-written `program.md`;
+  - it edits one training file;
+  - it trains for a fixed 5 minutes;
+  - it keeps the commit only if validation bits-per-byte improved, otherwise reverts.
+  - About 12 experiments an hour on one NVIDIA GPU; a community fork targets Apple silicon.
+- **The Lab adapts the same ratchet to idea-level experiments** that run in milliseconds on any CPU: each example has a program, a target metric and a keep-only-if-better rule (`npm run lab -- explore`).
+- **Cline's free models** work only inside the Cline extension and CLI ("free model usage is not supported through the Cline API"). Use Cline to drive the loop, not as a provider. ClinePass is $9.99 a month for higher rate limits.
+- **Vercel AI Gateway:** the free tier covers a subset of models with lower rate limits, and paid tokens have no markup.
+- **Cloudflare Workers AI:** 10,000 Neurons a day free on Workers Free; Gemma models are in its catalogue.
+
 ## Sandboxes compared
 
 | Platform | Isolation | Free allowance | Price (about 1 vCPU, 2 GB) | Max session | Fits |
@@ -41,6 +54,11 @@ Research from Nov 7, 2026 for John's request: run agents in the background to an
 | Linked data | `/api/knowledge/export.jsonld` with the generated context (schema.org terms) | JSON-LD 1.1, schema.org | The vocabulary is generated too: `schema/gen/vocab.md` |
 
 ## Sources
+
+- [Guide to autoresearch (DataCamp)](https://www.datacamp.com/tutorial/guide-to-autoresearch)
+- [Cline free models](https://docs.cline.bot/getting-started/free-models)
+- [Vercel AI Gateway pricing](https://vercel.com/docs/ai-gateway/pricing)
+- [Cloudflare Workers AI pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/)
 
 - [AI code sandbox benchmark 2026 (Superagent)](https://www.superagent.sh/blog/ai-code-sandbox-benchmark-2026)
 - [AI sandbox pricing (Northflank)](https://northflank.com/blog/ai-sandbox-pricing)

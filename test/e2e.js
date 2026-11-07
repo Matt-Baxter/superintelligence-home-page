@@ -267,6 +267,26 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   await john.goto(B + '/m/knowledge'); await john.waitForSelector('#adapters tr'); await john.click('.qid'); await john.waitForSelector('#edges .edge');
   ok((await john.$$('#edges .edge')).length > 0, 'Knowledge page shows a node\'s links'); await john.screenshot({ path: 'shots/knowledge.png', fullPage: true });
 
+  console.log('Lab: ideas, reproductions, hypotheses, self-improvement');
+  const lx = await j(matt, '/api/lab/examples');
+  ok(lx.examples.length === 6 && lx.examples.every((e) => e.idea && e.hypothesis && typeof e.verdict.supported === 'boolean'), 'six examples, each with idea, hypothesis and verdict');
+  ok(lx.examples.filter((e) => e.verdict.supported).length === 5 && lx.examples.some((e) => e.id === 'goodhart-oversight' && !e.verdict.supported), 'refuted hypotheses are kept and shown (5 supported, Goodhart not)');
+  const lg = await j(matt, '/api/lab/examples/rsi-decision-gym');
+  ok(lg.variant.metrics.heldout_accuracy > lg.baseline.metrics.heldout_accuracy + 0.2 && lg.variant.metrics.properties_hold === 4, 'decision gym improves itself and keeps its safety properties');
+  ok(lg.scorecard.totals.length === 2 && lg.judgeInput.entries.length === 2, 'reproduction and hypothesis are judged (weighted; JEV/CLEF input ready)');
+  const lr = await j(matt, '/api/lab/examples/goodhart-oversight/run', 'POST', { params: { audit: 0.8 } });
+  ok(lr.variant.params.audit === 0.8 && typeof lr.verdict.supported === 'boolean', 'a reader can run their own variant');
+  ok((await j(matt, '/api/lab/examples/goodhart-oversight/run', 'POST', { params: { audit: 99 } })).variant.params.audit === 1, 'params are clamped to their range');
+  const li = await j(matt, '/api/lab/intent', 'POST', { text: 'build a dashboard of recursive self-improvement' });
+  ok(li.action === 'build-dashboard' && li.valid === true && li.spec.elements.bars, 'intent: a dashboard request is routed, built from live data and validated');
+  ok((await j(matt, '/api/lab/intent', 'POST', { text: 'summarize https://x.com/a/status/1 about AGI' })).action === 'refuse', 'intent: Twitter/X is refused');
+  await matt.goto(B + '/m/lab'); await matt.waitForSelector('.excard');
+  await matt.click('#askForm button'); await matt.waitForSelector('#dash .jr-metric, #dash [class*="metric"], #dash *', { timeout: 8000 });
+  ok((await matt.textContent('#answer')).includes('build-dashboard'), 'Lab page routes a request and renders the dashboard');
+  await matt.click('a.excard[href="#/x/rsi-decision-gym"]'); await matt.waitForSelector('svg.chart');
+  ok((await matt.textContent('#view')).includes('Our hypothesis'), 'example page shows idea -> reproduction -> hypothesis with a chart');
+  await matt.screenshot({ path: 'shots/lab.png', fullPage: true });
+
   console.log('Modules, generative UI and judges');
   const mods = await j(john, '/api/admin/modules');
   ok(['blocks-core', 'generative-ui', 'decision', 'capabilities', 'admin', 'project'].every((id) => mods.modules.some((m) => m.id === id)) && mods.points.some((p) => p.id === 'decision.judges' && p.owner === 'decision'), 'kernel loads every enabled module; decision owns its extension point');
@@ -342,7 +362,7 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   console.log('Phone width');
   const ph = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })).newPage();
   await ph.goto(B); await ph.fill('#username', 'john'); await ph.fill('#password', 'correct-horse-9'); await ph.click('#authBtn'); await ph.waitForSelector('#feed .story');
-  for (const path of ['/', '/story?id=' + sid, '/brief', '/lists', '/sources', '/m/admin', '/m/project', '/m/capabilities', '/m/studio', '/m/decide', '/m/view?name=capability-snapshot', '/m/codemap', '/m/project#/timeline', '/m/learn', '/m/learn#/c/attention', '/m/learn#/how', '/m/knowledge']) { await ph.goto(B + path); await ph.waitForTimeout(600); ok(!(await ph.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'no sideways scroll: ' + path.split('?')[0]); }
+  for (const path of ['/', '/story?id=' + sid, '/brief', '/lists', '/sources', '/m/admin', '/m/project', '/m/capabilities', '/m/studio', '/m/decide', '/m/view?name=capability-snapshot', '/m/codemap', '/m/project#/timeline', '/m/learn', '/m/learn#/c/attention', '/m/learn#/how', '/m/knowledge', '/m/lab', '/m/lab#/x/rsi-decision-gym']) { await ph.goto(B + path); await ph.waitForTimeout(600); ok(!(await ph.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'no sideways scroll: ' + path.split('?')[0]); }
   await ph.goto(B); await ph.waitForSelector('#feed .story'); await ph.screenshot({ path: 'shots/phone-feed.png' });
   await john.goto(B); await john.waitForSelector('#feed .story'); await john.screenshot({ path: 'shots/feed.png', fullPage: true });
   await john.goto(B + '/brief'); await john.waitForSelector('#brief .jr-metric'); await john.screenshot({ path: 'shots/brief.png', fullPage: true });
