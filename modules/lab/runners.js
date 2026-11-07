@@ -140,5 +140,7 @@ function solve(A, b) { const n = b.length, M = A.map((row, i) => [...row, b[i]])
 runners.register(require("./gym").runner);
 // Interpretability toys (superposition, sparse autoencoder, steering): modules/lab/interp.js.
 for (const r of require("./interp").runners) runners.register(r);
+// Paper-to-code toys from the daily paper watcher: modules/lab/papers.js.
+for (const r of require("./papers").runners) runners.register(r);
 
 module.exports = { runners, rng, gauss, round };

@@ -1,12 +1,12 @@
 // Review routes (docs/NAMING.md: /api/review/* for signed-in users, /api/admin/review/* for admins).
 const fs = require("fs"), path = require("path");
 const R = require("./review");
+const { saveReview } = require("./store");
 const SAMPLES = require("./samples.json");
 const { ontology } = require("../../lib/tagger");
 const feeds = require("../../lib/feeds");
 
 const CONCEPTS = (() => { try { return JSON.parse(fs.readFileSync(path.join(__dirname, "..", "learn", "data", "concepts.json"), "utf8")).concepts; } catch { return []; } })();
-const iso = () => new Date().toISOString();
 
 module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, notFound }) {
   const input = (b = {}) => {
@@ -36,18 +36,8 @@ module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, no
 
   // Save: judge, store (an excerpt, never the full text: REQ-007), and add the doc's edges to the knowledge graph.
   app.post("/api/review/docs", auth, wrap(async (req) => {
-    const x = input(req.body); let r; try { r = R.review(x); } catch (e) { bad(e.message); }
-    const have = await db.get("SELECT * FROM review_docs WHERE qid = ?", r.qid);
-    if (have) return { doc: brief(have), existing: true, review: JSON.parse(have.result) };
-    const keep = { ...r, trace: r.trace.map(({ id, ms }) => ({ id, ms })) };
-    const id = await db.tx(async (t) => {
-      const id = await t.insert("INSERT INTO review_docs (qid, kind, title, authors, url, excerpt, score, naive, credibility, verdict, needs_person, result, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        r.qid, r.kind, r.title || x.text.slice(0, 120), r.authors, x.url, x.text.slice(0, 400), r.score, r.naive, r.credibility, r.verdict, r.needsPerson ? 1 : 0, JSON.stringify(keep), req.user.id, iso());
-      for (const e of r.edges) await t.run("INSERT INTO knowledge_edges (src, rel, dst, weight, evidence, updated_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (src, rel, dst) DO UPDATE SET weight = excluded.weight",
-        e.src, e.rel, e.dst, e.weight, JSON.stringify(e.evidence), iso());
-      return id;
-    });
-    return { doc: brief(await db.get("SELECT * FROM review_docs WHERE id = ?", id)), review: keep };
+    const x = input(req.body); let out; try { out = await saveReview(db, x, req.user.id); } catch (e) { if (e.status) throw e; bad(e.message); }
+    return { doc: brief(out.row), review: out.review, ...(out.existing ? { existing: true } : {}) };
   }));
   app.get("/api/review/docs", auth, wrap(async (req) => {
     const topic = str(req.query.topic, 60), verdict = str(req.query.verdict, 40);

@@ -14,7 +14,7 @@ module.exports = function mountLab(app, { db, auth, admin, wrap, str, bad, notFo
   };
   const cache = new Map(); // deterministic results: same example + params -> same answer
   const runCached = (id, overrides = {}) => { const k = id + JSON.stringify(overrides); if (!cache.has(k)) { if (cache.size > 200) cache.clear(); cache.set(k, L.runExample(id, overrides)); } return cache.get(k); };
-  const summary = (r) => ({ id: r.example.id, title: r.example.title, concept: r.example.concept, topics: r.example.topics, idea: r.example.idea,
+  const summary = (r) => ({ id: r.example.id, title: r.example.title, concept: r.example.concept, topics: r.example.topics, idea: r.example.idea, source: r.example.source || null,
     expect: r.example.reproduce.expect, hypothesis: r.example.hypothesis.statement, verdict: r.verdict });
   const scorecard = (input) => { try { return weighted(input); } catch (e) { return { error: e.message }; } };
 

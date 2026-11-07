@@ -82,7 +82,7 @@ try {
 
 // 5b6. si-expr (portable rules) and the schema registry: Node vectors, builder/registry units, generated schemas current.
 try {
-  sh("node test/expr-unit.js"); sh("node test/lab-unit.js"); sh("node test/review-unit.js");
+  sh("node test/expr-unit.js"); sh("node test/lab-unit.js"); sh("node test/review-unit.js"); sh("node test/papers-unit.js"); sh("node test/watch-unit.js");
   const ex = sh("node scripts/expr-check.js --only=node").trim().split("\n")[0].replace(/^✓ node\s+/, "");
   const sc = sh("node scripts/schema.js check").trim().split("\n")[0].replace(/^✓ up to date\s+/, "");
   ok("Rules and schemas", `si-expr ${ex} vectors; schema/gen ${sc} current`);

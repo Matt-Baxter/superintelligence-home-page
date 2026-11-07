@@ -70,6 +70,19 @@ const SUITES = {
       "interp.steering_exactness": { value: st.unedited_error, better: "lower", tol: 0, about: "output error on unedited inputs with the SAE error added back (0 = exact)" },
     };
   },
+  papers: () => {
+    // Paper-to-code toys (modules/lab/papers.js, cosine SAE in interp.js): the mechanism each example claims must hold.
+    const P = require("../modules/lab/papers"), I = require("../modules/lab/interp"), [sel, over] = P.runners, sae = I.runners.find((r) => r.id === "sparse-autoencoder");
+    const b = { edit_budget: 1, decay: 0, rounds: 40, proposals: 6, seed: 3 };
+    const drop = sel.run({ ...b, select_on: 0 }).metrics.hack_share - sel.run({ ...b, select_on: 1 }).metrics.hack_share;
+    const ev = over.run({ feedback: 1, recompute: 1, rounds: 30, seed: 5 }).metrics.evasion;
+    const c = (cos) => sae.run({ latents: 24, l1: 0.1, resample: 0, steps: 1200, seed: 2, cosine: cos, norm_spread: 0.8 }).metrics.recovered;
+    return {
+      "papers.hidden_eval_hack_drop": { value: Math.round(drop * 1000) / 1000, better: "higher", tol: 0.02, about: "drop in the quirk share when a self-improving agent is judged on hidden evaluations (arXiv 2609.26457 toy)" },
+      "papers.recompute_evasion": { value: ev, better: "lower", tol: 0, about: "undetected exploits with independent recomputation (arXiv 2609.28614 toy)" },
+      "papers.cosine_sae_gain": { value: c(1) - c(0), better: "higher", tol: 1, about: "extra true features a cosine-scored SAE recovers when input sizes vary (arXiv 2606.15054 toy)" },
+    };
+  },
   analysis: () => {
     // Scope and tagging on the labelled spec fixtures: in-scope titles vs off-topic ones (REQ-003).
     const A = require("../lib/analysis"), { tag } = require("../lib/tagger");
