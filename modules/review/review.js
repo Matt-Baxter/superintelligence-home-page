@@ -241,8 +241,35 @@ function claims(sents) {
 // Claim phrases that were not read as claims, and why (reported on the review).
 const notClaims = (sents) => sents.map((s) => ({ sentence: s.slice(0, 200), why: liveClaims(s).skipped })).filter((x) => x.why);
 // A survey's evidence is its coverage, not experiments: how many works, a taxonomy, comparisons, stated gaps.
-// Only a paper that says so in its title or first sentence is read as a survey (the stress test tries to fake it).
-const SURVEY = /\b((?:we|the authors) (?:survey|review)|this survey|a survey of|survey of \d|systematic review|literature review)\b/i;
+// Which kind of paper it is (REQ-036, tasks T036 and T040) is read from the title and from the text as a whole, never
+// from which sentence comes first, so reordering sentences can't change it:
+//   - survey: the title says so ("X: A Survey", "A Review of X", "Survey of/on X", "systematic/literature review"), or
+//     the text describes itself as one ("we survey", "this survey", "this review") and makes no experiment of its own
+//     ("we train", "we fine-tune", "we propose", "we introduce" ...). A survey sentence appended to an experiment
+//     paper doesn't make it a survey, wherever it is placed.
+//   - position paper, dataset or benchmark paper, negative result: labels with a note on what that kind can show. They
+//     are judged by the same markers (a dataset paper earns "Says how much was tested", "Uses held-out tests" and
+//     "Shares code, data or weights" the usual way); only a survey changes the arithmetic (coverage).
+const SURVEY_TITLE = /(?::\s*an? (?:survey|review|overview)\b|^\s*an? (?:survey|review|overview) (?:of|on)\b|\bsurvey (?:of|on)\b|\b(?:systematic|literature|scoping) review\b)/i;
+const SURVEY_SELF = /\b((?:we|the authors) (?:survey|review)|this (?:survey|review)|a survey of|survey of \d|systematic review|literature review)\b/i;
+const OWN_EXPERIMENT = /\b(?:we|the authors) (?:train|trained|fine-tune|fine-tuned|propose|proposed|introduce|introduced|ablate|ablated|build|built|design|designed)\b/i;
+const PAPER_KINDS = [
+  { id: "survey", label: "Survey", canShow: "how many works it covers, how it organises them, how it compares their findings and which gaps it names (its coverage is its evidence)",
+    test: (t, x) => (SURVEY_TITLE.test(t) ? "the title says it is a survey or review" : SURVEY_SELF.test(x) && !OWN_EXPERIMENT.test(`${t} ${x}`) ? "it describes itself as a survey and reports no experiment of its own" : null) },
+  { id: "position", label: "Position paper", canShow: "an argument, not a measurement: its claims are unbacked unless it cites evidence, so hype counts them as usual",
+    test: (t, x) => (/^\s*position\s*:/i.test(t) || /\bposition paper\b/i.test(`${t} ${x}`) ? "it calls itself a position paper" : null) },
+  { id: "dataset", label: "Dataset or benchmark", canShow: "how much it contains, how the test split is kept apart (held-out, contamination) and whether it is released",
+    test: (t, x) => (/\b(?:a|an|new) (?:\w+[- ])?(?:dataset|benchmark|corpus|test suite)\b(?! (?:results?|scores?|performance))/i.test(t) && !/\b(?:on|across) (?:a |an |the )?(?:\w+[- ])?(?:dataset|benchmark)\b/i.test(t) ? "the title names a new dataset or benchmark"
+      : /\bwe (?:introduce|present|release|construct|build|curate|collect) (?:a |an |the )?(?:new )?(?:[\w-]+ ){0,2}(?:dataset|benchmark|corpus|test suite)\b/i.test(x) ? "it introduces a dataset or benchmark" : null) },
+  { id: "negative", label: "Negative result", canShow: "that something did not work, and under which conditions: its limitations are its result",
+    test: (t, x) => (/\b(?:does not|do not|doesn't|don't|fails? to|no evidence (?:of|for|that)|negative results?)\b/i.test(t) ? "the title states a negative finding"
+      : /\b(?:negative results?|we find no (?:evidence|improvement|gain|effect|benefit))\b/i.test(x) ? "it reports a negative finding" : null) },
+];
+function paperKind(kind, title, text) {
+  if (kind !== "paper") return null;
+  for (const k of PAPER_KINDS) { const why = k.test(title, text); if (why) return { id: k.id, label: k.label, why, canShow: k.canShow }; }
+  return null;
+}
 const COVERAGE = [
   { label: "Says how many works it covers", points: 35, re: /\b\d[\d,]* (?:papers|studies|works|articles|systems)\b/i },
   { label: "Organises them (taxonomy, classes)", points: 25, re: /\b(taxonom\w+|classif\w+|categor\w+|order(?:s|ed)? \w+ (?:signals|methods) )/i },
@@ -310,9 +337,14 @@ function review(input) {
   const unbackedSet = new Set(cl.filter((c) => c.level !== "backed").map((c) => c.sentence));
   const sigText = sents.filter((s) => !unbackedSet.has(s.slice(0, 200))).join(" ");
   const sig = step("judge-significance", "Significance on the cleaned text, without unbacked claims", () => analysis.analyze({ title, summary: sigText, authors }, { kinds: [source] }));
-  const isSurvey = k.kind === "paper" && SURVEY.test(`${title} ${sents[0] || ""}`);
+  const pk = paperKind(k.kind, title, sents.join(" ")), isSurvey = pk?.id === "survey";
+  // Coverage is read whenever the title or the text calls it a survey, even when the text also reports its own
+  // experiment (then it isn't labelled a survey and its claims still count as hype). Adding a sentence can then never
+  // take coverage away, so rigor stays monotone; a text that does both is sent to a person (a survey sentence added to
+  // an experiment paper is the obvious way to fake coverage).
+  const mixedSurvey = k.kind === "paper" && !isSurvey && SURVEY_SELF.test(sents.join(" "));
   const hp = step("judge-hype", "Hype: unbacked claims and hype words", () => hype(text, cl, isSurvey, title));
-  if (isSurvey) { const cov = COVERAGE.filter((c) => c.re.test(cleaned.text)); const sv = cov.reduce((a, c) => a + c.points, 0);
+  if (isSurvey || mixedSurvey) { const cov = COVERAGE.filter((c) => c.re.test(cleaned.text)); const sv = cov.reduce((a, c) => a + c.points, 0);
     if (sv > rg.score) { rg.score = sv; rg.why = cov.map((c) => ({ factor: c.label, points: c.points, detail: "survey coverage" })); rg.missing = COVERAGE.filter((c) => !cov.includes(c)).map((c) => c.label); } }
 
   // A frontier signal (AGI, AI improving AI, human-level, a new best...) only earns points where it is made next to
@@ -373,6 +405,7 @@ function review(input) {
   if (Math.abs(naive.significance - score) >= 25) review_reasons.push(`the guards moved the score by ${naive.significance - score} points`);
   if (hp.unbacked >= 2) review_reasons.push(`${hp.unbacked} claims have nothing backing them`);
   if (fired("keyword-stuffing") || fired("rigor-words")) review_reasons.push("it looks written to game the scoring (keyword lists or checklist sentences)");
+  if (mixedSurvey) review_reasons.push("it calls itself a survey but also reports its own experiment, so its survey coverage needs a person to check");
   for (const c of cuts) review_reasons.push(`the ${c.field} was cut at ${c.kept.toLocaleString("en-US")} of ${c.length.toLocaleString("en-US")} characters, so the judges didn't read the rest`);
   // Off-topic is reported (scope) but isn't a reason to send it to a person: the feed's scope rule already handles it.
 
@@ -386,7 +419,7 @@ function review(input) {
   });
 
   return {
-    qid, kind: k.kind, kindWhy: k.why, kindLabel: isSurvey ? "Survey" : KINDS[k.kind].label, survey: isSurvey, arxiv, title, authors,
+    qid, kind: k.kind, kindWhy: k.why, kindLabel: pk ? pk.label : KINDS[k.kind].label, survey: isSurvey, paperKind: pk, arxiv, title, authors,
     score, naive: naive.significance, credibility, verdict, needsPerson: review_reasons.length > 0, reasons: review_reasons, truncated: cuts.length ? cuts : null,
     judges: [
       { id: "significance", label: "Significance", score: sig.significance, about: "How big a step toward superintelligence it reports (lib/analysis.js, on the cleaned text)", why: sig.why },
@@ -440,4 +473,4 @@ function stress(input, steps = 6) {
     summary: `Gaming the unguarded judge added ${a.gain.naive} points; the guarded score moved ${a.gain.guarded >= 0 ? "+" : ""}${a.gain.guarded} on the same edits. An adversary that targets the guarded score directly gained ${b.gain.guarded}.` };
 }
 
-module.exports = { canonical, fold, clauses, negatedAt, markersIn, injection, isClaim, KINDS, MARKERS, detectKind, clean, rigor, claims, hype, review, attack, stress, bank, sentences };
+module.exports = { canonical, fold, clauses, negatedAt, markersIn, injection, isClaim, paperKind, KINDS, MARKERS, detectKind, clean, rigor, claims, hype, review, attack, stress, bank, sentences };

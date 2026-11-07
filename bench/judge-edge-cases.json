@@ -567,7 +567,7 @@
     "rel": "eq",
     "to": 1
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "survey-review-of",
@@ -583,7 +583,7 @@
     "rel": "eq",
     "to": 1
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "survey-later-sentence",

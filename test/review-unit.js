@@ -39,6 +39,16 @@ ok(score({ ...careful, text: careful.text.toUpperCase(), title: careful.title.to
 const sents = R.sentences(careful.text); const shuffled = [...sents.slice(1), sents[0]].join(" ");
 ok(Math.abs(score({ ...careful, text: shuffled }) - rc.score) <= 5, "moving a sentence changes the score by at most 5");
 
+console.log("Kinds (REQ-036)");
+const kindOf = (title, text) => R.review({ kind: "paper", title, text }).paperKind?.id || "research";
+ok(kindOf("Sample Methods: A Survey", "Sample abstract (test data).") === "survey" && kindOf("A Review of Sample Agents", "Sample abstract (test data).") === "survey" && kindOf("Survey on Sample Agents", "Sample abstract (test data).") === "survey", "survey title forms");
+const sv = ["This survey compares findings across 40 studies and lists open problems.", "Accuracy on the Sample suite rose by 4.2%."];
+ok(R.review({ kind: "paper", title: "Sample (test data)", text: sv.join(" ") }).survey && R.review({ kind: "paper", title: "Sample (test data)", text: [...sv].reverse().join(" ") }).survey, "survey detection doesn't depend on sentence order");
+const mixed = R.review({ kind: "paper", title: "Sample (test data)", text: `We train a model on 12 tasks. ${sv[0]}` });
+ok(!mixed.survey && mixed.reasons.some((x) => /calls itself a survey/.test(x)), "a survey sentence in an experiment paper isn't a survey, and is sent to a person");
+ok(kindOf("Position: Sample agents need audits", "Sample abstract (test data).") === "position" && kindOf("A New Benchmark for Sample Agents", "Sample abstract (test data).") === "dataset" && kindOf("Sample Fine-Tuning Does Not Improve Reasoning", "Sample abstract (test data).") === "negative", "position, dataset or benchmark, and negative-result kinds");
+ok(kindOf("Sample Results on a Benchmark", "We train a model.") === "research", "...and a paper evaluated on a benchmark is not a benchmark paper");
+
 console.log("Claims (T035)");
 ok(!R.isClaim("The model may achieve human-level accuracy.") && !R.isClaim("We do not demonstrate human-level reasoning.") && !R.isClaim("Can Sample models achieve human-level reasoning?"), "hedged, negated and question sentences are not claims");
 ok(R.isClaim("We show the model achieves human-level accuracy."), "...an asserted one is");

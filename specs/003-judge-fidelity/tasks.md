@@ -47,11 +47,11 @@ Any agent (Codex, v0, Claude or another) picks up work here. `scripts/project-sy
 - [x] T033 [rules] [REQ-034] Don't drop a statement with a verb as a keyword list; flips clean-title-like-sentence (done: a sentence of 4+ words with a word that is neither a tag term nor a function word, touching at most 2 tags, is a statement and is kept)
 - [x] T034 [rules] [REQ-032] Sentence splitting that keeps "et al.", "Fig.", "e.g.", "i.e.", "approx." inside a sentence, and splits at semicolons for claim backing (so a claim can't borrow the numbers after a semicolon); flips the seg-* gaps (done: flips seg-et-al, seg-fig-claim, seg-eg-capital, seg-ie-digit, seg-approx, seg-semicolon-borrow; `clauses()` exported)
 - [x] T035 [rules] [REQ-035] Hedged claims ("may", "suggests"), negated claims and question titles are not claims; count every claim, not only the first 12, for hype; flips hedge-*, neg-negated-claim, title-question, claims-past-twelve (done: 5 gaps flipped; review() gains `claimCount` and `notClaims` [{sentence, why: hedged|negated|a question}]; `claims` stays the first 12 for display)
-- [ ] T036 [rules] [REQ-036] Survey detection that doesn't depend on which sentence comes first (the T004 order property)
+- [x] T036 [rules] [REQ-036] Survey detection that doesn't depend on which sentence comes first (the T004 order property) (done: kind read from the title and the whole text; order-rigor holds on seeds 7, 1, 3; one seed-2 counterexample left comes from a lower-case fragment joining its neighbour, a segmentation effect)
 
 ## Phase 5: kinds and bands (REQ-036, REQ-037)
 
-- [ ] T040 [rules] [REQ-036] Survey and review title forms; position, dataset/benchmark and negative-result kinds; flips survey-* gaps
+- [x] T040 [rules] [REQ-036] Survey and review title forms; position, dataset/benchmark and negative-result kinds; flips survey-* gaps (done: flips survey-colon-title, survey-review-of; `paperKind` {id, label, why, canShow}; only a survey changes the arithmetic, the other kinds are labels with a note)
 - [ ] T042 [rules] [REQ-037] Count only toy checks that test a credible paper's idea toward the dossier rating: today a non-credible paper with a held-up check can lift "early" to "some support" (Lean: `noncredible_paper_with_check_raises`)
 - [ ] T041 [rules] [REQ-037] `band(S, T, m)` for verdicts and the dossier; Border shown on the Review desk, the digest and the dossier; only High counts as credible (modules/review/review.js, modules/review/dossier.js, scripts/watch.js)
 
