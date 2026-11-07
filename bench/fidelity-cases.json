@@ -1,9 +1,9 @@
 {
- "about": "Test data (synthetic: every source is a made-up 'Sample' abstract about made-up models and benchmarks, and every paraphrase is a made-up rewording of it). Labelled source/paraphrase pairs for the paraphrase-fidelity check fidelity(source, paraphrase) (specs/003-judge-fidelity, REQ-033, proposed; the check itself is task T020, a [rules] task, not built yet). Each source has paraphrases of two kinds: 'faithful' ones say the same thing in other words (passive voice, reordered, merged or split sentences, number words, 'percentage points' spelled out) and must pass every check; 'unfaithful' ones carry exactly one defect from the 'defects' list and must fail the one check that 'defectCheck' names for it. 'where' quotes the part of the source the defect concerns (null when the paraphrase adds something the source doesn't have). Validated by test/fidelity-cases.js. Never edit a case to make a checker pass; add a case when a mis-judgement turns up.",
- "version": "1.1.0",
+ "about": "Test data (synthetic: every source is a made-up 'Sample' abstract about made-up models and benchmarks, and every paraphrase is a made-up rewording of it). Labelled source/paraphrase pairs for the paraphrase-fidelity check fidelity(source, paraphrase) (specs/003-judge-fidelity, REQ-033, proposed; the check is modules/review/fidelity.js, task T020, run on every pair by test/fidelity-unit.js). Each source has paraphrases of two kinds: 'faithful' ones say the same thing in other words (passive voice, reordered, merged or split sentences, number words, 'percentage points' spelled out) and must pass every check; 'unfaithful' ones carry exactly one defect from the 'defects' list and must fail the one check that 'defectCheck' names for it. 'where' quotes the part of the source the defect concerns (null when the paraphrase adds something the source doesn't have). Validated by test/fidelity-cases.js. Never edit a case to make a checker pass; add a case when a mis-judgement turns up.",
+ "version": "1.2.0",
  "req": "REQ-033",
  "rewordings": ["passive", "reorder", "merge", "split", "number-words", "units-spelled", "synonym"],
- "defects": ["number-changed", "unit-changed", "hedge-dropped", "claim-added", "claim-negated", "entity-added", "limitation-dropped", "overclaim-verb"],
+ "defects": ["number-changed", "unit-changed", "hedge-dropped", "claim-added", "claim-negated", "entity-added", "limitation-dropped", "overclaim-verb", "claim-dropped"],
  "checks": ["numbers", "units", "hedges", "negation", "claims-added", "claims-dropped", "entities", "limitations"],
  "defectCheck": {
   "number-changed": "numbers",
@@ -13,7 +13,8 @@
   "claim-negated": "negation",
   "entity-added": "entities",
   "limitation-dropped": "limitations",
-  "overclaim-verb": "hedges"
+  "overclaim-verb": "hedges",
+  "claim-dropped": "claims-dropped"
  },
  "sources": [
   {
@@ -124,7 +125,10 @@
       "why": "'indicate ... may help' became 'show ... helps': a stronger verb, with the hedge gone; the scope limit 'only under the conditions we studied' is kept." },
     { "id": "s3-u-entity", "kind": "unfaithful", "defect": "entity-added", "expect": { "pass": false, "check": "entities" }, "where": null,
       "text": "Sample abstract (test data). We test whether a Sample chain-of-thought monitor detects reward hacking in 200 synthetic episodes from the Sample-Gym suite. The monitor flags 31 of 47 hacking episodes and raises 5 false alarms. It does not detect hacking when the reasoning is hidden. Our findings indicate that monitoring may help, but only under the conditions we studied.",
-      "why": "Names an environment suite (Sample-Gym) the source doesn't." }
+      "why": "Names an environment suite (Sample-Gym) the source doesn't." },
+    { "id": "s3-u-dropped", "kind": "unfaithful", "defect": "claim-dropped", "expect": { "pass": false, "check": "claims-dropped" }, "where": "It does not detect hacking when the reasoning is hidden.",
+      "text": "Sample abstract (test data). We test whether a Sample chain-of-thought monitor detects reward hacking in 200 synthetic episodes. The monitor flags 31 of 47 hacking episodes and raises 5 false alarms. Our findings indicate that monitoring may help, but only under the conditions we studied.",
+      "why": "The negative result (no detection when the reasoning is hidden) is dropped; no number, hedge or limitation goes with it, so only the dropped-claim check can see it." }
    ]
   },
   {

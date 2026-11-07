@@ -65,6 +65,12 @@
       "better": "info",
       "about": "time to review one item"
     },
+    "review.fidelity_accuracy": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "paraphrase-fidelity checks right on bench/fidelity-cases.json (52 synthetic pairs: pass/fail and the expected check)"
+    },
     "lab.intent_accuracy": {
       "value": 0.993,
       "better": "higher",

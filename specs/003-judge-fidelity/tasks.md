@@ -26,7 +26,7 @@ Any agent (Codex, v0, Claude or another) picks up work here. `scripts/project-sy
 - [x] T006 [agent] [P] [REQ-037] Report how many reviewed papers in the catalog sit within 5 points of a cutoff (35, 60, 70), from a dry run on the fixtures (scripts/judge-report.js) (done: `npm run judge:report`; 2 of 3 papers watched on 2026-11-07 sit within 5 of 60)
 
 - [ ] T007 [people] [REQ-038] Install Lean 4 (elan, from https://lean-lang.org) on a machine you control, run `cd proofs && lake build`, and record which theorems check; agents may not run installers unattended
-- [ ] T008 [agent] [REQ-034] Add a pure dropped-result case to bench/fidelity-cases.json (the `claims-dropped` check has no case yet), and band cases (score exactly on 35, 60, 70) once `band()` exists
+- [x] T008 [agent] [REQ-034] Add a pure dropped-result case to bench/fidelity-cases.json (the `claims-dropped` check has no case yet), and band cases (score exactly on 35, 60, 70) once `band()` exists (done for the dropped result: `s3-u-dropped`, defect `claim-dropped`, file v1.2.0, 52 pairs; band cases wait for T041)
 
 ## Phase 2: canonical input (REQ-032)
 
@@ -36,7 +36,7 @@ Any agent (Codex, v0, Claude or another) picks up work here. `scripts/project-sy
 
 ## Phase 3: score the source (REQ-033)
 
-- [ ] T020 [rules] [REQ-033] `fidelity(source, paraphrase)` with number/unit, entity, hedge, negation and claim-count checks, passing bench/fidelity-cases.json (modules/review/fidelity.js)
+- [x] T020 [rules] [REQ-033] `fidelity(source, paraphrase)` with number/unit, entity, hedge, negation and claim-count checks, passing bench/fidelity-cases.json (modules/review/fidelity.js) (done: 52 of 52 right, each unfaithful pair fails only its expected check; `node test/fidelity-unit.js`; bench metric `review.fidelity_accuracy`)
 - [ ] T021 [rules] [REQ-033] The watcher scores the abstract and stores the paraphrase for display only, withheld when fidelity fails; only a hash and the 400-character excerpt are stored (scripts/watch.js, modules/review/store.js)
 
 ## Phase 4: wording and negation (REQ-034, REQ-035)

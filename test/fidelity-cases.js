@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-// Paraphrase-fidelity catalogue (bench/fidelity-cases.json, synthetic test data) for the future
-// fidelity(source, paraphrase) check (specs/003-judge-fidelity, REQ-033, task T020). This script only checks the
-// file's shape and prints its counts; it does NOT implement the fidelity check. Exit code 1 on a malformed file.
+// Paraphrase-fidelity catalogue (bench/fidelity-cases.json, synthetic test data) for the
+// fidelity(source, paraphrase) check (specs/003-judge-fidelity, REQ-033, task T020: modules/review/fidelity.js, run on
+// every pair by test/fidelity-unit.js). This script only checks the file's shape and prints its counts. Exit code 1 on
+// a malformed file.
 //   node test/fidelity-cases.js              shape check and counts
 //   node test/fidelity-cases.js --baseline   also: does today's Review desk give a paraphrase the same credibility as
 //                                            its source? (information only, never fails)
