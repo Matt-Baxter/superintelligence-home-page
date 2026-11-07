@@ -102,7 +102,8 @@ Every interface change gets a row here. Breaking changes bump the major version 
 - **Environment:** `PANEL_MODELS=provider:model,provider:model` (lib/providers.js presets; empty means the rules judge stands alone and the panel is marked incomplete).
 - **Criteria:** `CRITERIA.panel` (printed on `/research/criteria`); write-ups show each judge's credibility and the rule that chose.
 - **Track records page:** `GET /research/outlets` (same gate as `/research`): publishable reviews pooled by outlet, forecasts happened / not / pending, hit rate from 3 resolved.
-- **Workflow:** `.github/workflows/paper-watch.yml` passes `PANEL_MODELS` (repository variable) and provider keys (secrets) to the watcher, runs `scripts/checkin.js` after it and keeps both reports. | logged by John |
+- **Workflow:** `.github/workflows/paper-watch.yml` passes `PANEL_MODELS` (repository variable) and provider keys (secrets) to the watcher, runs `scripts/checkin.js` after it and keeps both reports.
+- **Rigor in the feed:** each `/research/feed.xml` item carries `<category domain="si:verdict|si:credibility|si:grade|si:panel">` (papers) or `si:evidence` (topics). Readers that don't know them ignore them; the spec version parses the feed unchanged. | logged by John |
 
 **Done means:** a classmate can sign up on the live site, see a grouped, tagged feed from at least 8 sources, and vote on and save stories that are still there the next time they sign in.
 

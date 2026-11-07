@@ -42,6 +42,7 @@ const serve = (port, env) => new Promise((resolve, reject) => {
     ok(r.ok && /rss\+xml/.test(r.headers.get("content-type")) && /noindex/.test(r.headers.get("x-robots-tag") || ""), "with RESEARCH_PUBLIC=1 the feed is served as RSS, still noindex");
     ok(xml.includes("Measuring self-improvement in coding agents") && xml.includes("Scaling Laws for Test-Time Compute"), "credible reviewed papers are in the feed");
     ok(!xml.includes("Superintelligence is here and everything changes") && !xml.includes("comment on an interpretability result"), "the doubtful hype post and the comment are left out");
+    ok(/<category domain="si:verdict">solid, modest step<\/category>/.test(xml) && /<category domain="si:credibility">\d+<\/category>/.test(xml) && /<category domain="si:grade">[A-E]<\/category>/.test(xml) && /<category domain="si:evidence">/.test(xml), "each item carries its rigor as si: categories (verdict, credibility, grade, evidence)");
     const link = (xml.match(/<link>(http:\/\/localhost:3291\/research\/paper\/\d+)<\/link>/) || [])[1];
     const pg = link ? await fetch(link) : null, html = pg ? await pg.text() : "";
     ok(pg && pg.ok && /Research preview/.test(html) && /name="robots" content="noindex/.test(html), "each item links to a write-up page tagged Research preview, noindex");

@@ -176,10 +176,14 @@ ${topics.length ? `<section><h2>Topics</h2><div class="list">${topics.map((t) =>
 // write-up next to the paper's other sources instead of making a second story.
 function feedXml({ papers, topics }, base) {
   const x = (s) => esc(s).replace(/&#39;/g, "&apos;");
-  const item = (title, link, guid, date, text) => `<item><title>${x(title)}</title><link>${x(link)}</link><guid isPermaLink="false">${x(guid)}</guid>${date ? `<pubDate>${new Date(date).toUTCString()}</pubDate>` : ""}<description>${x(text)}</description></item>`;
+  // Rigor rides each item as RSS <category> elements with a "si:" domain (verdict, credibility, source grade, panel
+// status, evidence rating), so a reader that knows them can show a badge and any other reader ignores them.
+  const cats = (c) => Object.entries(c).filter(([, v]) => v != null && v !== "").map(([k, v]) => `<category domain="si:${k}">${x(String(v))}</category>`).join("");
+  const item = (title, link, guid, date, text, c = {}) => `<item><title>${x(title)}</title>${cats(c)}<link>${x(link)}</link><guid isPermaLink="false">${x(guid)}</guid>${date ? `<pubDate>${new Date(date).toUTCString()}</pubDate>` : ""}<description>${x(text)}</description></item>`;
+  const R = (p) => (typeof p.result === "string" ? JSON.parse(p.result || "{}") : p.result || {});
   const items = [
-    ...papers.map((p) => item(p.title, `${base}/research/paper/${p.id}`, `si-research-${p.qid}`, p.created_at, plain(p, typeof p.result === "string" ? JSON.parse(p.result || "{}") : p.result || {}))),
-    ...topics.map((t) => item(`${t.label}: what the evidence on this superintelligence topic says`, `${base}/research/topic/${t.topic}`, `si-research-topic:${t.topic}`, t.at, `Rated ${t.strength}: ${t.why}.`)),
+    ...papers.map((p) => item(p.title, `${base}/research/paper/${p.id}`, `si-research-${p.qid}`, p.created_at, plain(p, R(p)), { verdict: p.verdict, credibility: p.credibility, grade: (R(p).source || {}).grade, panel: (R(p).panel || {}).status || "none" })),
+    ...topics.map((t) => item(`${t.label}: what the evidence on this superintelligence topic says`, `${base}/research/topic/${t.topic}`, `si-research-topic:${t.topic}`, t.at, `Rated ${t.strength}: ${t.why}.`, { evidence: t.strength })),
   ].join("");
   return `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>Superintelligence research write-ups (preview)</title><link>${x(base)}/research</link><description>Plain-language, traced write-ups of papers on the path to superintelligence. Judged from abstracts by rules; a preview.</description>${items}</channel></rss>`;
 }
