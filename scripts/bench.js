@@ -58,7 +58,7 @@ const SUITES = {
   },
   interp: () => {
     // Interpretability toys against ground truth (modules/lab/interp.js).
-    const I = require("../modules/lab/interp"), [sup, sae, steer] = I.runners;
+    const R = require("../modules/lab/runners").runners, sup = R.get("superposition"), sae = R.get("sparse-autoencoder"), steer = R.get("steering");
     const geo = [0, 0.7, 0.9].map((S) => sup.run({ sparsity: S, features: 5, decay: 0.9, steps: 2500, seed: 1 }));
     const phases = (geo[0].metrics.represented === 2 ? 1 : 0) + (/antipodal/.test(geo[1].notes[0]) ? 1 : 0) + (/pentagon/.test(geo[2].notes[0]) ? 1 : 0);
     const rec = [2, 3, 4].map((seed) => sae.run({ latents: 24, l1: 0.1, resample: 0, steps: 1200, seed }).metrics.recovered);
@@ -72,12 +72,12 @@ const SUITES = {
   },
   papers: () => {
     // Paper-to-code toys (modules/lab/papers.js, cosine SAE in interp.js): the mechanism each example claims must hold.
-    const P = require("../modules/lab/papers"), I = require("../modules/lab/interp"), [sel, over] = P.runners, sae = I.runners.find((r) => r.id === "sparse-autoencoder");
+    const R = require("../modules/lab/runners").runners, sel = R.get("self-improve-selection"), over = R.get("research-oversight"), sae = R.get("sparse-autoencoder");
     const b = { edit_budget: 1, decay: 0, rounds: 40, proposals: 6, seed: 3 };
     const drop = sel.run({ ...b, select_on: 0 }).metrics.hack_share - sel.run({ ...b, select_on: 1 }).metrics.hack_share;
     const ev = over.run({ feedback: 1, recompute: 1, rounds: 30, seed: 5 }).metrics.evasion;
     const c = (cos) => sae.run({ latents: 24, l1: 0.1, resample: 0, steps: 1200, seed: 2, cosine: cos, norm_spread: 0.8 }).metrics.recovered;
-    const rp = P.runners.find((r) => r.id === "roleplay-rsi"), rq = (m) => rp.run({ meta: m, edit_bound: 3, judge_noise: 0.2, rounds: 30, turns: 200, seed: 7 }).metrics.bad_rate;
+    const rp = R.get("roleplay-rsi"), rq = (m) => rp.run({ meta: m, edit_bound: 3, judge_noise: 0.2, rounds: 30, turns: 200, seed: 7 }).metrics.bad_rate;
     return {
       "papers.hidden_eval_hack_drop": { value: Math.round(drop * 1000) / 1000, better: "higher", tol: 0.02, about: "drop in the quirk share when a self-improving agent is judged on hidden evaluations (arXiv 2609.26457 toy)" },
       "papers.recompute_evasion": { value: ev, better: "lower", tol: 0, about: "undetected exploits with independent recomputation (arXiv 2609.28614 toy)" },

@@ -10,10 +10,7 @@
 //   roleplay-rsi             "Recursive Self-Improvement for Long-Horizon Role-Playing Dialogue" (arXiv 2611.07469): an
 //                            updater repairs a character's artifacts after bad replies and, one level up, refines its
 //                            own repair rules from how those repairs turned out, within a bound on edits per round.
-function rng(seed = 1) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
-const gauss = (r) => { const u = Math.max(1e-12, r()), v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
-const round = (x, d = 3) => Math.round(x * 10 ** d) / 10 ** d;
-const mean = (a) => a.reduce((s, x) => s + x, 0) / (a.length || 1);
+const { rng, gauss, round, mean, averaged } = require("./util");
 
 // ---------- self-improvement with visible tests vs hidden evaluations ----------
 // An agent is a vector of 8 "real skill" knobs and 4 "test quirk" knobs. Visible tests reward skill and are partly
@@ -146,15 +143,10 @@ const runnersList = [
       turns: { default: 200, min: 50, max: 500, step: 50, about: "Replies per round" },
       seed: { default: 7, min: 1, max: 999, step: 1, about: "Random seed" },
     },
-    metrics: [{ id: "bad_rate", label: "Bad-reply rate (last 5 rounds)", better: "lower" }, { id: "rules_right", label: "Share of repair rules aimed at the right artifact", better: "higher" }, { id: "side_effects", label: "Repairs that hit the wrong artifact", better: "lower" }],
+    metrics: [{ id: "bad_rate", label: "Bad-reply rate (last 5 rounds)", better: "lower" }, { id: "rules_right", label: "Share of repair rules aimed at the right artifact", better: "higher" }, { id: "side_effects", label: "Repairs that hit the wrong artifact", better: "lower" }, { id: "start_rate", label: "Bad-reply rate (first 3 rounds)", better: "lower" }, { id: "switches", label: "Repair-rule switches", better: "lower" }],
     run: (p) => rolePlayRSI(p) },
 ];
-// Averaging over seeds, so a verdict doesn't hang on one lucky draw (the Lab's examples pass seeds via "seeds").
-function averaged(fn, p, seeds = 10) {
-  const runs = Array.from({ length: seeds }, (_, i) => fn({ ...p, seed: (p.seed || 1) + i * 101 }));
-  const metrics = Object.fromEntries(Object.keys(runs[0].metrics).map((k) => [k, round(mean(runs.map((x) => x.metrics[k])))]));
-  return { ...runs[0], metrics, notes: [...runs[0].notes, `Metrics are the mean of ${seeds} seeds.`] };
-}
+// Every paper toy reports the mean of 10 seeds (util.averaged), so a verdict doesn't hang on one lucky draw.
 for (const r of runnersList) { const raw = r.run; r.run = (p) => averaged(raw, p, 10); }
 
 module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI };

@@ -3,14 +3,13 @@
 // sandbox and in the benchmarks. Each toy has ground truth (the true features are known), which real models lack.
 //   superposition      Anthropic's Toy Models of Superposition (2022): n sparse features squeezed into m dimensions.
 //   sparse-autoencoder Dictionary learning (Towards Monosemanticity, 2023): an SAE trained on the toy's hidden layer,
-//                      scored by how many of the toy's real feature directions it recovers; optional dead-latent resampling.
+//                      scored by how many of the toy's real feature directions it recovers; optional dead-latent resampling,
+//                      optional cosine scoring (arXiv 2606.15054, a paper-to-code toy) and input-size spread (norm_spread).
 //   steering           Clamp one SAE latent (Scaling Monosemanticity, 2024) with the SAE error added back (Goodfire's
 //                      intervention): how much the target feature moves versus collateral change in the others.
 // Gradients are written by hand (h = Wx, x' = ReLU(W^T W x + b)), so the same code ports to numpy line by line.
 
-function rng(seed = 1) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
-const gauss = (r) => { const u = Math.max(1e-12, r()), v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
-const round = (x, d = 3) => Math.round(x * 10 ** d) / 10 ** d;
+const { rng, gauss, round, mean } = require("./util");
 
 // Adam on a flat Float64Array.
 function adam(p, lr = 1e-2, b1 = 0.9, b2 = 0.999) {
@@ -139,7 +138,7 @@ const runnersList = [
       const stored = norms.map((x) => x > 0.5), represented = stored.filter(Boolean).length;
       const sd = D.filter((_, i) => stored[i]);
       return {
-        metrics: { represented, mean_dim: round(sd.length ? sd.reduce((a, x) => a + x, 0) / sd.length : 0), superposed: sd.filter((x) => x < 0.85).length, loss: round(toy.loss, 4) },
+        metrics: { represented, mean_dim: round(mean(sd)), superposed: sd.filter((x) => x < 0.85).length, loss: round(toy.loss, 4) },
         // The shape the stored feature directions make in the 2-D hidden space, traced in angle order and closed
         // (a pentagon at high sparsity, a line for antipodal pairs, two axes when features are dense).
         series: [{ name: "shape of the stored features (hidden x vs y)", points: (() => { const v = norms.map((_, i) => col(toy.W, 2, features, i)).filter((w) => norm(w) > 0.5).sort((a, c) => Math.atan2(a[1], a[0]) - Math.atan2(c[1], c[0])).map((w) => [round(w[0]), round(w[1])]); return v.length ? [...v, v[0]] : []; })() }],

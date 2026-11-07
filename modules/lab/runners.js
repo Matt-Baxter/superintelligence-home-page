@@ -1,14 +1,15 @@
 // Lab runners: small deterministic simulations that reproduce a superintelligence idea at toy scale.
 // Same params + same seed => same result, so every number in the app can be re-run and checked. Each runner is an
-// adapter { id, about, params: {name: {default, min, max, step?, about}}, metrics: [{id, label, better}], run(params) }.
-// run() returns { metrics: {id: number}, series: [{name, points: [[x, y]...]}], notes: [] }. Runs take milliseconds.
+// adapter { id, about, params: {name: {default, min, max, step, about}}, metrics: [{id, label, better: "higher" | "lower"}],
+// run(params, { rng }) }. run() returns { metrics: {id: number}, series: [{name, points: [[x, y]...]}], notes: [] } and
+// reports only the metric ids it declares. Runs take milliseconds. Registered runners, in order:
+//   compounding, goodhart, weak-to-strong, scaling, decision-gym (gym.js), superposition, sparse-autoencoder, steering
+//   (interp.js), self-improve-selection, research-oversight, roleplay-rsi (papers.js).
 const { createRegistry } = require("../../lib/registry");
 const runners = createRegistry("lab runner", { required: ["id", "about", "params", "metrics", "run"] });
 
-// Seeded PRNG (mulberry32) so runs repeat exactly.
-function rng(seed = 1) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
-const gauss = (r) => { const u = Math.max(1e-12, r()), v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
-const round = (x, d = 4) => Math.round(x * 10 ** d) / 10 ** d;
+// Shared helpers (modules/lab/util.js). This file's runners report 4 decimals unless a call says otherwise.
+const U = require("./util"), { rng, gauss, mean } = U, round = (x, d = 4) => U.round(x, d);
 
 // 1. Compounding self-improvement: each generation improves the next in proportion to capability^alpha, minus a
 //    fixed bottleneck share (compute, experiments) that no amount of capability removes.
@@ -128,7 +129,7 @@ runners.register({
     // fit log(loss) = a - k log(size) on the improving part
     const use = pts.slice(0, Math.max(2, plateau));
     const xs = use.map(([d]) => Math.log(d)), ys = use.map(([, l]) => Math.log(Math.max(l, 1e-9)));
-    const mx = xs.reduce((a, b) => a + b) / xs.length, my = ys.reduce((a, b) => a + b) / ys.length;
+    const mx = mean(xs), my = mean(ys);
     const kExp = -xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0) / xs.reduce((s, x) => s + (x - mx) ** 2, 0);
     return { metrics: { exponent: round(kExp, 3), best_loss: round(Math.min(...pts.map((p) => p[1])), 5), plateau_at: plateau }, series: [{ name: "test loss", points: pts, log: true }],
       notes: [`Loss falls roughly as size^-${round(kExp, 2)} until size ${plateau}.`] };
