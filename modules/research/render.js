@@ -18,11 +18,14 @@ function plain(row, r) {
   const has = rig.why.filter((w) => w.points > 0).map((w) => w.factor.toLowerCase());
   const miss = (rig.missing || []).map((m) => m.toLowerCase());
   const claims = r.claims || [], backed = claims.filter((c) => c.level === "backed").length;
-  const what = r.survey ? "a survey, so it is judged on how much ground it covers rather than on experiments of its own" : `${r.type ? `an ${r.type.label.toLowerCase()}` : "a paper"} (${(r.evidence && r.evidence.label) || "unreviewed"})`;
-  const s = [`This is ${what}. Our verdict from the abstract: ${row.verdict}, credibility ${row.credibility} out of 100.`];
+  const paper = (row.kind || r.kind) === "paper", src = paper ? "the abstract" : "the text";
+  const what = r.survey ? "a survey, so it is judged on how much ground it covers rather than on experiments of its own"
+    : paper ? `${r.type ? `an ${r.type.label.toLowerCase()}` : "a paper"} (${(r.evidence && r.evidence.label) || "unreviewed"})`
+    : `${row.kind === "comment" ? "a comment" : "an article"}${r.source ? ` from ${r.source.outlet.personal ? "a personal blog or newsletter" : r.source.outlet.label}, source grade ${r.source.grade}` : ""}`;
+  const s = [`This is ${what}. Our verdict from ${src}: ${row.verdict}, credibility ${row.credibility} out of 100.`];
   if (has.length) s.push(`It ${has.slice(0, 4).join(", ")}${has.length > 4 ? `, and ${pl(has.length - 4, "more check")}` : ""}.`);
-  if (miss.length) s.push(`The abstract doesn't show that it ${miss.slice(0, 3).join(", ")}; the full paper may.`);
-  if (claims.length) s.push(`${backed} of its ${pl(claims.length, "headline claim")} ${backed === 1 ? "carries its" : "carry their"} own evidence in the same sentence.`);
+  if (miss.length) s.push(paper ? `The abstract doesn't show that it ${miss.slice(0, 3).join(", ")}; the full paper may.` : `It doesn't show that it ${miss.slice(0, 3).join(", ")}.`);
+  if (claims.length) s.push(`Headline claims backed in their own sentence: ${backed} of ${claims.length}.`);
   return s.join(" ");
 }
 
@@ -43,7 +46,7 @@ function scorecard(row, r) {
 <p class="small muted" style="margin:0 0 8px">${esc(r.survey ? CRITERIA.survey.about : CRITERIA.rigor.about)} <a href="/research/criteria">All criteria</a></p>
 <table class="card sc"><tbody>${rows}<tr class="tot"><td></td><td>Rigor</td><td class="n">${rig.score} / 100</td></tr></tbody></table>
 <dl class="sum">
-<dt>Hype</dt><dd>${hp.score} (lower is better): ${esc(unb.detail || "0 of 0")} claims unbacked${words.detail ? `; hype words: ${esc(words.detail)}` : "; no hype words"}</dd>
+<dt>Hype</dt><dd>${hp.score} (lower is better): ${unb.detail && !/^0 of 0/.test(unb.detail) ? `${esc(unb.detail)} claims unbacked` : "no claims found"}${words.detail ? `; hype words: ${esc(words.detail)}` : "; no hype words"}</dd>
 <dt>Credibility</dt><dd>½ × ${rig.score} + ½ × (100 − ${hp.score}) = <b>${row.credibility}</b></dd>
 <dt>Significance</dt><dd>${row.score}, after the guards (${r.naive ?? row.naive} before)</dd>
 <dt>Verdict</dt><dd><b>${esc(row.verdict)}</b>${v ? `, because ${esc(v.rule)}` : ""}</dd>
@@ -61,6 +64,9 @@ function criteriaPage(base) {
 <section><h2>4. Credibility</h2><p>${esc(CRITERIA.credibility.about)}</p></section>
 <section><h2>5. Significance</h2><p>${esc(CRITERIA.significance.about)}</p></section>
 <section><h2>6. Verdict</h2><p class="small muted" style="margin:0 0 8px">The first rule that holds, top to bottom.</p><table class="card"><tbody>${CRITERIA.verdicts.map((v) => `<tr><td><b>${esc(v.id)}</b></td><td>${esc(v.rule)}</td></tr>`).join("")}</tbody></table></section>
+<section><h2>7. Source grade, A to E</h2><p class="small muted" style="margin:0 0 8px">${esc(CRITERIA.source.about)}</p><table class="card"><tbody>${CRITERIA.source.outlets.map((o) => `<tr><td><b>${esc(o.grade)}</b></td><td>${esc(o.label)}<span class="ev">${esc(o.why)}</span></td></tr>`).join("")}</tbody></table></section>
+<section><h2>8. Forecasts</h2><p>${esc(CRITERIA.forecasts.about)}</p></section>
+<section><h2>9. Buzz</h2><p>${esc(CRITERIA.buzz.about)}</p></section>
 <section><h2>Guards against gaming</h2><ul>${CRITERIA.guards.map((g) => `<li>${esc(g.label)}</li>`).join("")}</ul></section>
 <section><h2>When a person looks</h2><p>${esc(CRITERIA.person.about)} Doubtful items and anything a person disagreed with are never published here.</p></section>`;
   return shell({ title: "How we judge", base, body, desc: "The published criteria behind every research write-up." });
@@ -85,6 +91,10 @@ ${desc ? `<meta name="description" content="${esc(desc)}">` : ""}<link rel="styl
   .rx table.card tr.met td.mk { color: var(--fg); font-weight: 600; } .rx table.sc tr:not(.met):not(.tot) td:nth-child(2) { color: var(--muted); }
   .rx table.card .ev { display: block; font-size: 12px; color: var(--muted); overflow-wrap: anywhere; } .rx table.card tr.tot td { font-weight: 600; border-bottom: 0; }
   .rx dl.sum { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 12px 0 0; font-size: 14px; } .rx dl.sum dt { color: var(--muted); } .rx dl.sum dd { margin: 0; font-variant-numeric: tabular-nums; }
+  .rx .duo { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; } .rx .duo p { margin: 8px 0 0; }
+  .rx .ladder { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--fg); border-radius: var(--radius); overflow: hidden; }
+  .rx .ladder span { font-size: 12px; text-align: center; padding: 6px 4px; border-left: 1px solid var(--line); color: var(--muted); } .rx .ladder span:first-child { border-left: 0; }
+  .rx .ladder span.on { background: var(--fg); color: var(--surface); font-weight: 600; }
   .rx .chips { display: flex; flex-wrap: wrap; gap: 6px; } .rx .chips span { font-size: 13px; padding: 2px 8px; border: 1px solid var(--line); border-radius: var(--radius); }
   .rx blockquote { margin: 0; padding-left: 12px; border-left: 2px solid var(--line); color: var(--muted); font-size: 14px; }
   .rx .md p { margin: 0 0 10px; line-height: 1.6; } .rx .md h2 { margin-top: 16px; } .rx .md code { font-size: 12px; }
@@ -108,10 +118,12 @@ ${row.authors ? `<p class="small muted" style="margin:0">${esc(row.authors)}</p>
 <p class="lede">${esc(plain(row, r))}</p>
 ${scorecard(row, r)}
 ${(r.claims || []).length ? `<section><h2>What it claims</h2><ul>${r.claims.slice(0, 6).map((c) => `<li>${esc(c.sentence)} <span class="lv">(${esc(LEVEL[c.level] || c.level)})</span></li>`).join("")}</ul></section>` : ""}
-${fired.length || (J.rigor && J.rigor.missing && J.rigor.missing.length) ? `<section><h2>What to keep in mind</h2><ul>${fired.map((g) => `<li>${esc(g.label)}: ${esc(g.detail)}</li>`).join("")}${(J.rigor && J.rigor.missing ? J.rigor.missing : []).map((m) => `<li>Not shown in the abstract: ${esc(m.toLowerCase())}</li>`).join("")}</ul></section>` : ""}
+${fired.length || (J.rigor && J.rigor.missing && J.rigor.missing.length) ? `<section><h2>What to keep in mind</h2><ul>${fired.map((g) => `<li>${esc(g.label)}: ${esc(g.detail)}</li>`).join("")}${(J.rigor && J.rigor.missing ? J.rigor.missing : []).map((m) => `<li>Not shown${row.kind === "paper" ? " in the abstract" : ""}: ${esc(m.toLowerCase())}</li>`).join("")}</ul></section>` : ""}
+${r.source ? `<section><h2>Source grade: ${esc(r.source.grade)}</h2><ul>${r.source.why.map((w) => `<li>${esc(w)}</li>`).join("")}</ul></section>` : ""}
+${(r.forecasts || []).length ? `<section><h2>Forecasts in it</h2><p class="small muted" style="margin:0 0 8px">Dated predictions, tracked as events and marked by a person once due.</p><ul>${r.forecasts.map((f) => `<li>${esc(f.sentence)} <span class="lv">(due ${esc(f.due)})</span></li>`).join("")}</ul></section>` : ""}
 ${topics.length ? `<section><h2>Where it fits</h2><div class="chips">${topics.map((t) => `<span><a href="${esc(base)}/research/topic/${esc(t.qid.slice(6))}">${esc(t.label)}</a></span>`).join("")}</div></section>` : ""}
 <section><h2>Source</h2>${row.excerpt ? `<blockquote>${esc(row.excerpt)}${row.excerpt.length >= 400 ? "…" : ""}</blockquote>` : ""}
-<p class="small" style="margin:8px 0 0">${row.url ? `<a href="${esc(row.url)}" rel="noopener">Read the paper</a> · ` : ""}Trace <code>${esc(row.qid)}</code>, reviewed ${esc(String(row.created_at || "").slice(0, 10))}</p></section>`;
+<p class="small" style="margin:8px 0 0">${row.url ? `<a href="${esc(row.url)}" rel="noopener">${row.kind === "paper" ? "Read the paper" : "Read the original"}</a> · ` : ""}Trace <code>${esc(row.qid)}</code>, reviewed ${esc(String(row.created_at || "").slice(0, 10))}</p></section>`;
   return shell({ title: row.title, base, body, desc: plain(row, r) });
 }
 
@@ -127,9 +139,12 @@ function md(text) {
   if (list) out.push(`</${list}>`); return out.join("");
 }
 
+const ladder = (steps, on) => `<div class="ladder" role="img" aria-label="${esc(on)} on a scale of ${esc(steps.join(", "))}">${steps.map((x) => `<span class="${x === on ? "on" : ""}">${esc(x)}</span>`).join("")}</div>`;
 function topicPage(d, blogMd, base) {
   const body = `<h1>${esc(d.label)}: what the evidence says</h1>
-<p class="lede">The evidence is rated <b>${esc(d.strength)}</b>: ${esc(d.why)}. The scale is none yet, thin, early, some support; nothing here rates higher, because papers are judged from their abstracts.</p>
+<p class="lede">The evidence is rated <b>${esc(d.strength)}</b>: ${esc(d.why)}.${d.buzz ? ` The talk around it is <b>${esc(d.buzz.level)}</b>, so it is ${esc(d.buzz.gap)}.` : ""}</p>
+<section class="duo"><div><h2>Evidence</h2>${ladder(["none yet", "thin", "early", "some support"], d.strength)}<p class="small muted">From reviewed papers and our own toy checks. Nothing rates higher than "some support": papers are judged from their abstracts.</p></div>
+${d.buzz ? `<div><h2>Buzz</h2>${ladder(["quiet", "some", "loud"], d.buzz.level)}<p class="small muted">${d.buzz.items} items in ${d.buzz.days} days${d.buzz.hype != null ? `, average hype ${d.buzz.hype}/100` : ""}. Counted apart; it never changes the evidence rating.</p></div>` : ""}</section>
 <section class="md">${md(String(blogMd).split("\n").filter((l) => !/^Draft from the /.test(l)).join("\n"))}</section>`;
   return shell({ title: `${d.label}: the evidence`, base, body, desc: `${d.label}: ${d.strength}, ${d.why}.` });
 }

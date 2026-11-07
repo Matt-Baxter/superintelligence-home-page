@@ -21,6 +21,16 @@
         "scheduled",
         "REQ-028"
       ]
+    },
+    {
+      "key": "scheduled:checkin",
+      "title": "Daily agent check-in (scheduled agent task)",
+      "description": "After the paper watch, the same scheduled task runs scripts/checkin.js: requirements waiting for both partners' approval, people checks, forecasts that have fallen due, reviews waiting for a person, queued agent jobs and paper-watch branches nobody has reviewed. It reports what is stuck and the next action for each, and moves agent jobs along; it never approves a requirement, merges or deploys.",
+      "labels": [
+        "agent",
+        "scheduled",
+        "REQ-030"
+      ]
     }
   ]
 }

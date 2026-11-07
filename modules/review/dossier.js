@@ -9,6 +9,7 @@
 // Every sentence in the outputs carries numbered references, and every reference has a trace (doc:, story:, lab:,
 // concept:) back to the record it came from. Publishing is a person's action; nothing is posted (no Twitter/X).
 const analysis = require("../../lib/analysis");
+const SRC = require("./sources");
 const { ontology } = require("../../lib/tagger");
 const round = (x, d = 2) => Math.round(x * 10 ** d) / 10 ** d;
 const mean = (a) => (a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0);
@@ -23,25 +24,31 @@ async function gather(db, topic) {
   const docs = (await db.all(`SELECT DISTINCT d.id, d.qid, d.kind, d.title, d.authors, d.url, d.score, d.credibility, d.verdict, d.needs_person, d.label, d.result, d.created_at
     FROM review_docs d JOIN knowledge_edges e ON e.src = d.qid AND e.rel = 'about' WHERE e.dst IN (${mark}) ORDER BY d.id DESC LIMIT 200`, ...qids)).map((d) => ({ ...d, result: JSON.parse(d.result || "{}") }));
   const docEdges = docs.length ? await db.all(`SELECT src, rel, dst FROM knowledge_edges WHERE src IN (${docs.map(() => "?").join(", ")})`, ...docs.map((d) => d.qid)) : [];
-  const storyRows = await db.all(`SELECT DISTINCT s.id, s.title, s.url, s.summary, s.topics FROM stories s JOIN story_topics t ON t.story_id = s.id
+  const storyRows = await db.all(`SELECT DISTINCT s.id, s.title, s.url, s.summary, s.topics, COALESCE(s.published_at, s.first_seen) AS at FROM stories s JOIN story_topics t ON t.story_id = s.id
     WHERE t.topic IN (${ids.map(() => "?").join(", ")}) AND COALESCE(s.in_scope, 1) = 1 AND COALESCE(s.hidden, 0) = 0 ORDER BY s.id DESC LIMIT 300`, ...ids);
-  const links = storyRows.length ? await db.all(`SELECT l.story_id, src.name FROM story_links l JOIN sources src ON src.id = l.source_id WHERE l.story_id IN (${storyRows.map(() => "?").join(", ")})`, ...storyRows.map((s) => s.id)) : [];
+  const links = storyRows.length ? await db.all(`SELECT l.story_id, src.name, src.kind FROM story_links l JOIN sources src ON src.id = l.source_id WHERE l.story_id IN (${storyRows.map(() => "?").join(", ")})`, ...storyRows.map((s) => s.id)) : [];
   const ents = storyRows.length ? await db.all(`SELECT story_id, kind, entity FROM story_entities WHERE kind IN ('person', 'org') AND story_id IN (${storyRows.map(() => "?").join(", ")})`, ...storyRows.map((s) => s.id)) : [];
-  return { topic, ids, docs, docEdges, stories: storyRows.map((s) => ({ ...s, sources: [...new Set(links.filter((l) => l.story_id === s.id).map((l) => l.name))], entities: ents.filter((e) => e.story_id === s.id) })) };
+  const events = await db.all(`SELECT DISTINCT ev.id, ev.qid, ev.doc_qid, ev.outlet, ev.outlet_label, ev.sentence, ev.due, ev.status FROM review_events ev JOIN knowledge_edges e ON e.src = ev.qid AND e.rel = 'about'
+    WHERE e.dst IN (${mark}) ORDER BY ev.due ASC LIMIT 100`, ...qids).catch(() => []);
+  return { topic, ids, docs, docEdges, events, stories: storyRows.map((s) => { const L = links.filter((l) => l.story_id === s.id);
+    return { ...s, sources: [...new Set(L.map((l) => l.name))], kinds: [...new Set(L.map((l) => l.kind))], entities: ents.filter((e) => e.story_id === s.id) }; }) };
 }
 
 // ---------- analyse (pure) ----------
-function analyse({ topic, ids, docs, docEdges, stories }, { examples = [], concepts = [] } = {}) {
+function analyse({ topic, ids, docs, docEdges, stories, events = [] }, { examples = [], concepts = [], at = new Date().toISOString().slice(0, 10) } = {}) {
   const refs = [], ref = (r) => { const i = refs.findIndex((x) => x.trace === r.trace); if (i >= 0) return i + 1; refs.push(r); return refs.length; };
+  // One record per piece: the same URL reviewed twice (say, the watcher and a person) counts once, newest first.
+  const seenUrl = new Set(); docs = docs.filter((d) => !d.url || (seenUrl.has(d.url) ? false : seenUrl.add(d.url)));
   const papers = docs.filter((d) => d.kind !== "comment"), comments = docs.filter((d) => d.kind === "comment");
   const P = papers.map((d) => {
     const cl = d.result.claims || [], backed = cl.filter((c) => c.level === "backed").length, unbacked = cl.filter((c) => c.level === "unbacked").length;
     const strongest = cl.find((c) => c.level === "backed") || cl.find((c) => c.level === "partly backed") || null;
-    return { id: d.id, qid: d.qid, title: d.title, url: d.url, survey: !!d.result.survey, verdict: d.verdict, credibility: d.credibility, score: d.score,
+    return { id: d.id, qid: d.qid, kind: d.kind, grade: d.result.source ? d.result.source.grade : null, hype: ((d.result.judges || []).find((j) => j.id === "hype") || {}).score ?? null, at: d.created_at, title: d.title, url: d.url, survey: !!d.result.survey, verdict: d.verdict, credibility: d.credibility, score: d.score,
       claims: cl.length, backed, unbacked, needsPerson: !!d.needs_person, personLabel: d.label, strongest: strongest ? strongest.sentence : null,
       n: ref({ type: d.kind === "paper" ? "paper" : "article", title: d.title, url: d.url, trace: d.qid, note: `${d.verdict}, credibility ${d.credibility}` }) };
   }).sort((a, b) => b.credibility - a.credibility);
-  const primary = P.filter((p) => !p.survey), credible = primary.filter((p) => p.credibility >= 60);
+  // Evidence comes from papers only: an article or post reporting on a paper is buzz, not a second piece of evidence.
+  const primary = P.filter((p) => !p.survey && p.kind === "paper"), credible = primary.filter((p) => p.credibility >= 60);
 
   // Corroboration: a concept counts as corroborated when two or more reviewed papers explain it.
   const byConcept = {};
@@ -82,7 +89,14 @@ function analyse({ topic, ids, docs, docEdges, stories }, { examples = [], conce
     ...checks.filter((c) => !c.supported).map((c) => ({ text: `Our toy check "${c.title}" did not support its hypothesis`, n: c.n })),
   ].slice(0, 8);
 
-  return { topic, label: topicLabel(topic), ids, strength, why, at: new Date().toISOString().slice(0, 10),
+  // Buzz: how loudly the topic is talked about, kept apart from the evidence rating above (it never changes it).
+  const talk = SRC.buzz({ stories: stories.map((x) => ({ at: x.at, kinds: x.kinds || [] })), articles: P.filter((p) => p.kind !== "paper").concat(comments.map((c) => ({ at: c.created_at, hype: ((c.result.judges || []).find((j) => j.id === "hype") || {}).score }))), strength, at });
+  // Where the reviewed pieces come from, by grade.
+  const grades = SRC.GRADES.map((g) => ({ grade: g, count: P.filter((p) => p.grade === g).length })).filter((g) => g.count);
+  // Dated forecasts made about the topic, nearest first; a person marks each as happened or not once it's due.
+  const forecasts = events.map((e) => ({ id: e.id, qid: e.qid, sentence: e.sentence, due: e.due, status: e.status, outlet: e.outlet_label, overdue: e.status === "pending" && e.due < at,
+    n: (P.find((p) => p.qid === e.doc_qid) || {}).n })).slice(0, 12);
+  return { topic, label: topicLabel(topic), ids, strength, why, at, buzz: talk, grades, forecasts,
     counts: { papers: P.length, primary: primary.length, surveys: P.length - primary.length, credible: credible.length, comments: comments.length, stories: S.length, sources: sourceCount, checks: checks.length, supported, linked },
     meanCredibility: Math.round(mean(P.map((p) => p.credibility))), papers: P, checks, top, corroboration: corroboration.slice(0, 8), people, orgs,
     comments: { count: comments.length, verdicts: comments.reduce((a, c) => ((a[c.verdict] = (a[c.verdict] || 0) + 1), a), {}) }, weak, refs };
@@ -97,12 +111,23 @@ function blog(d, site = "") {
   L.push(`We reviewed ${pl(c.papers, "paper or article", "papers and articles")} from their abstracts (${pl(c.surveys, "survey")}), ${pl(c.stories, "feed story", "feed stories")} from ${pl(c.sources, "source")}, ${pl(c.comments, "reader comment")}, and ran ${pl(c.checks, "toy experiment")} of our own. Every judgement below links to its source; numbers in brackets are references.`, "");
   if (d.papers.length) {
     L.push("## What the papers say", "");
-    for (const p of d.papers.slice(0, 6)) L.push(`- **${p.title}** ${cite(p.n)}: ${p.verdict}, credibility ${p.credibility}/100${p.survey ? " (a survey)" : ""}; ${p.claims ? `${p.backed} of ${pl(p.claims, "headline claim")} ${p.backed === 1 ? "carries its" : "carry their"} own evidence` : "no headline claims detected"}.${p.strongest ? ` Its best-supported claim: "${p.strongest.slice(0, 160)}${p.strongest.length > 160 ? "…" : ""}"` : ""}`);
+    for (const p of d.papers.filter((x) => x.kind === "paper").slice(0, 6)) L.push(`- **${p.title}** ${cite(p.n)}: ${p.verdict}, credibility ${p.credibility}/100${p.survey ? " (a survey)" : ""}; ${p.claims ? `headline claims backed in their own sentence: ${p.backed} of ${p.claims}` : "no headline claims detected"}.${p.strongest ? ` Its best-supported claim: "${p.strongest.slice(0, 160)}${p.strongest.length > 160 ? "…" : ""}"` : ""}`);
     L.push("");
   }
   if (d.checks.length) {
     L.push("## What we checked ourselves", "", "Small deterministic experiments that test an idea's logic, not a paper's numbers:", "");
     for (const x of d.checks) L.push(`- **${x.title}** ${cite(x.n)}${x.source ? ` (idea from ${x.source.title})` : ""}: ${x.text.replace(/^(Supported|Not supported) at toy scale: /, "").replace(/\.$/, "")}: ${x.supported ? "supported" : "not supported"} at toy scale.`);
+    L.push("");
+  }
+  const talk = d.papers.filter((x) => x.kind !== "paper");
+  if (d.buzz) {
+    L.push("## The buzz versus the evidence", "", `**Buzz: ${d.buzz.level}** (${pl(d.buzz.items, "item")} in the last ${d.buzz.days} days: ${pl(d.buzz.stories, "news, blog or forum story", "news, blog or forum stories")} and ${pl(d.buzz.articles, "reviewed article or comment", "reviewed articles and comments")}${d.buzz.hype != null ? `, average hype ${d.buzz.hype}/100` : ""}). **Evidence: ${d.strength}.** So the topic is ${d.buzz.gap}. Buzz is counted separately and never changes the evidence rating.`, "");
+    for (const p of talk.slice(0, 6)) L.push(`- **${p.title}** ${cite(p.n)}: source grade ${p.grade || "?"}, hype ${p.hype ?? "?"}/100, ${p.verdict}.`);
+    if (talk.length) L.push("");
+  }
+  if (d.forecasts && d.forecasts.length) {
+    L.push("## Forecasts on the record", "", "Dated predictions in the pieces above, as events. A person marks each one as happened or not once it's due; outlets build a track record from them. Names of watched people are removed: we don't attribute forecasts to people.", "");
+    for (const f of d.forecasts.slice(0, 6)) L.push(`- Due ${f.due}${f.overdue ? " (overdue, needs a person to resolve)" : ""}: "${f.sentence}" ${cite(f.n)}, from ${f.outlet}; ${f.status}.`);
     L.push("");
   }
   if (d.top.length) { L.push("## In the news", ""); for (const s of d.top) L.push(`- ${s.title} ${cite(s.n)}, significance ${s.significance}/100${s.sources.length > 1 ? `, reported by ${pl(s.sources.length, "source")}` : ""}.`); L.push(""); }

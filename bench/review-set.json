@@ -80,6 +80,14 @@
    "title": "Sample: Self-improving systems, a survey of 900 papers (test data)",
    "authors": "Sample Author E (test data)",
    "text": "We survey 900 papers from 2023 to 2026 on systems that improve themselves, and classify them by what is improved and how fully the loop is closed. We separate bounded self-refinement from open-ended self-improvement and order evaluation signals from formal verifiers to self-assessment. We find that reported gains follow this ordering, and that self-confirming loops explain most failures. Measurement of self-improvement for governance is the least studied area."
+  },
+  {
+   "id": "b-hype-press-words",
+   "credible": false,
+   "kind": "article",
+   "title": "Sample: Self-improving AI is no longer sci-fi (test data)",
+   "authors": "Sample outlet (test data)",
+   "text": "Self-improving AI is the holy grail of the field, and the gap is closing fast. Labs say new models are now built largely by earlier ones. The coming intelligence explosion could be the most consequential event in history, a doomsday scenario for some and utterly transformative for others. Explosive progress is coming. Sources include posts on social media."
   }
  ]
 }

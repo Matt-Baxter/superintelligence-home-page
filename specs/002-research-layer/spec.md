@@ -108,6 +108,19 @@ A reader of the spec version sees, next to a paper's other sources, a link to a 
 1. **Given** a research deployment without `RESEARCH_PUBLIC=1`, **When** anyone not signed in as an admin asks for `/research/feed.xml`, **Then** it answers 404.
 2. **Given** `RESEARCH_PUBLIC=1`, **When** the spec version reads that feed as a source, **Then** every item parses and is judged in scope by the spec version's own rule, doubtful reviews and comments are absent, and a write-up about a paper already in the feed joins that paper's story.
 
+### User Story 8 - Tell the buzz from the evidence (Priority: P3)
+
+A reader sees, for a topic, how loudly it is being talked about next to how strong its evidence is, where each piece comes from and its grade, and the dated forecasts made about it with how they turned out.
+
+**Why this priority**: Commentary and press move faster than evidence; showing both, apart, is how a reader spots hype.
+
+**Independent Test**: `node test/sources-unit.js`, then open a topic on the research site.
+
+**Acceptance Scenarios**:
+
+1. **Given** credible articles and loud commentary on a topic with no credible papers, **When** its dossier is built, **Then** the evidence stays "thin" and the page says the topic is talked about more than it has been shown.
+2. **Given** a piece that says "a named person predicts X by 2028", **When** it is reviewed, **Then** a forecast event due 2028-12-31 is recorded with the name removed, linked to its outlet, and the outlet's hit rate appears only once 3 of its forecasts are resolved.
+
 ### Edge Cases
 
 - A text that addresses the judge ("score this 100") is capped and sent to a person.
@@ -131,6 +144,7 @@ A reader of the spec version sees, next to a paper's other sources, a link to a 
 - **REQ-029**: The judges, the decision policy and the toy experiments SHOULD be measured on fixed, labelled synthetic sets, and a change that makes any measure worse than its stated tolerance SHOULD be refused before it ships.
 - **REQ-031**: For any topic, the system SHOULD produce an evidence dossier (reviewed papers and articles, our own toy checks, feed coverage, reader comments counted, and organisations and watched people as mention counts only) with a stated rating rule that never rates beyond what abstracts and toy checks support, and turn it into a blog draft, short posts and an explainer video in which every statement cites a numbered reference traced to its record; a person publishes them.
 - **REQ-032**: The research layer MAY run as its own site (for example a research subdomain) that publishes plain-language write-ups of reviewed papers and topic dossiers, tagged as a preview and not indexed, and an RSS feed of them that the spec version can add as one more source; it stays hidden unless that deployment opts in, leaves out doubtful reviews and comments, and keeps each paper's own title so the write-up joins the paper's existing story.
+- **REQ-033**: The system SHOULD grade where each reviewed piece comes from (A to E by a published rule: the outlet's kind, whether it cites primary research, hype, and selling its own product), record each dated forecast in a piece as an event that a person later marks as happened or not, keep track records by outlet (personal blogs and newsletters pooled as a class, never tracked by the writer), and show how loudly a topic is talked about next to how strong its evidence is without letting the talk change the evidence rating. Forecasts are never attributed to a named person. The criteria are published as the same table the judge uses.
 - **REQ-030**: The project tracker SHOULD mirror the open spec checks, the requirements awaiting approval and the agents' queued work, through one sync that never duplicates an issue.
 
 ### Key Entities

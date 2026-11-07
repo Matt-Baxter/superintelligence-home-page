@@ -13,6 +13,9 @@ async function saveReview(db, x, userId = null) {
       r.qid, r.kind, r.title || String(x.text || "").slice(0, 120), r.authors, x.url || "", String(x.text || "").slice(0, 400), r.score, r.naive, r.credibility, r.verdict, r.needsPerson ? 1 : 0, JSON.stringify(keep), userId, iso());
     for (const e of r.edges) await t.run("INSERT INTO knowledge_edges (src, rel, dst, weight, evidence, updated_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (src, rel, dst) DO UPDATE SET weight = excluded.weight",
       e.src, e.rel, e.dst, e.weight, JSON.stringify(e.evidence), iso());
+    // Dated forecasts become events a person can later mark as happened or not, pooled by outlet.
+    for (const f of r.forecasts || []) await t.run("INSERT INTO review_events (qid, doc_qid, outlet, outlet_label, sentence, due, status, created_at) VALUES (?, ?, ?, ?, ?, ?, 'pending', ?) ON CONFLICT (qid) DO NOTHING",
+      f.qid, r.qid, r.source.outlet.id, r.source.outlet.label, f.sentence, f.due, iso());
     return id;
   });
   return { existing: false, row: await db.get("SELECT * FROM review_docs WHERE id = ?", id), review: keep };

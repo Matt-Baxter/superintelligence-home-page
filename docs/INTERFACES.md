@@ -90,6 +90,13 @@ Every interface change gets a row here. Breaking changes bump the major version 
 - **Routes (server-rendered, no nav entry):** `GET /research` (index), `GET /research/paper/:id` (write-up of one publishable review), `GET /research/topic/:topic` (a topic dossier as a page), `GET /research/feed.xml` (RSS 2.0 of publishable reviews and rated topic dossiers). All send `X-Robots-Tag: noindex, nofollow`; pages carry a "Research preview" tag and a robots noindex meta.
 - **Gate:** served when `RESEARCH_PUBLIC=1`, or to a signed-in admin; otherwise 404.
 - **Publishable:** papers and articles (never comments) not judged doubtful and not sent to a person, or a person agreed; never one a person disagreed with. RSS items keep the paper's own title so the reading site groups the write-up with the paper's story. | logged by John |
+| 1.9 | Nov 7, 2026 | Source grades, forecasts as events, buzz versus evidence, published criteria (proposed REQ-033; extended and research versions only).
+- **Review result** gains `source {grade A-E, kind, outlet {id, label, kind, personal}, cites, sells, why[]}`, `forecasts [{qid: event:<hash>, sentence, due, horizon}]` and `verdictRule`. New knowledge-graph edges: `published-by` (doc to `outlet:<host>` or the pooled `outlet:class-<kind>` for personal blogs and newsletters), `predicts` (doc to `event:`), `about` (event to topic). Review input accepts `sourceKind` and `at`.
+- **Table:** `review_events(id, qid UNIQUE, doc_qid, outlet, outlet_label, sentence, due, status pending|happened|did-not|unclear, note, resolved_by, resolved_at, created_at)`, pruned with its review.
+- **Routes:** signed in: `GET /api/review/outlets` (track records), `GET /api/review/events?status=`; admins: `POST /api/admin/review/events/:id {status, note}`; public when the research site is: `GET /research/criteria`.
+- **Exports:** `CRITERIA` and `VERDICTS` from `modules/review/review.js` (the judge uses them; pages print them). Dossiers gain `buzz`, `grades`, `forecasts`; evidence counts papers only.
+- **Watcher:** `--from` entries may carry `kind`, `sourceKind` and `published`; only papers (not surveys or position papers) are queued for paper-to-code.
+- **Agent check-in:** `npm run checkin` (`scripts/checkin.js`) writes `out/checkin/<date>.md`: proposals awaiting both partners, people checks, forecasts due, reviews sent to a person, unreviewed paper-watch branches, queued agent jobs. `scripts/project-sync.js` adds two follow-on issues (`research:forecasts-due`, `research:reviews-for-a-person`) and the scheduled check-in. | logged by John |
 
 **Done means:** a classmate can sign up on the live site, see a grouped, tagged feed from at least 8 sources, and vote on and save stories that are still there the next time they sign in.
 

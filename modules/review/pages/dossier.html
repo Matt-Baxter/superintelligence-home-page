@@ -25,6 +25,11 @@
   .md { font-size: 15px; line-height: 1.6; max-width: 72ch; } .md h1 { font-size: 26px; } .md h2 { font-size: 18px; margin-top: 18px; } .md li { margin: 3px 0; }
   .md blockquote, .md code { font-size: 13px; }
   details.draft > summary { cursor: pointer; }
+  .duo { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; } .duo p { margin: 8px 0 0; }
+  .ladder { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--fg); border-radius: var(--radius); overflow: hidden; }
+  .ladder span { font-size: 12px; text-align: center; padding: 6px 4px; border-left: 1px solid var(--line); color: var(--muted); } .ladder span:first-child { border-left: 0; }
+  .ladder span.on { background: var(--fg); color: var(--surface); font-weight: 600; }
+  .grade { display: inline-block; min-width: 1.6em; text-align: center; font-weight: 600; border: 1px solid var(--fg); border-radius: var(--radius); font-size: 12px; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; } .chip2 { font-size: 13px; padding: 2px 8px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
 </style></head>
 <body>
@@ -40,6 +45,7 @@
 <script>
 let user;
 const LEVELS = ["none yet", "thin", "early", "some support"];
+const ladder = (steps, on) => `<div class="ladder" role="img" aria-label="${esc(on)} on a scale of ${esc(steps.join(", "))}">${steps.map((x) => `<span class="${x === on ? "on" : ""}">${esc(x)}</span>`).join("")}</div>`;
 // Small, safe markdown for the draft preview: headings, bullets, numbered lists, bold, links, code.
 function md(text) {
   const inline = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\[([^\]]+)\]\(((?:https?:\/\/|\/)[^)\s]+)\)/g, '<a href="$2" rel="noopener">$1</a>');
@@ -63,8 +69,14 @@ async function load() {
     <section><div class="counts">
       <div><b>${c.papers}</b><span>papers and articles (${c.surveys} surveys)</span></div><div><b>${c.credible}</b><span>credible primary papers</span></div>
       <div><b>${c.checks}</b><span>toy checks (${c.supported} held up)</span></div><div><b>${c.stories}</b><span>feed stories</span></div><div><b>${c.sources}</b><span>news sources</span></div><div><b>${c.comments}</b><span>reader comments</span></div></div></section>
-    ${d.papers.length ? `<section class="panel"><h2>Papers and articles</h2><table class="t"><thead><tr><th>Title</th><th>Verdict</th><th class="n">Credibility</th><th class="n">Backed claims</th><th>Ref.</th></tr></thead><tbody>${d.papers.map((p) => `<tr><td><a href="/m/review#/doc/${p.id}">${esc(p.title)}</a>${p.survey ? ' <span class="small muted">(survey)</span>' : ""}</td><td>${esc(p.verdict)}</td><td class="n">${p.credibility}</td><td class="n">${p.claims ? `${p.backed}/${p.claims}` : "–"}</td><td>[${p.n}]</td></tr>`).join("")}</tbody></table></section>` : ""}
+    ${d.buzz ? `<section class="panel"><h2>Buzz versus evidence</h2><p class="small">The topic is <b>${esc(d.buzz.gap)}</b>.</p><div class="duo">
+      <div><span class="small muted">Evidence</span>${ladder(LEVELS, d.strength)}<p class="small muted">Papers and our own toy checks only.</p></div>
+      <div><span class="small muted">Buzz</span>${ladder(["quiet", "some", "loud"], d.buzz.level)}<p class="small muted">${d.buzz.items} news, blog, forum and community items in ${d.buzz.days} days${d.buzz.hype != null ? `; average hype ${d.buzz.hype}/100` : ""}. Never changes the evidence rating.</p></div></div></section>` : ""}
+    ${d.papers.length ? `<section class="panel"><h2>Papers and articles</h2><table class="t"><thead><tr><th>Title</th><th>Source</th><th>Verdict</th><th class="n">Credibility</th><th class="n">Backed claims</th><th>Ref.</th></tr></thead><tbody>${d.papers.map((p) => `<tr><td><a href="/m/review#/doc/${p.id}">${esc(p.title)}</a>${p.survey ? ' <span class="small muted">(survey)</span>' : ""}${p.kind !== "paper" ? ` <span class="small muted">(${esc(p.kind)})</span>` : ""}</td><td>${p.grade ? `<span class="grade">${esc(p.grade)}</span>` : "–"}</td><td>${esc(p.verdict)}</td><td class="n">${p.credibility}</td><td class="n">${p.claims ? `${p.backed}/${p.claims}` : "–"}</td><td>[${p.n}]</td></tr>`).join("")}</tbody></table></section>` : ""}
     ${d.checks.length ? `<section class="panel"><h2>Our own checks</h2><table class="t"><thead><tr><th>Experiment</th><th>Result</th><th>Tests a reviewed paper?</th><th>Ref.</th></tr></thead><tbody>${d.checks.map((x) => `<tr><td><a href="/m/lab#/x/${esc(x.id)}">${esc(x.title)}</a></td><td><span class="tag ${x.supported ? "yes" : "no"}">${x.supported ? "held up" : "did not hold up"}</span></td><td>${x.source && d.papers.some((p) => p.url === x.source.url) ? "yes" : "no, a general check"}</td><td>[${x.n}]</td></tr>`).join("")}</tbody></table></section>` : ""}
+    ${(d.forecasts || []).length ? `<section class="panel"><h2>Forecasts on the record</h2><p class="small muted">Dated predictions in the pieces above. Once due, a person marks each one; outlets build a track record (<a href="/research/criteria">rules</a>). Names are removed: no forecast is attributed to a person.</p>
+      <table class="t"><thead><tr><th>Due</th><th>Forecast</th><th>From</th><th>Status</th></tr></thead><tbody>${d.forecasts.map((f) => `<tr><td class="n">${esc(f.due)}${f.overdue ? "<br><span class=\"small\">overdue</span>" : ""}</td><td>${esc(f.sentence)} ${f.n ? `[${f.n}]` : ""}</td><td>${esc(f.outlet)}</td>
+        <td>${user.admin && f.id ? `<select data-ev="${f.id}" aria-label="Status">${["pending", "happened", "did-not", "unclear"].map((x) => `<option ${x === f.status ? "selected" : ""}>${x}</option>`).join("")}</select>` : esc(f.status)}</td></tr>`).join("")}</tbody></table></section>` : ""}
     <div class="cols">
       <section class="panel"><h2>Where the evidence is thin</h2>${d.weak.length ? `<ul class="small">${d.weak.map((w) => `<li>${esc(w.text)} [${w.n}]</li>`).join("")}</ul>` : '<p class="small muted">Nothing flagged.</p>'}</section>
       <section class="panel"><h2>Who is being talked about</h2><p class="small muted">Mention counts in the papers and stories above. A mention isn't an endorsement, and no claims are attributed to anyone.</p>
@@ -76,6 +88,7 @@ async function load() {
     <section class="panel"><details class="draft"><summary><h2 style="display:inline">Blog draft</h2> <span class="small muted">(${d.refs.length} references)</span></summary><div class="md">${md(r.blog)}</div>
       <div class="actions" style="margin-top:12px"><button class="btn" type="button" data-copy-md>Copy as Markdown</button></div></details></section>`;
     $$("[data-copy]").forEach((b) => (b.onclick = () => copy($("#" + b.dataset.copy).textContent, b)));
+    $$("[data-ev]").forEach((x) => (x.onchange = async () => { try { await api(`/api/admin/review/events/${x.dataset.ev}`, { body: { status: x.value } }); $("#status").textContent = "Forecast marked " + x.value + "."; } catch (e) { showErr($("#status"), e); } }));
     $("[data-copy-md]").onclick = (e) => copy(r.blog, e.target);
     $("#status").textContent = `Weighed on ${d.at}. ${d.refs.length} references.`;
   } catch (e) { showErr($("#status"), e); }

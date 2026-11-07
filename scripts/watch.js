@@ -23,7 +23,7 @@ const OUT = process.env.WATCH_OUT || path.join(root, "out", "watch");
 
 function parseEntries(text) {
   const t = String(text).trim();
-  if (t.startsWith("[") || t.startsWith("{")) { const j = JSON.parse(t); return (Array.isArray(j) ? j : j.entries || []).map((e) => ({ title: e.title, url: e.url, summary: e.summary || e.abstract || "", authors: e.authors || [], published: e.published || "" })); }
+  if (t.startsWith("[") || t.startsWith("{")) { const j = JSON.parse(t); return (Array.isArray(j) ? j : j.entries || []).map((e) => ({ title: e.title, url: e.url, summary: e.summary || e.abstract || "", authors: e.authors || [], published: e.published || "", kind: e.kind, sourceKind: e.sourceKind })); }
   return feeds.parseXml(t);
 }
 async function fetchArxiv() {
@@ -55,7 +55,8 @@ async function main() {
   }
   const rows = []; let stored = 0, already = 0;
   for (const e of entries) {
-    const x = { kind: "paper", title: e.title, text: e.summary, authors: (e.authors || []).join(", "), url: e.url };
+    // Entries may also be articles or comments (the buzz around a topic): kind, the outlet kind and the publication date.
+    const x = { kind: e.kind || "paper", title: e.title, text: e.summary, authors: (e.authors || []).join(", "), url: e.url, sourceKind: e.sourceKind || null, at: e.published ? String(e.published).slice(0, 10) : undefined };
     if (dry) { const r = R.review(x); rows.push({ e, r, isNew: true }); continue; }
     if (stored >= max) break;
     const out = await saveReview(db, x, null);
@@ -64,8 +65,8 @@ async function main() {
   }
   // Paper-to-code: the most credible new papers on the watched topics become Learn studio jobs (an agent does them).
   const P = CFG.paperToCode, queued = [];
-  // Surveys have no single method to implement, so they are catalogued but not queued.
-  const cands = rows.filter((x) => x.isNew && !x.r.survey && x.r.credibility >= P.minCredibility && x.r.edges.some((ed) => P.topics.includes(ed.dst)))
+  // Surveys and position papers have no single method to implement, so they are catalogued but not queued.
+  const cands = rows.filter((x) => x.isNew && !x.r.survey && x.r.kind === "paper" && !/^position\b/i.test(x.e.title) && x.r.credibility >= P.minCredibility && x.r.edges.some((ed) => P.topics.includes(ed.dst)))
     .sort((a, b) => b.r.credibility + b.r.score - (a.r.credibility + a.r.score)).slice(0, P.maxPerRun);
   for (const c of cands) {
     if (!dry) {

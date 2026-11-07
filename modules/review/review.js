@@ -9,6 +9,7 @@ const crypto = require("crypto");
 const analysis = require("../../lib/analysis");
 const taggers = require("../../lib/taggers");
 const { ontology } = require("../../lib/tagger");
+const SRC = require("./sources");
 
 const KINDS = {
   paper: { label: "Paper", source: "papers" },
@@ -47,7 +48,7 @@ const MARKERS = [
 const CLAIM = /\b(we (?:show|find|found|demonstrate|prove)|demonstrat\w+|achiev\w+|outperform\w*|surpass\w*|state[- ]of[- ]the[- ]art|sota|first (?:ai|model|system|time)|breakthrough|solv(?:es|ed)|superhuman|human[- ]level|will (?:soon|replace|surpass)|(?:superintelligen\w*|agi|recursive(?:ly)? self[- ]improv\w*) (?:is|are|has|have|will|was)\b|(?:reach|achiev|buil|creat)\w* (?:agi|superintelligen\w*))\b/i;
 // A title or sentence that only names a topic ("Recursive self-improvement of research agents") is a subject, not a claim:
 // topic words count as a claim only with an asserting verb ("AGI is here", "achieved superintelligence").
-const HYPE = /\b(revolutionary|unprecedented|breakthrough|game[- ]chang\w+|incredible|massive|insane|mind[- ]blowing|world[- ]changing|definitely|guaranteed|inevitabl\w+|imminent|everything changes|no one is talking about)\b/gi;
+const HYPE = /\b(revolutionary|unprecedented|breakthrough|game[- ]chang\w+|incredible|massive|insane|mind[- ]blowing|world[- ]changing|definitely|guaranteed|inevitabl\w+|imminent|everything chang(?:es|ing)|no one is talking about|holy grail|doomsday|explosive|closing fast|palpable|utterly transformative|no longer sci-fi|existential threats?|kill us all|most consequential)\b/gi;
 // Text written to the judge rather than the reader: a reward hack against model judges, flagged and capped here too.
 const INJECTION = /\b(ignore (?:all |the )?(?:previous|prior|above) instructions|you are (?:an? )?(?:ai|judge|grader)|(?:rate|score|grade) this (?:paper |article |post )?(?:as |a )?\d+|give (?:this|it) (?:a )?(?:perfect|high|top) score|system prompt)\b/i;
 
@@ -201,18 +202,26 @@ function review(input) {
   if (Math.abs(naive.significance - score) >= 25) review_reasons.push(`the guards moved the score by ${naive.significance - score} points`);
   if (hp.unbacked >= 2) review_reasons.push(`${hp.unbacked} claims have nothing backing them`);
   if (fired("keyword-stuffing") || fired("rigor-words")) review_reasons.push("it looks written to game the scoring (keyword lists or checklist sentences)");
+  if (hp.words.length >= 4 && !cl.some((c) => c.level === "backed")) review_reasons.push(`it reads as hype: ${hp.words.length} hype words and nothing backed`);
   // Off-topic is reported (scope) but isn't a reason to send it to a person: the feed's scope rule already handles it.
 
   // Two axes, reported separately: how big a step it claims (score) and how far to believe it (credibility).
   const v = VERDICTS.find((x) => x.when(score, credibility)), verdict = v.id;
   const qid = `doc:${hash(`${title}\n${text}`)}`;
+  // Where it comes from (graded by outlet kind and what the piece shows) and what it forecasts (dated events).
+  const origin = step("source", "Grade the source", () => SRC.grade({ url: input.url || "", text: `${title}\n${text}`, hype: hp.score, catalogKind: input.sourceKind || null }));
+  const forecasts = step("forecasts", "Find dated forecasts", () => SRC.predictions([title, ...sents], input.at || undefined)
+    .map((f) => ({ ...f, qid: `event:${hash(`${f.sentence}|${f.due}`)}` })));
   const edges = step("catalog", "Catalog it in the knowledge graph", () => {
     const rel = (t) => (t.qid.startsWith("topic:") ? "about" : t.qid.startsWith("concept:") ? "explains" : t.qid.startsWith("benchmark:") ? "evaluates-on" : "mentions");
-    return tags.filter((t) => !t.via).map((t) => ({ src: qid, rel: rel(t), dst: t.qid, weight: 1, evidence: [qid] }));
+    const tops = tags.filter((t) => !t.via && t.qid.startsWith("topic:"));
+    return [...tags.filter((t) => !t.via).map((t) => ({ src: qid, rel: rel(t), dst: t.qid, weight: 1, evidence: [qid] })),
+      { src: qid, rel: "published-by", dst: origin.outlet.id, weight: 1, evidence: [qid] },
+      ...forecasts.flatMap((f) => [{ src: qid, rel: "predicts", dst: f.qid, weight: 1, evidence: [qid] }, ...tops.map((t) => ({ src: f.qid, rel: "about", dst: t.qid, weight: 1, evidence: [qid] }))])];
   });
 
   return {
-    qid, kind: k.kind, kindWhy: k.why, kindLabel: isSurvey ? "Survey" : KINDS[k.kind].label, verdictRule: v.rule, survey: isSurvey, arxiv, title, authors,
+    qid, kind: k.kind, kindWhy: k.why, kindLabel: isSurvey ? "Survey" : KINDS[k.kind].label, verdictRule: v.rule, source: origin, forecasts, survey: isSurvey, arxiv, title, authors,
     score, naive: naive.significance, credibility, verdict, needsPerson: review_reasons.length > 0, reasons: review_reasons,
     judges: [
       { id: "significance", label: "Significance", score: sig.significance, about: "How big a step toward superintelligence it reports (lib/analysis.js, on the cleaned text)", why: sig.why },
@@ -275,7 +284,7 @@ const VERDICTS = [
   { id: "major and credible", rule: "significance 55 or more and credibility 60 or more", when: (s, c) => s >= 55 && c >= 60 },
   { id: "solid, modest step", rule: "credibility 70 or more", when: (s, c) => c >= 70 },
   { id: "big if true", rule: "significance 40 or more", when: (s) => s >= 40 },
-  { id: "minor", rule: "anything else", when: () => true },
+  { id: "minor", rule: "none of the rules above applied", when: () => true },
 ];
 const CRITERIA = {
   rigor: { about: "What the evidence needs. Each check counts only when a sentence shows it; the points add up to 100.", checks: MARKERS.map(({ id, label, points }) => ({ id, label, points })) },
@@ -293,7 +302,10 @@ const CRITERIA = {
     { id: "name-dropping", label: "Naming watched people only counts for authors" },
     { id: "prompt-injection", label: "Text addressed to the judge is flagged and capped" },
   ],
-  person: { about: "Sent to a person when it addresses the judge, the guards moved its score by 25 points or more, two or more claims have nothing backing them, or it looks written to game the scoring." },
+  source: { about: "Each piece gets a grade from A to E. It starts at its outlet's grade below, goes one step up when it cites primary research (a paper or study) and isn't hyped (to B at most: only peer review earns an A), one step down at hype 50 or more, and is an E when it sells its own product. Personal blogs and newsletters are graded as a class, never as the person who writes them.", outlets: SRC.OUTLETS.map(({ kind, grade, label, why }) => ({ kind, grade, label, why })) },
+  forecasts: { about: "A forecast is a sentence that looks ahead and names a time (by 2028, within 18 months, next year); questions don't count. Each becomes an event with a due date. A person marks it as happened, did not happen or unclear once it's due. Outlets get a hit rate from 3 resolved forecasts up. Names a forecast is pinned on are removed: forecasts are never attributed to people." },
+  buzz: { about: "How loudly a topic is talked about: news, newsletter, blog, forum and community items in the last 30 days (quiet under 5, loud at 20 or more), with the average hype of reviewed articles. Buzz is shown next to the evidence rating and never changes it; the gap between them is the hype signal." },
+  person: { about: "Sent to a person when it addresses the judge, the guards moved its score by 25 points or more, two or more claims have nothing backing them, it has four or more hype words and no backed claim, or it looks written to game the scoring." },
 };
 
 module.exports = { CRITERIA, VERDICTS, KINDS, MARKERS, detectKind, clean, rigor, claims, hype, review, attack, stress, bank, sentences };

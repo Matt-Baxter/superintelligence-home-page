@@ -14,11 +14,17 @@ CREATE TABLE IF NOT EXISTS review_docs (id \${ID}, qid TEXT NOT NULL UNIQUE, kin
   verdict TEXT NOT NULL, needs_person INTEGER DEFAULT 0, result TEXT DEFAULT '{}', label TEXT, label_note TEXT DEFAULT '',
   labelled_by INTEGER REFERENCES users(id) ON DELETE SET NULL, created_by INTEGER REFERENCES users(id) ON DELETE SET NULL, created_at TEXT DEFAULT \${T});
 CREATE INDEX IF NOT EXISTS idx_review_docs_created ON review_docs(id);
+CREATE TABLE IF NOT EXISTS review_events (id \${ID}, qid TEXT NOT NULL UNIQUE, doc_qid TEXT NOT NULL, outlet TEXT NOT NULL, outlet_label TEXT DEFAULT '',
+  sentence TEXT NOT NULL, due TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', note TEXT DEFAULT '',
+  resolved_by INTEGER REFERENCES users(id) ON DELETE SET NULL, resolved_at TEXT, created_at TEXT DEFAULT \${T});
+CREATE INDEX IF NOT EXISTS idx_review_events_outlet ON review_events(outlet);
 `);
     // Free tier: keep the newest 1,000 reviews, and drop graph edges of reviews that are gone.
     ctx.point("db.schema").addPrune(async (db) => {
       await db.run("DELETE FROM review_docs WHERE id NOT IN (SELECT id FROM review_docs ORDER BY id DESC LIMIT 1000)");
       await db.run("DELETE FROM knowledge_edges WHERE src LIKE 'doc:%' AND src NOT IN (SELECT qid FROM review_docs)");
+      await db.run("DELETE FROM review_events WHERE doc_qid NOT IN (SELECT qid FROM review_docs)");
+      await db.run("DELETE FROM knowledge_edges WHERE src LIKE 'event:%' AND src NOT IN (SELECT qid FROM review_events)");
     });
     ctx.point("http.routes").add((app, deps) => require("./routes")(app, deps));
     ctx.point("ui.nav").add({ href: "/m/review", label: "Review", order: 21 });

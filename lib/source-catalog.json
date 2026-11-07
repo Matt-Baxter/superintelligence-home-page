@@ -1,5 +1,5 @@
 {
-  "about": "Candidate sources an admin can enable from the Admin page. None of these feed URLs could be checked from the build sandbox, so each starts as unverified: enabling one runs a test fetch first, and the Admin page shows whether it worked. No Twitter/X. Sources that publish no feed (for example some lab news pages) aren't listed; add their posts with Submit a link, or use Find feed on their homepage. Kinds: journal means peer-reviewed venues (scored highest for evidence); people means a named researcher's or writer's own blog. 'findFeed' lists important sites without a known feed: the Admin page offers Find feed for each.",
+  "about": "Candidate sources an admin can enable from the Admin page. None of these feed URLs could be checked from the build sandbox, so each starts as unverified: enabling one runs a test fetch first, and the Admin page shows whether it worked. No Twitter/X. Entries marked (buzz) measure how loudly a topic is talked about, not evidence (modules/review/sources.js); Medium tag feeds were checked on 2026-11-07, Reddit blocks automated readers. Sources that publish no feed (for example some lab news pages) aren't listed; add their posts with Submit a link, or use Find feed on their homepage. Kinds: journal means peer-reviewed venues (scored highest for evidence); people means a named researcher's or writer's own blog. 'findFeed' lists important sites without a known feed: the Admin page offers Find feed for each.",
   "sources": [
     {
       "name": "arXiv: Computation and Language (cs.CL)",
@@ -406,6 +406,30 @@
       "format": "arxiv",
       "url": "https://export.arxiv.org/api/query?search_query=all:%22dangerous%20capabilities%22%20OR%20all:%22frontier%20model%20evaluation%22%20OR%20all:scheming&sortBy=submittedDate&sortOrder=descending&max_results=30",
       "home": "https://arxiv.org"
+    },
+    {
+      "name": "Medium: superintelligence tag (buzz)",
+      "kind": "community",
+      "format": "rss",
+      "url": "https://medium.com/feed/tag/superintelligence",
+      "home": "https://medium.com/tag/superintelligence",
+      "note": "Open-platform posts: counted as buzz, graded D. Checked 2026-11-07: valid RSS, 10 recent items."
+    },
+    {
+      "name": "Medium: AGI tag (buzz)",
+      "kind": "community",
+      "format": "rss",
+      "url": "https://medium.com/feed/tag/agi",
+      "home": "https://medium.com/tag/agi",
+      "note": "Open-platform posts: counted as buzz, graded D. Checked 2026-11-07: valid RSS, 10 items from the last 4 days."
+    },
+    {
+      "name": "Hacker News: superintelligence stories (buzz)",
+      "kind": "community",
+      "format": "hn-algolia",
+      "url": "https://hn.algolia.com/api/v1/search_by_date?query=superintelligence&tags=story&hitsPerPage=40",
+      "home": "https://news.ycombinator.com",
+      "note": "Checked 2026-11-07: valid JSON, 702 matching stories."
     }
   ],
   "findFeed": [

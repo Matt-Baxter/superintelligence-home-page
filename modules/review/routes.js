@@ -59,6 +59,25 @@ module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, no
     return { id: r.id, label };
   }));
 
+  // Sources and forecasts: each outlet's grades and track record, and the dated forecasts waiting to be resolved.
+  const SRC = require("./sources");
+  app.get("/api/review/outlets", auth, wrap(async () => {
+    const docs = await db.all("SELECT credibility, result FROM review_docs ORDER BY id DESC LIMIT 1000"), events = await db.all("SELECT outlet, status FROM review_events");
+    return { outlets: SRC.trackRecords(docs, events), grades: SRC.OUTLETS, minResolved: SRC.MIN_RESOLVED };
+  }));
+  app.get("/api/review/events", auth, wrap(async (req) => {
+    const status = ["pending", "happened", "did-not", "unclear"].includes(req.query.status) ? req.query.status : null;
+    const rows = await db.all(`SELECT e.id, e.qid, e.doc_qid, e.outlet, e.outlet_label, e.sentence, e.due, e.status, e.note, e.resolved_at, d.id AS doc_id, d.title, d.url
+      FROM review_events e LEFT JOIN review_docs d ON d.qid = e.doc_qid ${status ? "WHERE e.status = ?" : ""} ORDER BY e.due ASC LIMIT 300`, ...(status ? [status] : []));
+    return { events: rows };
+  }));
+  app.post("/api/admin/review/events/:id", auth, admin, wrap(async (req) => {
+    const status = String(req.body?.status || ""); if (!["pending", "happened", "did-not", "unclear"].includes(status)) bad("Status must be pending, happened, did-not or unclear.");
+    const e = await db.get("SELECT id FROM review_events WHERE id = ?", Number(req.params.id)); if (!e) notFound("That forecast");
+    await db.run("UPDATE review_events SET status = ?, note = ?, resolved_by = ?, resolved_at = ? WHERE id = ?", status, str(req.body?.note || "", 400), req.user.id, status === "pending" ? null : new Date().toISOString(), e.id);
+    return { ok: true };
+  }));
+
   // How the judges are doing: guard fire rates, the naive-vs-guarded gap, and agreement with people.
   app.get("/api/review/metrics", auth, wrap(async () => {
     const rows = await db.all("SELECT score, naive, credibility, verdict, needs_person, label, result FROM review_docs ORDER BY id DESC LIMIT 1000");
