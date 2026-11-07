@@ -38,6 +38,7 @@ requireUser().then(async () => {
     <header><h2><a href="/?topic=${encodeURIComponent(t.id)}">${esc(t.label)}</a></h2><span>${pl(t.stories, "story").replace("storys", "stories")} · ${pl(t.docs, "doc")}</span></header>
     ${t.children.length ? `<div class="subs">${t.children.map((c) => chip(`/?topic=${encodeURIComponent(c.id)}`, c.label, c.stories + c.docs)).join("")}</div>` : ""}
     ${t.concepts.length ? `<div><p class="k">Concepts</p><ul class="concepts">${t.concepts.map((c) => `<li><span class="lv" title="level">L${c.level}</span><a href="/m/learn#/c/${encodeURIComponent(c.id)}">${esc(c.name)}</a><span class="lv">${c.docs ? pl(c.docs, "doc") : ""}</span></li>`).join("")}</ul></div>` : ""}
+    <p class="small" style="margin:0"><a href="/m/dossier#${encodeURIComponent(t.id)}">Evidence dossier</a> <span class="muted">· weighed, sourced, with a blog draft and video</span></p>
     ${t.docs_recent.length ? `<div><p class="k">Recently reviewed</p><ul class="docs">${t.docs_recent.map((d) => `<li><a href="/m/review#/doc/${d.id}">${esc(d.title)}</a><span>${d.score} · ${esc(d.verdict)}</span></li>`).join("")}</ul></div>` : ""}
   </section>`).join("");
   $("#people").innerHTML = m.people.map((p) => chip(`/?person=${encodeURIComponent(p.id)}`, p.label, p.stories + p.docs)).join("") || '<p class="small muted">No watchlist yet.</p>';

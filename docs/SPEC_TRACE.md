@@ -33,6 +33,7 @@ How this build meets the shared spec ([specs/001-superintelligence-homepage/spec
 | REQ-027 | Review desk with anti-gaming guards | `modules/review` (`review.js`, `store.js`), `/m/review` | unit: review (22 checks); review demo; bench `review.*` |
 | REQ-028 | Daily paper watch | `scripts/watch.js`, `modules/review/watch.json`, `.github/workflows/paper-watch.yml` | unit: watch (5 checks) |
 | REQ-029 | Benchmarks with a ratchet | `scripts/bench.js`, `bench/` | preflight "Benchmarks" |
+| REQ-031 | Topic dossier: traced analysis, blog, posts, video | `modules/review/dossier.js`, `/m/dossier`, `/api/review/dossier/:topic`, worker job `dossier`, `/m/explainer?d=<topic>` | unit: dossier (14 checks); review demo: "Dossier" |
 | REQ-030 | Project tracker mirrors spec and agents | `scripts/project-sync.js`, `modules/project` | unit: project-sync |
 
 ## Acceptance suite

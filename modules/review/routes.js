@@ -76,6 +76,18 @@ module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, no
         note: "Agreement between a person and the judge's verdict. Below about 0.8 on 20+ labels, the rules need tuning (tune-significance)." } };
   }));
 
+  // Topic dossiers: a traced analysis of everything on one topic, with a blog draft, short posts and a video storyboard.
+  const D = require("./dossier");
+  const labExamples = () => { try { const L = require("../lab/lab"), pre = require("../lab/results.json").results; return L.EX.examples.filter((e) => pre[e.id]).map((e) => ({ ...e, verdict: pre[e.id].verdict })); } catch { return []; } };
+  const dossierFor = async (topic) => { if (!ontology.topics.some((t) => t.id === topic)) notFound("That topic"); return D.analyse(await D.gather(db, topic), { examples: labExamples(), concepts: CONCEPTS }); };
+  const site = (req) => (process.env.SITE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/$/, "");
+  app.get("/api/review/dossier/:topic", auth, wrap(async (req) => {
+    const d = await dossierFor(str(req.params.topic, 60)), link = `${site(req)}/m/dossier#${d.topic}`;
+    return { dossier: d, blog: D.blog(d, site(req)), posts: D.posts(d, link), storyboard: D.storyboard(d) };
+  }));
+  // The storyboard alone is public, like concept explainers, so the explainer player and its recorder can load it.
+  app.get("/api/review/dossier/:topic/storyboard", wrap(async (req) => ({ storyboard: D.storyboard(await dossierFor(str(req.params.topic, 60))) })));
+
   // The superintelligence map: the ontology's top-level topics, their finer topics, the Learn concepts under each, watched
   // people and organisations, with how many stories and reviewed docs touch each. Counts only: no claims about anyone.
   app.get("/api/review/map", auth, wrap(async () => {

@@ -147,6 +147,7 @@ const JOB_KINDS = [
   { id: "lean-proof", label: "Lean 4 proof", runs: "worker (checks with Lean when installed)" },
   { id: "explain", label: "Explain a paper in plain words", runs: "agent" },
   { id: "paper-to-code", label: "Paper to code", runs: "agent" },
+  { id: "dossier", label: "Topic dossier: blog draft, posts and explainer video (note: topic:<id>)", runs: "worker" },
   { id: "reverse-engineer", label: "Reverse-engineer a system or result", runs: "agent" },
 ];
 

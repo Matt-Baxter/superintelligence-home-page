@@ -30,6 +30,28 @@ const AGENT_BRIEF = {
   "reverse-engineer": "Work out how the named system or result most likely works from public material: inputs, mechanism, outputs, evidence for each claim, and open questions. Mark guesses as guesses.",
 };
 
+// Record an explainer page (the /m/explainer player) to WebM with Playwright, and to MP4 when ffmpeg is installed.
+async function record(pagePath, dir, job, files) {
+  try {
+    const { chromium } = require("playwright");
+    const base = (process.env.BASE || "http://localhost:3000").replace(/\/$/, "");
+    const browser = await chromium.launch();
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 }, recordVideo: { dir, size: { width: 1280, height: 720 } } });
+    const page = await ctx.newPage();
+    await page.goto(`${base}${pagePath}`);
+    const secs = await page.waitForFunction(() => window.__explainerSeconds, null, { timeout: 15000 }).then((h) => h.jsonValue());
+    await page.waitForFunction(() => window.__explainerDone === true, null, { timeout: (secs + 15) * 1000 });
+    await page.waitForTimeout(800);
+    const v = page.video(); await ctx.close(); await browser.close();
+    const webm = path.join(dir, "explainer.webm"); fs.renameSync(await v.path(), webm); files.push(`out/learn/${job.id}/explainer.webm`);
+    if (has("ffmpeg", ["-version"])) {
+      execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-i", webm, "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p", "-movflags", "+faststart", path.join(dir, "explainer.mp4")], { timeout: 300000 });
+      files.push(`out/learn/${job.id}/explainer.mp4`); return `Recorded the browser explainer (${secs}s) to MP4.`;
+    }
+    return `Recorded the browser explainer (${secs}s) to WebM; install ffmpeg for MP4.`;
+  } catch (e) { return `Browser recording skipped: ${String(e.message).split("\n")[0]}`; }
+}
+
 async function runJob(job, opts) {
   const dir = path.join(OUT, String(job.id)); fs.mkdirSync(dir, { recursive: true });
   const files = [], put = (name, text) => { fs.writeFileSync(path.join(dir, name), text); files.push(`out/learn/${job.id}/${name}`); };
@@ -45,6 +67,22 @@ async function runJob(job, opts) {
     return { status: "done", output: draft, files };
   }
 
+  // A topic dossier (modules/review/dossier.js): the traced analysis, its blog draft and posts, and the explainer video.
+  if (job.kind === "dossier") {
+    const topic = (String(job.note || "").match(/topic:([a-z0-9-]+)/) || [])[1]; if (!topic) throw new Error("A dossier needs topic:<id> in its note.");
+    const D = require("../modules/review/dossier"), Lab = require("../modules/lab/lab"), pre = require("../modules/lab/results.json").results;
+    const concepts = require("../modules/learn/data/concepts.json").concepts;
+    const d = D.analyse(await D.gather(db, topic), { examples: Lab.EX.examples.filter((e) => pre[e.id]).map((e) => ({ ...e, verdict: pre[e.id].verdict })), concepts });
+    const site = (process.env.SITE_URL || process.env.BASE || "").replace(/\/$/, ""), link = site ? `${site}/m/dossier#${topic}` : "";
+    const blog = D.blog(d, site); put("post.md", blog);
+    put("social.md", D.posts(d, link).map((x) => `## ${x.channel}\n\n${x.text}\n`).join("\n") + "\n(Drafts for a person to post. No Twitter/X.)\n");
+    put("dossier.json", JSON.stringify(d, null, 2)); put("storyboard.json", JSON.stringify(D.storyboard(d), null, 2));
+    const notes = [`Evidence on ${d.label}: ${d.strength} (${d.why}); ${d.refs.length} traced references.`];
+    if (!opts.noVideo) notes.push(await record(`/m/explainer?d=${encodeURIComponent(topic)}&record=1`, dir, job, files));
+    notes.push("Review the drafts, then publish them yourself: nothing is posted automatically.");
+    return { status: "done", output: `${notes.join("\n")}\n\n${blog}`, files };
+  }
+
   if (job.kind === "video") {
     if (!c) throw new Error("A video needs a concept.");
     const sb = L.storyboard(c.id), scene = L.manimScene(c.id), notes = [];
@@ -52,25 +90,7 @@ async function runJob(job, opts) {
     put(scene.file, scene.source);
     put("narration.txt", sb.scenes.map((s) => s.text ? `${s.text}${s.why ? " " + s.why : ""}` : `${s.center}: ${s.nodes.map((n) => n.name).join(", ")}`).join("\n\n") + "\n");
     // 1) Record the browser explainer (always available where Playwright is).
-    if (!opts.noVideo) {
-      try {
-        const { chromium } = require("playwright");
-        const base = (process.env.BASE || "http://localhost:3000").replace(/\/$/, "");
-        const browser = await chromium.launch();
-        const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 }, recordVideo: { dir, size: { width: 1280, height: 720 } } });
-        const page = await ctx.newPage();
-        await page.goto(`${base}/m/explainer?c=${encodeURIComponent(c.id)}&record=1`);
-        const secs = await page.waitForFunction(() => window.__explainerSeconds, null, { timeout: 15000 }).then((h) => h.jsonValue());
-        await page.waitForFunction(() => window.__explainerDone === true, null, { timeout: (secs + 15) * 1000 });
-        await page.waitForTimeout(800);
-        const v = page.video(); await ctx.close(); await browser.close();
-        const webm = path.join(dir, "explainer.webm"); fs.renameSync(await v.path(), webm); files.push(`out/learn/${job.id}/explainer.webm`);
-        if (has("ffmpeg", ["-version"])) {
-          execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-i", webm, "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p", "-movflags", "+faststart", path.join(dir, "explainer.mp4")], { timeout: 300000 });
-          files.push(`out/learn/${job.id}/explainer.mp4`); notes.push(`Recorded the browser explainer (${secs}s) to MP4.`);
-        } else notes.push(`Recorded the browser explainer (${secs}s) to WebM; install ffmpeg for MP4.`);
-      } catch (e) { notes.push(`Browser recording skipped: ${String(e.message).split("\n")[0]}`); }
-    }
+    if (!opts.noVideo) notes.push(await record(`/m/explainer?c=${encodeURIComponent(c.id)}&record=1`, dir, job, files));
     // 2) Render the Manim scene when Manim is installed (pip install manim).
     if (has("manim")) {
       try { execFileSync("manim", ["-qm", "--media_dir", path.join(dir, "manim"), path.join(dir, scene.file), scene.className], { timeout: 900000, stdio: "ignore" }); notes.push("Rendered the Manim scene (out/learn/<id>/manim)."); }
