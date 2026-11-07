@@ -64,6 +64,17 @@ Every interface change gets a row here. Breaking changes bump the major version 
 - **Worker:** `npm run lab`.
 - **Library:** `lib/providers.js` (OpenAI-compatible presets: ollama, lmstudio, openrouter, vercel-ai-gateway, cloudflare, groq).
 - **Embedder:** the `embeddinggemma` adapter. | logged by John |
+| 1.5 | Nov 7, 2026 | Lab Arena and the Review desk (extended version; proposed REQ-026 and REQ-027).
+- **Arena:** table `lab_policies(id, policy, accuracy, properties, note, active, created_by, created_at)`.
+  - `GET /api/lab/policy` returns `{id, source, policy, score}`; `GET /api/lab/policies`.
+  - `POST /api/admin/lab/policy {policy, note}` (refused unless every safety property holds and held-out accuracy is no worse than the live policy); `POST /api/admin/lab/policy/reset {id?}`.
+  - `POST /api/lab/examples/:id/variants {name, params}`, `GET /api/lab/examples/:id/variants`.
+  - Page `/m/arena`; browser sandbox bundle `public/m/lab-sandbox.js` (built from `modules/lab/client/`).
+- **Review module:** table `review_docs(id, qid, kind, title, authors, url, excerpt, score, naive, credibility, verdict, needs_person, result, label, label_note, labelled_by, created_by, created_at)`; stores a 400-character excerpt, never the full text (REQ-007).
+  - New id namespace `doc:` (a hash of title and text). Its edges (`about`, `explains`, `evaluates-on`, `mentions`) live in `knowledge_edges`, and a knowledge rebuild keeps them.
+  - Signed in: `GET /api/review/samples`; `POST /api/review/check` (judge, don't save); `POST /api/review/stress {steps?}` returns `{naiveAttack, whiteBox, summary}`; `POST /api/review/arxiv {id}` (`ARXIV_API` overrides the base URL); `POST /api/review/docs`; `GET /api/review/docs?topic=&verdict=`; `GET /api/review/docs/:id`; `GET /api/review/metrics`; `GET /api/review/map`.
+  - Admins: `POST /api/admin/review/docs/:id/label {label: agree|disagree, note}`.
+  - Pages `/m/review` and `/m/map`. | logged by John |
 
 **Done means:** a classmate can sign up on the live site, see a grouped, tagged feed from at least 8 sources, and vote on and save stories that are still there the next time they sign in.
 
