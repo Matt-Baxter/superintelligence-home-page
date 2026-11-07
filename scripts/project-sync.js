@@ -41,6 +41,8 @@ function tasks() {
 const JOB_STATUS = { queued: "todo", "needs-agent": "todo", running: "in_progress", done: "done", published: "done", failed: "todo" };
 
 async function main() {
+  // The Project tracker is an extended-version module; its tables only exist with that profile loaded.
+  process.env.SITE_PROFILE = process.env.SITE_PROFILE || "extended";
   const db = require("../lib/db"), { createKernel } = require("../kernel/kernel"), k = createKernel();
   db.extend({ sql: k.store.schema.join("\n"), columns: k.store.columns }); await db.ready();
   const now = () => db.now();

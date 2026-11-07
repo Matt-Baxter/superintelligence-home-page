@@ -32,43 +32,58 @@ injection was found are **inputs**.
 | `jsRound a b = (2a + b) / (2b)` | `Math.round` | round(a/b) for naturals. `Math.round(x) = floor(x + 1/2)`, and for x = a/b ≥ 0 that is `floor((2a + b) / 2b)`. Exact on rationals; the JS computes in floating point, which the vectors test checks |
 | `claimsPart`, `hype u k w` | review.js lines 108-114, `hype()` | `min(100, round(60u/k) + min(40, 10w))`, claims term 0 when k = 0. The code rounds the whole sum; since `min(40, 10w)` is an integer the two agree. A survey drops the claims term: pass k = 0 |
 | `credibility r h` | review.js line 197 | `round(0.5R + 0.5(100 - H)) = jsRound (R + (100 - H)) 2` |
-| `cap r` | review.js line 193 | `round(35 + 0.65R) = jsRound (3500 + 65R) 100 = (7100 + 130R) / 200` |
+| `cap r` | review.js line 193 | `round(35 + 0.65R) = jsRound (3500 + 65R) 100 = (7100 + 130R) / 200`. In doubles `0.65*R` is inexact for some R (e.g. R = 26 gives 51.900000000000006), but the exact halves (R = 10, 30, 50, 70, 90: 41.5, 54.5, 67.5, 80.5, 93.5) come out exact, and no inexact value is near a half, so the float code equals the model on R 0..100 (checked in node) |
 | `guarded b r inj` | review.js lines 189-196 | `min(b, cap)`, then `min(·, 30)` if injection. `b` is the base clamped at 0: the code applies `max(0, ·)` last, which gives the same number because cap ≥ 0 |
 | `band T m c` | not in code yet (REQ-037, T041) | Low `c < T - m`, Border `T - m ≤ c < T + m`, High `c ≥ T + m`. Natural subtraction: if m > T nothing is Low, same as with integers since c ≥ 0 |
-| `rating c l n` | dossier.js line 75, `const strength =` | `some support` if c ≥ 2 and l ≥ 1; `early` if c ≥ 1; `thin` if n > 0; else `none yet` (c credible primary papers, l linked toy checks that held up, n = `P.length`) |
+| `rating c l n` | dossier.js line 75, `const strength =` | `some support` if c ≥ 2 and l ≥ 1; `early` if c ≥ 1; `thin` if n > 0; else `none yet`. c = credible primary (non-survey) papers, credibility ≥ 60 (line 44); l = held-up toy checks whose source is any reviewed paper, credible or not (`urls`, line 52); n = `P.length`, every reviewed non-comment document including surveys |
 
 ## Theorems
 
-All: **written, not yet checked by Lean.** None uses `sorry`.
+Status of **every** row: **written, not yet checked by Lean.** None uses `sorry`. "Risk" is a guess at how likely the
+proof needs fixing on the first `lake build` (low: plain `omega`/`decide`/term proof on a small goal; medium: depends
+on tactic or reduction behaviour that has changed between Lean versions; high: none currently). A wrong *statement*
+would show up as a proof that cannot be repaired; the statements were checked against the code by hand and by
+`node test/judge-lean-vectors.js`.
 
-| Theorem | Statement | Plan step |
-| --- | --- | --- |
-| `weights_sum` | the 8 weights sum to 100 (`decide`) | 2 |
-| `weight_le_14` | every weight ≤ 14 | 2, 4 |
-| `rigor_all`, `rigor_none` | all families give 100, none give 0 (`decide`) | 2 |
-| `rigor_mono` | p ≤ q pointwise ⇒ rigor p ≤ rigor q | 2 |
-| `rigor_le_100` | rigor p ≤ 100 | 2 |
-| `rigor_flip` | p, q differ only at f ⇒ \|rigor p − rigor q\| ≤ weight f | 2 |
-| `jsRound_two`, `jsRound_mul_le` | `jsRound a 2 = (a+1)/2`; `jsRound a b · 2b ≤ 2a + b` (lower half of the rounding spec) | – |
-| `hype_le_100`, `hype_no_claims` | H ≤ 100; with k = 0 (or a survey) only hype words count | 3 |
-| `credibility_eq`, `credibility_le_100`, `credibility_rigor_le_100` | C = (R + 100 − H + 1)/2; C ≤ 100 when R ≤ 100 | 4 |
-| `credibility_flip_weight` | one flip, **hype held fixed**: \|ΔC\| ≤ ⌈w_f / 2⌉ | 4 |
-| `credibility_flip_7` | the same with today's weights: \|ΔC\| ≤ 7 | 4 |
-| `cap_eq`, `cap_ge_35`, `cap_le_100` | cap = (7100 + 130R)/200; 35 ≤ cap; cap ≤ 100 when R ≤ 100 | 5 |
-| `guarded_le_cap`, `guarded_le_base`, `guarded_inj_le_30`, `guarded_le_100` | S ≤ cap; S ≤ base; inj ⇒ S ≤ 30; S ≤ 100 | 5 |
-| `band_low`, `band_border`, `band_high` and `band_eq_low_iff`, `band_eq_border_iff`, `band_eq_high_iff` | each band holds exactly on its half-open interval | 6 |
-| `band_exhaustive`, `band_exclusive_low_high` | exactly one band (a function, so at most one; the iffs give the intervals) | 6 |
-| `flip_low_not_high`, `flip_high_not_low` | 2m ≥ 7, **hype held fixed**: one flip never moves Low ↔ High | 6 |
-| `margin_3_can_jump` | the bound is sharp: T = 60, m = 3, hype 75 (u 7 of k 12, w 4), dropping uncertainty takes C from 63 (High) to 56 (Low) (`decide`) | 6 |
-| `rating_some`/`early`/`thin`/`none`, `rating_exhaustive`, `rating_eq_*_iff` | the four cases, as conditions, are exhaustive and pairwise exclusive | 7 |
-| `rating_mono`, `rating_add_credible` | more credible papers, linked checks or papers never lower the rating | 7 |
-| `rating_add_noncredible` | with at least one paper, a non-credible (Border) paper changes nothing | 7 |
-| `first_noncredible_paper_raises` | but the first one lifts `none yet` to `thin` (`decide`), so the plan's "a Border paper never raises it" holds only from one paper on | 7 |
+| Theorem | Statement | Plan step | Status | Risk |
+| --- | --- | --- | --- | --- |
+| `weights_sum` | the 8 weights sum to 100 (`decide`) | 2 | written, not yet checked by Lean | low |
+| `weight_le_14` | every weight ≤ 14 | 2, 4 | written, not yet checked by Lean | low |
+| `pts_of_true`, `pts_of_false`, `pts_le`, `pts_congr`, `pts_mono`, `pts_off` | one family's points: its weight or 0 | 2 | written, not yet checked by Lean | low |
+| `rigor_all`, `rigor_none` | all families give 100, none give 0 (`decide`) | 2 | written, not yet checked by Lean | low |
+| `rigor_mono` | p ≤ q pointwise ⇒ rigor p ≤ rigor q | 2 | written, not yet checked by Lean | low |
+| `rigor_le_100` | rigor p ≤ 100 | 2 | written, not yet checked by Lean | low |
+| `rigor_flip` | p, q differ only at f ⇒ \|rigor p − rigor q\| ≤ weight f (8 explicit cases, 7 `pts_off` facts each, then `omega`) | 2 | written, not yet checked by Lean | medium |
+| `jsRound_two` | `jsRound a 2 = (a+1)/2` (`show` to turn `2*2` into `4`, with a `simp only` fallback) | – | written, not yet checked by Lean | low |
+| `jsRound_mul_le`, `jsRound_lt_succ` | `jsRound a b · 2b ≤ 2a + b < (jsRound a b + 1) · 2b` for b > 0: together they say jsRound a b = ⌊a/b + 1/2⌋ | – | written, not yet checked by Lean | low / medium (`jsRound_lt_succ` relies on `omega` treating the product `2 * b * q` as one atom after a `rw` into that exact shape) |
+| `hype_le_100`, `hype_no_claims` | H ≤ 100; with k = 0 (or a survey) only hype words count | 3 | written, not yet checked by Lean | low |
+| `credibility_eq`, `credibility_le_100`, `credibility_rigor_le_100` | C = (R + 100 − H + 1)/2; C ≤ 100 when R ≤ 100 | 4 | written, not yet checked by Lean | low |
+| `credibility_flip_weight` | one flip, **hype held fixed**: \|ΔC\| ≤ ⌈w_f / 2⌉ | 4 | written, not yet checked by Lean | low |
+| `credibility_flip_7` | the same with today's weights: \|ΔC\| ≤ 7 | 4 | written, not yet checked by Lean | low |
+| `cap_eq`, `cap_ge_35`, `cap_le_100` | cap = (7100 + 130R)/200; 35 ≤ cap; cap ≤ 100 when R ≤ 100 | 5 | written, not yet checked by Lean | low |
+| `guarded_le_cap`, `guarded_le_base`, `guarded_inj_le_30`, `guarded_le_100`, `guarded_le_100_of` | S ≤ cap; S ≤ base; inj ⇒ S ≤ 30; S ≤ 100 (for a family-sum R, and for any R ≤ 100, which covers survey coverage) | 5 | written, not yet checked by Lean | low |
+| `band_low`, `band_border`, `band_high`, `band_eq_low_iff`, `band_eq_border_iff`, `band_eq_high_iff` | each band holds exactly on its half-open interval | 6 | written, not yet checked by Lean | low |
+| `band_exhaustive`, `band_exclusive_low_high` | at least one band / not both Low and High. True of *any* function into a 3-constructor type, so they say nothing about the thresholds; the iffs carry the content | 6 | written, not yet checked by Lean | low |
+| `flip_low_not_high`, `flip_high_not_low` | 2m ≥ 7, **hype held fixed**: one flip never moves Low ↔ High | 6 | written, not yet checked by Lean | low |
+| `rigor_allButUncertainty`, `hype_7_12_4`, `margin_3_can_jump` | the bound is sharp: T = 60, m = 3, hype 75 (u 7 of k 12, w 4), dropping uncertainty takes C from 63 (High) to 56 (Low) (`decide`, which must evaluate `Nat.div` on literals) | 6 | written, not yet checked by Lean | medium |
+| `rating_some`/`early`/`thin`/`none`, `rating_eq_*_iff` | the four cases, as conditions, are exhaustive and pairwise exclusive | 7 | written, not yet checked by Lean | low |
+| `rating_exhaustive` | one of the four (true of any function into `Rating`; the iffs carry the content) | 7 | written, not yet checked by Lean | low |
+| `rating_mono` | more credible papers, linked checks or papers never lower the rating (`repeat' split`, then `decide` or `omega` on each of 16 leaves) | 7 | written, not yet checked by Lean | medium |
+| `rating_add_credible` | adding a credible paper never lowers it | 7 | written, not yet checked by Lean | low |
+| `rating_add_noncredible` | with at least one paper and **linked held fixed**, a non-credible (Border) paper changes nothing | 7 | written, not yet checked by Lean | low |
+| `first_noncredible_paper_raises` | but the first one lifts `none yet` to `thin` (`decide`) | 7 | written, not yet checked by Lean | low |
+| `noncredible_paper_with_check_raises` | and with c = 2, a Border paper that a held-up toy check cites (l 0 → 1) lifts `early` to `some support` (`decide`): see gap 9 | 7 | written, not yet checked by Lean | low |
 
-Proofs a reviewer might want to look at first, because they lean on tactic behaviour that varies between Lean
-versions: `rigor_flip` (a `cases f` followed by `try have … (by decide)` to collect the seven unchanged families),
-`rating_mono` (`repeat' split` then `simp only [Rating.rank]; try omega`), and the `show` steps in `jsRound_two` and
-`cap_eq`, which rely on `2 * 2` and `2 * 100` reducing to `4` and `200` by definitional unfolding.
+Summary: 0 high, 4 medium (`rigor_flip`, `jsRound_lt_succ`, the `margin_3_can_jump` group, `rating_mono`), the rest
+low. `lakefile.lean` (an empty `lean_lib Judge where`, as `lake init` writes) is low risk.
+
+Proofs to look at first if the build fails, because they lean on tactic behaviour that varies between Lean versions:
+`rating_mono` (`repeat' split` and the shape of the 16 leaves), `jsRound_lt_succ` (`omega` and a nonlinear atom),
+the `decide` proofs that evaluate `Nat.div` (`hype_7_12_4`, `margin_3_can_jump`; `margin_3_can_jump` falls back to
+rewriting with the two helper facts), and the `show` steps in `jsRound_two` and `cap_eq` (each has a `simp only`
+fallback). An earlier draft of `rigor_flip` used `try have … (by decide)` to skip the flipped family; that was
+replaced by explicit cases because a failing nested `by decide` can be logged as an error instead of being caught
+by `try`.
 
 ## Gaps between model and code
 
@@ -95,6 +110,11 @@ These are things the theorems do **not** say about today's code.
 8. **Floating point.** The model is exact rational rounding. `test/judge-lean-vectors.js` checks the float code
    equals it on every R 0..100, H 0..100, u ≤ k ≤ 50 and w 0..6, and finds no difference, but that is a test,
    not a proof about IEEE doubles.
+9. **Linked checks come from any reviewed paper.** dossier.js builds `urls` from every reviewed paper (line 52), so
+   adding a non-credible or survey paper can raise `linked` when a held-up toy check cites it, and with c ≥ 2 that
+   lifts `early` to `some support` (`noncredible_paper_with_check_raises`). `rating_add_noncredible` holds l fixed.
+   If the plan's "a Border paper never raises the rating" is meant, `linked` should count only checks citing
+   credible papers; that is a code (and possibly spec) change, not a proof change.
 
 ## Vectors for T051
 

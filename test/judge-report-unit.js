@@ -18,7 +18,7 @@ ok(c60.counts[3] === 2 && c60.counts[5] === 2 && c60.counts[8] === 3, "counts at
 ok(c60.borderline.map((b) => b.title).join("|") === "Sample paper 1 (test data)|Sample paper 3 (test data)", "the listing names the borderline items");
 ok(r.cutoffs.find((c) => c.field === "score" && c.cutoff === 55).counts[5] === 1, "a score 3 below 55 is borderline");
 ok(r.summary === "judge report: 5 items, 4 borderline at margin 5", "an item is counted once in the summary even when it is near two cutoffs");
-ok(J.report([item(1, 60)], 3).summary === "judge report: 1 items, 1 borderline at margin 3" && J.report([], 5).borderline === 0, "the margin flag and an empty input");
+ok(J.report([item(1, 60)], 3).summary === "judge report: 1 items, 1 borderline at margin 3" && J.report([], 5).borderline === 0, "a smaller margin and an empty input");
 ok(JSON.stringify(J.report([item(1, 61), item(2, 37)], 5)) === JSON.stringify(J.report([item(1, 61), item(2, 37)], 5)), "the report is deterministic");
 
 console.log(`\njudge report unit: ${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

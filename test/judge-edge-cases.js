@@ -41,8 +41,9 @@ function metric(name, input, r) {
 }
 const REL = { eq: (a, b) => a === b, le: (a, b) => a <= b, lt: (a, b) => a < b, ge: (a, b) => a >= b, gt: (a, b) => a > b };
 
-const results = [];
+const results = [], seen = new Set();
 for (const c of SET.cases) {
+  if (seen.has(c.id)) throw new Error(`duplicate case id ${c.id}`); seen.add(c.id);
   if (!REL[c.check.rel]) throw new Error(`${c.id}: unknown relation ${c.check.rel}`);
   if (!["ok", "gap"].includes(c.status)) throw new Error(`${c.id}: status must be ok or gap`);
   const ia = build(c.a), ra = R.review(ia);

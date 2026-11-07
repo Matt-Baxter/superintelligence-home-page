@@ -4,7 +4,9 @@
 
   REQ-038, task T005. Every proof here was WRITTEN BY HAND AND HAS NOT YET BEEN CHECKED
   BY LEAN. A person installs elan and runs `lake build` in proofs/ (see README.md).
-  Nothing in this file uses `sorry`.
+  Nothing in this file uses `sorry`. Reviewed by hand against review.js and dossier.js on
+  2026-11-07 (still unchecked by Lean): proofs that leaned on fragile tactic behaviour were
+  rewritten, and README.md gives each theorem a risk of needing fixes on the first build.
 
   What is modelled is the arithmetic only: which marker families a text shows, how many
   claims are unbacked, how many distinct hype words appear and whether an injection was
@@ -94,9 +96,12 @@ theorem rigor_mono (p q : Presence) (h : ∀ f, p f = true → q f = true) : rig
 
 /-- Rigor is at most 100 (plan step 2). -/
 theorem rigor_le_100 (p : Presence) : rigor p ≤ 100 := by
-  have h := rigor_mono p (fun _ => true) (fun _ _ => rfl)
-  rw [rigor_all] at h
-  exact h
+  exact Nat.le_trans (rigor_mono p (fun _ => true) (fun _ _ => rfl)) (Nat.le_of_eq rigor_all)
+
+/-- A family other than f contributes the same points to p and q. -/
+theorem pts_off {p q : Presence} {f : Family} (h : ∀ g, g ≠ f → p g = q g) (g : Family)
+    (hg : g ≠ f) : pts p g = pts q g :=
+  pts_congr (h g hg)
 
 /-- Flipping one family (p and q agree everywhere except at f) moves rigor by at most that
     family's weight, in either direction. -/
@@ -118,18 +123,82 @@ theorem rigor_flip (p q : Presence) (f : Family) (h : ∀ g, g ≠ f → p g = q
   have c6 := pts_le q .heldOut
   have c7 := pts_le q .limitations
   have c8 := pts_le q .artifacts
-  -- In each case, the seven families other than f contribute equally to both sums.
-  cases f <;>
-  ( unfold rigor
-    (try have e1 := pts_congr (h .numbers (by decide)))
-    (try have e2 := pts_congr (h .baseline (by decide)))
-    (try have e3 := pts_congr (h .method (by decide)))
-    (try have e4 := pts_congr (h .sample (by decide)))
-    (try have e5 := pts_congr (h .uncertainty (by decide)))
-    (try have e6 := pts_congr (h .heldOut (by decide)))
-    (try have e7 := pts_congr (h .limitations (by decide)))
-    (try have e8 := pts_congr (h .artifacts (by decide)))
-    constructor <;> omega )
+  -- In each case the seven families other than f contribute equally to both sums. Each case
+  -- names its seven families explicitly (no `try`, so a failing `by decide` cannot be swallowed).
+  unfold rigor
+  cases f with
+  | numbers =>
+    have e2 := pts_off h .baseline (by decide)
+    have e3 := pts_off h .method (by decide)
+    have e4 := pts_off h .sample (by decide)
+    have e5 := pts_off h .uncertainty (by decide)
+    have e6 := pts_off h .heldOut (by decide)
+    have e7 := pts_off h .limitations (by decide)
+    have e8 := pts_off h .artifacts (by decide)
+    constructor <;> omega
+  | baseline =>
+    have e1 := pts_off h .numbers (by decide)
+    have e3 := pts_off h .method (by decide)
+    have e4 := pts_off h .sample (by decide)
+    have e5 := pts_off h .uncertainty (by decide)
+    have e6 := pts_off h .heldOut (by decide)
+    have e7 := pts_off h .limitations (by decide)
+    have e8 := pts_off h .artifacts (by decide)
+    constructor <;> omega
+  | method =>
+    have e1 := pts_off h .numbers (by decide)
+    have e2 := pts_off h .baseline (by decide)
+    have e4 := pts_off h .sample (by decide)
+    have e5 := pts_off h .uncertainty (by decide)
+    have e6 := pts_off h .heldOut (by decide)
+    have e7 := pts_off h .limitations (by decide)
+    have e8 := pts_off h .artifacts (by decide)
+    constructor <;> omega
+  | sample =>
+    have e1 := pts_off h .numbers (by decide)
+    have e2 := pts_off h .baseline (by decide)
+    have e3 := pts_off h .method (by decide)
+    have e5 := pts_off h .uncertainty (by decide)
+    have e6 := pts_off h .heldOut (by decide)
+    have e7 := pts_off h .limitations (by decide)
+    have e8 := pts_off h .artifacts (by decide)
+    constructor <;> omega
+  | uncertainty =>
+    have e1 := pts_off h .numbers (by decide)
+    have e2 := pts_off h .baseline (by decide)
+    have e3 := pts_off h .method (by decide)
+    have e4 := pts_off h .sample (by decide)
+    have e6 := pts_off h .heldOut (by decide)
+    have e7 := pts_off h .limitations (by decide)
+    have e8 := pts_off h .artifacts (by decide)
+    constructor <;> omega
+  | heldOut =>
+    have e1 := pts_off h .numbers (by decide)
+    have e2 := pts_off h .baseline (by decide)
+    have e3 := pts_off h .method (by decide)
+    have e4 := pts_off h .sample (by decide)
+    have e5 := pts_off h .uncertainty (by decide)
+    have e7 := pts_off h .limitations (by decide)
+    have e8 := pts_off h .artifacts (by decide)
+    constructor <;> omega
+  | limitations =>
+    have e1 := pts_off h .numbers (by decide)
+    have e2 := pts_off h .baseline (by decide)
+    have e3 := pts_off h .method (by decide)
+    have e4 := pts_off h .sample (by decide)
+    have e5 := pts_off h .uncertainty (by decide)
+    have e6 := pts_off h .heldOut (by decide)
+    have e8 := pts_off h .artifacts (by decide)
+    constructor <;> omega
+  | artifacts =>
+    have e1 := pts_off h .numbers (by decide)
+    have e2 := pts_off h .baseline (by decide)
+    have e3 := pts_off h .method (by decide)
+    have e4 := pts_off h .sample (by decide)
+    have e5 := pts_off h .uncertainty (by decide)
+    have e6 := pts_off h .heldOut (by decide)
+    have e7 := pts_off h .limitations (by decide)
+    constructor <;> omega
 
 /-! ## Rounding: JavaScript's Math.round on a non-negative rational a / b -/
 
@@ -142,12 +211,27 @@ theorem rigor_flip (p q : Presence) (f : Family) (h : ∀ g, g ≠ f → p g = q
 def jsRound (a b : Nat) : Nat := (2 * a + b) / (2 * b)
 
 theorem jsRound_two (a : Nat) : jsRound a 2 = (a + 1) / 2 := by
-  show (2 * a + 2) / 4 = (a + 1) / 2
-  omega
+  -- `2 * 2` must become the literal `4` before omega sees the division (omega only divides by
+  -- literals). `show` does it by defeq; if that fails, simp's Nat.reduceMul simproc does it.
+  first
+  | (show (2 * a + 2) / 4 = (a + 1) / 2; omega)
+  | (simp only [jsRound]; omega)
 
 /-- The lower half of the rounding spec: jsRound a b * 2b ≤ 2a + b. -/
 theorem jsRound_mul_le (a b : Nat) : jsRound a b * (2 * b) ≤ 2 * a + b :=
   Nat.div_mul_le_self (2 * a + b) (2 * b)
+
+/-- The upper half: 2a + b < (jsRound a b + 1) * 2b when b > 0. With `jsRound_mul_le` this
+    pins jsRound a b down as the unique n with n ≤ a/b + 1/2 < n + 1, i.e. floor(a/b + 1/2). -/
+theorem jsRound_lt_succ (a b : Nat) (hb : 0 < b) : 2 * a + b < (jsRound a b + 1) * (2 * b) := by
+  unfold jsRound
+  have h1 := Nat.div_add_mod (2 * a + b) (2 * b)
+  have h2 := Nat.mod_lt (2 * a + b) (show 2 * b > 0 by omega)
+  -- h1 : 2 * b * q + r = 2 * a + b and h2 : r < 2 * b, with q the quotient and r the remainder.
+  -- omega treats the product 2 * b * q as one atom, so rewrite the goal's (q + 1) * (2 * b)
+  -- into exactly that shape first; the rest is linear.
+  rw [Nat.add_mul, Nat.one_mul, Nat.mul_comm ((2 * a + b) / (2 * b)) (2 * b)]
+  omega
 
 /-! ## Step 3: hype (review.js lines 108-114) -/
 
@@ -163,8 +247,7 @@ def hype (u k w : Nat) : Nat := min 100 (claimsPart u k + min 40 (10 * w))
 theorem hype_le_100 (u k w : Nat) : hype u k w ≤ 100 := Nat.min_le_left _ _
 
 theorem hype_no_claims (u w : Nat) : hype u 0 w = min 100 (min 40 (10 * w)) := by
-  unfold hype claimsPart
-  rw [if_pos rfl, Nat.zero_add]
+  simp [hype, claimsPart]
 
 /-! ## Step 4: credibility (review.js line 197) -/
 
@@ -189,8 +272,8 @@ theorem credibility_flip_weight (p q : Presence) (f : Family) (h : ∀ g, g ≠ 
     (hv : Nat) :
     credibility (rigor q) hv ≤ credibility (rigor p) hv + (weight f + 1) / 2 ∧
     credibility (rigor p) hv ≤ credibility (rigor q) hv + (weight f + 1) / 2 := by
-  have hf := rigor_flip p q f h
-  simp only [credibility_eq]
+  have ⟨hf1, hf2⟩ := rigor_flip p q f h
+  rw [credibility_eq, credibility_eq]
   constructor <;> omega
 
 /-- The same bound with today's largest weight, 14: at most 7 points. -/
@@ -198,9 +281,9 @@ theorem credibility_flip_7 (p q : Presence) (f : Family) (h : ∀ g, g ≠ f →
     (hv : Nat) :
     credibility (rigor q) hv ≤ credibility (rigor p) hv + 7 ∧
     credibility (rigor p) hv ≤ credibility (rigor q) hv + 7 := by
-  have hf := rigor_flip p q f h
+  have ⟨hf1, hf2⟩ := rigor_flip p q f h
   have hw := weight_le_14 f
-  simp only [credibility_eq]
+  rw [credibility_eq, credibility_eq]
   constructor <;> omega
 
 /-! ## Step 5: the guarded score (review.js lines 189-196) -/
@@ -209,8 +292,9 @@ theorem credibility_flip_7 (p q : Presence) (f : Family) (h : ∀ g, g ≠ f →
 def cap (r : Nat) : Nat := jsRound (3500 + 65 * r) 100
 
 theorem cap_eq (r : Nat) : cap r = (7100 + 130 * r) / 200 := by
-  show (2 * (3500 + 65 * r) + 100) / 200 = (7100 + 130 * r) / 200
-  omega
+  first
+  | (show (2 * (3500 + 65 * r) + 100) / 200 = (7100 + 130 * r) / 200; omega)
+  | (simp only [cap, jsRound]; omega)
 
 theorem cap_ge_35 (r : Nat) : 35 ≤ cap r := by
   rw [cap_eq]; omega
@@ -239,6 +323,11 @@ theorem guarded_inj_le_30 (b r : Nat) : guarded b r true ≤ 30 := Nat.min_le_ri
 
 theorem guarded_le_100 (b : Nat) (p : Presence) (inj : Bool) : guarded b (rigor p) inj ≤ 100 :=
   Nat.le_trans (guarded_le_cap b (rigor p) inj) (cap_le_100 _ (rigor_le_100 p))
+
+/-- The same for any R ≤ 100, which also covers a survey, whose R is the coverage score
+    (review.js lines 145-146), not a family sum. -/
+theorem guarded_le_100_of (b r : Nat) (inj : Bool) (hr : r ≤ 100) : guarded b r inj ≤ 100 :=
+  Nat.le_trans (guarded_le_cap b r inj) (cap_le_100 r hr)
 
 /-! ## Step 6: bands (REQ-037; not yet in review.js, which uses fixed cutoffs) -/
 
@@ -276,9 +365,9 @@ theorem band_eq_border_iff (T m c : Nat) : band T m c = .border ↔ (T - m ≤ c
     by_cases h1 : c < T - m
     · rw [band_low h1] at hb; cases hb
     · by_cases h2 : c < T + m
-      · omega
+      · exact ⟨by omega, h2⟩
       · rw [band_high h1 h2] at hb; cases hb
-  · intro h; exact band_border (by omega) h.2
+  · intro h; exact band_border (by have := h.1; omega) h.2
 
 theorem band_eq_high_iff (T m c : Nat) : band T m c = .high ↔ T + m ≤ c := by
   constructor
@@ -310,7 +399,7 @@ theorem flip_low_not_high (T m hv : Nat) (hm : 7 ≤ 2 * m) (p q : Presence) (f 
   intro hl hh
   rw [band_eq_low_iff] at hl
   rw [band_eq_high_iff] at hh
-  have := credibility_flip_7 p q f h hv
+  have ⟨h1, h2⟩ := credibility_flip_7 p q f h hv
   omega
 
 /-- ... nor High to Low. -/
@@ -320,19 +409,27 @@ theorem flip_high_not_low (T m hv : Nat) (hm : 7 ≤ 2 * m) (p q : Presence) (f 
   intro hh hl
   rw [band_eq_high_iff] at hh
   rw [band_eq_low_iff] at hl
-  have := credibility_flip_7 p q f h hv
+  have ⟨h1, h2⟩ := credibility_flip_7 p q f h hv
   omega
 
 /-- The margin bound is sharp: with m = 3 one flip (uncertainty, weight 14) does jump Low to High.
     Hype 75 = round(60 * 7/12) + min(40, 40) = 35 + 40; rigor 86 -> credibility 56 (Low, < 57);
     rigor 100 -> credibility 63 (High, ≥ 63). -/
-def allButUncertainty : Presence
+def allButUncertainty : Presence := fun f =>
+  match f with
   | .uncertainty => false
   | _ => true
 
+-- The two halves of the example, evaluated separately so a failure points at the right number.
+theorem rigor_allButUncertainty : rigor allButUncertainty = 86 := by decide
+theorem hype_7_12_4 : hype 7 12 4 = 75 := by decide
+
 theorem margin_3_can_jump :
     band 60 3 (credibility (rigor allButUncertainty) (hype 7 12 4)) = .low ∧
-    band 60 3 (credibility (rigor (fun _ => true)) (hype 7 12 4)) = .high := by decide
+    band 60 3 (credibility (rigor (fun _ => true)) (hype 7 12 4)) = .high := by
+  first
+  | decide
+  | (rw [rigor_allButUncertainty, rigor_all, hype_7_12_4]; decide)
 
 /-! ## Step 7: the dossier rating (dossier.js line 75, `const strength =`) -/
 
@@ -346,8 +443,11 @@ def Rating.rank : Rating → Nat
   | .early => 2
   | .someSupport => 3
 
-/-- credible = credible primary papers, linked = toy checks of their ideas that held up,
-    papers = reviewed primary papers (`P.length`). -/
+/-- credible = `credible.length`: primary (non-survey) papers with credibility ≥ 60 (dossier.js
+    line 44); linked = held-up toy checks whose source is ANY reviewed paper on the topic,
+    credible or not, survey or not (`urls` at line 52 is built from every paper); papers =
+    `P.length`: every reviewed non-comment document, surveys included (lines 36-37). The model
+    takes the three as independent naturals; in the code credible ≤ papers. -/
 def rating (credible linked papers : Nat) : Rating :=
   if 2 ≤ credible ∧ 1 ≤ linked then .someSupport
   else if 1 ≤ credible then .early
@@ -389,7 +489,7 @@ theorem rating_eq_some_iff (c l n : Nat) : rating c l n = .someSupport ↔ (2 �
       · by_cases h3 : 0 < n
         · rw [rating_thin h1 h2 h3] at hr; cases hr
         · rw [rating_none h1 h2 h3] at hr; cases hr
-  · exact rating_some
+  · exact fun h => rating_some h
 
 theorem rating_eq_early_iff (c l n : Nat) :
     rating c l n = .early ↔ (c = 1 ∨ (2 ≤ c ∧ l = 0)) := by
@@ -398,11 +498,17 @@ theorem rating_eq_early_iff (c l n : Nat) :
     by_cases h1 : 2 ≤ c ∧ 1 ≤ l
     · rw [rating_some h1] at hr; cases hr
     · by_cases h2 : 1 ≤ c
-      · omega
+      · by_cases hc : c = 1
+        · exact Or.inl hc
+        · have hl : ¬ 1 ≤ l := fun hl => h1 ⟨by omega, hl⟩
+          exact Or.inr ⟨by omega, by omega⟩
       · by_cases h3 : 0 < n
         · rw [rating_thin h1 h2 h3] at hr; cases hr
         · rw [rating_none h1 h2 h3] at hr; cases hr
-  · intro h; exact rating_early (by omega) (by omega)
+  · intro h
+    cases h with
+    | inl hc => exact rating_early (fun hh => absurd hh.1 (by omega)) (by omega)
+    | inr hc => exact rating_early (fun hh => absurd hh.2 (by have := hc.2; omega)) (by have := hc.1; omega)
 
 theorem rating_eq_thin_iff (c l n : Nat) : rating c l n = .thin ↔ (c = 0 ∧ 0 < n) := by
   constructor
@@ -412,9 +518,10 @@ theorem rating_eq_thin_iff (c l n : Nat) : rating c l n = .thin ↔ (c = 0 ∧ 0
     · by_cases h2 : 1 ≤ c
       · rw [rating_early h1 h2] at hr; cases hr
       · by_cases h3 : 0 < n
-        · omega
+        · exact ⟨by omega, h3⟩
         · rw [rating_none h1 h2 h3] at hr; cases hr
-  · intro h; exact rating_thin (by omega) (by omega) h.2
+  · intro h
+    exact rating_thin (fun hh => absurd hh.1 (by have := h.1; omega)) (by have := h.1; omega) h.2
 
 theorem rating_eq_none_iff (c l n : Nat) : rating c l n = .noneYet ↔ (c = 0 ∧ n = 0) := by
   constructor
@@ -425,21 +532,29 @@ theorem rating_eq_none_iff (c l n : Nat) : rating c l n = .noneYet ↔ (c = 0 �
       · rw [rating_early h1 h2] at hr; cases hr
       · by_cases h3 : 0 < n
         · rw [rating_thin h1 h2 h3] at hr; cases hr
-        · omega
-  · intro h; exact rating_none (by omega) (by omega) (by omega)
+        · exact ⟨by omega, by omega⟩
+  · intro h
+    exact rating_none (fun hh => absurd hh.1 (by have := h.1; omega)) (by have := h.1; omega)
+      (by have := h.2; omega)
 
 /-- Monotone: more credible papers, more linked checks or more papers never lower the rating. -/
 theorem rating_mono {c l n c' l' n' : Nat} (hc : c ≤ c') (hl : l ≤ l') (hn : n ≤ n') :
     (rating c l n).rank ≤ (rating c' l' n').rank := by
   unfold rating
   repeat' split
-  all_goals (simp only [Rating.rank]; try omega)
+  -- 16 leaves `Rating.x.rank ≤ Rating.y.rank`. The true ones are closed numerals (`decide`);
+  -- in the others the split hypotheses contradict hc, hl, hn (`omega`, which ignores the goal's
+  -- rank atoms and finds the contradiction among the hypotheses).
+  all_goals (first | decide | omega | (simp only [Rating.rank] at *; omega))
 
 /-- Adding a credible paper (which is also a paper) never lowers the rating. -/
 theorem rating_add_credible (c l n : Nat) : (rating c l n).rank ≤ (rating (c + 1) l (n + 1)).rank :=
   rating_mono (by omega) (Nat.le_refl l) (by omega)
 
-/-- Once there is at least one paper, adding a non-credible (e.g. Border) paper changes nothing. -/
+/-- Once there is at least one paper, adding a non-credible (e.g. Border) paper changes nothing,
+    WITH linked HELD FIXED. In dossier.js a new paper of any credibility also joins `urls`
+    (line 52), so a held-up toy check citing it raises `linked`; see
+    `noncredible_paper_with_check_raises` below. -/
 theorem rating_add_noncredible (c l n : Nat) (hn : 0 < n) : rating c l (n + 1) = rating c l n := by
   by_cases h1 : 2 ≤ c ∧ 1 ≤ l
   · rw [rating_some h1, rating_some h1]
@@ -450,5 +565,12 @@ theorem rating_add_noncredible (c l n : Nat) (hn : 0 < n) : rating c l (n + 1) =
 /-- ... but the first paper, credible or not, lifts "none yet" to "thin" (T004's observation;
     the plan's "a Border paper never raises it" holds only from one paper on). -/
 theorem first_noncredible_paper_raises : rating 0 0 1 ≠ rating 0 0 0 := by decide
+
+/-- ... and with two credible papers already, a non-credible paper that a held-up toy check cites
+    (linked 0 → 1) lifts "early" to "some support". So "a Border paper never raises the rating"
+    is false for dossier.js even from one paper on, unless checks citing Border papers are
+    excluded from `linked`. -/
+theorem noncredible_paper_with_check_raises :
+    rating 2 0 2 = .early ∧ rating 2 1 3 = .someSupport := by decide
 
 end Judge

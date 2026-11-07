@@ -19,7 +19,7 @@ Any agent (Codex, v0, Claude or another) picks up work here. `scripts/project-sy
 ## Phase 1: measure (no rule changes)
 
 - [x] T001 [agent] [REQ-034] Edge-case catalogue of 35 synthetic cases, with a runner that fails only on regressions and reports known gaps (bench/judge-edge-cases.json, test/judge-edge-cases.js, preflight)
-- [x] T002 [agent] [P] [REQ-034] Add catalogue cases for segmentation (e.g., et al., decimals, Fig.), ranges ("3–5%"), approximations ("~4%", "about 4%"), double negation, hedges ("may", "suggests"), merged sentences and title-only claims (bench/judge-edge-cases.json) (done: 27 cases; catalogue now 62, 16 pass, 46 known gaps)
+- [x] T002 [agent] [P] [REQ-034] Add catalogue cases for segmentation (e.g., et al., decimals, Fig.), ranges ("3–5%"), approximations ("~4%", "about 4%"), double negation, hedges ("may", "suggests"), merged sentences and title-only claims (bench/judge-edge-cases.json) (done: 27 cases; after an audit the catalogue is 69 cases, 22 pass, 47 known gaps)
 - [x] T003 [agent] [P] [REQ-033] Paraphrase-fidelity catalogue: synthetic source/paraphrase pairs that change a number, drop a hedge, add a claim, invert a claim, add an entity, or are faithful rewordings, each labelled with the expected check result (bench/fidelity-cases.json) (done: 5 sources, 51 paraphrases; today's judge can't tell 24 of 26 unfaithful ones from their source; `node test/fidelity-cases.js --baseline`)
 - [x] T004 [agent] [P] [REQ-038] Property tests over generated synthetic inputs for the plan's properties 2–7, run against today's code; record which hold (test/judge-properties.js) (done: 8 hold, 3 fail on today's code: survey sentence order, a repeated survey sentence placed first, and the one-flip credibility bound when the flip also unbacks a claim)
 - [x] T005 [agent] [P] [REQ-038] Lean 4 model of plan steps 3–7 (hype, credibility, guarded score, bands, rating) with theorem statements; proofs may be `sorry` at first and are filled in as they are checked (proofs/Judge.lean, proofs/lakefile.lean) (written, not yet checked by Lean: 40+ theorems, no `sorry`; proofs/README.md lists them; T007 checks them)
@@ -52,6 +52,7 @@ Any agent (Codex, v0, Claude or another) picks up work here. `scripts/project-sy
 ## Phase 5: kinds and bands (REQ-036, REQ-037)
 
 - [ ] T040 [rules] [REQ-036] Survey and review title forms; position, dataset/benchmark and negative-result kinds; flips survey-* gaps
+- [ ] T042 [rules] [REQ-037] Count only toy checks that test a credible paper's idea toward the dossier rating: today a non-credible paper with a held-up check can lift "early" to "some support" (Lean: `noncredible_paper_with_check_raises`)
 - [ ] T041 [rules] [REQ-037] `band(S, T, m)` for verdicts and the dossier; Border shown on the Review desk, the digest and the dossier; only High counts as credible (modules/review/review.js, modules/review/dossier.js, scripts/watch.js)
 
 ## Phase 6: proofs (REQ-038)
