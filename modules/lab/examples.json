@@ -644,6 +644,60 @@
      "weight": 20
     }
    ]
+  },
+  {
+   "id": "moe-sae-expert-split",
+   "title": "Which expert wrote this feature? Splitting an SAE latent across a Mixture-of-Experts layer",
+   "concept": "concept:interpretability",
+   "topics": [
+    "topic:interpretability"
+   ],
+   "source": {
+    "title": "SAE Interprets MoE: Sparse AutoEncoders Reveal That MoE Experts Exhibit Human-Interpretable Fine-Grained Specialization",
+    "url": "https://arxiv.org/abs/2611.08089",
+    "via": "daily paper watcher, Nov 7, 2026"
+   },
+   "idea": "A Mixture-of-Experts layer's output is a weighted sum: the router gives each expert a weight and adds up what the experts wrote. Put a sparse autoencoder on that output and each latent's input is a dot product with the sum, so it splits exactly into one piece per expert. That tells you which expert actually wrote a feature, which the router's weights alone can't, because the router decides by broad topic while experts split the work more finely.",
+   "reproduce": {
+    "runner": "moe-sae-attribution",
+    "params": {
+     "router_info": 0,
+     "leak": 0.1,
+     "enc_noise": 0.2,
+     "tokens": 400,
+     "seed": 11
+    },
+    "expect": "The per-expert pieces add up to each latent's pre-activation exactly (split error 0). Crediting latents by contribution names the owning expert for about all of them, against roughly 0.7 by gate weight, and the top expert holds about 0.77 of a latent's contribution but only about 0.45 of its gate weight: contribution is more concentrated than gating."
+   },
+   "hypothesis": {
+    "statement": "Ours: a noisier SAE encoder (noise 0.2 to 0.8) mixes features owned by different experts into one latent, so crediting by contribution names the right expert less often, by at least 0.1.",
+    "params": {
+     "enc_noise": 0.8
+    },
+    "predict": {
+     "metric": "contrib_acc",
+     "direction": "down",
+     "delta": 0.1
+    }
+   },
+   "criteria": [
+    {
+     "metric": "contrib_acc",
+     "weight": 40
+    },
+    {
+     "metric": "advantage",
+     "weight": 30
+    },
+    {
+     "metric": "contrib_conc",
+     "weight": 20
+    },
+    {
+     "metric": "split_error",
+     "weight": 10
+    }
+   ]
   }
  ]
 }

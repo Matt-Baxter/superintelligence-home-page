@@ -3,11 +3,13 @@
 const R = require("./review");
 const iso = () => new Date().toISOString();
 
-async function saveReview(db, x, userId = null) {
+// `extra` (optional) is merged into the stored result: the watcher passes {input: {read, abstractSha1, fidelity}} so a
+// review records what it was scored from. It never carries text beyond the 400-character excerpt.
+async function saveReview(db, x, userId = null, extra = null) {
   const r = R.review(x);
   const have = await db.get("SELECT * FROM review_docs WHERE qid = ?", r.qid);
   if (have) return { existing: true, row: have, review: JSON.parse(have.result) };
-  const keep = { ...r, trace: r.trace.map(({ id, ms }) => ({ id, ms })) };
+  const keep = { ...r, trace: r.trace.map(({ id, ms }) => ({ id, ms })), ...(extra || {}) };
   const id = await db.tx(async (t) => {
     const id = await t.insert("INSERT INTO review_docs (qid, kind, title, authors, url, excerpt, score, naive, credibility, verdict, needs_person, result, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       r.qid, r.kind, r.title || String(x.text || "").slice(0, 120), r.authors, x.url || "", String(x.text || "").slice(0, 400), r.score, r.naive, r.credibility, r.verdict, r.needsPerson ? 1 : 0, JSON.stringify(keep), userId, iso());

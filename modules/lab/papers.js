@@ -10,6 +10,9 @@
 //   roleplay-rsi             "Recursive Self-Improvement for Long-Horizon Role-Playing Dialogue" (arXiv 2611.07469): an
 //                            updater repairs a character's artifacts after bad replies and, one level up, refines its
 //                            own repair rules from how those repairs turned out, within a bound on edits per round.
+//   moe-sae-attribution      "SAE Interprets MoE" (arXiv 2611.08089): an SAE reads a Mixture-of-Experts layer's output,
+//                            a router-weighted sum of expert outputs, so each latent's pre-activation splits exactly
+//                            into per-expert contributions; compare that with attributing latents by gate weight.
 function rng(seed = 1) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 const gauss = (r) => { const u = Math.max(1e-12, r()), v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
 const round = (x, d = 3) => Math.round(x * 10 ** d) / 10 ** d;
@@ -116,6 +119,49 @@ function rolePlayRSI({ meta = 1, edit_bound = 3, judge_noise = 0.2, rounds = 30,
     notes: [`${meta ? "The updater refined its own rules" : "The updater's rules were fixed"}; ${switches} rule switches, ${side} repairs hit the wrong artifact.`, `${Math.round(right * F)} of ${F} repair rules point at the artifact that really fixes that failure.`] };
 }
 
+// ---------- MoE expert attribution: SAE latent contributions vs gate weights ----------
+// E experts, F true features (F/E owned by each expert). Tokens come from coarse domains; the router sends a domain's
+// tokens to a pair of experts with near-even gates, so gates say little about which expert of the pair owns a fine
+// feature (router_info mixes in the true owner). Each expert writes its own active features, plus a `leak` share of the
+// others'. The layer output is y = sum_e g_e * out_e. The SAE here is idealised: its encoder rows are the true feature
+// directions plus `enc_noise` (training is left out; the point is the split). A latent's pre-activation w.y splits
+// exactly into sum_e g_e * (w.out_e), so each latent can be credited to experts by contribution, or by gate weight.
+function moeAttribution({ router_info = 0, leak = 0.1, enc_noise = 0.2, tokens = 400, seed = 11 }) {
+  const r = rng(seed), E = 4, F = 16, D = 24, per = F / E;
+  const unit = (v) => { const n = Math.hypot(...v) || 1; return v.map((x) => x / n); };
+  const dict = Array.from({ length: F }, () => unit(Array.from({ length: D }, () => gauss(r))));
+  const enc = dict.map((d) => unit(d.map((x) => x + enc_noise * gauss(r) / Math.sqrt(D))));
+  const owner = (f) => Math.floor(f / per), dot = (a, b) => a.reduce((s, x, i) => s + x * b[i], 0);
+  const contrib = Array.from({ length: F }, () => new Array(E).fill(0)), gate = Array.from({ length: F }, () => new Array(E).fill(0));
+  let errMax = 0;
+  for (let t = 0; t < tokens; t++) {
+    const dom = r() < 0.5 ? 0 : 1, pair = [2 * dom, 2 * dom + 1];
+    const active = [...Array(F).keys()].filter((f) => pair.includes(owner(f)) && r() < 0.25);
+    if (!active.length) continue;
+    const amp = Object.fromEntries(active.map((f) => [f, 0.5 + r()]));
+    // Router: near-even split within the pair, nudged toward the experts that own this token's features by router_info.
+    const own = pair.map((e) => active.filter((f) => owner(f) === e).length / active.length);
+    const g = new Array(E).fill(0); let a = 0.5 + 0.1 * gauss(r); a = Math.min(0.9, Math.max(0.1, (1 - router_info) * a + router_info * own[0]));
+    g[pair[0]] = a; g[pair[1]] = 1 - a;
+    const out = Array.from({ length: E }, (_, e) => { const v = new Array(D).fill(0); for (const f of active) { const w = owner(f) === e ? 1 : leak; for (let i = 0; i < D; i++) v[i] += w * amp[f] * dict[f][i]; } return v; });
+    const y = new Array(D).fill(0); for (let e = 0; e < E; e++) for (let i = 0; i < D; i++) y[i] += g[e] * out[e][i];
+    for (let j = 0; j < F; j++) {
+      const pre = dot(enc[j], y); if (pre <= 0.3) continue; // latent fires
+      const parts = out.map((o, e) => g[e] * dot(enc[j], o));
+      errMax = Math.max(errMax, Math.abs(parts.reduce((s, x) => s + x, 0) - pre));
+      for (let e = 0; e < E; e++) { contrib[j][e] += Math.max(0, parts[e]); gate[j][e] += g[e]; }
+    }
+  }
+  const share = (row) => { const s = row.reduce((a, x) => a + x, 0); return s > 0 ? Math.max(...row) / s : 0; };
+  const argmax = (row) => row.indexOf(Math.max(...row));
+  const live = [...Array(F).keys()].filter((j) => contrib[j].some((x) => x > 0));
+  const accC = mean(live.map((j) => (argmax(contrib[j]) === owner(j) ? 1 : 0))), accG = mean(live.map((j) => (argmax(gate[j]) === owner(j) ? 1 : 0)));
+  const concC = mean(live.map((j) => share(contrib[j]))), concG = mean(live.map((j) => share(gate[j])));
+  return { metrics: { contrib_acc: round(accC), gate_acc: round(accG), advantage: round(accC - accG), contrib_conc: round(concC), gate_conc: round(concG), split_error: round(errMax, 6) },
+    series: [{ name: "top-expert share per latent (contribution)", points: live.map((j, i) => [i, round(share(contrib[j]))]) }, { name: "top-expert share per latent (gate)", points: live.map((j, i) => [i, round(share(gate[j]))]) }],
+    notes: [`${live.length} of ${F} latents fired; per-expert contributions add up to the pre-activation to within ${round(errMax, 6)}.`, `Contribution names the owning expert for ${Math.round(accC * live.length)} latents, gate weight for ${Math.round(accG * live.length)}.`] };
+}
+
 const runnersList = [
   { id: "self-improve-selection", about: "An agent edits itself and keeps the best version, judged on visible tests or hidden evaluations (with an edit budget)",
     params: {
@@ -148,6 +194,16 @@ const runnersList = [
     },
     metrics: [{ id: "bad_rate", label: "Bad-reply rate (last 5 rounds)", better: "lower" }, { id: "rules_right", label: "Share of repair rules aimed at the right artifact", better: "higher" }, { id: "side_effects", label: "Repairs that hit the wrong artifact", better: "lower" }],
     run: (p) => rolePlayRSI(p) },
+  { id: "moe-sae-attribution", about: "An SAE on a Mixture-of-Experts layer's output: credit each latent to experts by its exact per-expert contribution, or by gate weight",
+    params: {
+      router_info: { default: 0, min: 0, max: 1, step: 0.1, about: "How much the router's gates know about which expert owns a token's fine features (0 = coarse domain only)" },
+      leak: { default: 0.1, min: 0, max: 1, step: 0.1, about: "Share of other experts' features each expert also writes" },
+      enc_noise: { default: 0.2, min: 0, max: 1, step: 0.1, about: "Noise in the SAE encoder directions (0 = the true features)" },
+      tokens: { default: 400, min: 100, max: 1000, step: 100, about: "Tokens sampled" },
+      seed: { default: 11, min: 1, max: 999, step: 1, about: "Random seed" },
+    },
+    metrics: [{ id: "contrib_acc", label: "Latents credited to the owning expert (contribution)", better: "higher" }, { id: "gate_acc", label: "Latents credited to the owning expert (gate weight)", better: "higher" }, { id: "advantage", label: "Contribution's accuracy edge over gate weight", better: "higher" }, { id: "contrib_conc", label: "Top expert's share of a latent (contribution)", better: "higher" }, { id: "gate_conc", label: "Top expert's share of a latent (gate weight)", better: "higher" }, { id: "split_error", label: "Largest gap between summed contributions and the pre-activation", better: "lower" }],
+    run: (p) => moeAttribution(p) },
 ];
 // Averaging over seeds, so a verdict doesn't hang on one lucky draw (the Lab's examples pass seeds via "seeds").
 function averaged(fn, p, seeds = 10) {
@@ -157,4 +213,4 @@ function averaged(fn, p, seeds = 10) {
 }
 for (const r of runnersList) { const raw = r.run; r.run = (p) => averaged(raw, p, 10); }
 
-module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI };
+module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI, moeAttribution };

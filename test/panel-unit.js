@@ -76,6 +76,11 @@ const rules = R.review({ kind: "paper", title: "Sample (test data)", text: TEXT 
   ok(v.items.length === 1 && v.items[0].id === "b-x" && v.ruleIdeas.length === 1, "advisor proposals are vetted: only labelled test data passes, and nothing is added to the benchmark without a person");
   ok(/at most 3 synthetic test items/.test(A.prompt([{ ok: false, label: "x", value: 1, why: "y" }], [])[0].content), "the advisor's review prompt asks for synthetic items and rule ideas only");
 
+  const withdrawn = R.review({ kind: "paper", title: "Sample withdrawn paper (test data)", text: "This paper has been withdrawn by the authors. We evaluated 3 models on 50 tasks." });
+  for (const models of [[], [model("model-a"), model("model-b")]]) {
+    const result = await P.panel({ text: "Sample withdrawn paper (test data)", rules: withdrawn, models });
+    ok(result.verdict === "withdrawn" && result.credibility <= 10 && result.needsPerson, "panel preserves withdrawal caps and human review with zero or two models");
+  }
   console.log(`\npanel unit: ${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })();

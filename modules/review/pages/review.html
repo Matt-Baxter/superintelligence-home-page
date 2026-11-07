@@ -91,7 +91,7 @@ function show(r, doc) {
   const byRel = {}; for (const e of r.edges) (byRel[e.rel] ||= []).push(e.dst);
   $("#result").innerHTML = `<div class="panel enter">
     <div class="verdict"><h2 style="margin:0">${esc(r.title || "Untitled")}</h2></div>
-    <div class="verdict"><span class="tag ${tone(r.verdict)}">${esc(r.verdict)}</span><span class="small muted">${esc(r.kindLabel)}: ${esc(r.kindWhy)}${r.arxiv ? ` · arXiv ${esc(r.arxiv)}` : ""}${r.scope.in ? "" : " · may be off-topic"}</span></div>
+    <div class="verdict"><span class="tag ${tone(r.verdict)}">${esc(r.verdict)}</span>${r.verdictNote ? `<span class="small" data-verdict-note>${esc(r.verdictNote)}</span>` : ""}<span class="small muted">${esc(r.kindLabel)}: ${esc(r.kindWhy)}${r.arxiv ? ` · arXiv ${esc(r.arxiv)}` : ""}${r.scope.in ? "" : " · may be off-topic"}</span></div>
     <div class="score"><div><span class="k">Score (guarded)</span><span class="n">${r.score}</span><span class="small muted">unguarded judge: ${r.naive}</span></div>
       <div><span class="k">Credibility</span><span class="n">${r.credibility}</span><span class="small muted">rigor and lack of hype</span></div>
       <div><span class="k">Claims backed</span><span class="n">${r.claims.filter((c) => c.level === "backed").length}/${r.claims.length}</span><span class="small muted">with a number nearby</span></div></div>

@@ -30,6 +30,12 @@ const P = D.posts(full, "https://example.test/m/dossier#recursive-self-improveme
 ok(P.every((p) => !/twitter\.com|x\.com/i.test(p.text)) && P.find((p) => /Bluesky/.test(p.channel)).text.length <= 280, "posts: no Twitter/X, short post within 280 characters");
 const long = D.posts({ ...full, label: "Sample topic with a long name (test data)", why: "x".repeat(150), papers: [{ ...full.papers[0], title: "T".repeat(120) }] }, "https://example.test/m/dossier#sample");
 ok(long.every((p) => (p.text.match(/"/g) || []).length % 2 === 0), "posts keep whole sentences: no quote is cut in half");
+// REQ-037 (T041/T042): only High papers (credibility 65 or more around the cutoff 60, m = 5) count as credible; Border
+// papers are listed as borderline; a held-up check of a paper that isn't credible doesn't lift the rating.
+ok(base([doc(1, 60)], []).strength === "thin" && base([doc(1, 65)], []).strength === "early", "credibility exactly 60 is Border (thin); 65 = T + m is High (early)");
+const bd = base([doc(1, 70), doc(2, 55)], []);
+ok(bd.counts.credible === 1 && bd.counts.borderline === 1 && /## Borderline papers/.test(D.blog(bd)) && D.posts(bd).some((p) => /Borderline, not counted/.test(p.text)), "a Border paper (55 = T - m) is listed as borderline in the blog and posts, not counted as credible");
+ok(base([doc(1, 70), doc(2, 65), doc(3, 58)], [ex("t", true, "https://arxiv.org/abs/2611.00003")]).strength === "early", "a held-up toy check of a Border paper doesn't lift early to some support (T042)");
 const sb = D.storyboard(full);
 ok(sb.scenes.every((s) => ["title", "say", "bars", "graph"].includes(s.kind) && s.seconds > 0), "the storyboard uses scenes the explainer player knows");
 {

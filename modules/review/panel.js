@@ -77,7 +77,7 @@ async function judgeWith(model, text) {
   return { id: model.id, model: model.model, kept: main.kept, credibility: main.credibility, rigor: main.rigor, hype: main.hype, quotesDropped: main.dropped.length, reason: main.reason, sensitivity: { prestige, wording }, biased };
 }
 
-const verdictFor = (score, credibility) => VERDICTS.find((v) => v.when(score, credibility));
+const verdictFor = (score, credibility, flags) => VERDICTS.find((v) => v.when(score, credibility, flags));
 
 // ---------- the advisor (a bigger model that guides, never scores) ----------
 // When the efficient models disagree, a bigger model reads the same masked text and each judge's verified checks and
@@ -103,7 +103,7 @@ async function advise(model, text, judges) {
 async function panel({ text, rules, models, advisor = null }) {
   const judges = [{ id: "rules", model: "published rules", credibility: rules.credibility, verdict: rules.verdict, biased: [] }], errors = [];
   for (const m of models) {
-    try { const j = await judgeWith(m, text); judges.push({ ...j, verdict: verdictFor(rules.score, j.credibility).id }); }
+    try { const j = await judgeWith(m, text); judges.push({ ...j, verdict: verdictFor(rules.score, j.credibility, rules).id }); }
     catch (e) { errors.push({ id: m.id, error: String(e.message).slice(0, 200) }); }
   }
   const usable = judges.filter((j) => j.id !== "rules" && !j.biased.length);
@@ -116,7 +116,8 @@ async function panel({ text, rules, models, advisor = null }) {
     if (spread <= LIMITS.agree && same) { status = "agreed"; credibility = Math.round([...cs, rules.credibility].reduce((a, b) => a + b, 0) / (cs.length + 1)); rule = `models agree (spread ${spread}, same verdict): mean of the models and the rules judge`; }
     else { status = "disagreed"; credibility = Math.min(...cs, rules.credibility); needsPerson = true; rule = `models disagree (spread ${spread}${same ? "" : ", different verdicts"}): the most conservative credibility, sent to a person`; }
   }
-  const v = verdictFor(rules.score, credibility);
+  if (rules.withdrawn) { credibility = Math.min(10, credibility); needsPerson = true; }
+  const v = verdictFor(rules.score, credibility, rules);
   // Escalate to the advisor when the models disagree, or agree with each other but sit far from the rules judge.
   let advice = null;
   const far = status === "agreed" && Math.abs(usable.reduce((a, j) => a + j.credibility, 0) / usable.length - rules.credibility) > LIMITS.escalate;
