@@ -61,7 +61,7 @@
       "about": "points the same attack gains on the unguarded judge (the attack is real)"
     },
     "review.ms_per_doc": {
-      "value": 14.7,
+      "value": 16.8,
       "better": "info",
       "about": "time to review one item"
     },
@@ -82,6 +82,30 @@
       "better": "higher",
       "tol": 0,
       "about": "share of the 4 safety properties that hold"
+    },
+    "interp.superposition_phases": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "the toy reproduces the paper's three regimes: dedicated (S=0), antipodal pairs (S=0.7), pentagon (S=0.9)"
+    },
+    "interp.sae_recovery": {
+      "value": 0.778,
+      "better": "higher",
+      "tol": 0.03,
+      "about": "share of the toy's 12 true features an SAE recovers (cosine > 0.9), mean of 3 seeds"
+    },
+    "interp.steering_selectivity": {
+      "value": 8.28,
+      "better": "higher",
+      "tol": 0.5,
+      "about": "target gain / collateral change when clamping one SAE latent to 4x"
+    },
+    "interp.steering_exactness": {
+      "value": 0,
+      "better": "lower",
+      "tol": 0,
+      "about": "output error on unedited inputs with the SAE error added back (0 = exact)"
     },
     "analysis.scope_accuracy": {
       "value": 1,

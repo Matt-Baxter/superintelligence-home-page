@@ -138,5 +138,7 @@ function solve(A, b) { const n = b.length, M = A.map((row, i) => [...row, b[i]])
 
 // 5. Decision gym: recursive self-improvement on decision making (see gym.js).
 runners.register(require("./gym").runner);
+// Interpretability toys (superposition, sparse autoencoder, steering): modules/lab/interp.js.
+for (const r of require("./interp").runners) runners.register(r);
 
 module.exports = { runners, rng, gauss, round };

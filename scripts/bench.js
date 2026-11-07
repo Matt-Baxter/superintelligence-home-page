@@ -56,6 +56,20 @@ const SUITES = {
       "lab.safety_properties": { value: s.properties / s.of, better: "higher", tol: 0, about: `share of the ${s.of} safety properties that hold` },
     };
   },
+  interp: () => {
+    // Interpretability toys against ground truth (modules/lab/interp.js).
+    const I = require("../modules/lab/interp"), [sup, sae, steer] = I.runners;
+    const geo = [0, 0.7, 0.9].map((S) => sup.run({ sparsity: S, features: 5, decay: 0.9, steps: 2500, seed: 1 }));
+    const phases = (geo[0].metrics.represented === 2 ? 1 : 0) + (/antipodal/.test(geo[1].notes[0]) ? 1 : 0) + (/pentagon/.test(geo[2].notes[0]) ? 1 : 0);
+    const rec = [2, 3, 4].map((seed) => sae.run({ latents: 24, l1: 0.1, resample: 0, steps: 1200, seed }).metrics.recovered);
+    const st = steer.run({ clamp: 4, keep_error: 1, seed: 2 }).metrics;
+    return {
+      "interp.superposition_phases": { value: phases / 3, better: "higher", tol: 0, about: "the toy reproduces the paper's three regimes: dedicated (S=0), antipodal pairs (S=0.7), pentagon (S=0.9)" },
+      "interp.sae_recovery": { value: Math.round((rec.reduce((a, x) => a + x, 0) / rec.length / 12) * 1000) / 1000, better: "higher", tol: 0.03, about: "share of the toy's 12 true features an SAE recovers (cosine > 0.9), mean of 3 seeds" },
+      "interp.steering_selectivity": { value: st.selectivity, better: "higher", tol: 0.5, about: "target gain / collateral change when clamping one SAE latent to 4x" },
+      "interp.steering_exactness": { value: st.unedited_error, better: "lower", tol: 0, about: "output error on unedited inputs with the SAE error added back (0 = exact)" },
+    };
+  },
   analysis: () => {
     // Scope and tagging on the labelled spec fixtures: in-scope titles vs off-topic ones (REQ-003).
     const A = require("../lib/analysis"), { tag } = require("../lib/tagger");
