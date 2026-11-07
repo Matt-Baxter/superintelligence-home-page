@@ -8,6 +8,6 @@
     "SC-004": "9 of every 10 stories in a live sample of 20 judged on-topic by both partners: do it on the live feed."
   },
   "scheduled": [
-    { "key": "scheduled:paper-watch", "title": "Daily paper watch and paper-to-code (scheduled agent task)", "description": "Once a day an agent finds new papers, runs scripts/watch.js, builds at most one paper-to-code toy and pushes it to a feature/paper-watch-<date> branch (never main). Until 2026-11-07 this was a Claude scheduled task; for the bake-off it moves to Codex (handoff/routines/paper-watch.md). Review those branches; nothing merges on its own. The GitHub Actions workflow .github/workflows/paper-watch.yml runs the watcher with direct arXiv access once it is merged.", "labels": ["agent", "scheduled", "REQ-028"] }
+    { "key": "scheduled:paper-watch", "title": "Daily paper watch and paper-to-code (scheduled agent task)", "description": "Once a day an agent finds new papers, runs scripts/watch.js, builds at most one paper-to-code toy and pushes it to a feature/paper-watch-<date> branch (never main). It runs as a Claude scheduled task; handoff/routines/paper-watch.md has the same steps for any agent, and .github/workflows/paper-watch.yml runs the watcher once merged. Review those branches; nothing merges on its own. The GitHub Actions workflow .github/workflows/paper-watch.yml runs the watcher with direct arXiv access once it is merged.", "labels": ["agent", "scheduled", "REQ-028"] }
   ]
 }

@@ -1,6 +1,6 @@
 # Daily paper watch (for any agent)
 
-What the Claude scheduled task did each morning until 2026-11-07, written so Codex (or another agent) can run it. Once a day at most (free-tier rule). The GitHub Actions workflow `.github/workflows/paper-watch.yml` runs steps 1–2 by itself once it is merged to the default branch; the agent adds paper-to-code, checks and dossiers.
+What the Claude scheduled task does each morning, written so any agent (Claude, Codex or another) can run it; it stays on the Claude task for now. Once a day at most (free-tier rule). The GitHub Actions workflow `.github/workflows/paper-watch.yml` runs steps 1–2 by itself once it is merged to the default branch; the agent adds paper-to-code, checks and dossiers.
 
 ## Steps
 

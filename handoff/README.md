@@ -1,6 +1,6 @@
 # Handoff: start here (Codex, v0 and any other agent)
 
-Written 2026-11-07 (on branch `feature/judge-fidelity-spec` until merged), when the humans moved the bake-off's agent work from Claude to **Codex** and **v0**. Everything an agent needs to carry on is in this repository; nothing lives only in a chat.
+Written 2026-11-07 (on branch `feature/judge-fidelity-spec` until merged), so the work can move between agents. In the bake-off, **Matt builds with Claude Code** and **John builds with v0 or Codex**; other agents (the scheduled paper watch, helpers) follow the same rules. Everything an agent needs to carry on is in this repository; nothing lives only in a chat.
 
 ## Read in this order
 

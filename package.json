@@ -28,7 +28,8 @@
     "watch": "node scripts/watch.js",
     "project:sync": "node scripts/project-sync.js",
     "lab:results": "node scripts/lab-results.js",
-    "dossier": "node scripts/dossier.js"
+    "dossier": "node scripts/dossier.js",
+    "judge:report": "node scripts/judge-report.js"
   },
   "keywords": [],
   "author": "",

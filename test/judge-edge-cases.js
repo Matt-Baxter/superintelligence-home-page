@@ -29,6 +29,9 @@ function metric(name, input, r) {
     case "survey": return r.survey ? 1 : 0;
     case "injection": return r.guards.find((g) => g.id === "prompt-injection").fired ? 1 : 0;
     case "dropped": return r.dropped.length;
+    case "sentences": return R.sentences(input.text).length; // how many sentences the segmenter finds in the text
+    case "claims": return r.claims.length; // claims found in the title and kept sentences
+    case "backedClaims": return r.claims.filter((c) => c.level === "backed").length; // claims whose own sentence carries the evidence
     case "deterministic": return strip(R.review(input)) === strip(r) ? 1 : 0;
     case "notMajor": return r.verdict !== "major and credible" ? 1 : 0;
     // The review has no truncation flag today; a fix would add r.truncated (and a guard or reason saying so).

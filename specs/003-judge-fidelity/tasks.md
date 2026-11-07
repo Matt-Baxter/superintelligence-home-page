@@ -19,11 +19,14 @@ Any agent (Codex, v0, Claude or another) picks up work here. `scripts/project-sy
 ## Phase 1: measure (no rule changes)
 
 - [x] T001 [agent] [REQ-034] Edge-case catalogue of 35 synthetic cases, with a runner that fails only on regressions and reports known gaps (bench/judge-edge-cases.json, test/judge-edge-cases.js, preflight)
-- [ ] T002 [agent] [P] [REQ-034] Add catalogue cases for segmentation (e.g., et al., decimals, Fig.), ranges ("3–5%"), approximations ("~4%", "about 4%"), double negation, hedges ("may", "suggests"), merged sentences and title-only claims (bench/judge-edge-cases.json)
-- [ ] T003 [agent] [P] [REQ-033] Paraphrase-fidelity catalogue: synthetic source/paraphrase pairs that change a number, drop a hedge, add a claim, invert a claim, add an entity, or are faithful rewordings, each labelled with the expected check result (bench/fidelity-cases.json)
-- [ ] T004 [agent] [P] [REQ-038] Property tests over generated synthetic inputs for the plan's properties 2–7, run against today's code; record which hold (test/judge-properties.js)
-- [ ] T005 [agent] [P] [REQ-038] Lean 4 model of plan steps 3–7 (hype, credibility, guarded score, bands, rating) with theorem statements; proofs may be `sorry` at first and are filled in as they are checked (proofs/Judge.lean, proofs/lakefile.lean)
-- [ ] T006 [agent] [P] [REQ-037] Report how many reviewed papers in the catalog sit within 5 points of a cutoff (35, 60, 70), from a dry run on the fixtures (scripts/judge-report.js)
+- [x] T002 [agent] [P] [REQ-034] Add catalogue cases for segmentation (e.g., et al., decimals, Fig.), ranges ("3–5%"), approximations ("~4%", "about 4%"), double negation, hedges ("may", "suggests"), merged sentences and title-only claims (bench/judge-edge-cases.json) (done: 27 cases; catalogue now 62, 16 pass, 46 known gaps)
+- [x] T003 [agent] [P] [REQ-033] Paraphrase-fidelity catalogue: synthetic source/paraphrase pairs that change a number, drop a hedge, add a claim, invert a claim, add an entity, or are faithful rewordings, each labelled with the expected check result (bench/fidelity-cases.json) (done: 5 sources, 51 paraphrases; today's judge can't tell 24 of 26 unfaithful ones from their source; `node test/fidelity-cases.js --baseline`)
+- [x] T004 [agent] [P] [REQ-038] Property tests over generated synthetic inputs for the plan's properties 2–7, run against today's code; record which hold (test/judge-properties.js) (done: 8 hold, 3 fail on today's code: survey sentence order, a repeated survey sentence placed first, and the one-flip credibility bound when the flip also unbacks a claim)
+- [x] T005 [agent] [P] [REQ-038] Lean 4 model of plan steps 3–7 (hype, credibility, guarded score, bands, rating) with theorem statements; proofs may be `sorry` at first and are filled in as they are checked (proofs/Judge.lean, proofs/lakefile.lean) (written, not yet checked by Lean: 40+ theorems, no `sorry`; proofs/README.md lists them; T007 checks them)
+- [x] T006 [agent] [P] [REQ-037] Report how many reviewed papers in the catalog sit within 5 points of a cutoff (35, 60, 70), from a dry run on the fixtures (scripts/judge-report.js) (done: `npm run judge:report`; 2 of 3 papers watched on 2026-11-07 sit within 5 of 60)
+
+- [ ] T007 [people] [REQ-038] Install Lean 4 (elan, from https://lean-lang.org) on a machine you control, run `cd proofs && lake build`, and record which theorems check; agents may not run installers unattended
+- [ ] T008 [agent] [REQ-034] Add a pure dropped-result case to bench/fidelity-cases.json (the `claims-dropped` check has no case yet), and band cases (score exactly on 35, 60, 70) once `band()` exists
 
 ## Phase 2: canonical input (REQ-032)
 
@@ -42,6 +45,9 @@ Any agent (Codex, v0, Claude or another) picks up work here. `scripts/project-sy
 - [ ] T031 [rules] [REQ-035] Negation window for markers and hype words; capitalised names exempt from hype; flips neg-* and hype-benchmark-name
 - [ ] T032 [rules] [REQ-035] Injection guard on canonical text with confusables mapped, more wordings, and a "describes attacks" exception that is reported, not capped; flips inj-*
 - [ ] T033 [rules] [REQ-034] Don't drop a statement with a verb as a keyword list; flips clean-title-like-sentence
+- [ ] T034 [rules] [REQ-032] Sentence splitting that keeps "et al.", "Fig.", "e.g.", "i.e.", "approx." inside a sentence, and splits at semicolons for claim backing (so a claim can't borrow the numbers after a semicolon); flips the seg-* gaps
+- [ ] T035 [rules] [REQ-035] Hedged claims ("may", "suggests"), negated claims and question titles are not claims; count every claim, not only the first 12, for hype; flips hedge-*, neg-negated-claim, title-question, claims-past-twelve
+- [ ] T036 [rules] [REQ-036] Survey detection that doesn't depend on which sentence comes first (the T004 order property)
 
 ## Phase 5: kinds and bands (REQ-036, REQ-037)
 

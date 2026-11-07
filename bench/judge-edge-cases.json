@@ -1,5 +1,5 @@
 {
- "about": "Test data (synthetic, every text is a made-up 'Sample' abstract): edge cases for the Review desk judges (modules/review/review.js), run by test/judge-edge-cases.js. Each case states the behaviour we want. A case whose 'status' is 'gap' is a known failure of today's rules, kept on purpose so a fix can be checked against it (specs/003-judge-fidelity, REQ-032..REQ-037, proposed). A case marked 'ok' must keep passing: the runner fails if an 'ok' case breaks, and reports (without failing) when a 'gap' case starts passing so its status can be flipped. Pair cases compare input a with input b, which say the same thing; single cases check one input.",
+ "about": "Test data (synthetic, every text is a made-up 'Sample' abstract): edge cases for the Review desk judges (modules/review/review.js), run by test/judge-edge-cases.js. Each case states the behaviour we want. A case whose 'status' is 'gap' is a known failure of today's rules, kept on purpose so a fix can be checked against it (specs/003-judge-fidelity, REQ-032..REQ-037, proposed; tasks T010-T041). A case marked 'ok' must keep passing: the runner fails if an 'ok' case breaks, and reports (without failing) when a 'gap' case starts passing so its status can be flipped. Pair cases compare input a with input b, which say the same thing; single cases check one input.",
  "version": "1.0.0",
  "base": "Sample abstract (test data). We train a small model on 12 synthetic tasks and compare it with a baseline. Accuracy rises by 4% on a held-out test set across 3 seeds. Limitations: results are only on toy data. Code is available.",
  "cases": [
@@ -660,6 +660,532 @@
    },
    "status": "gap",
    "b": {}
+  },
+  {
+   "id": "seg-et-al",
+   "stage": "segment",
+   "req": "REQ-032",
+   "about": "'et al.' before a year doesn't end the sentence",
+   "a": {
+    "replace": [
+     "compare it with a baseline",
+     "compare it with the baseline of Sample et al. 2025"
+    ]
+   },
+   "b": {
+    "replace": [
+     "compare it with a baseline",
+     "compare it with the baseline of Sample 2025"
+    ]
+   },
+   "check": {
+    "metric": "sentences",
+    "rel": "eq"
+   },
+   "status": "gap"
+  },
+  {
+   "id": "seg-fig-claim",
+   "stage": "segment",
+   "req": "REQ-032",
+   "about": "'Fig. 2' inside a claim doesn't split the claim from its own evidence",
+   "a": {
+    "replace": [
+     "Accuracy rises by 4% on a held-out test set across 3 seeds.",
+     "We show in Fig. 2 that accuracy rises by 4% on a held-out test set across 3 seeds."
+    ]
+   },
+   "b": {
+    "replace": [
+     "Accuracy rises by 4% on a held-out test set across 3 seeds.",
+     "We show that accuracy rises by 4% on a held-out test set across 3 seeds."
+    ]
+   },
+   "check": {
+    "metric": "backedClaims",
+    "rel": "eq"
+   },
+   "status": "gap"
+  },
+  {
+   "id": "seg-decimal",
+   "stage": "segment",
+   "req": "REQ-032",
+   "about": "A decimal (41.2%) doesn't end the sentence",
+   "a": {
+    "replace": [
+     "4%",
+     "41.2%"
+    ]
+   },
+   "b": {},
+   "check": {
+    "metric": "sentences",
+    "rel": "eq"
+   },
+   "status": "ok"
+  },
+  {
+   "id": "seg-eg-capital",
+   "stage": "segment",
+   "req": "REQ-032",
+   "about": "'e.g.' before a capitalised name doesn't end the sentence",
+   "a": {
+    "replace": [
+     "compare it with a baseline",
+     "compare it with baselines, e.g. Sample Probe and Sample Ridge"
+    ]
+   },
+   "b": {
+    "replace": [
+     "compare it with a baseline",
+     "compare it with baselines such as Sample Probe and Sample Ridge"
+    ]
+   },
+   "check": {
+    "metric": "sentences",
+    "rel": "eq"
+   },
+   "status": "gap"
+  },
+  {
+   "id": "seg-ie-digit",
+   "stage": "segment",
+   "req": "REQ-032",
+   "about": "'i.e.' before a number doesn't end the sentence",
+   "a": {
+    "replace": [
+     "12 synthetic tasks",
+     "12 synthetic tasks, i.e. 3 per domain"
+    ]
+   },
+   "b": {
+    "replace": [
+     "12 synthetic tasks",
+     "12 synthetic tasks, that is 3 per domain"
+    ]
+   },
+   "check": {
+    "metric": "sentences",
+    "rel": "eq"
+   },
+   "status": "gap"
+  },
+  {
+   "id": "seg-approx",
+   "stage": "segment",
+   "req": "REQ-032",
+   "about": "'approx. 4%' keeps the number in its sentence",
+   "a": {
+    "replace": [
+     "by 4%",
+     "by approx. 4%"
+    ]
+   },
+   "b": {},
+   "check": {
+    "metric": "sentences",
+    "rel": "eq"
+   },
+   "status": "gap"
+  },
+  {
+   "id": "seg-semicolon-same",
+   "stage": "segment",
+   "req": "REQ-032",
+   "about": "Joining two evidence sentences with a semicolon earns the same credibility",
+   "a": {
+    "replace": [
+     "and compare it with a baseline. Accuracy rises",
+     "and compare it with a baseline; accuracy rises"
+    ]
+   },
+   "b": {},
+   "check": {
+    "metric": "credibility",
+    "rel": "eq"
+   },
+   "status": "ok"
+  },
+  {
+   "id": "seg-semicolon-borrow",
+   "stage": "segment",
+   "req": "REQ-033",
+   "about": "A claim merged by a semicolon into someone else's evidence sentence doesn't become backed",
+   "a": {
+    "replace": [
+     "Accuracy rises by 4% on a held-out test set across 3 seeds.",
+     "We demonstrate a breakthrough; accuracy rises by 4% on a held-out test set across 3 seeds."
+    ]
+   },
+   "b": {
+    "replace": [
+     "Accuracy rises by 4% on a held-out test set across 3 seeds.",
+     "We demonstrate a breakthrough. Accuracy rises by 4% on a held-out test set across 3 seeds."
+    ]
+   },
+   "check": {
+    "metric": "backedClaims",
+    "rel": "eq"
+   },
+   "status": "gap"
+  },
+  {
+   "id": "num-range-dash",
+   "stage": "numbers",
+   "req": "REQ-034",
+   "about": "A range with an en dash ('3–5%') and with a hyphen ('3-5%') are the same number",
+   "a": {
+    "replace": [
+     "4%",
+     "3–5%"
+    ]
+   },
+   "b": {
+    "replace": [
+     "4%",
+     "3-5%"
+    ]
+   },
+   "check": {
+    "metric": "credibility",
+    "rel": "eq"
+   },
+   "status": "ok"
+  },
+  {
+   "id": "num-range-seeds",
+   "stage": "numbers",
+   "req": "REQ-034",
+   "about": "'across 3–5 seeds' is the same uncertainty statement as 'across 5 seeds'",
+   "a": {
+    "replace": [
+     "across 3 seeds",
+     "across 3–5 seeds"
+    ]
+   },
+   "b": {
+    "replace": [
+     "across 3 seeds",
+     "across 5 seeds"
+    ]
+   },
+   "check": {
+    "metric": "credibility",
+    "rel": "eq"
+   },
+   "status": "gap"
+  },
+  {
+   "id": "num-approx-tilde",
+   "stage": "numbers",
+   "req": "REQ-034",
+   "about": "'~4%' is a number",
+   "a": {
+    "replace": [
+     "4%",
+     "~4%"
+    ]
+   },
+   "b": {},
+   "check": {
+    "metric": "credibility",
+    "rel": "eq"
+   },
+   "status": "ok"
+  },
+  {
+   "id": "num-approx-about",
+   "stage": "numbers",
+   "req": "REQ-034",
+   "about": "'about 4%' is a number",
+   "a": {
+    "replace": [
+     "by 4%",
+     "by about 4%"
+    ]
+   },
+   "b": {},
+   "check": {
+    "metric": "credibility",
+    "rel": "eq"
+   },
+   "status": "ok"
+  },
+  {
+   "id": "num-per-cent",
+   "stage": "numbers",
+   "req": "REQ-034",
+   "about": "'4 per cent' (British spelling) is a number",
+   "a": {
+    "replace": [
+     "4%",
+     "4 per cent"
+    ]
+   },
+   "b": {},
+   "check": {
+    "metric": "credibility",
+    "rel": "eq"
+   },
+   "status": "gap"
+  },
+  {
+   "id": "num-hyphen-points",
+   "stage": "numbers",
+   "req": "REQ-034",
+   "about": "'a 4-point gain' is a number like '4 points'",
+   "a": {
+    "replace": [
+     "Accuracy rises by 4%",
+     "Accuracy shows a 4-point gain"
+    ]
+   },
+   "b": {
+    "replace": [
+     "Accuracy rises by 4%",
+     "Accuracy rises by 4 points"
+    ]
+   },
+   "check": {
+    "metric": "credibility",
+    "rel": "eq"
+   },
+   "status": "gap"
+  },
+  {
+   "id": "neg-double-not-without",
+   "stage": "negation",
+   "req": "REQ-035",
+   "about": "'not without limitations' (double negation) still states limitations",
+   "a": {
+    "replace": [
+     "Limitations: results are only on toy data.",
+     "The method is not without limitations: results are only on toy data."
+    ]
+   },
+   "b": {},
+   "check": {
+    "metric": "credibility",
+    "rel": "eq"
+   },
+   "status": "ok"
+  },
+  {
+   "id": "neg-not-unseen",
+   "stage": "negation",
+   "req": "REQ-035",
+   "about": "'tasks that were not unseen' means seen: no held-out credit",
+   "a": {
+    "replace": [
+     "on a held-out test set",
+     "on tasks that were not unseen in training"
+    ]
+   },
+   "b": {
+    "replace": [
+     "on a held-out test set",
+     "on tasks seen in training"
+    ]
+   },
+   "check": {
+    "metric": "credibility",
+    "rel": "le"
+   },
+   "status": "gap"
+  },
+  {
+   "id": "neg-never-fails",
+   "stage": "negation",
+   "req": "REQ-035",
+   "about": "'never fails on' is a boast, not a stated limitation",
+   "a": {
+    "replace": [
+     "Limitations: results are only on toy data.",
+     "The method never fails on toy data."
+    ]
+   },
+   "b": {
+    "replace": [
+     "Limitations: results are only on toy data.",
+     ""
+    ]
+   },
+   "check": {
+    "metric": "credibility",
+    "rel": "le"
+   },
+   "status": "gap"
+  },
+  {
+   "id": "neg-not-only",
+   "stage": "negation",
+   "req": "REQ-035",
+   "about": "'not only on toy data' widens the result: no limitations credit",
+   "a": {
+    "replace": [
+     "Limitations: results are only on toy data.",
+     "Results hold not only on toy data but also on Sample larger tasks."
+    ]
+   },
+   "b": {
+    "replace": [
+     "Limitations: results are only on toy data.",
+     ""
+    ]
+   },
+   "check": {
+    "metric": "credibility",
+    "rel": "le"
+   },
+   "status": "gap"
+  },
+  {
+   "id": "neg-without-baseline",
+   "stage": "negation",
+   "req": "REQ-035",
+   "about": "'without a baseline' earns no baseline credit",
+   "a": {
+    "replace": [
+     "and compare it with a baseline",
+     "without a baseline"
+    ]
+   },
+   "b": {
+    "replace": [
+     "and compare it with a baseline",
+     ""
+    ]
+   },
+   "check": {
+    "metric": "credibility",
+    "rel": "le"
+   },
+   "status": "gap"
+  },
+  {
+   "id": "neg-negated-claim",
+   "stage": "claims",
+   "req": "REQ-035",
+   "about": "'We do not demonstrate human-level reasoning' is not a claim",
+   "a": {
+    "append": "We do not demonstrate human-level reasoning."
+   },
+   "b": {},
+   "check": {
+    "metric": "claims",
+    "rel": "eq"
+   },
+   "status": "gap"
+  },
+  {
+   "id": "hedge-may",
+   "stage": "claims",
+   "req": "REQ-035",
+   "about": "A hedge ('may achieve') is not a claim",
+   "a": {
+    "append": "The model may achieve human-level accuracy on harder tasks."
+   },
+   "b": {},
+   "check": {
+    "metric": "claims",
+    "rel": "eq"
+   },
+   "status": "gap"
+  },
+  {
+   "id": "hedge-suggests",
+   "stage": "claims",
+   "req": "REQ-035",
+   "about": "'results suggest it outperforms' is a hedge, not a claim",
+   "a": {
+    "append": "These results suggest the method outperforms larger models."
+   },
+   "b": {},
+   "check": {
+    "metric": "claims",
+    "rel": "eq"
+   },
+   "status": "gap"
+  },
+  {
+   "id": "hedge-control-assert",
+   "stage": "claims",
+   "req": "REQ-035",
+   "about": "Control: the same sentence asserted ('we show it achieves') is a claim",
+   "a": {
+    "append": "We show the model achieves human-level accuracy on harder tasks."
+   },
+   "b": {},
+   "check": {
+    "metric": "claims",
+    "rel": "gt"
+   },
+   "status": "ok"
+  },
+  {
+   "id": "title-question",
+   "stage": "claims",
+   "req": "REQ-035",
+   "about": "A title that asks ('Can ... Achieve ...?') makes no claim",
+   "a": {
+    "title": "Can Sample Models Achieve Human-Level Reasoning?",
+    "text": ""
+   },
+   "check": {
+    "metric": "claims",
+    "rel": "eq",
+    "to": 0
+   },
+   "status": "gap"
+  },
+  {
+   "id": "title-topic-only",
+   "stage": "claims",
+   "req": "REQ-035",
+   "about": "A title that only names a topic ('Recursive Self-Improvement of ...') makes no claim",
+   "a": {
+    "title": "Recursive Self-Improvement of Sample Research Agents",
+    "text": ""
+   },
+   "check": {
+    "metric": "claims",
+    "rel": "eq",
+    "to": 0
+   },
+   "status": "ok"
+  },
+  {
+   "id": "claims-past-twelve",
+   "stage": "claims",
+   "req": "REQ-035",
+   "about": "Unbacked claims after the twelfth claim still count as hype",
+   "a": {
+    "text": "Sample abstract (test data). We show accuracy rises by 1% across 3 seeds on Sample task 1. We show accuracy rises by 2% across 3 seeds on Sample task 2. We show accuracy rises by 3% across 3 seeds on Sample task 3. We show accuracy rises by 4% across 3 seeds on Sample task 4. We show accuracy rises by 5% across 3 seeds on Sample task 5. We show accuracy rises by 6% across 3 seeds on Sample task 6. We show accuracy rises by 7% across 3 seeds on Sample task 7. We show accuracy rises by 8% across 3 seeds on Sample task 8. We show accuracy rises by 9% across 3 seeds on Sample task 9. We show accuracy rises by 10% across 3 seeds on Sample task 10. We show accuracy rises by 11% across 3 seeds on Sample task 11. We show accuracy rises by 12% across 3 seeds on Sample task 12. We achieve superhuman reasoning. We solved alignment. The model will soon replace researchers."
+   },
+   "b": {
+    "text": "Sample abstract (test data). We show accuracy rises by 1% across 3 seeds on Sample task 1. We show accuracy rises by 2% across 3 seeds on Sample task 2. We show accuracy rises by 3% across 3 seeds on Sample task 3. We show accuracy rises by 4% across 3 seeds on Sample task 4. We show accuracy rises by 5% across 3 seeds on Sample task 5. We show accuracy rises by 6% across 3 seeds on Sample task 6. We show accuracy rises by 7% across 3 seeds on Sample task 7. We show accuracy rises by 8% across 3 seeds on Sample task 8. We show accuracy rises by 9% across 3 seeds on Sample task 9. We show accuracy rises by 10% across 3 seeds on Sample task 10. We show accuracy rises by 11% across 3 seeds on Sample task 11. We show accuracy rises by 12% across 3 seeds on Sample task 12."
+   },
+   "check": {
+    "metric": "hype",
+    "rel": "gt"
+   },
+   "status": "gap"
+  },
+  {
+   "id": "inj-system-prompt-topic",
+   "stage": "guards",
+   "req": "REQ-035",
+   "about": "A paper that studies system prompts is not addressing the judge",
+   "a": {
+    "append": "We also measure how the system prompt changes accuracy."
+   },
+   "check": {
+    "metric": "injection",
+    "rel": "eq",
+    "to": 0
+   },
+   "status": "gap"
   }
  ]
 }

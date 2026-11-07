@@ -35,7 +35,7 @@ How this build meets the shared spec ([specs/001-superintelligence-homepage/spec
 | REQ-029 | Benchmarks with a ratchet | `scripts/bench.js`, `bench/` | preflight "Benchmarks" |
 | REQ-031 | Topic dossier: traced analysis, blog, posts, video | `modules/review/dossier.js`, `/m/dossier`, `/api/review/dossier/:topic`, worker job `dossier`, `/m/explainer?d=<topic>` | unit: dossier (14 checks); review demo: "Dossier" |
 | REQ-030 | Project tracker mirrors spec and agents | `scripts/project-sync.js`, `modules/project` | unit: project-sync (proposals and tasks from every `specs/<nnn>/`) |
-| REQ-032–038 | Judge fidelity and stability (proposed, `specs/003-judge-fidelity`) | not built yet; measured by `bench/judge-edge-cases.json` | `test/judge-edge-cases.js` in preflight (known gaps reported; `ok` cases must pass) |
+| REQ-032–038 | Judge fidelity and stability (proposed, `specs/003-judge-fidelity`) | not built yet; measured by `bench/judge-edge-cases.json`, `bench/fidelity-cases.json`, `scripts/judge-report.js`, Lean model in `proofs/` (unchecked) | preflight: judge edge cases (known gaps reported; `ok` cases must pass), judge properties (`test/judge-properties.js`), fidelity set, near-cutoff report and Lean vectors units |
 | REQ-039–040 | Peer reviews and reader comments (proposed, `specs/003-judge-fidelity`) | not built yet | none yet (tasks T060, T061) |
 
 ## Acceptance suite

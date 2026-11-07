@@ -6,7 +6,7 @@
 
 **Status**: Proposed, **not approved**. Nothing here is in scope until both partners (John and Matt) approve it (constitution, shared documents). It changes only the extended version (`SITE_PROFILE=extended`): the Review desk, the paper watcher and the dossier from `specs/002-research-layer`. The shared spec (`specs/001-superintelligence-homepage`) is unchanged by it.
 
-**Input**: the 2026-11-07 paper watch, where rewording the same facts about one paper moved its credibility from 55 to 63, across the cutoff of 60 the dossier uses to call a paper credible; a survey of methods (`research.md`); and an edge-case catalogue run against today's rules (`bench/judge-edge-cases.json`, 35 synthetic cases: 8 pass, 27 are known gaps).
+**Input**: the 2026-11-07 paper watch, where rewording the same facts about one paper moved its credibility from 55 to 63, across the cutoff of 60 the dossier uses to call a paper credible; a survey of methods (`research.md`); and an edge-case catalogue run against today's rules (`bench/judge-edge-cases.json`, 62 synthetic cases: 16 pass, 46 are known gaps); a paraphrase-fidelity set (`bench/fidelity-cases.json`: today's judge can't tell 24 of 26 unfaithful paraphrases from their source, and 13 of 25 faithful rewordings move its credibility); property tests (`test/judge-properties.js`); and a Lean 4 model of the arithmetic (`proofs/`, written, not yet checked).
 
 ## Overview
 
@@ -128,7 +128,7 @@ The full catalogue, with the expected behaviour and the test type of each, is `b
 
 ### Measurable Outcomes
 
-- **SC-301**: Every case in the edge-case catalogue marked `ok` passes on every change; the known gaps fall from 27 to 0 as REQ-032..REQ-036 are built.
+- **SC-301**: Every case in the edge-case catalogue marked `ok` passes on every change; the known gaps (46 on 2026-11-07) fall to 0 as REQ-032..REQ-036 are built.
 - **SC-302**: Meaning-preserving rewordings of a paraphrase change no score (0 points), because scores come from the abstract.
 - **SC-303**: No single marker change moves an item more than one band, checked by property tests over at least 1,000 generated synthetic inputs.
 - **SC-304**: The Lean 4 model proves the bounds, caps, monotonicity and band properties with no `sorry`, and agrees with the JavaScript evaluator on every generated case.
