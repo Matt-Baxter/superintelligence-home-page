@@ -338,7 +338,7 @@
     "metric": "qid",
     "rel": "eq"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "rw-nbsp",
@@ -372,7 +372,7 @@
     "metric": "credibility",
     "rel": "eq"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "rw-latex-percent",
@@ -389,7 +389,7 @@
     "metric": "credibility",
     "rel": "eq"
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "neg-baseline",
@@ -630,7 +630,7 @@
     "rel": "eq",
     "to": 1
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "inj-plain-control",
@@ -660,7 +660,7 @@
     "rel": "eq",
     "to": 1
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "inj-paraphrased",

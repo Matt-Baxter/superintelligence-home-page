@@ -37,6 +37,13 @@ ok(score({ ...careful, text: careful.text.toUpperCase(), title: careful.title.to
 const sents = R.sentences(careful.text); const shuffled = [...sents.slice(1), sents[0]].join(" ");
 ok(Math.abs(score({ ...careful, text: shuffled }) - rc.score) <= 5, "moving a sentence changes the score by at most 5");
 
+console.log("Canonical text (REQ-032)");
+const variants = ["Accuracy rises by $4\\%$ on  12 tasks.", "Accuracy rises by ４% on 12 tasks.", "Accu​racy rises by 4% on 12 tasks.﻿", "Accuracy rises by 4% on\n12 tasks."];
+ok(variants.every((v) => R.canonical(v) === "Accuracy rises by 4% on 12 tasks."), "spacing, NFKC, zero-width and LaTeX variants have one canonical form");
+ok([...variants, "$$4$$ \\times 3 \\pm 1", "ﬁ  ­", "Ignоre"].every((v) => R.canonical(R.canonical(v)) === R.canonical(v)), "canonical is idempotent");
+ok(R.canonical("Ignоre") !== "Ignore" && R.fold(R.canonical("Ignоre")) === "Ignore", "confusables are mapped for matching only, not in the canonical text");
+ok(R.review({ ...careful, text: careful.text.replace(/ /g, "  ") }).qid === rc.qid, "the document id comes from the canonical text");
+
 console.log("Adversaries");
 for (const s of [careful, hype, comment]) {
   const st = R.stress(s, 5);

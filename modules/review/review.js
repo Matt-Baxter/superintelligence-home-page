@@ -15,6 +15,28 @@ const KINDS = {
   article: { label: "Article", source: "news" },
   comment: { label: "Comment", source: "community" },
 };
+// ---------- 0. canonical text (REQ-032, task T010) ----------
+// canonical(x): what the judges read. Unicode NFKC (full-width digits, ligatures, non-breaking spaces become plain
+// characters), format characters removed (zero-width spaces and joiners, U+2060, U+FEFF, soft hyphens, bidi marks:
+// every \p{Cf}), common LaTeX rewritten ($4\%$ -> 4%, \times -> ×, \pm -> ±, $...$ dropped around plain numbers)
+// and whitespace collapsed. It removes no letter or digit, and it is idempotent: the steps are repeated until the
+// text stops changing (after the first pass every rewrite only shortens it, so this ends), so canonical(canonical(x)) === canonical(x).
+const LATEX = [[/\\%/g, "%"], [/\\times(?![A-Za-z])\s*/g, "× "], [/\\pm(?![A-Za-z])\s*/g, "± "], [/\\approx(?![A-Za-z])\s*/g, "≈ "], [/\\sim(?![A-Za-z])\s*/g, "~"],
+  [/\$([\d.,\s%×±≈~<>=+\-−–]*\d[\d.,\s%×±≈~<>=+\-−–]*)\$/g, "$1"]];
+function canonOnce(x) {
+  let t = String(x ?? "").normalize("NFKC").replace(/\p{Cf}/gu, "");
+  for (const [re, to] of LATEX) t = t.replace(re, to);
+  return t.replace(/\s+/g, " ").trim();
+}
+function canonical(x) {
+  let a = String(x ?? ""), b = canonOnce(a);
+  for (let i = 0; i < 16 && b !== a; i++) { a = b; b = canonOnce(a); }
+  return b;
+}
+// Confusables: Cyrillic and Greek letters that look like Latin ones, mapped one character to one character (so match
+// positions don't move). Used only for matching (markers, guards), never for the text shown to a reader.
+const CONFUSABLE = Object.fromEntries([..."аеорсухіјѕԁһԛԝАВЕКМНОРСТХУІЈЅαορνικτυχΑΒΕΖΗΙΚΜΝΟΡΤΥΧ"].map((c, i) => [c, "aeopcyxijsdhqwABEKMHOPCTXYIJSaopvikTuxABEZHIKMNOPTYX"[i]]));
+const fold = (x) => String(x).replace(/[\u0370-\u03ff\u0400-\u052f]/g, (c) => CONFUSABLE[c] || c);
 const words = (s) => String(s).toLowerCase().match(/[\p{L}\p{N}]+(?:[-'][\p{L}\p{N}]+)*/gu) || [];
 // Split at . ! ? followed by a space, so decimals (41.2%) and abbreviations inside a sentence stay together.
 const sentences = (s) => String(s).replace(/\s+/g, " ").trim().split(/(?<=[.!?])\s+(?=["'(\[]?[A-Z0-9])/).map((x) => x.trim()).filter(Boolean);
@@ -51,7 +73,7 @@ const HYPE = /\b(revolutionary|unprecedented|breakthrough|game[- ]chang\w+|incre
 // Text written to the judge rather than the reader: a reward hack against model judges, flagged and capped here too.
 const INJECTION = /\b(ignore (?:all |the )?(?:previous|prior|above) instructions|you are (?:an? )?(?:ai|judge|grader)|(?:rate|score|grade) this (?:paper |article |post )?(?:as |a )?\d+|give (?:this|it) (?:a )?(?:perfect|high|top) score|system prompt)\b/i;
 
-function markersIn(sentence) { return MARKERS.filter((m) => m.re.test(sentence)).map((m) => m.id); }
+function markersIn(sentence) { const f = fold(sentence); return MARKERS.filter((m) => m.re.test(f)).map((m) => m.id); }
 // Backing = two or more marker categories near the claim, at least one of them quantitative. Words alone ("we
 // evaluated it against the baseline") can be added for free; a number, a sample size or an interval is harder to fake.
 const QUANT = new Set(["numbers", "sample", "uncertainty"]);
@@ -119,7 +141,8 @@ function hype(text, cl, survey = false) {
 function review(input) {
   const t0 = process.hrtime.bigint(), trace = [];
   const step = (id, label, fn) => { const s = process.hrtime.bigint(); const out = fn(); trace.push({ id, label, ms: Number(process.hrtime.bigint() - s) / 1e6 }); return out; };
-  const title = String(input.title || "").trim().slice(0, 300), text = String(input.text || "").trim().slice(0, 20000), authors = String(input.authors || "").trim().slice(0, 600);
+  // Every judge reads the canonical form (REQ-032): spacing, Unicode and LaTeX variants of one text are one text.
+  const title = canonical(input.title).slice(0, 300), text = canonical(input.text).slice(0, 20000), authors = canonical(input.authors).slice(0, 600);
   if (!title && !text) throw new Error("Give a title or some text.");
 
   const k = step("normalise", "Work out what it is", () => detectKind({ ...input, title, text }));
@@ -179,7 +202,7 @@ function review(input) {
       detail: frontier.unbacked.length ? `"${frontier.unbacked.join("; ")}" with no evidence in the same or next sentence: ${frontier.removed} points removed` : "every frontier signal is backed where it is made, or there are none" });
     const dropped_names = mentioned.filter((id) => !byAuthors.has(id));
     g.push({ id: "name-dropping", label: "Naming watched people only counts for authors", fired: dropped_names.length > 0, detail: dropped_names.length ? `${pl(dropped_names.length, "watchlist name")} in the text but not the authors: catalogued as mentions, no points` : "no names outside the author list" });
-    const inj = INJECTION.test(`${title}\n${text}`);
+    const inj = INJECTION.test(fold(`${title}\n${text}`));
     g.push({ id: "prompt-injection", label: "Text addressed to the judge is flagged and capped", fired: inj, detail: inj ? "instructions to a judge or grader found: score capped at 30 and sent to a person" : "none found" });
     return g;
   });
@@ -205,6 +228,7 @@ function review(input) {
 
   // Two axes, reported separately: how big a step it claims (score) and how far to believe it (credibility).
   const verdict = credibility < 35 ? "doubtful" : score >= 55 && credibility >= 60 ? "major and credible" : credibility >= 70 ? "solid, modest step" : score >= 40 ? "big if true" : "minor";
+  // The id comes from the canonical text, so two spellings of one document share it.
   const qid = `doc:${hash(`${title}\n${text}`)}`;
   const edges = step("catalog", "Catalog it in the knowledge graph", () => {
     const rel = (t) => (t.qid.startsWith("topic:") ? "about" : t.qid.startsWith("concept:") ? "explains" : t.qid.startsWith("benchmark:") ? "evaluates-on" : "mentions");
@@ -265,4 +289,4 @@ function stress(input, steps = 6) {
     summary: `Gaming the unguarded judge added ${a.gain.naive} points; the guarded score moved ${a.gain.guarded >= 0 ? "+" : ""}${a.gain.guarded} on the same edits. An adversary that targets the guarded score directly gained ${b.gain.guarded}.` };
 }
 
-module.exports = { KINDS, MARKERS, detectKind, clean, rigor, claims, hype, review, attack, stress, bank, sentences };
+module.exports = { canonical, fold, KINDS, MARKERS, detectKind, clean, rigor, claims, hype, review, attack, stress, bank, sentences };

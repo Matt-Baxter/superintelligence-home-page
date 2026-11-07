@@ -30,7 +30,7 @@ Any agent (Codex, v0, Claude or another) picks up work here. `scripts/project-sy
 
 ## Phase 2: canonical input (REQ-032)
 
-- [ ] T010 [rules] [REQ-032] `canonical(text)`: NFKC, zero-width and format characters removed, whitespace collapsed, common LaTeX rewritten; `qid` from canonical text; flips rw-whitespace-id, rw-fullwidth-digits, rw-latex-percent, inj-zero-width (modules/review/review.js)
+- [x] T010 [rules] [REQ-032] `canonical(text)`: NFKC, zero-width and format characters removed, whitespace collapsed, common LaTeX rewritten; `qid` from canonical text; flips rw-whitespace-id, rw-fullwidth-digits, rw-latex-percent, inj-zero-width (modules/review/review.js) (done: `canonical()` and `fold()` exported; flips rw-whitespace-id, rw-fullwidth-digits, rw-latex-percent, inj-zero-width and, through the confusables map on the guard, inj-homoglyph)
 - [ ] T011 [rules] [REQ-032] Report truncation as a reason and a field; flips trunc-limitations-late (modules/review/review.js)
 - [ ] T012 [rules] [REQ-037] Cap any single marker weight at 10, or raise the band margin, so one flip moves credibility by at most 5; flips band-one-marker (modules/review/review.js, bench/baseline.json)
 
