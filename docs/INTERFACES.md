@@ -112,7 +112,8 @@ Every interface change gets a row here. Breaking changes bump the major version 
 - **Page:** `/m/control`, nav entry "Research" (admins): forecasts due with outcome buttons, flagged reviews with agree/disagree, quality checks, proposals, people checks, links.
 - **Forecast outcomes:** `annulled` added beside `unclear` (both count for neither side); `POST /api/admin/review/events/:id` accepts it.
 - **Open data:** `GET /research/data.json` (same gate as `/research`): `{about, generated, pieces[{id, title, url, kind, reviewed, verdict, verdictRule, credibility, significance, rigor, hype, rubric, grade, outlet, code, panel, forecasts[], writeup}], topics[]}`; no excerpts, no writer names.
-- **Code link:** review results gain `code` (first GitHub, GitLab or Hugging Face repository link in the text); shown on the write-up and sent as `si:code` in the feed. | logged by John |
+- **Code link:** review results gain `code` (first GitHub, GitLab or Hugging Face repository link in the text); shown on the write-up and sent as `si:code` in the feed.
+- **Withdrawn verdict:** a text saying it was withdrawn or retracted gets verdict `withdrawn` (first rule in `VERDICTS`), credibility and significance capped at 10, `withdrawn: true` and a reason sending it to a person. The benchmark counts `doubtful` and `withdrawn` as the not-credible verdicts. | logged by John |
 
 **Done means:** a classmate can sign up on the live site, see a grouped, tagged feed from at least 8 sources, and vote on and save stories that are still there the next time they sign in.
 

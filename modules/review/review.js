@@ -120,6 +120,7 @@ const REPORTING = [
 const ASSERT = /\b(is (?:already )?here|already|will (?!not)\w+|now \w+s\b|most of|every|each generation|compounds?|inevitabl\w+|soon)\b/i;
 const HEDGE = /\b(whether|may|might|could|uncertain|unclear|open question|plausible|if )\b/i;
 const CITE = REPORTING[0].re;
+const WITHDRAWN = /\b(this (?:paper|article|preprint|submission|work) (?:has been|was|is being) (?:withdrawn|retracted)|withdrawn by the authors?|has been retracted|retraction notice|retracted (?:by|due to|after))\b/i;
 function hype(text, cl, survey = false, asserts = 0) {
   const hits = [...new Set((String(text).match(HYPE) || []).map((h) => h.toLowerCase()))];
   const unbacked = cl.filter((c) => c.level === "unbacked").length + asserts; cl = { length: cl.length + asserts };
@@ -214,9 +215,14 @@ function review(input) {
   let score = Math.min(base, cap);
   if (fired("prompt-injection")) score = Math.min(score, 30);
   score = Math.max(0, Math.round(score));
-  const credibility = Math.round(0.5 * rg.score + 0.5 * (100 - hp.score));
+  // A paper or article that says it was withdrawn or retracted can't be relied on, however good it looks: scores are
+  // capped, the verdict says so, and a person looks at it (scite shows retraction notices the same way).
+  const withdrawn = WITHDRAWN.test(`${title}\n${text}`);
+  const credibility = withdrawn ? Math.min(10, Math.round(0.5 * rg.score + 0.5 * (100 - hp.score))) : Math.round(0.5 * rg.score + 0.5 * (100 - hp.score));
+  if (withdrawn) score = Math.min(score, 10);
 
   const review_reasons = [];
+  if (withdrawn) review_reasons.push("the text says it was withdrawn or retracted");
   if (fired("prompt-injection")) review_reasons.push("it contains instructions to the judge");
   if (Math.abs(naive.significance - score) >= 25) review_reasons.push(`the guards moved the score by ${naive.significance - score} points`);
   if (hp.unbacked >= 2) review_reasons.push(`${hp.unbacked} claims have nothing backing them`);
@@ -225,7 +231,7 @@ function review(input) {
   // Off-topic is reported (scope) but isn't a reason to send it to a person: the feed's scope rule already handles it.
 
   // Two axes, reported separately: how big a step it claims (score) and how far to believe it (credibility).
-  const v = VERDICTS.find((x) => x.when(score, credibility)), verdict = v.id;
+  const v = VERDICTS.find((x) => x.when(score, credibility, { withdrawn })), verdict = v.id;
   const qid = `doc:${hash(`${title}\n${text}`)}`;
   // Where it comes from (graded by outlet kind and what the piece shows) and what it forecasts (dated events).
   const origin = step("source", "Grade the source", () => SRC.grade({ url: input.url || "", text: `${title}\n${text}`, hype: hp.score, catalogKind: input.sourceKind || null }));
@@ -240,7 +246,7 @@ function review(input) {
   });
 
   return {
-    qid, kind: k.kind, kindWhy: k.why, kindLabel: isSurvey ? "Survey" : KINDS[k.kind].label, verdictRule: v.rule, rubric, source: origin, forecasts, code: codeLink(`${title}\n${text}`), survey: isSurvey, arxiv, title, authors,
+    qid, kind: k.kind, kindWhy: k.why, kindLabel: isSurvey ? "Survey" : KINDS[k.kind].label, verdictRule: v.rule, withdrawn, rubric, source: origin, forecasts, code: codeLink(`${title}\n${text}`), survey: isSurvey, arxiv, title, authors,
     score, naive: naive.significance, credibility, verdict, needsPerson: review_reasons.length > 0, reasons: review_reasons,
     judges: [
       { id: "significance", label: "Significance", score: sig.significance, about: "How big a step toward superintelligence it reports (lib/analysis.js, on the cleaned text)", why: sig.why },
@@ -306,6 +312,7 @@ function codeLink(text) {
 // check and what the code checks can't drift apart (test/review-unit.js compares them).
 // Verdict: the first row whose rule holds. Significance (how big a step) and credibility (how far to believe it) are separate axes.
 const VERDICTS = [
+  { id: "withdrawn", rule: "the text says it was withdrawn or retracted", when: (s, c, f) => !!(f && f.withdrawn) },
   { id: "doubtful", rule: "credibility below 35", when: (s, c) => c < 35 },
   { id: "major and credible", rule: "significance 55 or more and credibility 60 or more", when: (s, c) => s >= 55 && c >= 60 },
   { id: "solid, modest step", rule: "credibility 70 or more", when: (s, c) => c >= 70 },

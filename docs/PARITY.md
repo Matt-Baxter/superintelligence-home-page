@@ -31,7 +31,7 @@ Checked 2026-11-07 against each product's public pages, docs and changelogs (clo
 | Coverage gap ("blindspot") | ✓ | – | – | – | – | – | – | – | – | ✓ buzz versus evidence |
 | Claim and evidence check | – | – | – | – | ✓ support/contrast | ✓ own evals | – | – | ◐ significance score | ✓ rigor, backed claims, guards |
 | Independent re-test of a result | – | – | – | – | – | ✓ | – | – | – | ◐ Lab toy checks of a paper's idea |
-| Retraction or withdrawal notice | – | – | – | – | ✓ | – | – | – | – | – next |
+| Retraction or withdrawal notice | – | – | – | – | ✓ | – | – | – | – | ✓ withdrawn verdict (added) |
 | Link to the paper's code | – | – | ✓ | ✓ | – | – | – | – | – | ✓ (added today) |
 | Forecasts tracked and scored | – | – | – | – | – | – | ✓ | – | – | ◐ events, outcomes, hit rate; no probabilities yet |
 | Who is talked about (entities) | – | ✓ pages | – | ◐ authors | – | – | – | – | ◐ org tags | ◐ mention counts only, by design |
@@ -51,7 +51,6 @@ No app in the matrix judges the judging: published criteria that the code itself
 
 | Gap | Seen in | Cost | Plan |
 | --- | --- | --- | --- |
-| Withdrawal and retraction notice | scite | small | Flag papers whose abstract or arXiv page says withdrawn; send to a person (benchmark item first) |
 | Probabilities on forecasts, Brier scores | Metaculus | small | Record a stated probability when a piece gives one; Brier only for those |
 | Discussion on a write-up | HF Papers, Metaculus | medium | Reuse the extended version's notes; spec change needed for the main app |
 | Support or contrast between papers | scite | medium | Extend "where papers agree" with a "where they disagree" list from reviewed papers on the same concept |

@@ -104,6 +104,14 @@
    "title": "Sample: Why self-improving AI is already here (test data)",
    "authors": "Sample blog (test data)",
    "text": "Self-improving AI is already here. Labs now build each model mostly with the previous one. Agents run their own experiments and improve their own code. Each generation makes the next one faster. This is how progress compounds. The next few model generations will automate most of AI research."
+  },
+  {
+   "id": "b-withdrawn",
+   "credible": false,
+   "kind": "paper",
+   "title": "Sample: Agents that improve their own training code (test data)",
+   "authors": "Sample Author F (test data)",
+   "text": "This paper has been withdrawn by the authors due to an error in the evaluation. We evaluated 3 agent variants on 500 held-out tasks. Compared with the baseline, the self-edited agent solved 44.0% of tasks versus 35.0% (95% confidence interval 6.1 to 11.9, across 5 seeds). Limitations: the tasks are short. Code is available at github.com/sample-org/sample-repo."
   }
  ]
 }

@@ -53,5 +53,11 @@ for (const s of [careful, hype, comment]) {
   ok(grid.every(([s2, c]) => VERDICTS.filter((v) => v.when(s2, c)).length >= 1) && VERDICTS.at(-1).rule === "none of the rules above applied", "criteria: every score pair gets a verdict, and the last rule catches the rest");
   ok(rv.verdictRule === VERDICTS.find((v) => v.id === rv.verdict).rule, "criteria: each review records the verdict rule that decided it");
 }
+// A piece that says it was withdrawn or retracted (scite-style notice): capped, its own verdict, sent to a person.
+{
+  const w = R.review({ kind: "paper", title: "Sample withdrawn paper (test data)", text: "This paper has been withdrawn by the authors. We evaluated 3 variants on 500 held-out tasks, 44.0% versus 35.0% (95% confidence interval 6.1 to 11.9)." });
+  ok(w.withdrawn && w.verdict === "withdrawn" && w.credibility <= 10 && w.needsPerson, "a withdrawn paper gets the withdrawn verdict, credibility 10 at most, and goes to a person");
+  ok(!R.review({ kind: "article", title: "Sample (test data)", text: "The authors withdrew from the conference schedule but the paper stands, with 500 tasks tested." }).withdrawn, "mentioning a withdrawal of something else doesn't trigger it");
+}
 console.log(`\nreview unit: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
