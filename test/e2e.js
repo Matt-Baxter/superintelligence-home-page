@@ -181,7 +181,7 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   ok(specs.specs.length >= 3 && specs.reqs.every((r) => r.trace && Array.isArray(r.tasks) && Array.isArray(r.issues)) && specs.reqs.find((r) => r.id === 'REQ-020').issues.length > 0, 'each REQ carries its trace, tasks and the tracker issues labelled with it');
   ok((await j(matt, '/api/admin/project/specs')).status === 403, 'specs API is admins only');
   await john.goto(B + '/m/project#/specs'); await john.waitForSelector('#spList tr[data-req="REQ-040"]');
-  ok((await john.$$('#spList tr[data-req]')).length === 40 && (await john.textContent('#spList')).includes('Approved') && (await john.textContent('#body')).includes('node scripts/project-sync.js'), 'Specs view shows every REQ with status chips and the sync command');
+  ok((await john.$$('#spList tr[data-req]')).length === specs.reqs.length && (await john.textContent('#spList')).includes('Approved') && (await john.textContent('#body')).includes('node scripts/project-sync.js'), 'Specs view shows every REQ with status chips and the sync command');
   await john.selectOption('#spStatus', 'approved'); ok((await john.$$('#spList tr[data-req]')).length === 20, 'status filter: 20 approved');
   await john.selectOption('#spStatus', ''); await john.check('#spOpen'); const openRows = await john.$$eval('#spList tr[data-req]', (x) => x.map((t) => t.dataset.req));
   ok(openRows.length === specs.reqs.filter((r) => r.open > 0).length && openRows.length > 0, 'has-open-tasks filter');
