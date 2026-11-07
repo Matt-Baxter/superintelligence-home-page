@@ -1,5 +1,7 @@
 # Handoff: state of John's build, for Codex and v0
 
+> **Newer:** start with [handoff/SI-HANDOFF-2026-11-07.md](../handoff/SI-HANDOFF-2026-11-07.md). This page describes `fix/sync-with-main` only; a second line of work, `feature/judge-fidelity-rules`, still has to be combined with it.
+
 Written 2026-11-07 for whoever picks this up next (Codex for code, v0 for the bake-off UI). Everything below is on branch `fix/sync-with-main`. Rules first, then what exists, how to run it, what's open, and ready-to-use prompts.
 
 ## 1. Rules that don't change
