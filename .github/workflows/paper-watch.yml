@@ -1,0 +1,33 @@
+# Daily paper watch: find new superintelligence, interpretability and self-improvement papers on arXiv, judge them
+# with the Review desk, catalog them in the knowledge graph and queue paper-to-code jobs (scripts/watch.js).
+# Once a day (the free-tier rule: no cron more often than daily). Free on public repositories.
+# Stores into the site's database when the DATABASE_URL secret is set (a human sets it; agents don't change GitHub
+# settings); otherwise it runs on a throwaway SQLite database and only the digest is kept. GitHub runs scheduled
+# workflows from the default branch, so this starts once it is merged.
+name: Daily paper watch
+on:
+  schedule:
+    - cron: "17 11 * * *"
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Watch arXiv
+        run: node scripts/watch.js
+        env:
+          SITE_PROFILE: extended
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paper-watch
+          path: out/watch/*.md
+          retention-days: 14
