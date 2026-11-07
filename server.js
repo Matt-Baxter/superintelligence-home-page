@@ -1,4 +1,4 @@
-// Superintelligence Homepage: multi-source AI-progress feed with accounts, curation, a weekly brief and an agent log.
+// Superintelligence Homepage: multi-source AI-progress feed with accounts, curation, and a weekly brief (the agent log is AGENT_LOG.md in the repo, REQ-020).
 // Runs as a normal Node server (`npm start`) or as a Vercel function (api/index.js imports `app`).
 // Env: PORT, DATABASE_URL/POSTGRES_URL (Postgres) or DATA_DIR (SQLite), FETCH_MINUTES, CRON_SECRET, APP_TZ, NODE_ENV
 const express = require("express");
@@ -14,6 +14,7 @@ const analysis = require("./lib/analysis");
 // Features beyond the core are modules (modules/<id>/module.js, enabled in modules/modules.json) that plug into
 // extension points. Their headless contributions are applied here, before anything reads them.
 const { createKernel } = require("./kernel/kernel");
+const profile = require("./lib/profile"); const ids = require("./lib/ids"); const feature = profile.feature;
 const kernel = createKernel();
 for (const f of kernel.store.formats) feeds.FORMATS[f.id] = f.format;
 for (const sig of kernel.store.signals) analysis.registerSignal(sig);
@@ -96,7 +97,7 @@ app.post("/api/login", limit(30, 6e5), wrap(async (req, res) => {
   await startSession(res, u.id); return { user: { id: u.id, username: u.username, name: u.display_name, admin: bool(u.is_admin) } };
 }));
 app.post("/api/logout", wrap(async (req, res) => { const t = cookie(req, "sid"); if (t) await db.run("DELETE FROM sessions WHERE token = ?", t); res.clearCookie("sid"); return { ok: true }; }));
-app.get("/api/me", wrap((req) => ({ user: req.user ? { ...req.user, nav: kernel.nav(req.user) } : null })));
+app.get("/api/me", wrap((req) => { const pr = profile.current(); return { user: req.user ? { ...req.user, nav: kernel.nav(req.user), profile: pr.name, features: [...pr.features] } : null, profile: pr.name }; }));
 app.get("/api/ontology", wrap(() => ({ topics: tagger.topicList(), orgs: tagger.orgList(), about: tagger.ontology.about,
   benchmarks: (tagger.ontology.benchmarks || []).map(({ id, label, measures }) => ({ id, label, measures })), people: (tagger.ontology.people || []).map(({ id, label }) => ({ id, label })) })));
 
@@ -145,6 +146,13 @@ app.get("/api/stories", auth, wrap(async (req) => {
   if (days) { w.push("COALESCE(s.published_at, s.first_seen) >= ?"); a.push(new Date(Date.now() - days * 864e5).toISOString()); }
   if (req.query.benchmark) { w.push("s.id IN (SELECT story_id FROM story_entities WHERE kind = 'benchmark' AND entity = ?)"); a.push(str(req.query.benchmark, 40)); }
   if (req.query.person) { w.push("s.id IN (SELECT story_id FROM story_entities WHERE kind = 'person' AND entity = ?)"); a.push(str(req.query.person, 60)); }
+  // ?tag=topic:alignment,org:openai,benchmark:swe-bench,person:<id>: qualified ids (lib/ids.js), all must match.
+  for (const { raw, ok: t } of ids.parseList(req.query.tag)) {
+    if (!t || !["topic", "org", "benchmark", "person"].includes(t.ns)) bad(`Unknown tag "${raw}". Use topic:, org:, benchmark: or person: followed by an id.`);
+    if (t.ns === "topic") { w.push("s.id IN (SELECT story_id FROM story_topics WHERE topic = ?)"); a.push(t.id); }
+    if (t.ns === "org") { w.push("s.orgs LIKE ?"); a.push(`%"id":"${t.id}"%`); }
+    if (t.ns === "benchmark" || t.ns === "person") { w.push("s.id IN (SELECT story_id FROM story_entities WHERE kind = ? AND entity = ?)"); a.push(t.ns, t.id); }
+  }
   if (Number(req.query.min)) { w.push("COALESCE(s.significance, 0) >= ?"); a.push(Math.min(100, Number(req.query.min))); }
   if (req.query.saved === "1") { w.push("s.id IN (SELECT story_id FROM saves WHERE user_id = ?)"); a.push(req.user.id); }
   const sort = ["top", "new", "votes", "signal"].includes(req.query.sort) ? req.query.sort : "new"; // REQ-002: newest first
@@ -155,10 +163,10 @@ app.get("/api/stories/:id", auth, wrap(async (req) => {
   const id = Number(req.params.id); const rows = await storyRows("s.id = ?", [id], req.user.id); if (!rows.length) notFound("That story");
   return {
     story: rows[0],
-    notes: (await db.all(`SELECT n.id, n.text, n.private, n.created_at, u.display_name AS name, n.user_id FROM notes n JOIN users u ON u.id = n.user_id
+    notes: !profile.has("notes") ? [] : (await db.all(`SELECT n.id, n.text, n.private, n.created_at, u.display_name AS name, n.user_id FROM notes n JOIN users u ON u.id = n.user_id
       WHERE n.story_id = ? AND (n.private = 0 OR n.user_id = ?) ORDER BY n.id`, id, req.user.id)).map(({ user_id, ...n }) => ({ ...n, mine: user_id === req.user.id, private: bool(n.private) })),
-    lists: (await db.all("SELECT l.id, l.title, EXISTS(SELECT 1 FROM list_items i WHERE i.list_id = l.id AND i.story_id = ?) AS has FROM lists l WHERE l.owner_id = ? ORDER BY l.title", id, req.user.id)).map((l) => ({ ...l, has: bool(l.has) })),
-    inPublicLists: await db.all("SELECT l.id, l.title, u.display_name AS owner FROM list_items i JOIN lists l ON l.id = i.list_id JOIN users u ON u.id = l.owner_id WHERE i.story_id = ? AND l.public = 1", id),
+    lists: !profile.has("lists") ? [] : (await db.all("SELECT l.id, l.title, EXISTS(SELECT 1 FROM list_items i WHERE i.list_id = l.id AND i.story_id = ?) AS has FROM lists l WHERE l.owner_id = ? ORDER BY l.title", id, req.user.id)).map((l) => ({ ...l, has: bool(l.has) })),
+    inPublicLists: !profile.has("lists") ? [] : await db.all("SELECT l.id, l.title, u.display_name AS owner FROM list_items i JOIN lists l ON l.id = i.list_id JOIN users u ON u.id = l.owner_id WHERE i.story_id = ? AND l.public = 1", id),
   };
 }));
 const storyExists = async (id) => (await db.get("SELECT id FROM stories WHERE id = ?", id)) || notFound("That story");
@@ -172,13 +180,13 @@ app.post("/api/stories/:id/vote", auth, wrap(async (req) => {
   return { voted, votes: (await db.get("SELECT COUNT(*) AS n FROM votes WHERE story_id = ?", sid)).n };
 }));
 app.post("/api/stories/:id/save", auth, wrap(async (req) => ({ saved: await toggle("saves", req.user.id, Number(req.params.id)) })));
-app.post("/api/stories/:id/notes", auth, wrap(async (req) => {
+app.post("/api/stories/:id/notes", auth, feature("notes"), wrap(async (req) => {
   const sid = Number(req.params.id); await storyExists(sid);
   const text = str(req.body.text, 2000); if (!text) bad("Write the note first.");
   await db.run("INSERT INTO notes (user_id, story_id, text, private, created_at) VALUES (?, ?, ?, ?, ?)", req.user.id, sid, text, req.body.private === false ? 0 : 1, now());
   return { ok: true };
 }));
-app.delete("/api/notes/:id", auth, wrap(async (req) => {
+app.delete("/api/notes/:id", auth, feature("notes"), wrap(async (req) => {
   const n = await db.get("SELECT * FROM notes WHERE id = ?", Number(req.params.id)); if (!n) notFound("That note");
   if (n.user_id !== req.user.id) forbid("You can only delete your own notes.");
   await db.run("DELETE FROM notes WHERE id = ?", n.id); return { ok: true };
@@ -195,18 +203,18 @@ app.post("/api/stories", auth, limit(20, 36e5), wrap(async (req) => {
 
 /* -------------------------------------------------------------------- lists */
 const listRow = async (id) => (await db.get("SELECT * FROM lists WHERE id = ?", id)) || notFound("That list");
-app.get("/api/lists", auth, wrap(async (req) => {
+app.get("/api/lists", auth, feature("lists"), wrap(async (req) => {
   const rows = await db.all(`SELECT l.id, l.title, l.description, l.public, l.owner_id, u.display_name AS owner,
     (SELECT COUNT(*) FROM list_items i WHERE i.list_id = l.id) AS items, (SELECT COUNT(*) FROM follows f WHERE f.list_id = l.id) AS followers,
     EXISTS(SELECT 1 FROM follows f WHERE f.list_id = l.id AND f.user_id = ?) AS following
     FROM lists l JOIN users u ON u.id = l.owner_id WHERE l.public = 1 OR l.owner_id = ? ORDER BY l.created_at DESC, l.id DESC`, req.user.id, req.user.id);
   return { lists: rows.map(({ owner_id, ...l }) => ({ ...l, mine: owner_id === req.user.id, public: bool(l.public), following: bool(l.following) })) };
 }));
-app.post("/api/lists", auth, wrap(async (req) => {
+app.post("/api/lists", auth, feature("lists"), wrap(async (req) => {
   const title = str(req.body.title, 120); if (!title) bad("Give the list a title.");
   return { id: await db.insert("INSERT INTO lists (owner_id, title, description, public, created_at) VALUES (?, ?, ?, ?, ?)", req.user.id, title, str(req.body.description, 600), req.body.public === false ? 0 : 1, now()) };
 }));
-app.get("/api/lists/:id", auth, wrap(async (req) => {
+app.get("/api/lists/:id", auth, feature("lists"), wrap(async (req) => {
   const l = await listRow(Number(req.params.id)); if (!bool(l.public) && l.owner_id !== req.user.id) forbid("This list is private.");
   const ids = await db.all("SELECT story_id, note FROM list_items WHERE list_id = ? ORDER BY added_at DESC", l.id);
   const notes = Object.fromEntries(ids.map((i) => [i.story_id, i.note]));
@@ -214,19 +222,19 @@ app.get("/api/lists/:id", auth, wrap(async (req) => {
   return { list: { ...l, public: bool(l.public), mine: l.owner_id === req.user.id, owner: (await db.get("SELECT display_name AS n FROM users WHERE id = ?", l.owner_id)).n,
     following: !!(await db.get("SELECT 1 AS x FROM follows WHERE user_id = ? AND list_id = ?", req.user.id, l.id)) }, stories: stories.map((s) => ({ ...s, listNote: notes[s.id] || "" })) };
 }));
-app.put("/api/lists/:id/items/:sid", auth, wrap(async (req) => {
+app.put("/api/lists/:id/items/:sid", auth, feature("lists"), wrap(async (req) => {
   const l = await listRow(Number(req.params.id)); if (l.owner_id !== req.user.id) forbid("Only the list's owner can change it.");
   const sid = Number(req.params.sid); await storyExists(sid);
   if (req.body.remove) await db.run("DELETE FROM list_items WHERE list_id = ? AND story_id = ?", l.id, sid);
   else await db.run("INSERT INTO list_items (list_id, story_id, note, added_at) VALUES (?, ?, ?, ?) ON CONFLICT (list_id, story_id) DO UPDATE SET note = excluded.note", l.id, sid, str(req.body.note, 400), now());
   return { ok: true };
 }));
-app.post("/api/lists/:id/follow", auth, wrap(async (req) => {
+app.post("/api/lists/:id/follow", auth, feature("lists"), wrap(async (req) => {
   const l = await listRow(Number(req.params.id)); if (!bool(l.public)) forbid("This list is private.");
   if (await db.get("SELECT 1 AS x FROM follows WHERE user_id = ? AND list_id = ?", req.user.id, l.id)) { await db.run("DELETE FROM follows WHERE user_id = ? AND list_id = ?", req.user.id, l.id); return { following: false }; }
   await db.run("INSERT OR IGNORE INTO follows (user_id, list_id) VALUES (?, ?)", req.user.id, l.id); return { following: true };
 }));
-app.delete("/api/lists/:id", auth, wrap(async (req) => {
+app.delete("/api/lists/:id", auth, feature("lists"), wrap(async (req) => {
   const l = await listRow(Number(req.params.id)); if (l.owner_id !== req.user.id) forbid("Only the list's owner can delete it.");
   await db.run("DELETE FROM lists WHERE id = ?", l.id); return { ok: true };
 }));
@@ -238,7 +246,7 @@ app.get("/api/sources", auth, wrap(async (req) => ({
   kinds: KINDS.filter((k) => k !== "submitted"), fetching: harvester.isRunning(), fetchMinutes: process.env.VERCEL ? null : FETCH_MINUTES, schedule: process.env.VERCEL ? "daily (Vercel Cron)" : null, isAdmin: req.user.admin,
   formats: Object.entries(feeds.FORMATS).map(([id, f]) => ({ id, label: f.label })),
 })));
-app.post("/api/sources/suggest", auth, limit(10, 36e5), wrap(async (req) => {
+app.post("/api/sources/suggest", auth, feature("suggest-sources"), limit(10, 36e5), wrap(async (req) => {
   const name = str(req.body.name, 100), url = str(req.body.url, 600), kind = str(req.body.kind, 30), format = FORMAT_IDS.includes(req.body.format) ? req.body.format : "rss";
   if (!name || !/^https?:\/\//.test(url)) bad("Give the source a name and its feed URL (https://…).");
   if (!KINDS.includes(kind) || kind === "submitted") bad("Pick what kind of source it is.");
@@ -248,17 +256,7 @@ app.post("/api/sources/suggest", auth, limit(10, 36e5), wrap(async (req) => {
     name, kind, format, url, str(req.body.home, 600), req.user.admin ? "active" : "pending", req.user.id, str(req.body.note, 300), now());
   return { ok: true, status: req.user.admin ? "active" : "pending" };
 }));
-app.put("/api/sources/:id", auth, admin, wrap(async (req) => {
-  const s = await db.get("SELECT * FROM sources WHERE id = ?", Number(req.params.id)); if (!s) notFound("That source");
-  const status = ["active", "paused", "pending", "rejected"].includes(req.body.status) ? req.body.status : s.status;
-  await db.run("UPDATE sources SET status = ?, url = ?, name = ? WHERE id = ?", status, str(req.body.url, 600) || s.url, str(req.body.name, 100) || s.name, s.id);
-  return { ok: true };
-}));
-app.post("/api/sources/fetch", auth, admin, wrap(async (req) => {
-  const r = await fetchAll(req.body.id ? Number(req.body.id) : null);
-  await audit.log(req.user.id, "harvest.run", req.body.id ? `source:${req.body.id}` : "all", r.skipped ? "skipped" : `${r.ok} ok, ${r.errors} errors, ${r.stored} new`);
-  return r;
-}));
+// Changing a source and harvesting now are admin routes: PUT /api/admin/sources/:id and POST /api/admin/harvest (admin module).
 // Vercel Cron calls this with "Authorization: Bearer $CRON_SECRET". Without a secret configured it stays closed.
 app.get("/api/cron/fetch", wrap(async (req, res) => {
   const secret = process.env.CRON_SECRET;
@@ -267,63 +265,9 @@ app.get("/api/cron/fetch", wrap(async (req, res) => {
 }));
 
 /* ---------------------------------------------------------------- agent log */
-// Entries are visible to every signed-in user (so the instructor can read them); only the author can write.
-// Each autosave records how much text changed, how much was typed vs pasted, and active editing time.
-// That is evidence of how an entry was written, not proof: the counts come from the author's browser.
-const LOG_FIELDS = ["went_wrong", "caught_how", "fix"];
-const logRow = async (id) => (await db.get("SELECT * FROM agent_log WHERE id = ?", id)) || notFound("That entry");
-async function shapeLog(e, uid) {
-  const author = await db.get("SELECT display_name AS name, username FROM users WHERE id = ?", e.author_id);
-  const saves = await db.get("SELECT COUNT(*) AS n, MIN(at) AS first, MAX(at) AS last FROM agent_log_saves WHERE entry_id = ?", e.id);
-  const total = LOG_FIELDS.reduce((a, k) => a + (e[k] || "").length, 0);
-  return { ...e, active_ms: Number(e.active_ms), author, mine: e.author_id === uid, total_chars: total, saves: saves.n, first_save: saves.first, last_save: saves.last };
-}
-app.get("/api/agent-log", auth, wrap(async (req) => {
-  const rows = await db.all("SELECT * FROM agent_log WHERE status = 'submitted' OR author_id = ? ORDER BY session_date DESC, id DESC", req.user.id);
-  return { entries: await Promise.all(rows.map((e) => shapeLog(e, req.user.id))) };
-}));
-app.post("/api/agent-log", auth, wrap(async (req) => {
-  // The browser sends its local date; the fallback uses the app's time zone (US Central by default), not UTC.
-  const date = /^\d{4}-\d{2}-\d{2}$/.test(req.body.sessionDate) ? req.body.sessionDate : new Date().toLocaleDateString("en-CA", { timeZone: APP_TZ });
-  const id = await db.insert("INSERT INTO agent_log (author_id, session_date, agent, created_at, updated_at) VALUES (?, ?, ?, ?, ?)", req.user.id, date, str(req.body.agent, 80), now(), now());
-  return { entry: await shapeLog(await logRow(id), req.user.id) };
-}));
-app.get("/api/agent-log/:id", auth, wrap(async (req) => {
-  const e = await logRow(Number(req.params.id)); if (e.status !== "submitted" && e.author_id !== req.user.id) forbid("That draft belongs to someone else.");
-  return { entry: await shapeLog(e, req.user.id), timeline: await db.all("SELECT at, total_chars, typed_delta, pasted_delta, active_delta_ms FROM agent_log_saves WHERE entry_id = ? ORDER BY id", e.id) };
-}));
-app.put("/api/agent-log/:id", auth, limit(240, 6e5), wrap(async (req) => {
-  const e = await logRow(Number(req.params.id)); if (e.author_id !== req.user.id) forbid("You can only edit your own agent log entries.");
-  const b = req.body, f = Object.fromEntries(LOG_FIELDS.map((k) => [k, typeof b[k] === "string" ? b[k].slice(0, 4000) : e[k]]));
-  const n = (v, max) => Math.max(0, Math.min(max, Math.round(Number(v) || 0)));
-  const typed = n(b.typedDelta, 20000), pasted = n(b.pastedDelta, 20000), active = n(b.activeDeltaMs, 15 * 60e3), edits = n(b.editDelta, 20000);
-  const total = LOG_FIELDS.reduce((a, k) => a + f[k].length, 0);
-  const submit = b.submit === true;
-  if (submit && (!f.went_wrong.trim() || !f.caught_how.trim())) bad("Fill in what the agent got wrong and how you caught it before submitting.");
-  await db.tx(async (t) => {
-    await t.run(`UPDATE agent_log SET went_wrong = ?, caught_how = ?, fix = ?, link = ?, agent = ?, session_date = ?,
-        typed_chars = typed_chars + ?, pasted_chars = pasted_chars + ?, active_ms = active_ms + ?, edit_events = edit_events + ?, updated_at = ?,
-        status = ?, submitted_at = ? WHERE id = ?`,
-      f.went_wrong, f.caught_how, f.fix, str(b.link, 400) || e.link, str(b.agent, 80) || e.agent, /^\d{4}-\d{2}-\d{2}$/.test(b.sessionDate) ? b.sessionDate : e.session_date,
-      typed, pasted, active, edits, now(), submit ? "submitted" : e.status, submit && !e.submitted_at ? now() : e.submitted_at, e.id);
-    if (typed || pasted || active || submit) await t.run("INSERT INTO agent_log_saves (entry_id, at, total_chars, typed_delta, pasted_delta, active_delta_ms) VALUES (?, ?, ?, ?, ?, ?)", e.id, now(), total, typed, pasted, active);
-  });
-  return { entry: await shapeLog(await logRow(e.id), req.user.id) };
-}));
-app.delete("/api/agent-log/:id", auth, wrap(async (req) => {
-  const e = await logRow(Number(req.params.id)); if (e.author_id !== req.user.id) forbid("You can only delete your own entries.");
-  if (e.status === "submitted") bad("Submitted entries stay in the log. Edit it instead.");
-  await db.run("DELETE FROM agent_log WHERE id = ?", e.id); return { ok: true };
-}));
-app.get("/api/agent-log-export.md", auth, wrap(async (req, res) => {
-  const rows = await Promise.all((await db.all("SELECT * FROM agent_log WHERE status = 'submitted' ORDER BY session_date, id")).map((e) => shapeLog(e, req.user.id)));
-  const mins = (ms) => Math.round(ms / 6e4);
-  const md = ["# Agent log", "", `Exported ${new Date().toISOString().slice(0, 10)}. Each entry was written by its author in the Agent log page. The writing record (time spent, autosaves, typed vs pasted characters) is collected by the editor in the author's browser: evidence of how it was written, not proof.`, ""]
-    .concat(rows.flatMap((e) => [`## ${e.session_date} · ${e.author.name}${e.agent ? ` · ${e.agent}` : ""}`, "", "**What the agent got wrong**", "", e.went_wrong, "", "**How I caught it**", "", e.caught_how, "",
-      ...(e.fix ? ["**What I did about it**", "", e.fix, ""] : []), ...(e.link ? [`Link: ${e.link}`, ""] : []),
-      `*Writing record: ${mins(e.active_ms)} min active, ${e.saves} autosaves, ${e.typed_chars} characters typed, ${e.pasted_chars} pasted.*`, ""]));
-  res.type("text/markdown").set("Content-Disposition", 'attachment; filename="agent-log.md"').send(md.join("\n"));
-}));
+// REQ-020: the agent log is AGENT_LOG.md in the repo, written by the partners; it is not part of the app.
+// Old in-app entries stay in the agent_log table untouched; admins can export them once (GET /api/admin/agent-log.md).
+app.get(["/agent-log", "/agent-log.html"], (req, res) => res.redirect(302, process.env.AGENT_LOG_URL || "https://github.com/Matt-Baxter/superintelligence-home-page/blob/main/AGENT_LOG.md"));
 
 /* -------------------------------------------- weekly brief (a json-render spec) */
 let viewsP; const views = () => (viewsP ||= Promise.all([import("./views/specs.mjs"), import("./views/catalog.mjs")]).then(([s, c]) => ({ ...s, catalog: c.catalog })));
@@ -332,7 +276,7 @@ function weekBounds(weekStart) {
   const day = (d.getUTCDay() + 6) % 7; const start = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - (weekStart ? 0 : day)));
   return { start, end: new Date(start.getTime() + 7 * 864e5) };
 }
-app.get("/api/brief", auth, wrap(async (req) => {
+app.get("/api/brief", auth, feature("brief"), wrap(async (req) => {
   const { start, end } = weekBounds(str(req.query.week, 10));
   const prevStart = new Date(start.getTime() - 7 * 864e5);
   const inRange = "COALESCE(s.published_at, s.first_seen) >= ? AND COALESCE(s.published_at, s.first_seen) < ?";
@@ -343,10 +287,6 @@ app.get("/api/brief", auth, wrap(async (req) => {
   const v = await views();
   return { spec: v.weeklyBrief({ start, end, stories, topics: tagger.topicList(), prevCounts: prevMap, kinds }), week: start.toISOString().slice(0, 10) };
 }));
-app.get("/api/agent-log-view", auth, wrap(async (req) => {
-  const rows = await Promise.all((await db.all("SELECT * FROM agent_log WHERE status = 'submitted' ORDER BY session_date")).map((e) => shapeLog(e, req.user.id)));
-  return { spec: (await views()).agentLogSummary(rows) };
-}));
 app.get("/api/catalog", wrap(async () => { const { catalog } = await views(); return { components: Object.keys(catalog.data?.components ?? {}), prompt: catalog.prompt(), jsonSchema: catalog.jsonSchema() }; }));
 
 /* -------------------------------------------------------------------- admin */
@@ -355,8 +295,11 @@ function moduleDeps() {
   return { app, db, auth, admin, wrap, str, bad, forbid, notFound, bool, now, KINDS, FORMAT_IDS, harvester, audit, tagger, feeds, analysis, storyRows, views, kernel };
 }
 kernel.mount(app, moduleDeps());
-app.get("/api/modules", auth, admin, wrap(() => kernel.describe()));
+app.get("/api/admin/modules", auth, admin, wrap(() => kernel.describe()));
 // Module pages live in modules/<id>/pages and are served at /m/<page> (the build copies them into public/m for Vercel).
+// Only pages of modules in this profile are served (public/m may hold copies from a build with another profile).
+const modulePages = new Set(kernel.modules.flatMap((m) => { const d = path.join(m.dir, "pages"); return require("node:fs").existsSync(d) ? require("node:fs").readdirSync(d).map((f) => f.replace(/\.html$/, "")) : []; }));
+app.use("/m", (req, res, next) => { const name = req.path.slice(1).replace(/\.html$/, ""); return !name || modulePages.has(name) || !/^[\w-]+$/.test(name) ? next() : res.status(404).send("Not part of this version of the site."); });
 for (const m of kernel.modules) { const dir = path.join(m.dir, "pages"); if (require("node:fs").existsSync(dir)) app.use("/m", express.static(dir, { extensions: ["html"] })); }
 for (const [from, to] of [["/capabilities", "/m/capabilities"], ["/admin", "/m/admin"], ["/project", "/m/project"]]) app.get(from, (req, res) => res.redirect(301, to));
 

@@ -52,7 +52,7 @@ async function teardown({ title, summary = "", url = "", kind = "submitted" }, l
   steps.push({ id: "tag", name: "Tag", what: "The ontology tagger matches topic and organisation words. Every tag keeps the words that matched, so it can explain itself.",
     input: { text: `${title} ${summary}`.slice(0, 300) }, output: { topics: tg.topics.map((t) => ({ label: t.label, matched: t.matched, via: t.via || null })), orgs: tg.orgs.map((o) => ({ label: o.label, matched: o.matched })) } });
   const a = analysis.analyze({ title, summary, topics: tg.topics }, { kinds: [kind], nsources: match ? 2 : 1 });
-  steps.push({ id: "scope", name: "Scope", what: "Only superintelligence stories reach the feed (REQ-003): a strong term, or at least two of the seven top-level topics.",
+  steps.push({ id: "scope", name: "Scope", what: "Only superintelligence stories reach the feed (REQ-003): a strong term, or at least two of the nine top-level topics.",
     input: { topics: [...new Set(tg.topics.map((t) => t.label))] }, output: a.scope });
   steps.push({ id: "score", name: "Score", what: "Significance (0-100) adds up named factors, each with its points and reason, so the number is never a black box.",
     input: { kind, sources: match ? 2 : 1 }, output: { significance: a.significance, type: a.type.label, evidence: a.evidence.label, why: a.why } });

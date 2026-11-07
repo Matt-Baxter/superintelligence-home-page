@@ -4,7 +4,7 @@ async function snapshot({ db, tagger, storyRows }, uid, daysAsked) {
     const days = Math.min(90, Math.max(7, Number(daysAsked) || 7));
     const since = new Date(Date.now() - days * 864e5).toISOString(), before = new Date(Date.now() - 2 * days * 864e5).toISOString();
     const seen = "COALESCE(s.published_at, s.first_seen)", vis = "COALESCE(s.hidden, 0) = 0 AND COALESCE(s.in_scope, 1) = 1";
-    const areas = ["superintelligence", "capabilities", "reasoning", "math", "coding", "agents", "long-horizon", "ai-rnd", "multimodal", "robotics", "science", "safety", "evals", "compute"];
+    const areas = ["superintelligence", "capabilities", "reasoning", "math", "coding", "agents", "long-horizon", "automating-ai-research", "multimodal", "robotics", "science", "safety", "evals", "compute"];
     const counts = await db.all(`SELECT t.topic, SUM(CASE WHEN ${seen} >= ? THEN 1 ELSE 0 END) AS now, SUM(CASE WHEN ${seen} < ? THEN 1 ELSE 0 END) AS prev,
         MAX(CASE WHEN ${seen} >= ? THEN s.significance ELSE 0 END) AS top FROM story_topics t JOIN stories s ON s.id = t.story_id
       WHERE ${vis} AND ${seen} >= ? GROUP BY t.topic`, since, since, since, before);

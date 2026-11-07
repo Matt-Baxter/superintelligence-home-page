@@ -20,7 +20,7 @@ The plan both builds follow:
 | --- | --- |
 | **Superintelligence feed** | 11 default sources across 5 kinds (`lib/sources.json`): arXiv (cs.AI and an alignment/safety search), Hugging Face Daily Papers, OpenAI, Google DeepMind, Alignment Forum, LessWrong, Epoch AI, AI Impacts, MIRI, Import AI. Only stories about superintelligence are shown (REQ-003); each says why. Newest first. Harvested four times a day. |
 | **Story grouping** | The same paper or announcement from several sources becomes one story. An arXiv id beats a URL, and a URL beats a normalized title (`lib/feeds.js`). |
-| **Ontology tags that explain themselves** | The spec's seven superintelligence topics at the top, finer topics under them, plus organizations, benchmarks and a people watchlist (`lib/ontology.json`). Every tag stores the words that matched. |
+| **Ontology tags that explain themselves** | The spec's nine superintelligence topics at the top, finer topics under them, plus organizations, benchmarks and a people watchlist (`lib/ontology.json`). Every tag stores the words that matched. |
 | **Accounts and curation** | Votes, saves, private or shared notes, public or private reading lists that others can follow, and submitted links. |
 | **Weekly brief** | Top stories and per-topic activity, compared with last week. Built as a json-render spec on the server. |
 | **Sources page** | Every feed, its kind, and whether its last fetch worked. Users suggest feeds; the admin (the first account) approves them. |
@@ -28,7 +28,7 @@ The plan both builds follow:
 
 ## json-render
 
-The weekly brief and the agent log summary are [json-render](https://github.com/vercel-labs/json-render) specs (v0.22.0). The server builds each spec from the data and validates it against the catalog (`views/catalog.mjs`) before sending it. `GET /api/catalog` exposes the catalog's AI prompt and JSON Schema, so a model could generate new views from only the approved parts later.
+The weekly brief is a [json-render](https://github.com/vercel-labs/json-render) specs (v0.22.0). The server builds each spec from the data and validates it against the catalog (`views/catalog.mjs`) before sending it. `GET /api/catalog` exposes the catalog's AI prompt and JSON Schema, so a model could generate new views from only the approved parts later.
 
 ## Plan documents
 

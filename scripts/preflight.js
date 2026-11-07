@@ -68,6 +68,18 @@ try {
   ignored.length ? fail("No ignored source files", `git-ignored but needed: ${ignored.slice(0, 5).join(", ")} (fix .gitignore)`) : ok("No ignored source files");
 } catch { ok("No ignored source files", "skipped (no git)"); }
 
+// 5b4. Naming convention (docs/NAMING.md): routes, tables, ids, labels, metadata
+try { ok("Naming", sh("node scripts/naming.js").trim().split("\n").pop().replace(/^naming: /, "")); }
+catch (e) { fail("Naming", String(e.stdout || e.message).trim().split("\n").slice(0, 4).join(" | ")); }
+
+// 5b5. Commit messages on this branch carry no co-author or session trailers (the humans asked).
+try {
+  const base = sh("git merge-base HEAD origin/main").trim();
+  const bodies = sh(`git log ${base}..HEAD --format=%H%n%B%n----`);
+  const bad = bodies.split("----").filter((b) => /^(Co-Authored-By|Claude-Session):/im.test(b)).map((b) => b.trim().slice(0, 10));
+  bad.length ? fail("Commit trailers", `${bad.length} commit(s) since main carry Co-Authored-By/Claude-Session lines: ${bad.slice(0, 3).join(", ")}`) : ok("Commit trailers", "none");
+} catch { ok("Commit trailers", "skipped (no origin/main)"); }
+
 // 5c. Agent kit: skills, subagents, plugin manifests, symlinks, index and MCP handshake
 try { ok("Agent kit", sh("node scripts/agent-kit.js check").trim()); }
 catch (e) { fail("Agent kit", String(e.stderr || e.message).trim().split("\n").slice(0, 4).join(" ")); }
@@ -105,6 +117,7 @@ async function smoke() {
   const port = 3400 + Math.floor(Math.random() * 500);
   const env = { ...process.env, PORT: String(port), DATA_DIR: fs.mkdtempSync(path.join(require("node:os").tmpdir(), "si-pf-")) };
   delete env.DATABASE_URL; delete env.POSTGRES_URL;
+  env.SITE_PROFILE = "spec"; // the smoke test checks the version built from the shared spec; npm test covers the extended one
   const child = spawn(process.execPath, ["--no-warnings", "test/serve-fixtures.js"], { cwd: root, env, stdio: ["ignore", "pipe", "pipe"] });
   let errOut = ""; child.stderr.on("data", (d) => (errOut += d));
   const B = `http://localhost:${port}`;
@@ -121,8 +134,12 @@ async function smoke() {
     const st = await call("/api/stories"); steps.push(["feed (4 superintelligence stories; the general-AI sample is left out)", st.status === 200 && st.json.stories?.length === 4]);
     steps.push(["grouping (3 sources on one story)", st.json.stories?.some((s) => s.nsources === 3)]);
     const id = st.json.stories?.[0]?.id; const v = await call(`/api/stories/${id}/vote`, { method: "POST" }); steps.push(["vote", v.json.voted === true && v.json.votes === 1]);
-    const br = await call("/api/brief"); steps.push(["weekly brief spec", br.status === 200 && !!br.json.spec?.root]);
-    const al = await call("/api/agent-log", { body: {} }); steps.push(["agent log draft", al.status === 200 && al.json.entry?.status === "draft"]);
+    const me = await call("/api/me"); steps.push(["spec version running", me.json.user?.profile === "spec"]);
+    const extras = await Promise.all(["/api/brief", "/api/lists", "/api/learn/concepts", "/api/admin/project/issues"].map((p) => call(p)));
+    steps.push(["extras beyond the spec are off (brief, lists, Learn, project)", extras.every((r) => r.status === 404)]);
+    const page = await fetch(B + "/m/learn"); steps.push(["extended-only pages aren't served", page.status === 404]);
+    const save = await call(`/api/stories/${id}/save`, { method: "POST" }); steps.push(["save (REQ)", save.status === 200]);
+    const al = await call("/api/agent-log"); steps.push(["no in-app agent log (REQ-020)", al.status === 404]);
     const anon = await fetch(B + "/api/stories"); steps.push(["anonymous blocked", anon.status === 401]);
     const tw = await call("/api/stories", { body: { url: "https://x.com/a/status/1", title: "A Twitter thread here" } }); steps.push(["Twitter link refused", tw.status === 400]);
     const failed = steps.filter(([, p]) => !p).map(([n]) => n);

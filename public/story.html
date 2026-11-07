@@ -22,7 +22,7 @@
         <div class="actions"><label style="display:flex;flex-direction:row;gap:6px;align-items:center;color:var(--fg)"><input type="checkbox" id="shareNote" style="width:auto"> Share with everyone</label><button class="btn primary" type="submit">Add note</button></div>
         <p class="err" id="noteErr" role="alert"></p>
       </form>
-      <section class="panel">
+      <section class="panel" id="listsPanel">
         <h2>Reading lists</h2>
         <div id="myLists" style="display:grid;gap:6px"></div>
         <form class="row" id="newList"><input id="newListTitle" placeholder="New list, e.g. Interpretability reading group" aria-label="New list title"><button class="btn" type="submit">Create and add</button></form>
@@ -58,6 +58,6 @@ async function load() {
 }
 $("#noteForm").onsubmit = async (e) => { e.preventDefault(); try { await api(`/api/stories/${id}/notes`, { body: { text: $("#noteText").value, private: !$("#shareNote").checked } }); $("#noteText").value = ""; load(); } catch (err) { showErr($("#noteErr"), err); } };
 $("#newList").onsubmit = async (e) => { e.preventDefault(); const t = $("#newListTitle").value.trim(); if (!t) return; const r = await api("/api/lists", { body: { title: t } }); await api(`/api/lists/${r.id}/items/${id}`, { method: "PUT", body: { note: "" } }); $("#newListTitle").value = ""; load(); };
-requireUser().then(load).catch((e) => { $("#card").innerHTML = `<li class="empty">${esc(e.message)}</li>`; });
+requireUser().then((u) => { const f = u.features || []; $("#noteForm").hidden = !f.includes("notes"); $("#listsPanel").hidden = !f.includes("lists"); return load(); }).catch((e) => { $("#card").innerHTML = `<li class="empty">${esc(e.message)}</li>`; });
 </script>
 </body></html>

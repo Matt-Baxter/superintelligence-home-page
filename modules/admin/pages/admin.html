@@ -97,9 +97,9 @@
   </section>
 
   <section class="tabpanel" data-panel="users" hidden>
-    <div class="panel"><div class="tablewrap"><table><thead><tr><th>User</th><th>Joined</th><th>Votes</th><th>Notes</th><th>Log entries</th><th>Admin</th><th>Disabled</th></tr></thead><tbody id="userRows"></tbody></table></div>
+    <div class="panel"><div class="tablewrap"><table><thead><tr><th>User</th><th>Joined</th><th>Votes</th><th>Notes</th><th>Admin</th><th>Disabled</th></tr></thead><tbody id="userRows"></tbody></table></div>
       <p class="err" id="uErr" role="alert"></p>
-      <p class="small muted">Admins can't read or edit anyone's agent log drafts; those stay the author's own.</p></div>
+      <p class="small muted">The agent log is <code>AGENT_LOG.md</code> in the repo (REQ-020). Entries written in the old in-app page: <a href="/api/admin/agent-log.md">export them</a> to copy into that file.</p></div>
   </section>
 
   <section class="tabpanel" data-panel="moderation" hidden>
@@ -145,7 +145,7 @@ $$("#tabs button").forEach((b) => (b.onclick = () => show(b.dataset.tab)));
 /* overview */
 async function loadOverview() {
   const d = await api("/api/admin/overview"), c = d.counts;
-  const k = [["Active sources", d.sources.active || 0], ["Pending review", d.sources.pending || 0], ["Failing", d.failing.length], ["Stories", c.stories], ["New in 24 h", c.storiesToday], ["Untagged", c.untagged], ["Left out (off-topic)", c.offTopic], ["Hidden", c.hidden], ["Users", c.users], ["Admins", c.admins], ["Votes", c.votes], ["Notes", c.notes], ["Agent log entries", c.agentLog]];
+  const k = [["Active sources", d.sources.active || 0], ["Pending review", d.sources.pending || 0], ["Failing", d.failing.length], ["Stories", c.stories], ["New in 24 h", c.storiesToday], ["Untagged", c.untagged], ["Left out (off-topic)", c.offTopic], ["Hidden", c.hidden], ["Users", c.users], ["Admins", c.admins], ["Votes", c.votes], ["Notes", c.notes]];
   $("#kpis").innerHTML = k.map(([t, v]) => `<div class="kpi"><b>${v}</b><span>${t}</span></div>`).join("");
   $("#sub").textContent = `Database: ${d.engine === "pg" ? "Postgres" : "SQLite"}. Harvest schedule: ${d.schedule}${process_cron(d)}.${d.harvesting ? " A harvest is running now." : ""}`;
   $("#failing").innerHTML = d.failing.length ? `<ul>${d.failing.map((s) => `<li><b>${esc(s.name)}</b>: ${esc(s.last_error || "")} <span class="small muted">(${s.failures} failures, last ${ago(s.last_fetched)})</span></li>`).join("")}</ul>` : `<p class="small muted">Nothing failing.</p>`;
@@ -260,7 +260,7 @@ $("#runStatus").onchange = loadRuns;
 /* users */
 async function loadUsers() {
   const r = await api("/api/admin/users");
-  $("#userRows").innerHTML = r.users.map((u) => `<tr data-id="${u.id}"><td><b>${esc(u.display_name)}</b> <span class="small muted">@${esc(u.username)}</span></td><td>${fmtDate(u.created_at)}</td><td>${u.votes}</td><td>${u.notes}</td><td>${u.log_entries}</td>
+  $("#userRows").innerHTML = r.users.map((u) => `<tr data-id="${u.id}"><td><b>${esc(u.display_name)}</b> <span class="small muted">@${esc(u.username)}</span></td><td>${fmtDate(u.created_at)}</td><td>${u.votes}</td><td>${u.notes}</td>
     <td><input type="checkbox" data-f="admin" aria-label="Admin" ${u.is_admin ? "checked" : ""}></td><td><input type="checkbox" data-f="disabled" aria-label="Disabled" ${u.disabled ? "checked" : ""}></td></tr>`).join("");
   $$("#userRows input").forEach((cb) => (cb.onchange = async () => {
     $("#uErr").textContent = "";

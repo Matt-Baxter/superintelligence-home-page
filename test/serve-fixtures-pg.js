@@ -1,5 +1,6 @@
 // Same as serve-fixtures.js but against a Postgres database (DATABASE_URL must point at a throwaway test database).
 if (!process.env.DATABASE_URL) { console.error("Set DATABASE_URL to a throwaway Postgres database."); process.exit(1); }
+process.env.SITE_PROFILE = process.env.SITE_PROFILE || "extended"; // the browser test covers every feature; preflight checks the spec version
 process.env.FETCH_MINUTES = "0";
 process.env.ALLOW_FIXTURE_FEEDS = "1";
 process.env.SOURCE_CATALOG = require("node:path").join(__dirname, "fixtures", "sample-catalog.json");

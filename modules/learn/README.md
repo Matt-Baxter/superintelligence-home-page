@@ -6,7 +6,7 @@ The ideas behind superintelligence research in plain words, mapped as a graph an
 - **Table:** `learn_jobs`, pruned after 60 days unless published.
 - **Routes:**
   - signed in: `GET /api/learn/concepts`, `GET /api/learn/concepts/:id`, `GET /api/learn/story/:id`, `POST /api/learn/teardown`, `GET /api/learn/posts/:id`;
-  - public: `GET /api/learn/explainer/:id`, `GET /learn/feed.xml`;
+  - public: `GET /api/learn/explainer/:id`, `GET /api/learn/feed.xml`;
   - admins: `GET|POST /api/admin/learn/jobs`, `GET|PUT|DELETE /api/admin/learn/jobs/:id`.
 - **Pages:**
   - `/m/learn`, with the concept map, a page per concept, How it works, Studio jobs (admins) and published posts;

@@ -125,7 +125,7 @@ $("#ask").oninput = () => { clearTimeout(t); t = setTimeout(ask, 200); };
 async function ask() {
   const q = $("#ask").value.trim(); $$("#lanes .nd").forEach((b) => b.classList.remove("hit"));
   if (!q) return clear();
-  const r = await api(`/api/codemap/ask?q=${encodeURIComponent(q)}`);
+  const r = await api(`/api/admin/codemap/ask?q=${encodeURIComponent(q)}`);
   if (!r.answer.length) { $("#stats").textContent = "Nothing in the map matches."; return; }
   goTo(r.answer[0].id);
   for (const a of r.answer) $(`#lanes [data-id="${CSS.escape(a.id)}"]`)?.classList.add("hit");
@@ -137,7 +137,7 @@ document.addEventListener("keydown", (e) => { if (e.key === "Escape") clear(); i
 
 requireUser().then(async (u) => {
   if (!u.admin) { $("main").innerHTML = '<div class="panel"><h1>Codebase map</h1><p>The map is for admins.</p></div>'; return; }
-  G = await api("/api/codemap"); byId = Object.fromEntries(G.nodes.map((n) => [n.id, n]));
+  G = await api("/api/admin/codemap"); byId = Object.fromEntries(G.nodes.map((n) => [n.id, n]));
   $("#stats").textContent = `${Object.entries(G.counts).map(([k, v]) => `${v} ${k}${v > 1 ? "s" : ""}`).join(" · ")} · ${G.edges.length} links · built ${ago(G.generated)}`;
   $("#problems").innerHTML = G.problems.map((p) => `<li>${esc(p.message)}</li>`).join("");
   render();

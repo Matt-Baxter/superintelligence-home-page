@@ -68,20 +68,3 @@ export function weeklyBrief({ start, end, stories, topics, prevCounts, kinds }) 
 }
 
 /* Agent log summary: how much was logged, by whom, and how it was written. */
-export function agentLogSummary(rows) {
-  const { el, done } = builder();
-  if (!rows.length) return check(done(el("Callout", { tone: "neutral", title: "No submitted entries yet", text: "Each partner writes their own entries, in their own words. Start one with “New entry”." })));
-  const by = {};
-  rows.forEach((r) => { const k = r.author.name; (by[k] ||= { n: 0, typed: 0, pasted: 0, ms: 0 }); by[k].n++; by[k].typed += r.typed_chars; by[k].pasted += r.pasted_chars; by[k].ms += r.active_ms; });
-  const pasted = rows.reduce((a, r) => a + r.pasted_chars, 0), typed = rows.reduce((a, r) => a + r.typed_chars, 0);
-  const share = typed + pasted ? pasted / (typed + pasted) : 0;
-  const kids = [el("Grid", { columns: 3 }, [
-    el("Metric", { label: "Submitted entries", value: String(rows.length) }),
-    el("Metric", { label: "Time spent writing", value: `${Math.round(rows.reduce((a, r) => a + r.active_ms, 0) / 6e4)} min` }),
-    el("Metric", { label: "Pasted text", value: `${Math.round(share * 100)}%`, hint: `${pasted} of ${typed + pasted} characters`, tone: share > 0.25 ? "warn" : "good" }),
-  ])];
-  kids.push(el("Card", { title: "Entries by author" }, [
-    el("Table", { columns: ["Author", "Entries", "Minutes writing", "Typed", "Pasted"], rows: Object.entries(by).map(([k, v]) => [k, String(v.n), String(Math.round(v.ms / 6e4)), String(v.typed), String(v.pasted)]) }),
-  ]));
-  return check(done(el("Stack", { gap: "md" }, kids)));
-}

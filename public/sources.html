@@ -42,11 +42,11 @@ async function load() {
     const adm = !isAdmin ? "" : `<td><select data-status="${s.id}" aria-label="Status for ${esc(s.name)}">${["active", "paused", "pending", "rejected"].map((x) => `<option ${x === s.status ? "selected" : ""}>${x}</option>`).join("")}</select></td>`;
     return `<tr><td><a href="${esc(s.home || s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.name)}</a></td><td>${esc(KIND[s.kind] || s.kind)}</td><td>${s.stories}</td><td>${st}</td>${adm}</tr>`;
   }).join("");
-  $$("[data-status]").forEach((sel) => sel.onchange = async () => { await api(`/api/sources/${sel.dataset.status}`, { method: "PUT", body: { status: sel.value } }); load(); });
+  $$("[data-status]").forEach((sel) => sel.onchange = async () => { await api(`/api/admin/sources/${sel.dataset.status}`, { method: "PUT", body: { status: sel.value } }); load(); });
 }
 $("#fetchAll").onclick = async () => {
   $("#fetchAll").disabled = true; $("#fetchMsg").className = "small muted"; $("#fetchMsg").textContent = "Fetching every active source…";
-  try { const r = await api("/api/sources/fetch", { body: {} }); const ok = (r.report || []).filter((x) => !x.error).length; $("#fetchMsg").textContent = r.skipped ? "A fetch is already running." : `${ok} of ${(r.report || []).length} sources fetched.`; }
+  try { const r = await api("/api/admin/harvest", { body: { force: true } }); const ok = (r.report || []).filter((x) => !x.error).length; $("#fetchMsg").textContent = r.skipped ? "A fetch is already running." : `${ok} of ${(r.report || []).length} sources fetched.`; }
   catch (err) { showErr($("#fetchMsg"), err); } finally { $("#fetchAll").disabled = false; load(); }
 };
 $("#suggest").onsubmit = async (e) => {
@@ -55,6 +55,6 @@ $("#suggest").onsubmit = async (e) => {
     e.target.reset(); flash($("#sErr"), r.status === "active" ? "Added." : "Thanks. An admin will review it."); load(); }
   catch (err) { showErr($("#sErr"), err); }
 };
-requireUser().then(load);
+requireUser().then((u) => { $("#suggest").hidden = !(u.features || []).includes("suggest-sources"); return load(); });
 </script>
 </body></html>

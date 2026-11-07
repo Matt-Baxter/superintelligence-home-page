@@ -14,7 +14,7 @@ The Learn module (`modules/learn`) holds the concepts behind superintelligence r
    - `check`: one question, three options, the answer index and why it's right.
    - `relations`: kinds from `relations` (needs, part-of, leads-to, contrasts, related), pointing at existing ids.
    - `terms`: words that mark a story about it (the tagger's syntax: `word*` for a prefix).
-   - `topic`: one of the seven top-level topics.
+   - `topic`: one of the nine top-level topics.
    - No claims or quotes attributed to real people, and no invented papers.
 2. **Toy Lean proofs** (`lean`): a small formal statement of the idea. Set `proved: true` only after the proof checks with plain Lean 4 (no Mathlib): `lean file.lean`. Otherwise leave `sorry`, set `needs`, and queue a `lean-proof` job.
 3. **Run the queue:** `npm run learn:worker` (same `DATA_DIR`/`DATABASE_URL` as the site; `BASE` = a running site for video recording; `LEAN` = path to `lean`). Results go to `out/learn/<id>/`:
@@ -25,7 +25,7 @@ The Learn module (`modules/learn`) holds the concepts behind superintelligence r
    - Paper to code: small runnable code on synthetic data, plus a README of what is and isn't reproduced.
    - Reverse-engineering: mark every guess as a guess.
 5. **Publishing is a person's job.**
-   - A finished post becomes public only when an admin presses "Publish to RSS". Blog readers and Substack's RSS import can then pull `/learn/feed.xml`.
+   - A finished post becomes public only when an admin presses "Publish to RSS". Blog readers and Substack's RSS import can then pull `/api/learn/feed.xml`.
    - Videos and social drafts are uploaded by a person.
    - Never post to an account, and never use Twitter/X.
 6. **Check:** run `npm run preflight` (unslop, codemap, smoke) and `npm test` (the Learn section).

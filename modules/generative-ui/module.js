@@ -6,6 +6,7 @@ module.exports = {
   version: "1.0.0",
   description: "json-render catalog for LLMs, spec validation, a view registry (ui.views), the Studio to generate and preview UI, and the view page.",
   requires: ["blocks-core"],
+  api: ["/api/ui"], // short alias for this module's routes (docs/NAMING.md)
   setup(ctx) {
     ctx.point("http.routes").add((app, deps) => require("./routes")(app, deps));
     ctx.point("ui.nav").add({ href: "/m/studio", label: "Studio", admin: true, order: 85 });

@@ -14,11 +14,20 @@ How this build meets the shared spec ([specs/001-superintelligence-homepage/spec
 | REQ-008 | A failing source doesn't stop the feed | `harvestSource` never throws; backoff | e2e: "catalog: … failures reported", "a failing source backs off" |
 | REQ-009–012 | Accounts, stay signed in, hashed passwords, no extra personal data | `server.js` auth (scrypt, session cookie, 30-day sessions) | e2e: "Accounts" section |
 | REQ-013–016 | One vote per user per story, saves, kept per user, enforced by the server | `server.js` votes and saves routes | e2e: "Votes and saves" section, "saves are per user" |
-| REQ-017 | Filter by topic | topic bar = the seven spec topics | e2e: "topic filter", "US4" |
+| REQ-017 | Filter by topic | topic bar = the nine spec topics | e2e: "topic filter", "US4" |
 | REQ-018 | Laptop and phone, no sideways scroll | `public/css/app.css` | e2e: "Phone width" section |
 | REQ-019 | Live 2+ weeks before the presentation | `docs/DEPLOY.md` (humans deploy) | not automated |
-| REQ-020 | Agent log (open question) | In the app: `/agent-log`, typed vs pasted tracking | e2e: "Agent log" section |
+| REQ-020 | Human-written agent log in the repo | `AGENT_LOG.md` (the partners write it; agents never do). The app has no agent log page: `/agent-log` redirects to the file; old in-app entries can be exported once from `/api/admin/agent-log.md` | e2e: "Agent log" section; preflight smoke "no in-app agent log" |
 
 ## Beyond the spec
 
-Built before the spec was ratified and not traced to a REQ (constitution principle III): notes, reading lists, the weekly brief, suggested sources, the admin and project modules, the capability tracker and significance score, generative UI and judges, the codebase map and the project timeline (developer and process tooling), the unslop check (tooling), the Learn module (requirements proposed in docs/PLAN_NEXT.md), the agent kit. Under the constitution these stay out of the shared bake-off scope unless both partners add them to the spec. They're kept as modules, so each can be switched off in `modules/modules.json` without touching the core.
+The site has two versions (`modules/profiles.json`, `SITE_PROFILE`):
+
+- **`spec` (the default)** is exactly the shared spec. Preflight's smoke test runs it and checks that the extras answer 404.
+- **`extended`** adds work that serves no REQ (constitution principle III):
+  - notes, reading lists, the weekly brief and suggested sources (core, switched by feature);
+  - the capability tracker, the project tracker and timeline, the codebase map and the Learn layer (modules; requirements proposed in docs/PLAN_NEXT.md).
+
+  The browser test (`npm test`) runs the extended version so every feature stays tested.
+
+The admin, generative-UI and decision modules run in both versions: admin runs the site's sources, and decision supports the bake-off comparison. The extended build as it stood before Matt's REQ-020 change is saved as git tag `snapshot/john-extended-2026-11-07`, measured in `docs/snapshots/`. The naming convention (`docs/NAMING.md`) and the unslop check are tooling.

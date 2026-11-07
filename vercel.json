@@ -46,19 +46,9 @@
   ],
   "redirects": [
     {
-      "source": "/capabilities",
-      "destination": "/m/capabilities",
-      "permanent": true
-    },
-    {
-      "source": "/admin",
-      "destination": "/m/admin",
-      "permanent": true
-    },
-    {
-      "source": "/project",
-      "destination": "/m/project",
-      "permanent": true
+      "source": "/agent-log",
+      "destination": "https://github.com/Matt-Baxter/superintelligence-home-page/blob/main/AGENT_LOG.md",
+      "permanent": false
     }
   ]
 }
