@@ -239,6 +239,8 @@ filter and check the full feed returns.
 - **Superintelligence topics** (fixed list both builds use; can grow later with both partners'
   approval):
   - Capabilities & AGI progress
+  - Automating AI research
+  - Recursive self improvement
   - Alignment
   - Interpretability
   - Safety & risk
