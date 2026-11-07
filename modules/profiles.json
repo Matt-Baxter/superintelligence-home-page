@@ -5,11 +5,22 @@
     "spec": {
       "about": "Matt's shared spec, REQ-001 to REQ-020. The spec lists notes, reading lists, a weekly brief, user-suggested sources and an in-app agent log as out of scope.",
       "features": [],
-      "modules": ["blocks-core", "generative-ui", "decision", "admin"]
+      "modules": [
+        "blocks-core",
+        "generative-ui",
+        "decision",
+        "admin"
+      ]
     },
     "extended": {
       "about": "Everything: the spec plus John's additions, kept for comparison and later use.",
-      "features": ["notes", "lists", "brief", "suggest-sources"],
+      "features": [
+        "notes",
+        "lists",
+        "brief",
+        "suggest-sources",
+        "display-name"
+      ],
       "modules": "*"
     }
   }
