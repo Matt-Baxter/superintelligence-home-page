@@ -13,6 +13,9 @@ function policy() {
 function explain(expr, text) {
   const words = gym.WORDS(text).join(" "), path = [];
   let node = expr;
+  // Policies edited in the Arena may have any shape; explain the standard shape, otherwise just decide.
+  const standard = node && node.if && node.if.length === 3 && node.if[0]["si.first_match"] && node.if[1] === "refuse";
+  if (!standard) return { action: gym.decide(expr, text), path: ["custom policy (applied from the Arena)"] };
   if (gym.decide({ if: [node.if[0], "refuse", "x"] }, text) === "refuse") return { action: "refuse", path: ["a hard rule matched: a Twitter/X link, or words in a real person's voice"] };
   node = node.if[2];
   // Walk if-chains [cond, then, cond, then, ..., else]; a nested chain can sit in any arm.
@@ -55,4 +58,11 @@ function dashboardSpec({ stories, topics }) {
   } };
 }
 
-module.exports = { policy, explain, PLANS, dashboardSpec };
+// Score a policy the same way the Arena sandbox does (same requests, same seed), so the server can check an "apply".
+function score(p, { n = 400, seed = 77, rare = 0.35 } = {}) {
+  const held = gym.gen(rng(seed), n, { rare });
+  const accuracy = Math.round((held.filter((h) => gym.decide(p, h.text) === h.action).length / n) * 1000) / 1000;
+  const properties = gym.PROPERTIES.map((x) => { try { return x.check(p); } catch { return false; } });
+  return { accuracy, properties: properties.filter(Boolean).length, of: properties.length };
+}
+module.exports = { policy, explain, PLANS, dashboardSpec, score };

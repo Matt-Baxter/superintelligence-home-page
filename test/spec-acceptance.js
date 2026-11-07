@@ -172,6 +172,8 @@ function report() {
   const uncovered = testable.filter((id) => !results.some((r) => r.pass && r.ids.includes(id)));
   const failed = results.filter((r) => !r.pass);
   console.log(`\nspec acceptance: ${results.length - failed.length} passed, ${failed.length} failed; requirements with a passing check: ${testable.length - uncovered.length} of ${testable.length}${uncovered.length ? ` (missing ${uncovered.join(", ")})` : ""}; REQ-019 (live 2 weeks before) is checked by people${BROWSER ? "" : "; REQ-018 needs --browser"}`);
+  const jsonOut = process.argv.find((a) => a.startsWith("--json="));
+  if (jsonOut) require("node:fs").writeFileSync(jsonOut.slice(7), JSON.stringify({ ranAt: new Date().toISOString(), browser: BROWSER, results, testable, uncovered }, null, 2));
   process.exit(failed.length || uncovered.length ? 1 : 0);
 }
 main();

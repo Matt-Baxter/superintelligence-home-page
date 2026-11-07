@@ -3,7 +3,15 @@ const L = require("./lab");
 const intent = require("./intent");
 const tagger = require("../../lib/tagger");
 
-module.exports = function mountLab(app, { db, auth, wrap, str, bad, notFound, views, weighted }) {
+module.exports = function mountLab(app, { db, auth, admin, wrap, str, bad, notFound, views, weighted }) {
+  // The live intent policy: the latest one applied from the Arena, or the gym's learned policy.
+  let applied = { id: null, policy: null };
+  const livePolicy = async () => {
+    const row = await db.get("SELECT id, policy FROM lab_policies WHERE active = 1 ORDER BY id DESC LIMIT 1");
+    if (!row) return { id: null, policy: intent.policy() };
+    if (applied.id !== row.id) applied = { id: row.id, policy: JSON.parse(row.policy) };
+    return applied;
+  };
   const cache = new Map(); // deterministic results: same example + params -> same answer
   const runCached = (id, overrides = {}) => { const k = id + JSON.stringify(overrides); if (!cache.has(k)) { if (cache.size > 200) cache.clear(); cache.set(k, L.runExample(id, overrides)); } return cache.get(k); };
   const summary = (r) => ({ id: r.example.id, title: r.example.title, concept: r.example.concept, topics: r.example.topics, idea: r.example.idea,
@@ -37,8 +45,8 @@ module.exports = function mountLab(app, { db, auth, wrap, str, bad, notFound, vi
   // Intent -> action (the gym's learned si-expr policy) -> plan; "build-dashboard" is executed and validated.
   app.post("/api/lab/intent", auth, wrap(async (req) => {
     const text = str(req.body?.text, 400); if (!text) bad("Say what you want done.");
-    const pol = intent.policy(), { action, path } = intent.explain(pol, text);
-    const out = { text, action, why: path, plan: (intent.PLANS[action] || intent.PLANS.clarify)() };
+    const live = await livePolicy(), pol = live.policy, { action, path } = intent.explain(pol, text);
+    const out = { text, action, why: path, policy: live.id ? `applied #${live.id}` : "learned", plan: (intent.PLANS[action] || intent.PLANS.clarify)() };
     if (action === "build-dashboard") {
       // Two portable queries (no string aggregation, which differs between SQLite and Postgres).
       const rows = await db.all("SELECT id, topics FROM stories WHERE COALESCE(in_scope, 1) = 1 AND COALESCE(hidden, 0) = 0 ORDER BY id DESC LIMIT 500");
@@ -50,5 +58,44 @@ module.exports = function mountLab(app, { db, auth, wrap, str, bad, notFound, vi
     }
     return out;
   }));
-  app.get("/api/lab/policy", auth, wrap(async () => ({ about: "The decision gym's policy after 8 self-improvement rounds, as portable si-expr JSON (runs in Node, Python, Rust, WebAssembly).", policy: intent.policy() })));
+  app.get("/api/lab/policy", auth, wrap(async () => {
+    const live = await livePolicy();
+    return { about: "The live intent policy as portable si-expr JSON (runs in Node, Python, Rust, WebAssembly): the latest one applied from the Arena, or the gym's learned policy.", id: live.id, source: live.id ? "applied" : "learned", policy: live.policy, score: intent.score(live.policy) };
+  }));
+  app.get("/api/lab/policies", auth, wrap(async () => ({ policies: await db.all("SELECT id, accuracy, properties, note, active, created_at FROM lab_policies ORDER BY id DESC LIMIT 30") })));
+  // Apply an edited policy: the server re-scores it and refuses it unless every safety property holds and held-out
+  // accuracy is no worse than the live policy (the same ratchet the gym uses). Admins only.
+  app.post("/api/admin/lab/policy", auth, admin, wrap(async (req) => {
+    const p = req.body?.policy; if (!p || typeof p !== "object" || Array.isArray(p)) bad("Send {policy: <si-expr object>}.");
+    if (JSON.stringify(p).length > 200000) bad("That policy is too large.");
+    let cand; try { cand = intent.score(p); } catch (e) { bad(`The policy doesn't evaluate: ${e.message}`); }
+    const live = await livePolicy(), cur = intent.score(live.policy);
+    if (cand.properties < cand.of) bad(`Refused: only ${cand.properties} of ${cand.of} safety properties hold (Twitter/X and impersonation must be refused, decisions must be deterministic and case-insensitive).`);
+    if (cand.accuracy < cur.accuracy) bad(`Refused by the ratchet: held-out accuracy ${cand.accuracy} is below the live policy's ${cur.accuracy}.`);
+    const id = await db.tx(async (t) => { await t.run("UPDATE lab_policies SET active = 0 WHERE active = 1");
+      return t.insert("INSERT INTO lab_policies (policy, accuracy, properties, note, active, created_by) VALUES (?, ?, ?, ?, 1, ?)", JSON.stringify(p), cand.accuracy, cand.properties, str(req.body?.note, 300), req.user.id); });
+    return { applied: id, score: cand, previous: cur };
+  }));
+  // Go back to the learned policy (or to an earlier applied one).
+  app.post("/api/admin/lab/policy/reset", auth, admin, wrap(async (req) => {
+    const to = Number(req.body?.id) || null;
+    await db.run("UPDATE lab_policies SET active = 0 WHERE active = 1");
+    if (to) { if (!(await db.get("SELECT id FROM lab_policies WHERE id = ?", to))) notFound("That policy"); await db.run("UPDATE lab_policies SET active = 1 WHERE id = ?", to); }
+    applied = { id: null, policy: null };
+    return { active: to || "learned" };
+  }));
+  // Saved variants: a reader's params for an example, re-run on the server and kept for everyone to see.
+  app.post("/api/lab/examples/:id/variants", auth, wrap(async (req) => {
+    const id = str(req.params.id, 60); if (!L.BY_ID[id]) notFound("That example");
+    const name = str(req.body?.name, 80); if (!name) bad("Give the variant a name.");
+    const p = req.body?.params || {}; const clean = Object.fromEntries(Object.entries(p).filter(([, v]) => Number.isFinite(Number(v))).slice(0, 12).map(([k, v]) => [k, Number(v)]));
+    const r = runCached(id, clean);
+    const vid = await db.insert("INSERT INTO lab_runs (example_id, kind, proposer, metric, value, result, created_by) VALUES (?, 'variant', 'person', ?, ?, ?, ?)",
+      id, r.verdict.metric, r.verdict.variant, JSON.stringify({ name, params: r.variant.params, metrics: r.variant.metrics, verdict: r.verdict }), req.user.id);
+    return { id: vid, name, params: r.variant.params, metrics: r.variant.metrics, verdict: r.verdict };
+  }));
+  app.get("/api/lab/examples/:id/variants", auth, wrap(async (req) => {
+    const rows = await db.all("SELECT r.id, r.value, r.result, r.created_at, u.username AS by_user FROM lab_runs r LEFT JOIN users u ON u.id = r.created_by WHERE r.example_id = ? AND r.kind = 'variant' ORDER BY r.id DESC LIMIT 50", str(req.params.id, 60));
+    return { variants: rows.map((r) => ({ id: r.id, value: r.value, by: r.by_user, created_at: r.created_at, ...JSON.parse(r.result || "{}") })) };
+  }));
 };
