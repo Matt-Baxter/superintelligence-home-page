@@ -88,6 +88,16 @@ try {
   ok("Rules and schemas", `si-expr ${ex} vectors; schema/gen ${sc} current`);
 } catch (e) { fail("Rules and schemas", String(e.stdout || e.stderr || e.message).trim().split("\n").slice(-3).join(" | ")); }
 
+// 5b7. Judge edge cases (bench/judge-edge-cases.json, proposed REQ-032..REQ-037): a case marked "ok" that breaks fails;
+// known gaps are reported, not failed, so the backlog is visible and can only shrink.
+try { ok("Judge edge cases", sh("node test/judge-edge-cases.js").trim().split("\n").pop().replace(/^judge edge cases: /, "")); }
+catch (e) { fail("Judge edge cases", String(e.stdout || e.message).trim().split("\n").filter((l) => /✗|regression/.test(l)).slice(0, 4).join(" | ")); }
+
+// 5b8. AGENTS.md is what Codex reads (not CLAUDE.md): it must carry the hard rules itself and fit Codex's 32 KiB default.
+try { const a = fs.readFileSync(path.join(root, "AGENTS.md"), "utf8"), need = ["Never push to `main`", "No Twitter/X", "No co-author trailers", "npm run preflight"].filter((x) => !a.includes(x));
+  const kb = Buffer.byteLength(a) / 1024; need.length || kb > 32 ? fail("AGENTS.md", [need.length && `missing: ${need.join(", ")}`, kb > 32 && `${kb.toFixed(1)} KiB, over Codex's 32 KiB`].filter(Boolean).join("; ")) : ok("AGENTS.md", `rules and commands present, ${kb.toFixed(1)} KiB`); }
+catch (e) { fail("AGENTS.md", e.message); }
+
 // 5b6. Lab results precomputed for cold starts (scripts/lab-results.js) must match the current examples and runners.
 try { ok("Lab results current", sh("node scripts/lab-results.js --check").trim().replace(/^lab results: /, "")); }
 catch (e) { fail("Lab results current", String(e.stdout || e.message).trim()); }
