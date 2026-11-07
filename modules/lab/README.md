@@ -79,3 +79,15 @@ mlx_lm.lora --model google/gemma-3-12b-it --train --data data --iters 200 --batc
 Then serve the adapter (`mlx_lm.server --model google/gemma-3-12b-it --adapter-path adapters`) and point `--provider lmstudio` (or `LMSTUDIO_BASE=http://localhost:8080/v1`) at it. That closes the loop: the model that proposes changes is trained on which of its proposals survived the ratchet.
 
 Not run here: this cloud session has no GPU and no Apple silicon, so the fine-tuning commands are written from MLX's documented interface and untested in this repo. Everything else above was run.
+
+## Interpretability toys (`interp.js`)
+
+Three CPU toys from the research report on Anthropic's, Goodfire's and the open-source interpretability methods. Each runs in under 1.5 s, in plain JavaScript with hand-written gradients, on the server, in the Arena sandbox and in the benchmarks. Each has ground truth, because the toy's true features are known.
+
+| Runner | What it reproduces | Example and result |
+| --- | --- | --- |
+| `superposition` | Toy Models of Superposition: n sparse features in 2 dimensions; dimensionality D_i shows the geometry | `toy-superposition`: dense keeps 2 features, sparsity 0.9 stores all 5 as a pentagon (D = 0.4). Supported. |
+| `sparse-autoencoder` | Dictionary learning on the toy's hidden layer, scored by how many true directions it recovers; optional dead-latent resampling | `sae-dead-latents`: resampling did **not** recover more features at this scale (10 vs 10). Refuted, and kept. |
+| `steering` | Clamp one SAE latent, with or without adding the SAE error back (Goodfire's intervention) | `steering-error-term`: the error term makes unedited outputs exact (0.008 to 0). Supported. |
+
+`npm run bench` tracks all three (`interp.*` metrics), so a change that breaks the phase changes, lowers SAE recovery or makes steering less exact fails preflight.
