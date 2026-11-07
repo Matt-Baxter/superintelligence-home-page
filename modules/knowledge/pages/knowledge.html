@@ -4,11 +4,11 @@
 <style>
   .kgrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; }
   @media (max-width: 860px) { .kgrid { grid-template-columns: 1fr; } }
-  .qid { font: 13px var(--mono); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; cursor: pointer; white-space: nowrap; }
+  .qid { font: 13px var(--mono); background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); padding: 1px 6px; cursor: pointer; white-space: nowrap; }
   .qid:hover { border-color: var(--accent); }
   .edge { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
   .rel { color: var(--muted); font-size: 12px; }
-  .bar { height: 4px; background: var(--accent-soft); border-radius: 2px; } .bar > i { display: block; height: 4px; background: var(--accent); border-radius: 2px; }
+  .bar { height: 4px; background: var(--accent-soft); border-radius: var(--radius); } .bar > i { display: block; height: 4px; background: var(--accent); border-radius: var(--radius); }
   .chunk { padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; } .chunk .tags { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px; }
   svg.kg { width: 100%; height: auto; display: block; } svg.kg text { fill: var(--fg); font: 12px var(--font); } svg.kg path { fill: none; stroke: var(--line); } svg.kg circle { fill: var(--surface); stroke: var(--accent); }
 </style></head>

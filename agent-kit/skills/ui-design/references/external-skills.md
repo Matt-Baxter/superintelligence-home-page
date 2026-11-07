@@ -14,3 +14,9 @@ These are third-party or Anthropic skills that the humans can add to their own C
 | Theme Factory, Canvas Design (Anthropic) | github.com/anthropics/skills | Palettes and type pairings; posters and graphics. |
 
 Lists of these: pasqualepillitteri.it ("Best Claude Code skills for UI/UX design") and uxplanet.org ("Must-have UX/UI design skills for Claude Code").
+
+## Checked on Nov 7, 2026
+
+- **impeccable** (pbakaus, Apache-2.0) has audit, critique and polish workflows, but Skillstore rates its current version critical-risk: a live server that exposes its token over wildcard CORS, a shell-injection risk and subprocesses that bypass approvals. Don't install it until that review clears ([Skillstore](https://skillstore.io/skills/pbakaus-impeccable)).
+- **minimalist-ui** (leonxlnx/taste-skill, MIT) prescribes warm monochrome, flat bordered cards and no heavy shadows, which is close to this repo's monochrome pass ([Skillstore](https://skillstore.io/skills/leonxlnx-minimalist-ui)).
+- This repo's own look since the monochrome pass: neutral greys with black ink, status shown by fill and outline (never hue), 4px corners everywhere, Newsreader for headlines and story titles, IBM Plex Sans for the interface, fonts self-hosted in `public/fonts`. Before-and-after screenshots: `node test/design-shots.js <label>` writes `shots/design/`.
