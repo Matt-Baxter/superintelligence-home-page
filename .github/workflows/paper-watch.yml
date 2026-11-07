@@ -26,8 +26,21 @@ jobs:
         env:
           SITE_PROFILE: extended
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # Judge panel (REQ-034): two models from different makers, set by a human as a repository variable, for
+          # example "groq:llama-3.1-8b-instant,openrouter:google/gemma-3-12b-it:free"; each provider's key is a secret.
+          # Unset, every review is marked "panel incomplete" and the rules judge stands alone.
+          PANEL_MODELS: ${{ vars.PANEL_MODELS }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      - name: Check in
+        run: node scripts/checkin.js
+        env:
+          SITE_PROFILE: extended
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
       - uses: actions/upload-artifact@v4
         with:
           name: paper-watch
-          path: out/watch/*.md
+          path: |
+            out/watch/*.md
+            out/checkin/*.md
           retention-days: 14

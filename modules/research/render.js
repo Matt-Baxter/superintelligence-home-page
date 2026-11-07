@@ -88,7 +88,8 @@ ${desc ? `<meta name="description" content="${esc(desc)}">` : ""}<link rel="styl
   .rx section { border-top: 1px solid var(--line); padding-top: 14px; }
   .rx ul, .rx ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 15px; line-height: 1.5; }
   .rx .lv { font-size: 12px; color: var(--muted); white-space: nowrap; }
-  .rx table.card { width: 100%; border-collapse: collapse; font-size: 14px; } .rx table.card td { padding: 7px 8px 7px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .rx table.card { width: 100%; border-collapse: collapse; font-size: 14px; } .rx table.card th { text-align: left; font-weight: 500; color: var(--muted); font-size: 12px; padding: 0 8px 6px 0; } .rx table.card th.n { text-align: right; }
+  .rx table.card td { padding: 7px 8px 7px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
   .rx table.card td.n { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; } .rx table.card td.mk { width: 1.5em; color: var(--muted); }
   .rx table.card tr.met td.mk { color: var(--fg); font-weight: 600; } .rx table.sc tr:not(.met):not(.tot) td:nth-child(2) { color: var(--muted); }
   .rx table.card .ev { display: block; font-size: 12px; color: var(--muted); overflow-wrap: anywhere; } .rx table.card tr.tot td { font-weight: 600; border-bottom: 0; }
@@ -97,6 +98,7 @@ ${desc ? `<meta name="description" content="${esc(desc)}">` : ""}<link rel="styl
   .rx .ladder { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--fg); border-radius: var(--radius); overflow: hidden; }
   .rx .ladder span { font-size: 12px; text-align: center; padding: 6px 4px; border-left: 1px solid var(--line); color: var(--muted); } .rx .ladder span:first-child { border-left: 0; }
   .rx .ladder span.on { background: var(--fg); color: var(--surface); font-weight: 600; }
+  .rx .scroll { overflow-x: auto; }
   .rx .chips { display: flex; flex-wrap: wrap; gap: 6px; } .rx .chips span { font-size: 13px; padding: 2px 8px; border: 1px solid var(--line); border-radius: var(--radius); }
   .rx blockquote { margin: 0; padding-left: 12px; border-left: 2px solid var(--line); color: var(--muted); font-size: 14px; }
   .rx .md p { margin: 0 0 10px; line-height: 1.6; } .rx .md h2 { margin-top: 16px; } .rx .md code { font-size: 12px; }
@@ -106,7 +108,7 @@ ${desc ? `<meta name="description" content="${esc(desc)}">` : ""}<link rel="styl
 </style></head><body><main class="rx">
 <span class="flag">Research preview</span>
 ${body}
-<footer>Judged by rules from the abstract, not by a person and not by a model: a draft to read alongside the paper, not instead of it. Real people appear only as mention counts. <a href="${esc(base)}/research/criteria">How we judge</a> · <a href="${esc(base)}/research">All write-ups</a> · <a href="${esc(base)}/research/feed.xml">RSS</a></footer>
+<footer>Judged by rules from the abstract, not by a person and not by a model: a draft to read alongside the paper, not instead of it. Real people appear only as mention counts. <a href="${esc(base)}/research/criteria">How we judge</a> · <a href="${esc(base)}/research/outlets">Track records</a> · <a href="${esc(base)}/research">All write-ups</a> · <a href="${esc(base)}/research/feed.xml">RSS</a></footer>
 </main></body></html>`;
 }
 
@@ -151,6 +153,17 @@ ${d.buzz ? `<div><h2>Buzz</h2>${ladder(["quiet", "some", "loud"], d.buzz.level)}
   return shell({ title: `${d.label}: the evidence`, base, body, desc: `${d.label}: ${d.strength}, ${d.why}.` });
 }
 
+// Outlet track records: grades of the pieces reviewed, and forecasts made and how they turned out. Personal blogs and
+// newsletters appear as one pooled class, never by writer; a hit rate shows only from 3 resolved forecasts.
+function outletsPage(records, minResolved, base) {
+  const rows = records.map((o) => `<tr><td>${esc(o.label)}${o.personal ? '<span class="ev">pooled: no writer is tracked</span>' : ""}</td><td class="n">${o.base || "?"}</td><td class="n">${o.pieces}</td><td class="n">${o.meanCredibility}</td><td class="n">${o.forecasts}</td><td class="n">${o.happened} / ${o.didNot} / ${o.pending}</td><td class="n">${o.hitRate == null ? "–" : `${Math.round(o.hitRate * 100)}%`}</td></tr>`).join("");
+  const body = `<h1>Who has been right</h1>
+<p class="lede">Each outlet's reviewed pieces and the dated forecasts they made, marked by a person once due. A hit rate appears only after ${minResolved} forecasts are resolved; until then there is not enough to judge.</p>
+<section><h2>Track records</h2>${records.length ? `<div class="scroll"><table class="card"><thead><tr><th>Outlet</th><th class="n">Grade</th><th class="n">Pieces</th><th class="n">Mean credibility</th><th class="n">Forecasts</th><th class="n">Happened / not / pending</th><th class="n">Hit rate</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="small muted">Nothing reviewed yet.</p>'}
+<p class="small muted" style="margin:8px 0 0">Grade = the outlet's starting grade (<a href="${esc(base)}/research/criteria">criteria</a>). "Unclear" forecasts count for neither side. Forecasts never carry a person's name.</p></section>`;
+  return shell({ title: "Track records", base, body, desc: "Outlets' reviewed pieces and forecast track records." });
+}
+
 function indexPage({ papers, topics }, base) {
   const body = `<h1>Superintelligence research, explained</h1>
 <p class="lede">Plain-language write-ups of papers on the path to superintelligence: what each claims, how far to believe it and why, traced to its record. Each one also goes out as an item in <a href="${esc(base)}/research/feed.xml">this RSS feed</a>, so a news feed can carry it as one more source.</p>
@@ -171,4 +184,4 @@ function feedXml({ papers, topics }, base) {
   return `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>Superintelligence research write-ups (preview)</title><link>${x(base)}/research</link><description>Plain-language, traced write-ups of papers on the path to superintelligence. Judged from abstracts by rules; a preview.</description>${items}</channel></rss>`;
 }
 
-module.exports = { scorecard, criteriaPage, publishable, plain, paperPage, topicPage, indexPage, feedXml, md };
+module.exports = { outletsPage, scorecard, criteriaPage, publishable, plain, paperPage, topicPage, indexPage, feedXml, md };

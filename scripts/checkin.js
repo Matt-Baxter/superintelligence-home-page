@@ -16,6 +16,8 @@ async function waiting(db, today = new Date().toISOString().slice(0, 10)) {
     reviewsForPerson: await n("SELECT COUNT(*) AS n FROM review_docs WHERE needs_person = 1 AND label IS NULL"),
     jobsQueued: await n("SELECT COUNT(*) AS n FROM learn_jobs WHERE status IN ('queued', 'needs-agent')"),
     jobsFailed: await n("SELECT COUNT(*) AS n FROM learn_jobs WHERE status = 'failed'"),
+    // Reviews judged without a two-model panel (REQ-034): the rules judge stood alone.
+    unpaneled: await n("SELECT COUNT(*) AS n FROM review_docs WHERE result NOT LIKE '%\"panel\":{\"status\":\"agreed%' AND result NOT LIKE '%\"panel\":{\"status\":\"disagreed%'"),
   };
 }
 
@@ -48,6 +50,7 @@ async function main() {
   L.push(`- **Paper-watch branches not merged:** ${B.length ? B.map((b) => `${b.branch} (${b.date})`).join(", ") : "none"}. Next: John reviews and opens the pull request, or deletes the branch.`);
   L.push("", "## Agents' own queue", "");
   L.push(`- **Studio jobs queued:** ${W.jobsQueued}${W.jobsFailed ? `; failed: ${W.jobsFailed} (retry or close with a note)` : ""}. Next: the daily task does at most one paper-to-code toy; \`npm run learn:worker\` does the rest.`);
+  L.push(`- **Reviews without a two-model panel:** ${W.unpaneled}. Next: set PANEL_MODELS to two models from different makers where the watcher runs (see .env.example); until then the rules judge stands alone.`);
   L.push("- **Keep in step:** run `npm run project:sync` where the tracker lives, so each item above has one issue (sync-key) that moves to Done when it's done.");
   L.push("", "## Rules", "", "Agents never approve a requirement, write agent-log entries, push to main or Matt's branches, merge or deploy. Commits carry no trailers and no assistant or model names.");
   const md = L.join("\n") + "\n", dir = path.join(root, "out", "checkin");

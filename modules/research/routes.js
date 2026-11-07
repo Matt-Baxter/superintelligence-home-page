@@ -29,6 +29,12 @@ module.exports = function mountResearch(app, { db, wrap }) {
   };
 
   app.get("/research", gate, page(async (req) => V.indexPage({ papers: await papers(), topics: await topics() }, base(req))));
+  app.get("/research/outlets", gate, page(async (req) => {
+    const S = require("../review/sources");
+    const docs = (await db.all("SELECT kind, credibility, verdict, needs_person, label, result FROM review_docs ORDER BY id DESC LIMIT 1000")).filter(V.publishable);
+    const events = await db.all("SELECT outlet, status FROM review_events").catch(() => []);
+    return V.outletsPage(S.trackRecords(docs, events), S.MIN_RESOLVED, base(req));
+  }));
   app.get("/research/criteria", gate, page(async (req) => V.criteriaPage(base(req))));
   app.get("/research/feed.xml", gate, wrap(async (req, res) => { res.type("application/rss+xml").send(V.feedXml({ papers: await papers(), topics: await topics() }, base(req))); }));
   app.get("/research/paper/:id", gate, page(async (req) => {

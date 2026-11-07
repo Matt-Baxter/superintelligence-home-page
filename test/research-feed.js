@@ -49,6 +49,8 @@ const serve = (port, env) => new Promise((resolve, reject) => {
     ok(/How it was judged/.test(html) && /½ × \d+ \+ ½ × \(100 − \d+\) = <b>\d+<\/b>/.test(html) && /because credibility/.test(html), "the write-up shows its scorecard: each criterion met or not, the credibility arithmetic and the verdict rule");
     const crit = await (await fetch("http://localhost:3291/research/criteria")).text();
     ok(/How we judge a paper/.test(crit) && /Shares code, data or weights/.test(crit) && /none of the rules above applied/.test(crit), "the criteria page publishes the rigor checks and the verdict rules");
+    const tr = await (await fetch("http://localhost:3291/research/outlets")).text();
+    ok(/Who has been right/.test(tr) && /pooled: no writer is tracked/.test(tr) && !/Sample Author/.test(tr), "the track-record page lists outlets, pools personal blogs and names no writer");
     const idx = await (await fetch("http://localhost:3291/research")).text();
     ok(/Superintelligence research, explained/.test(idx) && /\/research\/topic\//.test(idx), "the index lists papers and topic dossiers");
     const doubt = await fetch("http://localhost:3291/research/paper/2");
