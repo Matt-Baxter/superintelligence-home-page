@@ -142,7 +142,10 @@ function review(input) {
   const t0 = process.hrtime.bigint(), trace = [];
   const step = (id, label, fn) => { const s = process.hrtime.bigint(); const out = fn(); trace.push({ id, label, ms: Number(process.hrtime.bigint() - s) / 1e6 }); return out; };
   // Every judge reads the canonical form (REQ-032): spacing, Unicode and LaTeX variants of one text are one text.
-  const title = canonical(input.title).slice(0, 300), text = canonical(input.text).slice(0, 20000), authors = canonical(input.authors).slice(0, 600);
+  // What doesn't fit is cut, and the cut is reported (field and reason), never silent (REQ-032, task T011).
+  const LIMITS = { title: 300, text: 20000, authors: 600 }, full = { title: canonical(input.title), text: canonical(input.text), authors: canonical(input.authors) };
+  const cuts = Object.entries(LIMITS).filter(([f, n]) => full[f].length > n).map(([f, n]) => ({ field: f, length: full[f].length, kept: n }));
+  const title = full.title.slice(0, LIMITS.title), text = full.text.slice(0, LIMITS.text), authors = full.authors.slice(0, LIMITS.authors);
   if (!title && !text) throw new Error("Give a title or some text.");
 
   const k = step("normalise", "Work out what it is", () => detectKind({ ...input, title, text }));
@@ -224,6 +227,7 @@ function review(input) {
   if (Math.abs(naive.significance - score) >= 25) review_reasons.push(`the guards moved the score by ${naive.significance - score} points`);
   if (hp.unbacked >= 2) review_reasons.push(`${hp.unbacked} claims have nothing backing them`);
   if (fired("keyword-stuffing") || fired("rigor-words")) review_reasons.push("it looks written to game the scoring (keyword lists or checklist sentences)");
+  for (const c of cuts) review_reasons.push(`the ${c.field} was cut at ${c.kept.toLocaleString("en-US")} of ${c.length.toLocaleString("en-US")} characters, so the judges didn't read the rest`);
   // Off-topic is reported (scope) but isn't a reason to send it to a person: the feed's scope rule already handles it.
 
   // Two axes, reported separately: how big a step it claims (score) and how far to believe it (credibility).
@@ -237,7 +241,7 @@ function review(input) {
 
   return {
     qid, kind: k.kind, kindWhy: k.why, kindLabel: isSurvey ? "Survey" : KINDS[k.kind].label, survey: isSurvey, arxiv, title, authors,
-    score, naive: naive.significance, credibility, verdict, needsPerson: review_reasons.length > 0, reasons: review_reasons,
+    score, naive: naive.significance, credibility, verdict, needsPerson: review_reasons.length > 0, reasons: review_reasons, truncated: cuts.length ? cuts : null,
     judges: [
       { id: "significance", label: "Significance", score: sig.significance, about: "How big a step toward superintelligence it reports (lib/analysis.js, on the cleaned text)", why: sig.why },
       { id: "rigor", label: "Rigor", score: rg.score, about: "What its evidence would need: numbers, baselines, method, sample size, uncertainty, held-out tests, limitations, shared artifacts", why: rg.why, missing: rg.missing },

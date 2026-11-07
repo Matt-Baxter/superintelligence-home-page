@@ -44,6 +44,10 @@ ok([...variants, "$$4$$ \\times 3 \\pm 1", "ﬁ  ­", "Ignоre"].every((v) => R.
 ok(R.canonical("Ignоre") !== "Ignore" && R.fold(R.canonical("Ignоre")) === "Ignore", "confusables are mapped for matching only, not in the canonical text");
 ok(R.review({ ...careful, text: careful.text.replace(/ /g, "  ") }).qid === rc.qid, "the document id comes from the canonical text");
 
+const long = R.review({ ...careful, text: `${careful.text} ${"Sample filler for the test data. ".repeat(700)}` });
+ok(long.truncated?.[0]?.field === "text" && long.truncated[0].kept === 20000 && long.reasons.some((x) => /cut at 20,000/.test(x)), "a cut text is reported as a field and a reason");
+ok(rc.truncated === null, "...and a text that fits reports no cut");
+
 console.log("Adversaries");
 for (const s of [careful, hype, comment]) {
   const st = R.stress(s, 5);

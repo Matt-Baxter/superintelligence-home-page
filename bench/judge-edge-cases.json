@@ -720,7 +720,7 @@
     "rel": "eq",
     "to": 1
    },
-   "status": "gap"
+   "status": "ok"
   },
   {
    "id": "det-same-input",
