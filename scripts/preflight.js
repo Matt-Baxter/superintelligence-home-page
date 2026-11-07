@@ -156,7 +156,12 @@ async function smoke() {
   finally { child.kill(); }
 }
 
-smoke().then(() => {
+// 8. Spec acceptance (API checks) on the spec version with labelled synthetic sources: every REQ needs a passing check (SC-008).
+async function specAcceptance() {
+  try { const out = sh("node test/spec-acceptance.js").trim().split("\n").pop(); ok("Spec acceptance", out.replace(/^spec acceptance: /, "").split(";").slice(0, 2).join(";")); }
+  catch (e) { fail("Spec acceptance", String(e.stdout || e.message).trim().split("\n").filter((l) => l.startsWith("✗") || l.startsWith("spec acceptance")).slice(0, 4).join(" | ")); }
+}
+smoke().then(specAcceptance).then(() => {
   const t = results.map((r) => `${r.ok ? (r.warn ? "!" : "✓") : "✗"} ${r.name}${r.detail ? ` (${r.detail})` : ""}`).join("\n");
   console.log(t);
   const nfail = results.filter((r) => !r.ok).length;

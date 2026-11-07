@@ -49,7 +49,7 @@
 let mode = "login", sort = params.get("sort") || "new", offset = 0, ONT;
 $$(".tabs button").forEach((b) => b.onclick = () => {
   mode = b.dataset.mode; $$(".tabs button").forEach((x) => x.setAttribute("aria-selected", x === b));
-  $("#nameWrap").hidden = mode !== "signup"; $("#authBtn").textContent = mode === "signup" ? "Create account" : "Sign in"; $("#authErr").textContent = "";
+  $("#nameWrap").hidden = mode !== "signup" || !window.SI_DISPLAY_NAME; $("#authBtn").textContent = mode === "signup" ? "Create account" : "Sign in"; $("#authErr").textContent = "";
 });
 $("#authForm").onsubmit = async (e) => {
   e.preventDefault(); $("#authBtn").disabled = true;
@@ -64,7 +64,7 @@ async function load(append = false) {
   const { stories } = await api("/api/stories?" + qs);
   const feed = $("#feed"); if (!append) feed.innerHTML = "";
   feed.classList.add("stagger"); stories.forEach((st, i) => { const li = storyCard(st); li.style.setProperty("--i", i); feed.append(li); });
-  if (!append && !stories.length) feed.innerHTML = `<li class="empty">No stories match. ${s.days ? "Try a longer time window, or " : ""}check the <a href="/sources">Sources</a> page: feeds are harvested several times a day once the site is deployed.</li>`;
+  if (!append && !stories.length) feed.innerHTML = s.topic ? `<li class="empty">No stories yet on ${esc((ONT.topics.find((x) => x.id === s.topic) || {}).label || s.topic)}. <a href="/">See every topic</a></li>` : `<li class="empty">No stories yet. ${s.days ? "Try a longer time window, or " : ""}check the <a href="/sources">Sources</a> page: feeds are harvested several times a day once the site is deployed.</li>`;
   $("#more").hidden = stories.length < 40; offset += stories.length;
 }
 function header() {
@@ -82,7 +82,7 @@ $("#submitBtn").onclick = () => { $("#submitForm").hidden = false; $("#sUrl").fo
 $("#sCancel").onclick = () => { $("#submitForm").hidden = true; };
 $("#submitForm").onsubmit = async (e) => { e.preventDefault(); try { const r = await api("/api/stories", { body: { url: $("#sUrl").value, title: $("#sTitle").value, summary: $("#sSum").value } }); location.href = `/story?id=${r.id}`; } catch (err) { showErr($("#sErr"), err); } };
 (async () => {
-  const { user } = await api("/api/me", { allow401: true });
+  const { user, features: siteFeatures = [] } = await api("/api/me", { allow401: true }); window.SI_DISPLAY_NAME = siteFeatures.includes("display-name");
   if (!user) { $("#auth").hidden = false; $("#username").focus(); return; }
   topbar(user); $("#feedView").hidden = false;
   ONT = await api("/api/ontology");

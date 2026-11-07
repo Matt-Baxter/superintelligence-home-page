@@ -20,7 +20,8 @@
     "codemap": "node scripts/codemap.js",
     "learn:worker": "node scripts/learn-worker.js",
     "expr:check": "node scripts/expr-check.js",
-    "schema": "node scripts/schema.js"
+    "schema": "node scripts/schema.js",
+    "test:spec": "node test/spec-acceptance.js --browser"
   },
   "keywords": [],
   "author": "",

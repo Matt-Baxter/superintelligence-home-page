@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic alignment and safety research group feed (test data). -->
+<rss version="2.0"><channel><title>Sample safety group (test data)</title><link>https://example.org/safety</link><description>Test data.</description>
+<item><title>Sample paper: scalable oversight of a self-improving system (test data)</title><link>https://example.org/safety/oversight-rsi</link><category>about-superintelligence: yes</category><pubDate>Fri, 06 Nov 2026 12:00:00 GMT</pubDate><description>Synthetic proposal for keeping human oversight as a system improves itself; covers corrigibility and loss of control.</description></item>
+<item><title>Sample note: an AI chatbot for a museum (test data)</title><link>https://example.org/safety/museum</link><category>about-superintelligence: no</category><pubDate>Fri, 06 Nov 2026 04:00:00 GMT</pubDate><description>Weak, borderline item: mentions a chatbot and nothing about advanced AI.</description></item>
+</channel></rss>

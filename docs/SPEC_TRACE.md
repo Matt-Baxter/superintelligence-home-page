@@ -19,6 +19,10 @@ How this build meets the shared spec ([specs/001-superintelligence-homepage/spec
 | REQ-019 | Live 2+ weeks before the presentation | `docs/DEPLOY.md` (humans deploy) | not automated |
 | REQ-020 | Human-written agent log in the repo | `AGENT_LOG.md` (the partners write it; agents never do). The app has no agent log page: `/agent-log` redirects to the file; old in-app entries can be exported once from `/api/admin/agent-log.md` | e2e: "Agent log" section; preflight smoke "no in-app agent log" |
 
+## Acceptance suite
+
+`test/spec-acceptance.js` runs every user-story scenario, edge case and success criterion that can be automated, against the **spec version**, with labelled synthetic sources (`test/fixtures/spec`: 9 sources across 7 kinds). Each check names its REQ. The run fails if a testable requirement (REQ-001 to REQ-018, REQ-020) has no passing check (SC-008). Preflight runs the API checks; `npm run test:spec` adds the browser checks at laptop and phone widths. REQ-019 (live two weeks before the presentation) is checked by people.
+
 ## Beyond the spec
 
 The site has two versions (`modules/profiles.json`, `SITE_PROFILE`):

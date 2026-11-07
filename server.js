@@ -82,7 +82,9 @@ const limit = (n, ms) => (req, res, next) => {
 
 /* accounts — the first account becomes the admin */
 app.post("/api/signup", limit(30, 6e5), wrap(async (req, res) => {
-  const u = str(req.body.username, 40), name = str(req.body.displayName, 60) || u, pw = req.body.password || "";
+  const u = str(req.body.username, 40), pw = req.body.password || "";
+  // REQ-012: only a username and password. A separate display name is an extended-version extra.
+  const name = (profile.has("display-name") && str(req.body.displayName, 60)) || u;
   if (!/^[a-zA-Z0-9_.-]{3,40}$/.test(u)) bad("Usernames are 3–40 letters, numbers, dots, dashes or underscores.");
   if (typeof pw !== "string" || pw.length < 8) bad("Passwords need at least 8 characters.");
   if (await db.get("SELECT 1 AS x FROM users WHERE LOWER(username) = LOWER(?)", u)) bad("That username is taken.");
@@ -97,7 +99,7 @@ app.post("/api/login", limit(30, 6e5), wrap(async (req, res) => {
   await startSession(res, u.id); return { user: { id: u.id, username: u.username, name: u.display_name, admin: bool(u.is_admin) } };
 }));
 app.post("/api/logout", wrap(async (req, res) => { const t = cookie(req, "sid"); if (t) await db.run("DELETE FROM sessions WHERE token = ?", t); res.clearCookie("sid"); return { ok: true }; }));
-app.get("/api/me", wrap((req) => { const pr = profile.current(); return { user: req.user ? { ...req.user, nav: kernel.nav(req.user), profile: pr.name, features: [...pr.features] } : null, profile: pr.name }; }));
+app.get("/api/me", wrap((req) => { const pr = profile.current(); return { user: req.user ? { ...req.user, nav: kernel.nav(req.user), profile: pr.name, features: [...pr.features] } : null, profile: pr.name, features: [...pr.features] }; }));
 app.get("/api/ontology", wrap(() => ({ topics: tagger.topicList(), orgs: tagger.orgList(), about: tagger.ontology.about,
   benchmarks: (tagger.ontology.benchmarks || []).map(({ id, label, measures }) => ({ id, label, measures })), people: (tagger.ontology.people || []).map(({ id, label }) => ({ id, label })) })));
 

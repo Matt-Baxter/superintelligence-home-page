@@ -20,6 +20,16 @@ const feeds = require("../lib/feeds");
   await add("Sample arXiv feed (test data)", "papers", "arxiv", "sample-atom.xml");
   await add("Sample lab blog (test data)", "lab", "rss", "sample-rss.xml");
   await add("Sample daily papers (test data)", "papers", "hf-daily", "sample-hf.json");
+  // FIXTURE_SET=spec adds labelled sources across every kind the shared spec names (test/fixtures/spec), for the
+  // spec acceptance suite (test/spec-acceptance.js): 9 sources, 7 kinds, a re-published paper, a Twitter/X link, off-topic items.
+  if (process.env.FIXTURE_SET === "spec") {
+    await add("Sample mixed feed (test data)", "news", "rss", "sample-spec.xml");
+    await add("Sample alignment forum (test data)", "forum", "rss", "spec/forum.xml");
+    await add("Sample AI newsletter (test data)", "newsletter", "rss", "spec/newsletter.xml");
+    await add("Sample forecasting org (test data)", "research-org", "rss", "spec/forecasting.xml");
+    await add("Sample safety group (test data)", "research-org", "rss", "spec/safety.xml");
+    await add("Sample governance group (test data)", "policy", "rss", "spec/policy.xml");
+  }
   // Real default sources stay listed but paused here, since the test machine may not reach them.
   await db.run("UPDATE sources SET status = 'paused' WHERE url NOT LIKE 'fixture://%'");
   const port = Number(process.env.PORT || 3200);
