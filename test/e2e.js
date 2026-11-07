@@ -272,7 +272,7 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   const EXN = require('../modules/lab/examples.json').examples.length;
   ok(lx.examples.length === EXN && lx.examples.every((e) => e.idea && e.hypothesis && typeof e.verdict.supported === 'boolean'), `${EXN} examples, each with idea, hypothesis and verdict`);
   const refuted = lx.examples.filter((e) => !e.verdict.supported).map((e) => e.id).sort().join(',');
-  ok(refuted === 'goodhart-oversight,rrsi-edit-budget,sae-dead-latents', `refuted hypotheses are kept and shown (${refuted})`);
+  ok(refuted === 'goodhart-oversight,roleplay-bounded-rsi,rrsi-edit-budget,sae-dead-latents', `refuted hypotheses are kept and shown (${refuted})`);
   const lg = await j(matt, '/api/lab/examples/rsi-decision-gym');
   ok(lg.variant.metrics.heldout_accuracy > lg.baseline.metrics.heldout_accuracy + 0.2 && lg.variant.metrics.properties_hold === 4, 'decision gym improves itself and keeps its safety properties');
   ok(lg.scorecard.totals.length === 2 && lg.judgeInput.entries.length === 2, 'reproduction and hypothesis are judged (weighted; JEV/CLEF input ready)');
@@ -358,7 +358,9 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   await john.fill('#ask', 'project_issues'); await john.waitForFunction(() => document.querySelector('.side h2')?.textContent === 'project_issues');
   ok(true, 'typing in "Ask the map" jumps to the match');
   await john.click('[data-view="spec"]'); await john.waitForSelector('#lanes [data-id="req:REQ-003"]');
-  ok((await john.$$('#lanes .lane:nth-child(1) .nd')).length === 20, 'the spec view lists all 20 requirements');
+  // The map reads every spec (specs/*/spec.md: the shared spec and the proposed research layer).
+  const NREQ = new Set(require('node:fs').readdirSync(require('node:path').join(__dirname, '..', 'specs')).flatMap((d) => { try { return [...require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'specs', d, 'spec.md'), 'utf8').matchAll(/\*\*(REQ-\d{3})\*\*:/g)].map((m) => m[1]); } catch { return []; } })).size;
+  ok((await john.$$('#lanes .lane:nth-child(1) .nd')).length === NREQ, `the spec view lists all ${NREQ} requirements`);
   await john.screenshot({ path: 'shots/codemap.png' });
 
   console.log('Phone width');
