@@ -64,30 +64,35 @@ const geometry = (D, represented) => {
 };
 
 // ---------- the sparse autoencoder on the toy's hidden layer ----------
-function trainSAE(toy, { latents = 40, l1 = 0.003, steps = 2500, batch = 256, lr = 0.005, resample = 0, seed = 2 } = {}) {
+// cosine = 1: score each latent by the cosine between the input and its encoder direction, then scale by the input's
+// norm ("Size Doesn't Matter: Cosine-Scored Sparse Autoencoders", arXiv 2606.15054). Whether a latent fires then depends
+// on direction only. normSpread scales each input by a random factor (models with normalization discard that size).
+// (Simplification: in cosine mode the encoder's gradient doesn't flow into the pre-encoder bias or through the norm.)
+function trainSAE(toy, { latents = 40, l1 = 0.003, steps = 2500, batch = 256, lr = 0.005, resample = 0, seed = 2, cosine = 0, normSpread = 0 } = {}) {
   const { n, m, W, S } = toy, r = rng(seed), d = m, k = latents;
   // params: We (k x d), be (k), Wd (d x k, unit-norm columns), bd (d)
   const P = new Float64Array(k * d + k + d * k + d); const oWe = 0, obe = k * d, oWd = obe + k, obd = oWd + d * k;
   for (let j = 0; j < k; j++) { const v = Array.from({ length: d }, () => gauss(r)), nv = norm(v); for (let a = 0; a < d; a++) { P[oWd + a * k + j] = v[a] / nv; P[oWe + j * d + a] = (0.5 * v[a]) / nv; } }
   const step = adam(P, lr), G = new Float64Array(P.length), fired = new Float64Array(k);
-  const hidden = () => { const x = sample(r, n, S), h = new Float64Array(d); for (let a = 0; a < d; a++) { let s = 0; for (let i = 0; i < n; i++) s += W[a * n + i] * x[i]; h[a] = s; } return h; };
+  const hidden = () => { const x = sample(r, n, S), h = new Float64Array(d), rho = normSpread ? Math.exp(normSpread * gauss(r)) : 1; for (let a = 0; a < d; a++) { let s = 0; for (let i = 0; i < n; i++) s += W[a * n + i] * x[i]; h[a] = rho * s; } return h; };
   const fwd = (h) => {
     const c = new Float64Array(d); for (let a = 0; a < d; a++) c[a] = h[a] - P[obd + a];
     const pre = new Float64Array(k), z = new Float64Array(k);
-    for (let j = 0; j < k; j++) { let s = P[obe + j]; for (let a = 0; a < d; a++) s += P[oWe + j * d + a] * c[a]; pre[j] = s; z[j] = s > 0 ? s : 0; }
+    const nc = cosine ? Math.sqrt(c.reduce((acc, x) => acc + x * x, 0)) || 1e-9 : 1; // input norm (1 when inner-product scoring)
+    for (let j = 0; j < k; j++) { let s = P[obe + j]; for (let a = 0; a < d; a++) s += (P[oWe + j * d + a] * c[a]) / nc; pre[j] = s; z[j] = s > 0 ? s * nc : 0; }
     const hh = new Float64Array(d); for (let a = 0; a < d; a++) { let s = P[obd + a]; for (let j = 0; j < k; j++) s += P[oWd + a * k + j] * z[j]; hh[a] = s; }
-    return { c, pre, z, hh };
+    return { c, pre, z, hh, nc };
   };
   let resampled = 0;
   for (let s = 0; s < steps; s++) {
     G.fill(0);
     for (let q = 0; q < batch; q++) {
-      const h = hidden(), { c, pre, z, hh } = fwd(h);
+      const h = hidden(), { c, pre, z, hh, nc } = fwd(h);
       const e = new Float64Array(d); for (let a = 0; a < d; a++) e[a] = (2 * (hh[a] - h[a])) / batch;
       const dpre = new Float64Array(k);
-      for (let j = 0; j < k; j++) { if (z[j] > 0) fired[j]++; let dz = l1 / batch; for (let a = 0; a < d; a++) dz += P[oWd + a * k + j] * e[a]; dpre[j] = pre[j] > 0 ? dz : 0; }
+      for (let j = 0; j < k; j++) { if (z[j] > 0) fired[j]++; let dz = l1 / batch; for (let a = 0; a < d; a++) dz += P[oWd + a * k + j] * e[a]; dpre[j] = pre[j] > 0 ? dz * nc : 0; }
       for (let a = 0; a < d; a++) { for (let j = 0; j < k; j++) G[oWd + a * k + j] += e[a] * z[j]; G[obd + a] += e[a]; }
-      for (let j = 0; j < k; j++) { if (!dpre[j]) continue; G[obe + j] += dpre[j]; for (let a = 0; a < d; a++) { G[oWe + j * d + a] += dpre[j] * c[a]; G[obd + a] -= P[oWe + j * d + a] * dpre[j]; } }
+      for (let j = 0; j < k; j++) { if (!dpre[j]) continue; G[obe + j] += dpre[j] / (cosine ? nc : 1); for (let a = 0; a < d; a++) { G[oWe + j * d + a] += (dpre[j] * c[a]) / (cosine ? nc * nc : 1); if (!cosine) G[obd + a] -= P[oWe + j * d + a] * dpre[j]; } }
     }
     step(G);
     for (let j = 0; j < k; j++) { let s = 0; for (let a = 0; a < d; a++) s += P[oWd + a * k + j] ** 2; s = Math.sqrt(s) || 1; for (let a = 0; a < d; a++) P[oWd + a * k + j] /= s; }
@@ -148,13 +153,15 @@ const runnersList = [
       latents: { default: 24, min: 4, max: 64, step: 4, about: "SAE dictionary size" },
       l1: { default: 0.1, min: 0, max: 0.3, step: 0.01, about: "Sparsity penalty" },
       resample: { default: 0, min: 0, max: 1, step: 1, about: "1 = resample dead latents toward badly reconstructed inputs" },
+      cosine: { default: 0, min: 0, max: 1, step: 1, about: "1 = score latents by cosine, then scale by the input's norm (cosine-scored SAE)" },
+      norm_spread: { default: 0, min: 0, max: 1.5, step: 0.1, about: "How much input sizes vary (0 = all the same size)" },
       steps: { default: 1200, min: 400, max: 3000, step: 200, about: "SAE training steps" },
       seed: { default: 2, min: 1, max: 999, step: 1, about: "Random seed" },
     },
     metrics: [{ id: "recovered", label: "True features recovered (cosine > 0.9)", better: "higher" }, { id: "fve", label: "Variance explained", better: "higher" }, { id: "l0", label: "Active latents per input (L0)", better: "lower" }, { id: "dead", label: "Dead latents", better: "lower" }],
-    run({ latents, l1, resample, steps, seed }) {
+    run({ latents, l1, resample, steps, seed, cosine = 0, norm_spread = 0 }) {
       const toy = sharedToy();
-      const sae = trainSAE(toy, { latents, l1, resample, steps, batch: 64, lr: 0.01, seed });
+      const sae = trainSAE(toy, { latents, l1, resample, steps, batch: 64, lr: 0.01, seed, cosine, normSpread: norm_spread });
       const rc = recovery(toy, sae);
       return { metrics: { recovered: rc.recovered, fve: round(sae.fve), l0: round(sae.l0, 2), dead: sae.dead },
         series: [], notes: [`The toy stored ${rc.learned} of its 12 features in 4 dimensions; the SAE recovered ${rc.recovered} (median best cosine ${rc.median}).`, resample ? `${sae.resampled} dead latents were resampled.` : "No resampling."] };

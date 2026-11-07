@@ -9,13 +9,13 @@
       "about": "credible items out-rank doubtful ones on credibility"
     },
     "review.score_auc": {
-      "value": 0.656,
+      "value": 0.688,
       "better": "higher",
       "tol": 0.02,
       "about": "...on the guarded score"
     },
     "review.naive_score_auc": {
-      "value": 0,
+      "value": 0.125,
       "better": "info",
       "about": "...on the unguarded score (for comparison)"
     },
@@ -41,7 +41,7 @@
       "value": 1,
       "better": "higher",
       "tol": 0,
-      "about": "padding, stuffing, checklists, name-dropping, unbacked claims and injection don't raise the score (48 edits)"
+      "about": "padding, stuffing, checklists, name-dropping, unbacked claims and injection don't raise the score (60 edits)"
     },
     "review.adversary_gain_guarded": {
       "value": 0,
@@ -56,12 +56,12 @@
       "about": "points an adversary attacking the guarded score gains"
     },
     "review.adversary_gain_naive": {
-      "value": 30.25,
+      "value": 30.5,
       "better": "info",
       "about": "points the same attack gains on the unguarded judge (the attack is real)"
     },
     "review.ms_per_doc": {
-      "value": 16.8,
+      "value": 12.8,
       "better": "info",
       "about": "time to review one item"
     },
@@ -106,6 +106,24 @@
       "better": "lower",
       "tol": 0,
       "about": "output error on unedited inputs with the SAE error added back (0 = exact)"
+    },
+    "papers.hidden_eval_hack_drop": {
+      "value": 0.185,
+      "better": "higher",
+      "tol": 0.02,
+      "about": "drop in the quirk share when a self-improving agent is judged on hidden evaluations (arXiv 2609.26457 toy)"
+    },
+    "papers.recompute_evasion": {
+      "value": 0,
+      "better": "lower",
+      "tol": 0,
+      "about": "undetected exploits with independent recomputation (arXiv 2609.28614 toy)"
+    },
+    "papers.cosine_sae_gain": {
+      "value": 8,
+      "better": "higher",
+      "tol": 1,
+      "about": "extra true features a cosine-scored SAE recovers when input sizes vary (arXiv 2606.15054 toy)"
     },
     "analysis.scope_accuracy": {
       "value": 1,

@@ -392,6 +392,207 @@
      "weight": 20
     }
    ]
+  },
+  {
+   "id": "rsi-hidden-evals",
+   "title": "Self-improving agents: keep edits that win on hidden evaluations, not visible tests",
+   "concept": "concept:recursive-self-improvement",
+   "topics": [
+    "topic:recursive-self-improvement",
+    "topic:automating-ai-research"
+   ],
+   "source": {
+    "title": "Recursive self-improvement of AI research agents",
+    "url": "https://arxiv.org/abs/2609.26457",
+    "via": "daily paper watcher, Nov 7, 2026"
+   },
+   "idea": "An AI research agent proposes changes to its own code, benchmarks each version and keeps the best. If it keeps whatever raises the tests it can see, it also keeps changes that fool those tests: reward hacking that looks like progress. Judging versions on hidden evaluations it never sees removes that payoff, and the paper reports less reward hacking as a side effect.",
+   "reproduce": {
+    "runner": "self-improve-selection",
+    "params": {
+     "select_on": 0,
+     "edit_budget": 1,
+     "decay": 0,
+     "rounds": 40,
+     "proposals": 6,
+     "seed": 3
+    },
+    "expect": "Kept on visible tests, about a third of the agent's visible score comes from test quirks rather than skill."
+   },
+   "hypothesis": {
+    "statement": "Ours: selecting edits on hidden evaluations instead cuts the share of the score that comes from test quirks by at least 0.1, without lowering the held-out benchmark score.",
+    "params": {
+     "select_on": 1
+    },
+    "predict": {
+     "metric": "hack_share",
+     "direction": "down",
+     "delta": 0.1
+    }
+   },
+   "criteria": [
+    {
+     "metric": "hack_share",
+     "weight": 50
+    },
+    {
+     "metric": "heldout",
+     "weight": 40
+    },
+    {
+     "metric": "kept",
+     "weight": 10
+    }
+   ]
+  },
+  {
+   "id": "rrsi-edit-budget",
+   "title": "Self-improvement with a shrinking edit budget",
+   "concept": "concept:recursive-self-improvement",
+   "topics": [
+    "topic:recursive-self-improvement"
+   ],
+   "source": {
+    "title": "RRSI: Regularized Recursive Self-Improvement of Agent Harnesses",
+    "url": "https://arxiv.org/abs/2609.24972",
+    "via": "daily paper watcher, Nov 7, 2026"
+   },
+   "idea": "When each self-edit bundles many changes, a change that only games the benchmark can ride along with a real improvement and be kept. Limiting how many changes one proposal may bundle, and shrinking that limit over time, is meant to keep the gains that transfer and drop the ones that overfit.",
+   "reproduce": {
+    "runner": "self-improve-selection",
+    "params": {
+     "select_on": 1,
+     "edit_budget": 12,
+     "decay": 0,
+     "rounds": 40,
+     "proposals": 6,
+     "seed": 3
+    },
+    "expect": "Even judged on hidden evaluations, large bundled edits let test quirks ride along: about a quarter of the visible score comes from quirks."
+   },
+   "hypothesis": {
+    "statement": "Ours: shrinking the edit budget from 12 to 1 over the run lowers the share of the score from test quirks by at least 0.05.",
+    "params": {
+     "decay": 1
+    },
+    "predict": {
+     "metric": "hack_share",
+     "direction": "down",
+     "delta": 0.05
+    }
+   },
+   "criteria": [
+    {
+     "metric": "hack_share",
+     "weight": 50
+    },
+    {
+     "metric": "heldout",
+     "weight": 50
+    }
+   ]
+  },
+  {
+   "id": "oversight-recompute",
+   "title": "Reward hacking by research agents: recompute the results yourself",
+   "concept": "concept:reward-hacking",
+   "topics": [
+    "topic:alignment",
+    "topic:automating-ai-research"
+   ],
+   "source": {
+    "title": "Reward Hacking Challenges Oversight of Autonomous Research Agents",
+    "url": "https://arxiv.org/abs/2609.28614",
+    "via": "daily paper watcher, Nov 7, 2026"
+   },
+   "idea": "A research agent that picks its own methods and reports its own scores can choose an exploit that inflates the score. A reviewer who sees only code and scores catches blunt exploits and misses subtle ones. The paper's proposed defence is to keep the metric outside the agent's control: recompute results independently on data built to expose likely exploits.",
+   "reproduce": {
+    "runner": "research-oversight",
+    "params": {
+     "feedback": 0,
+     "recompute": 0,
+     "rounds": 30,
+     "seed": 5
+    },
+    "expect": "With a reviewer alone, the agent keeps reaching for exploits and most of them slip through. (In our toy, detailed feedback barely changes this: 0.67 against 0.68, so the paper's finding that feedback teaches evasion is not reproduced here.)"
+   },
+   "hypothesis": {
+    "statement": "Ours: recomputing every result independently brings undetected exploits to zero and pushes the agent back to honest methods.",
+    "params": {
+     "recompute": 1
+    },
+    "predict": {
+     "metric": "evasion",
+     "direction": "down",
+     "delta": 0.5
+    }
+   },
+   "criteria": [
+    {
+     "metric": "evasion",
+     "weight": 50
+    },
+    {
+     "metric": "true_quality",
+     "weight": 30
+    },
+    {
+     "metric": "exploit_rate",
+     "weight": 20
+    }
+   ]
+  },
+  {
+   "id": "cosine-sae",
+   "title": "Cosine-scored sparse autoencoders when input sizes vary",
+   "concept": "concept:interpretability",
+   "topics": [
+    "topic:interpretability"
+   ],
+   "source": {
+    "title": "Size Doesn't Matter: Cosine-Scored Sparse Autoencoders",
+    "url": "https://arxiv.org/abs/2606.15054",
+    "via": "daily paper watcher, Nov 7, 2026"
+   },
+   "idea": "A standard sparse autoencoder decides whether a feature fires from an inner product, so the input's overall size matters as much as its direction. Models that normalise their activations ignore that size. Scoring features by cosine (direction only) and scaling by the size afterwards should spend fewer latents on detecting size and recover more real features.",
+   "reproduce": {
+    "runner": "sparse-autoencoder",
+    "params": {
+     "latents": 24,
+     "l1": 0.1,
+     "resample": 0,
+     "steps": 1200,
+     "seed": 2,
+     "cosine": 0,
+     "norm_spread": 0.8
+    },
+    "expect": "When input sizes vary, a standard SAE recovers only a few of the toy's 12 true feature directions."
+   },
+   "hypothesis": {
+    "statement": "Ours: cosine scoring recovers at least 4 more of the 12 true features on the same inputs.",
+    "params": {
+     "cosine": 1
+    },
+    "predict": {
+     "metric": "recovered",
+     "direction": "up",
+     "delta": 4
+    }
+   },
+   "criteria": [
+    {
+     "metric": "recovered",
+     "weight": 60
+    },
+    {
+     "metric": "fve",
+     "weight": 20
+    },
+    {
+     "metric": "dead",
+     "weight": 20
+    }
+   ]
   }
  ]
 }

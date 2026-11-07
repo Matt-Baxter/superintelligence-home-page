@@ -56,7 +56,7 @@ function metricsTable(runner, base, variant) {
 }
 async function list() {
   const r = await api("/api/lab/examples");
-  $("#view").innerHTML = `<h2 style="margin-top:24px">Examples</h2><div class="exlist stagger">${r.examples.map((e, i) => `<a class="excard" style="--i:${i}" href="#/x/${e.id}"><span class="small muted">${esc(e.concept)}</span><h3>${esc(e.title)}</h3><p class="small" style="margin:0">${esc(e.idea)}</p><span class="vd ${e.verdict.supported ? "yes" : "no"}">${e.verdict.supported ? "Hypothesis supported" : "Hypothesis not supported"}</span></a>`).join("")}</div>`;
+  $("#view").innerHTML = `<h2 style="margin-top:24px">Examples</h2><div class="exlist stagger">${r.examples.map((e, i) => `<a class="excard" style="--i:${i}" href="#/x/${e.id}"><span class="small muted">${esc(e.concept)}${e.source ? " · from a paper" : ""}</span><h3>${esc(e.title)}</h3><p class="small" style="margin:0">${esc(e.idea)}</p><span class="vd ${e.verdict.supported ? "yes" : "no"}">${e.verdict.supported ? "Hypothesis supported" : "Hypothesis not supported"}</span></a>`).join("")}</div>`;
 }
 async function detail(id) {
   const d = await api(`/api/lab/examples/${encodeURIComponent(id)}`);
@@ -64,7 +64,7 @@ async function detail(id) {
   $("#view").innerHTML = `<p style="margin-top:20px"><a href="#/">All examples</a></p>
     <section class="panel enter"><span class="small muted">${esc(d.concept)} · ${d.topics.map(esc).join(" · ")}</span><h2 style="font-size:22px">${esc(d.title)}</h2>
     <div class="chain">
-      <div class="step"><span class="k">1 · The idea, in our words</span><p style="margin:0">${esc(d.idea)}</p></div>
+      <div class="step"><span class="k">1 · The idea, in our words</span><p style="margin:0">${esc(d.idea)}</p>${d.source ? `<p class="small muted" style="margin:0">From the paper <a href="${esc(d.source.url)}" rel="noopener">${esc(d.source.title)}</a> (found by the ${esc(d.source.via)}). Toy scale: this tests the idea's logic, not the paper's numbers.</p>` : ""}</div>
       <div class="step"><span class="k">2 · Our reproduction</span><p style="margin:0" class="small">${esc(d.expect)}</p><p class="small muted" style="margin:0">Runner <code>${esc(d.runner.id)}</code>: ${esc(d.runner.about)}. Params ${esc(JSON.stringify(d.baseline.params))}</p><p class="small" style="margin:0">${esc(d.baseline.notes[0] || "")}</p></div>
       <div class="step"><span class="k">3 · Our hypothesis</span><p style="margin:0" class="small">${esc(d.hypothesis)}</p><p class="small muted" style="margin:0">Changes ${esc(JSON.stringify(d.hypothesisParams))}</p></div>
     </div></section>
