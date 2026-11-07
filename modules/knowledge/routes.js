@@ -34,7 +34,7 @@ module.exports = function mountKnowledge(app, { db, auth, admin, wrap, str, bad,
     const all = (await db.all("SELECT story_id, ord, tags FROM knowledge_chunks")).map((r) => ({ ...r, tags: JSON.parse(r.tags) }));
     const edges = [...K.coOccurrence(all), ...taggers.curatedEdges()];
     await db.tx(async (t) => {
-      await t.run("DELETE FROM knowledge_edges");
+      await t.run("DELETE FROM knowledge_edges WHERE src NOT LIKE 'doc:%'"); // reviewed docs (modules/review) keep their edges
       for (const e of edges) await t.run("INSERT INTO knowledge_edges (src, rel, dst, weight, evidence, updated_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (src, rel, dst) DO UPDATE SET weight = excluded.weight, evidence = excluded.evidence",
         e.src, e.rel, e.dst, e.weight, JSON.stringify(e.evidence), iso());
     });

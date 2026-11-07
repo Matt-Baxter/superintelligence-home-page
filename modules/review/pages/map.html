@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Superintelligence map · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css">
+<style>
+  .totals { display: flex; gap: 22px; flex-wrap: wrap; font-size: 14px; color: var(--muted); } .totals b { color: var(--fg); font-variant-numeric: tabular-nums; font-size: 17px; margin-right: 4px; }
+  .map { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+  .area { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 14px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+  .area header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+  .area header h2 { font-size: 17px; margin: 0; } .area header span { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .k { font-size: 13px; color: var(--muted); }
+  .subs { display: flex; flex-wrap: wrap; gap: 6px; }
+  .sub { font-size: 13px; padding: 2px 8px; border: 1px solid var(--line); border-radius: var(--radius); text-decoration: none; color: var(--fg); background: var(--bg); }
+  .sub b { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--accent); margin-left: 4px; } .sub.zero { color: var(--muted); } .sub.zero b { color: var(--muted); }
+  .concepts { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: 14px; }
+  .concepts li { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 6px; align-items: baseline; } .lv { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .docs { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 14px; } .docs li { display: flex; justify-content: space-between; gap: 8px; } .docs a { overflow-wrap: anywhere; }
+  .docs span { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; font-size: 13px; }
+  .entries { display: flex; flex-wrap: wrap; gap: 6px; }
+</style></head>
+<body>
+<main>
+  <div class="pagehead"><div><h1>Superintelligence map</h1><p class="muted">The top-level areas of the ontology, what sits under each, the concepts that explain them and how much the feed and the review desk have on each. Click a topic to filter the feed.</p></div><a class="btn" href="/m/review">Review something</a></div>
+  <p class="totals" id="totals"></p>
+  <div class="map" id="map"></div>
+  <div class="cols">
+    <section class="panel"><h2>Watched people</h2><p class="small muted">Watchlist entries only: how often a name appears in the feed and in reviewed docs. No claims are recorded about anyone.</p><div class="entries" id="people"></div></section>
+    <section class="panel"><h2>Organisations</h2><div class="entries" id="orgs"></div></section>
+  </div>
+</main>
+<script src="/js/api.js"></script>
+<script>
+const pl = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+const chip = (href, label, n) => `<a class="sub${n ? "" : " zero"}" href="${href}">${esc(label)}<b>${n}</b></a>`;
+requireUser().then(async () => {
+  const m = await api("/api/review/map");
+  $("#totals").innerHTML = `<span><b>${m.totals.stories}</b>stories in scope</span><span><b>${m.totals.docs}</b>reviewed docs</span><span><b>${m.totals.concepts}</b>concepts</span>`;
+  $("#map").innerHTML = m.topics.map((t) => `<section class="area">
+    <header><h2><a href="/?topic=${encodeURIComponent(t.id)}">${esc(t.label)}</a></h2><span>${pl(t.stories, "story").replace("storys", "stories")} · ${pl(t.docs, "doc")}</span></header>
+    ${t.children.length ? `<div class="subs">${t.children.map((c) => chip(`/?topic=${encodeURIComponent(c.id)}`, c.label, c.stories + c.docs)).join("")}</div>` : ""}
+    ${t.concepts.length ? `<div><p class="k">Concepts</p><ul class="concepts">${t.concepts.map((c) => `<li><span class="lv" title="level">L${c.level}</span><a href="/m/learn#/c/${encodeURIComponent(c.id)}">${esc(c.name)}</a><span class="lv">${c.docs ? pl(c.docs, "doc") : ""}</span></li>`).join("")}</ul></div>` : ""}
+    ${t.docs_recent.length ? `<div><p class="k">Recently reviewed</p><ul class="docs">${t.docs_recent.map((d) => `<li><a href="/m/review#/doc/${d.id}">${esc(d.title)}</a><span>${d.score} · ${esc(d.verdict)}</span></li>`).join("")}</ul></div>` : ""}
+  </section>`).join("");
+  $("#people").innerHTML = m.people.map((p) => chip(`/?person=${encodeURIComponent(p.id)}`, p.label, p.stories + p.docs)).join("") || '<p class="small muted">No watchlist yet.</p>';
+  $("#orgs").innerHTML = m.orgs.map((o) => chip(`/?org=${encodeURIComponent(o.id)}`, o.label, o.docs)).join("");
+});
+</script>
+</body></html>
