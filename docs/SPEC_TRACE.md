@@ -5,10 +5,10 @@ How this build meets the shared spec ([specs/001-superintelligence-homepage/spec
 | REQ | What | Where in the code | Checked by |
 | --- | --- | --- | --- |
 | REQ-001 | 8+ superintelligence sources, 5+ kinds, fetched on a schedule | `lib/sources.json` (11 sources, 5 kinds), `lib/harvest.js`, `vercel.json` crons | unit: "REQ-001: 8+ sources across 5+ kinds" |
-| REQ-002 | Feed newest first; title, sources, topics, link | `server.js` default sort `new`; `storyCard` in `public/js/api.js` | e2e: "REQ-002: the feed is newest first by default" |
-| REQ-003 | Only superintelligence stories | `scope` in `lib/ontology.json`, `scope()` in `lib/analysis.js`, `stories.in_scope`, `storyRows` filter | e2e: "REQ-003 / SC-003" (both); unit: scope checks |
+| REQ-002 | Feed newest first; title, sources, topics, link | `server.js` default sort `new`; `storyCard` in `public/js/api.js` | e2e: "REQ-002: the feed is newest first by default"; unit: lineage (docs/LINEAGE.md) |
+| REQ-003 | Only superintelligence stories | `scope` in `lib/ontology.json`, `scope()` in `lib/analysis.js`, `stories.in_scope`, `storyRows` filter | e2e: "REQ-003 / SC-003" (both); unit: scope checks; unit: lineage (docs/LINEAGE.md) |
 | REQ-004 | Duplicates grouped into one story | `storyKeys` in `lib/feeds.js`, `addItem` in `lib/harvest.js` | e2e: grouping checks in "Feed" |
-| REQ-005 | Topics with the words that matched | `lib/tagger.js`; scope reason on the story page | e2e: "US1-5 / REQ-005", "REQ-005: the story page says why" |
+| REQ-005 | Topics with the words that matched | `lib/tagger.js`; scope reason on the story page | e2e: "US1-5 / REQ-005", "REQ-005: the story page says why"; unit: lineage (docs/LINEAGE.md) |
 | REQ-006 | No Twitter/X, as source or link | `addItem` drops x.com/twitter.com links; admin and suggest refuse them; preflight and guard hook | e2e: "REQ-006: an item linking to Twitter/X is dropped", "Twitter/X is refused" |
 | REQ-007 | Link out, no full text | Stories store title, summary (capped at 1,500 chars) and URL only | e2e: story links |
 | REQ-008 | A failing source doesn't stop the feed | `harvestSource` never throws; backoff | e2e: "catalog: … failures reported", "a failing source backs off" |
@@ -29,9 +29,9 @@ How this build meets the shared spec ([specs/001-superintelligence-homepage/spec
 | REQ-023 | Concepts in plain words, graph | `modules/learn/data/concepts.json`, `/m/learn`, `/m/map` | e2e: "Learn" section; review demo: "Map" |
 | REQ-024 | Background studio jobs | `learn_jobs`, `scripts/learn-worker.js`; the watcher queues `paper-to-code` | e2e: "Learn" section; unit: watch "queued for paper-to-code" |
 | REQ-025 | Explainer video and drafts, people publish | `modules/learn` explainer, RSS of published posts | e2e: "Learn" section |
-| REQ-026 | Worked examples, refuted kept, sources, sandbox | `modules/lab` (`examples.json`, `runners.js`, `interp.js`, `papers.js`, shared helpers in `util.js`), `/m/lab`, `/m/arena` | unit: lab, papers; arena demo; e2e: "refuted hypotheses are kept" |
-| REQ-027 | Review desk with anti-gaming guards | `modules/review` (`review.js`, `store.js`), `/m/review` | unit: review (22 checks); review demo; bench `review.*` |
-| REQ-028 | Daily paper watch | `scripts/watch.js`, `modules/review/watch.json`, `.github/workflows/paper-watch.yml` | unit: watch (5 checks) |
+| REQ-026 | Worked examples, refuted kept, sources, sandbox | `modules/lab` (`examples.json`, `runners.js`, `interp.js`, `papers.js`, shared helpers in `util.js`), `/m/lab`, `/m/arena` | unit: lab, papers; arena demo; e2e: "refuted hypotheses are kept"; unit: lineage (docs/LINEAGE.md) |
+| REQ-027 | Review desk with anti-gaming guards | `modules/review` (`review.js`, `store.js`), `/m/review` | unit: review (22 checks); review demo; bench `review.*`; unit: lineage (docs/LINEAGE.md) |
+| REQ-028 | Daily paper watch | `scripts/watch.js`, `modules/review/watch.json`, `.github/workflows/paper-watch.yml` | unit: watch (5 checks); unit: lineage (docs/LINEAGE.md) |
 | REQ-029 | Benchmarks with a ratchet | `scripts/bench.js`, `bench/` | preflight "Benchmarks" |
 | REQ-030 | Project tracker mirrors spec and agents | `scripts/project-sync.js`, `modules/project` | unit: project-sync |
 
