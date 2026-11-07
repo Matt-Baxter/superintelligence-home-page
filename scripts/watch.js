@@ -5,8 +5,15 @@
 //
 //   node scripts/watch.js                     query arXiv (modules/review/watch.json), at most once a day
 //   node scripts/watch.js --from <file>       use entries someone already fetched: arXiv Atom XML, or JSON
-//                                             [{title, url, summary, authors[], published?}] (how an agent without
-//                                             direct network access, or a test, feeds it)
+//                                             [{title, url, abstract?, summary?, authors[], published?}] (how an agent
+//                                             without direct network access, or a test, feeds it)
+//
+// What gets scored (REQ-033): the paper's own abstract. arXiv Atom's <summary> is the abstract. In JSON, "abstract" is
+// the abstract text (CC0 arXiv metadata) and "summary" is an agent's paraphrase. With both, the abstract is scored, the
+// paraphrase is checked by fidelity() (modules/review/fidelity.js) and shown in the digest only if it passes ("summary
+// withheld: <check>" otherwise); it never changes a score and is never stored. Only the abstract's sha256 and the usual
+// 400-character excerpt are stored (REQ-007). A JSON entry with only a summary is scored from it, as before, and the
+// digest says so.
 //   --people   also search the watchlist by author name      --dry   judge and write the digest, store nothing
 //   --max N    store at most N new papers (default maxNewPerRun)
 //
@@ -16,15 +23,17 @@ const fs = require("node:fs"), path = require("node:path");
 const root = path.join(__dirname, "..");
 const args = process.argv.slice(2), has = (f) => args.includes(f), val = (f) => { const i = args.indexOf(f); return i >= 0 ? args[i + 1] : null; };
 const CFG = require("../modules/review/watch.json");
-const feeds = require("../lib/feeds");
+const feeds = require("../lib/feeds"), crypto = require("node:crypto");
+const { fidelity } = require("../modules/review/fidelity");
 const { ontology } = require("../lib/tagger");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const OUT = process.env.WATCH_OUT || path.join(root, "out", "watch");
 
 function parseEntries(text) {
   const t = String(text).trim();
-  if (t.startsWith("[") || t.startsWith("{")) { const j = JSON.parse(t); return (Array.isArray(j) ? j : j.entries || []).map((e) => ({ title: e.title, url: e.url, summary: e.summary || e.abstract || "", authors: e.authors || [], published: e.published || "" })); }
-  return feeds.parseXml(t);
+  const str = (v) => String(v || "").replace(/\s+/g, " ").trim();
+  if (t.startsWith("[") || t.startsWith("{")) { const j = JSON.parse(t); return (Array.isArray(j) ? j : j.entries || []).map((e) => ({ title: e.title, url: e.url, abstract: str(e.abstract), summary: str(e.summary), authors: e.authors || [], published: e.published || "" })); }
+  return feeds.parseXml(t).map(fromAtom);
 }
 async function fetchArxiv() {
   const base = process.env.ARXIV_API || "https://export.arxiv.org/api/query?", out = [];
@@ -33,10 +42,22 @@ async function fetchArxiv() {
   for (const [i, q] of qs.entries()) {
     if (i) await sleep(Number(process.env.WATCH_DELAY_MS ?? 3100)); // arXiv: one request every 3 seconds
     const url = base.startsWith("fixture://") ? base : `${base}search_query=${encodeURIComponent(q.q)}&sortBy=submittedDate&sortOrder=descending&max_results=${CFG.maxPerQuery}`;
-    try { const items = feeds.parseXml((await feeds.fetchText(url, { timeoutMs: 20000 })).body); out.push(...items.map((e) => ({ ...e, query: q.id }))); console.log(`  ${q.id}: ${items.length}`); }
+    try { const items = feeds.parseXml((await feeds.fetchText(url, { timeoutMs: 20000 })).body).map(fromAtom); out.push(...items.map((e) => ({ ...e, query: q.id }))); console.log(`  ${q.id}: ${items.length}`); }
     catch (e) { console.log(`  ${q.id}: failed (${e.message})`); }
   }
   return out;
+}
+// arXiv's Atom <summary> is the paper's abstract, not a paraphrase.
+const fromAtom = (e) => ({ ...e, abstract: String(e.summary || "").trim(), summary: "" });
+// Which text is scored, and the paraphrase's fate. The paraphrase is display only: it never reaches review().
+function readEntry(e) {
+  const abstract = e.abstract || "", summary = e.summary || "";
+  if (!abstract) return { text: summary, read: "paraphrase", note: "scored from the agent's paraphrase (no abstract given)", extra: null, shown: null, withheld: null };
+  const f = summary ? fidelity(abstract, summary) : null;
+  const input = { read: "abstract", abstractSha256: crypto.createHash("sha256").update(abstract).digest("hex"), fidelity: f ? { pass: f.pass, failed: f.failed, version: f.version } : null };
+  const withheld = f && !f.pass ? f.failed[0] : null;
+  return { text: abstract, read: "abstract", note: !summary ? "scored from the abstract" : withheld ? `scored from the abstract; summary withheld: ${withheld}` : "scored from the abstract; summary checked against it",
+    extra: { input }, shown: f && f.pass ? summary : null, withheld, fidelity: f };
 }
 const arxivId = (u) => (String(u).match(/(\d{4}\.\d{4,5})/) || [])[1] || null;
 
@@ -55,12 +76,13 @@ async function main() {
   }
   const rows = []; let stored = 0, already = 0;
   for (const e of entries) {
-    const x = { kind: "paper", title: e.title, text: e.summary, authors: (e.authors || []).join(", "), url: e.url };
-    if (dry) { const r = R.review(x); rows.push({ e, r, isNew: true }); continue; }
+    const rd = readEntry(e);
+    const x = { kind: "paper", title: e.title, text: rd.text, authors: (e.authors || []).join(", "), url: e.url };
+    if (dry) { const r = R.review(x); rows.push({ e, r, rd, isNew: true }); continue; }
     if (stored >= max) break;
-    const out = await saveReview(db, x, null);
+    const out = await saveReview(db, x, null, rd.extra);
     if (out.existing) already++; else stored++;
-    rows.push({ e, r: out.review, isNew: !out.existing, docId: out.row.id });
+    rows.push({ e, r: out.review, rd, isNew: !out.existing, docId: out.row.id });
   }
   // Paper-to-code: the most credible new papers on the watched topics become Learn studio jobs (an agent does them).
   const P = CFG.paperToCode, queued = [];
@@ -81,11 +103,14 @@ async function main() {
   fs.mkdirSync(OUT, { recursive: true });
   const topicsOf = (r) => r.edges.filter((ed) => ed.rel === "about").map((ed) => ed.dst.slice(6)).join(", ");
   const md = [`# Paper watch, ${day}`, "", `${entries.length} papers found, ${stored} new${dry ? " (dry run: nothing stored)" : ""}, ${already} already in the catalog, ${queued.length} queued for paper-to-code. Scores come from the Review desk's guarded judges; people are matched by name only.`, "",
-    "| Paper | Verdict | Score | Credibility | Topics | New |", "| --- | --- | --- | --- | --- | --- |",
-    ...rows.sort((a, b) => b.r.credibility - a.r.credibility).map(({ e, r, isNew }) => `| [${e.title.replace(/\|/g, "/")}](${e.url}) | ${r.verdict} | ${r.score} | ${r.credibility} | ${topicsOf(r)} | ${isNew ? "yes" : ""} |`), "",
+    "| Paper | Verdict | Score | Credibility | Topics | New | Read from |", "| --- | --- | --- | --- | --- | --- | --- |",
+    ...rows.sort((a, b) => b.r.credibility - a.r.credibility).map(({ e, r, rd, isNew }) => `| [${e.title.replace(/\|/g, "/")}](${e.url}) | ${r.verdict} | ${r.score} | ${r.credibility} | ${topicsOf(r)} | ${isNew ? "yes" : ""} | ${rd.note} |`), "",
+    ...(rows.some((x) => x.rd.shown || x.rd.withheld) ? ["## Agent summaries", "", "Shown only when they pass the fidelity check against the abstract; they never change a score.", "",
+      ...rows.filter((x) => x.rd.shown || x.rd.withheld).map(({ e, rd }) => `- [${e.title}](${e.url}): ${rd.shown ? rd.shown : `summary withheld: ${rd.withheld} (${rd.fidelity.checks.find((c) => c.id === rd.withheld).detail})`}`), ""] : []),
     "## Queued for paper-to-code", "", ...(queued.length ? queued.map((q) => `- ${q.id ? `job #${q.id}: ` : ""}[${q.title}](${q.url})`) : ["- nothing new qualified today"]), ""];
   fs.writeFileSync(path.join(OUT, `${day}.md`), md.join("\n"));
-  fs.writeFileSync(path.join(OUT, `${day}.json`), JSON.stringify({ day, found: entries.length, stored, already, queued, papers: rows.map(({ e, r, isNew }) => ({ title: e.title, url: e.url, arxiv: arxivId(e.url), verdict: r.verdict, score: r.score, credibility: r.credibility, topics: topicsOf(r), isNew, qid: r.qid })) }, null, 2));
+  fs.writeFileSync(path.join(OUT, `${day}.json`), JSON.stringify({ day, found: entries.length, stored, already, queued, papers: rows.map(({ e, r, rd, isNew }) => ({ title: e.title, url: e.url, arxiv: arxivId(e.url), verdict: r.verdict, score: r.score, credibility: r.credibility, topics: topicsOf(r), isNew, qid: r.qid,
+    read: rd.read, note: rd.note, abstractSha256: rd.extra?.input.abstractSha256 || null, summary: rd.shown, summaryWithheld: rd.withheld, fidelity: rd.extra?.input.fidelity || null })) }, null, 2));
   console.log(`watch: ${entries.length} found, ${stored} new, ${already} already catalogued, ${queued.length} queued for paper-to-code -> out/watch/${day}.md`);
 }
 main().then(() => process.exit(0), (e) => { console.error("watch:", e.message); process.exit(1); });

@@ -33,6 +33,7 @@ const SUITES = {
     let gNaive = 0, gGuard = 0, gWhite = 0;
     for (const { it } of rs) { const s = R.stress(it, 5); gNaive += s.naiveAttack.gain.naive; gGuard += s.naiveAttack.gain.guarded; gWhite += s.whiteBox.gain.guarded; }
     const n = rs.length, r3 = (x) => Math.round(x * 1000) / 1000;
+    const fid = require("../modules/review/fidelity").evaluate(JSON.parse(fs.readFileSync(path.join(DIR, "fidelity-cases.json"), "utf8")));
     return {
       "review.credibility_auc": { value: r3(auc("credibility")), better: "higher", tol: 0, about: "credible items out-rank doubtful ones on credibility" },
       "review.score_auc": { value: r3(auc("score")), better: "higher", tol: 0.02, about: "...on the guarded score" },
@@ -45,6 +46,7 @@ const SUITES = {
       "review.whitebox_gain": { value: r3(gWhite / n), better: "lower", tol: 0.5, about: "points an adversary attacking the guarded score gains" },
       "review.adversary_gain_naive": { value: r3(gNaive / n), better: "info", about: "points the same attack gains on the unguarded judge (the attack is real)" },
       "review.ms_per_doc": { value: Math.round(ms * 10) / 10, better: "info", about: "time to review one item" },
+      "review.fidelity_accuracy": { value: r3(fid.accuracy), better: "higher", tol: 0, about: `paraphrase-fidelity checks right on bench/fidelity-cases.json (${fid.n} synthetic pairs: pass/fail and the expected check)` },
     };
   },
   lab: () => {
