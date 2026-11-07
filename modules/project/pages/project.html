@@ -103,6 +103,23 @@
   .tlfoot { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 10px 18px; border-top: 1px solid var(--line); }
   .tlwarn { color: var(--bad); font-size: 13px; }
   .deps { display: flex; flex-wrap: wrap; gap: 4px; }
+  /* specs */
+  .sv { padding: 14px 18px 24px; display: grid; gap: 18px; min-width: 0; }
+  .sv-sum { display: grid; gap: 6px; font-size: 13.5px; } .sv-sum code { overflow-wrap: anywhere; }
+  .sv-f { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: 13px; }
+  .sv-f select { width: auto; max-width: 100%; min-width: 0; flex: none; margin: 0; font: inherit; font-size: 13px; padding: 4px 8px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--fg); }
+  .sv-f label { display: inline-flex; gap: 6px; align-items: center; } .sv-f input[type=checkbox] { width: auto; margin: 0; }
+  .sv-spec { display: grid; gap: 8px; min-width: 0; }
+  .sv-spec h2 { font-size: 17px; font-weight: 600; margin: 0; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+  .sv-spec .tot { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .sv-spec table { font-size: 13px; min-width: 720px; } .sv-spec td { font-variant-numeric: tabular-nums; }
+  .sv-spec td.id { font-family: var(--mono); font-size: 12px; white-space: nowrap; } .sv-spec td.txt { min-width: 240px; }
+  .sv-spec td.tr { min-width: 220px; max-width: 320px; overflow-wrap: anywhere; color: var(--muted); } .sv-spec td.tr b { color: var(--fg); font-weight: 600; }
+  .sv-spec td.tk { min-width: 120px; } .sv-spec .tl-done { color: var(--muted); text-decoration: line-through; }
+  .stc { font-size: 11.5px; border: 1px solid var(--fg); border-radius: var(--radius); padding: 0 6px; white-space: nowrap; }
+  .stc.approved { background: var(--fg); color: var(--surface); } .stc.proposed { border-style: dashed; color: var(--muted); border-color: var(--line-strong); }
+  .sv-spec .sub { font-size: 12px; margin-top: 2px; }
+  .lvl { font-size: 11px; font-weight: 600; color: var(--muted); margin-right: 4px; }
   .toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--fg); color: var(--surface); padding: 8px 14px; border-radius: var(--radius); font-size: 13px; z-index: 40; }
   @media (max-width: 760px) {
     .pm { grid-template-columns: minmax(0, 1fr); }
@@ -126,6 +143,7 @@
     <button class="nv" data-view="timeline">Timeline</button>
     <button class="nv" data-view="milestones">Milestones</button>
     <button class="nv" data-view="activity">Activity</button>
+    <button class="nv" data-view="specs">Specs <span class="n" data-count="specs"></span></button>
     <h2>Milestones</h2><div class="ms-nav" id="msNav"></div>
     <h2>Labels</h2><div class="lb-nav" id="lbNav"></div>
     <p class="small muted hint" style="margin:16px 8px 0"><span class="kbd">C</span> new · <span class="kbd">/</span> search · <span class="kbd">J</span><span class="kbd">K</span> move · <span class="kbd">⌘K</span> commands · <span class="kbd">?</span> all keys</p>
@@ -183,6 +201,7 @@ const VIEWS = {
   timeline: { title: "Timeline", query: { status: "backlog,todo,in_progress,in_review,done" }, timeline: true },
   milestones: { title: "Milestones", special: true },
   activity: { title: "Activity", special: true },
+  specs: { title: "Specs", special: true },
 };
 async function loadMeta() {
   M = await api("/api/admin/project/meta");
@@ -207,6 +226,7 @@ async function render() {
   const anyF = Object.values(filters).some(Boolean); $("#clearF").hidden = !anyF;
   if (view === "milestones") return renderMilestones();
   if (view === "activity") return renderActivity();
+  if (view === "specs") return renderSpecs();
   const q = new URLSearchParams({ ...V.query }); for (const [k, v] of Object.entries(filters)) if (v !== "") q.set(k, v);
   const resp = await api("/api/admin/project/issues?" + q); issues = resp.issues;
   $("#viewCount").textContent = `${issues.length} issue${issues.length === 1 ? "" : "s"}`;
@@ -357,6 +377,50 @@ async function renderActivity() {
   const r = await api("/api/admin/project/activity"); $("#viewCount").textContent = "";
   $("#body").innerHTML = `<div class="feed-act">${r.activity.map((a) => `<div><span class="when">${ago(a.at)}</span><b>${esc(a.actor || "Someone")}</b> ${esc(a.action)}${a.detail ? ` <b>${esc(a.detail)}</b>` : ""} ${a.key ? `on <a href="#/all/${a.number}" data-open="${a.number}">${a.key} ${esc(a.title)}</a>` : ""}</div>`).join("") || '<div class="empty-st">No activity yet.</div>'}</div>`;
   $$("[data-open]").forEach((x) => (x.onclick = (e) => { e.preventDefault(); openIssue(x.dataset.open); }));
+}
+/* ---------- specs (REQ-030): every requirement with its trace, tasks and tracker issues ---------- */
+let SP = null; const spF = { spec: "", status: "", who: "", open: false };
+const md = (s) => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>"); // the trace's inline code, nothing else
+async function renderSpecs() {
+  SP = await api("/api/admin/project/specs");
+  $("[data-count=specs]").textContent = SP.reqs.length || "";
+  const st = SP.status, sum = st ? `<p>Shared spec, measured ${esc(st.measured || "")} (docs/SPEC_STATUS.md): ${st.summary.map((r) => `${esc(r.part.toLowerCase())} ${esc(r.passing)} passing, ${esc(r.people)} need people, ${esc(r.open)} open`).join("; ")}.</p>` : '<p class="muted">No docs/SPEC_STATUS.md yet; run <code>npm run spec:status</code>.</p>';
+  const opt = (v, t, cur) => `<option value="${esc(v)}" ${v === cur ? "selected" : ""}>${esc(t)}</option>`;
+  $("#body").innerHTML = `<div class="sv"><div class="sv-sum">${sum}
+    ${SP.people.length ? `<p class="small muted">People checks: ${SP.people.map((p) => `<b>${esc(p.id)}</b> ${esc(p.text)}`).join(" · ")}</p>` : ""}
+    <p class="small muted">Tracker issues come from the sync, which runs outside the web server: <code id="syncCmd">${esc(SP.sync.command)}</code> <button class="btn" type="button" id="syncCopy">Copy</button>${SP.source === "snapshot" ? " · read from the build snapshot" : ""}</p></div>
+    <div class="sv-f" role="group" aria-label="Filter requirements">
+      <select id="spSpec" aria-label="Spec">${opt("", "Every spec", spF.spec)}${SP.specs.map((s) => opt(s.id, `${s.id} ${s.title}`, spF.spec)).join("")}</select>
+      <select id="spStatus" aria-label="Status">${opt("", "Any status", spF.status)}${opt("approved", "Approved", spF.status)}${opt("proposed", "Proposed", spF.status)}</select>
+      <select id="spWho" aria-label="Who">${opt("", "Anyone", spF.who)}${opt("agent", "Agent tasks", spF.who)}${opt("rules", "Rules tasks", spF.who)}${opt("people", "People", spF.who)}</select>
+      <label><input type="checkbox" id="spOpen" ${spF.open ? "checked" : ""}> Has open tasks</label>
+      <span class="muted" id="spCount"></span></div><div id="spList"></div></div>`;
+  $("#syncCopy").onclick = (e) => copy(SP.sync.command, e.currentTarget);
+  [["#spSpec", "spec"], ["#spStatus", "status"], ["#spWho", "who"]].forEach(([s, k]) => ($(s).onchange = () => { spF[k] = $(s).value; drawSpecs(); }));
+  $("#spOpen").onchange = () => { spF.open = $("#spOpen").checked; drawSpecs(); };
+  drawSpecs();
+}
+function drawSpecs() {
+  const keep = (r) => (!spF.spec || r.spec === spF.spec) && (!spF.status || r.status === spF.status) && (!spF.open || r.open > 0)
+    && (!spF.who || r.tasks.some((t) => t.who === spF.who) || (spF.who === "people" && r.people));
+  const shown = SP.reqs.filter(keep);
+  $("#viewCount").textContent = `${shown.length} of ${SP.reqs.length} requirements`; $("#spCount").textContent = "";
+  const task = (t) => `<span class="${t.done ? "tl-done" : ""}" title="${esc(t.text)}">${esc(t.id)} <span class="muted">${esc(t.who)}</span></span>`;
+  const iss = (n) => { const i = SP.issues[n]; return `<a href="#/specs/${n}" data-open="${n}" title="${esc(i.title)} (${esc(statusLabel(i.status))})">${esc(i.key)}</a>`; };
+  $("#spList").innerHTML = SP.specs.map((s) => {
+    const rows = shown.filter((r) => r.spec === s.id); if (!rows.length) return "";
+    const T = s.totals;
+    return `<section class="sv-spec" data-spec="${esc(s.id)}"><h2>${esc(s.id)} ${esc(s.title)} <span class="stc ${s.status}">${s.status === "approved" ? "Approved" : "Proposed"}</span></h2>
+      <p class="tot">${T.reqs} requirements (${T.must} MUST, ${T.should} SHOULD) · ${T.traced} traced · tasks ${T.open} open, ${T.done} done · specs/${esc(s.dir)}/spec.md</p>
+      <div class="tablewrap"><table><thead><tr><th>REQ</th><th>Requirement</th><th>Status</th><th>Where and how it's checked</th><th>Tasks</th><th>Issues</th></tr></thead><tbody>
+      ${rows.map((r) => `<tr data-req="${r.id}"><td class="id">${r.id}</td><td class="txt"><span class="lvl">${esc(r.level)}</span>${esc(r.text)}${r.people ? `<div class="sub muted">People check: ${esc(r.people)}</div>` : ""}</td>
+        <td><span class="stc ${r.status}">${r.status === "approved" ? "Approved" : "Proposed"}</span>${r.measured ? `<div class="sub muted">${esc(r.measured)}</div>` : ""}</td>
+        <td class="tr">${r.trace ? `<b>Code</b> ${md(r.trace.code)}<br><b>Check</b> ${md(r.trace.check)}` : "Not traced"}</td>
+        <td class="tk">${r.tasks.length ? `<div>${r.open} open, ${r.done} done</div><div class="sub">${r.tasks.map(task).join(", ")}</div>` : '<span class="muted">None</span>'}</td>
+        <td>${r.issues.length ? r.issues.map(iss).join(" ") : '<span class="muted">None</span>'}</td></tr>`).join("")}
+      </tbody></table></div></section>`;
+  }).join("") || '<div class="empty-st">No requirement matches these filters.</div>';
+  $$("#spList [data-open]").forEach((x) => (x.onclick = (e) => { e.preventDefault(); openIssue(x.dataset.open); }));
 }
 async function loadStarter() {
   try { const r = await api("/api/admin/project/starter", { body: {} }); toast(`Loaded ${r.issues} issues in ${r.milestones} milestones`); await loadMeta(); render(); } catch (e) { toast(e.message); }

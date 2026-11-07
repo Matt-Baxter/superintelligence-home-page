@@ -5,7 +5,15 @@ Linear-style project workspace for running the project: issues (SI-n) with statu
 - **Tables** (owned here, via `db.schema`): `project_issues`, `project_milestones`, `project_comments`, `project_activity`.
 - **Routes**: `/api/admin/project/*` (`routes.js`). **Page**: `/m/project` (old `/project` redirects). **Nav**: Project (admins). **Starter**: `starter.json`.
 
-## Timeline (1.1.0)
+## Specs (1.2.0, proposed REQ-030)
+
+`/m/project#/specs`: every requirement in `specs/<nnn>/spec.md`, one table per spec, with its status (approved for the shared 001, proposed otherwise, from the spec's Status line), where it lives and how it's checked (`docs/SPEC_TRACE.md`), its Spec Kit tasks (`tasks.md`, with the agent/rules/people tag), people checks (`sync.json`), the measured status (`docs/SPEC_STATUS.md`) and the SI-n issues labelled with it. Filters: spec, status, who, has open tasks.
+
+- **Route:** `GET /api/admin/project/specs` (`specs.js` parses; `routes.js` adds issues). Shape in docs/INTERFACES.md 1.11.
+- **Sync:** issues come from `node scripts/project-sync.js`, which runs outside the web server; the page shows the command rather than a button.
+- **Vercel:** `npm run build` writes `data/specs.json` (git-ignored) via `scripts/spec-index.js`, read when `specs/` isn't in the bundle.
+- **Test:** `node test/project-specs-unit.js` (preflight) and the e2e "Project specs" section.
+
 
 `/m/project#/timeline` (shortcut G then T): issues with a start and due date drawn as bars, grouped by milestone, with day/week/month zoom, a today line and weekend bands.
 

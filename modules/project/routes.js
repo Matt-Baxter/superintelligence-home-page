@@ -186,6 +186,17 @@ module.exports = function mountProject(app, { db, auth, admin, wrap, str, bad, n
       LEFT JOIN users u ON u.id = a.actor_id LEFT JOIN project_issues i ON i.id = a.issue_id ORDER BY a.id DESC LIMIT 100`)).map((r) => ({ ...r, key: r.number ? `${PREFIX}-${r.number}` : null })),
   })));
 
+  // Specs view (REQ-030): every REQ from specs/<nnn>/spec.md with its trace, tasks, people check and the tracker
+  // issues labelled with it (project-sync labels approvals, people checks and tasks with their REQ ids). Read per request.
+  app.get("/api/admin/project/specs", ...A, wrap(async () => {
+    const data = require("./specs").collect(), byReq = {}, issues = {};
+    for (const r of await db.all("SELECT number, title, status, labels FROM project_issues WHERE labels LIKE ? ORDER BY number LIMIT 2000", '%"REQ-%')) {
+      issues[r.number] = { key: `${PREFIX}-${r.number}`, title: r.title, status: r.status };
+      for (const l of JSON.parse(r.labels || "[]")) if (/^REQ-\d{3}$/.test(l)) (byReq[l] = byReq[l] || []).push(r.number);
+    }
+    return { ...data, reqs: data.reqs.map((r) => ({ ...r, issues: byReq[r.id] || [] })), issues, sync: { command: "node scripts/project-sync.js", inProcess: false } };
+  }));
+
   // Load the project's real open to-dos (modules/project/starter.json, taken from docs/OUR_PARTS.md) into an empty tracker.
   app.post("/api/admin/project/starter", ...A, wrap(async (req) => {
     if ((await db.get("SELECT COUNT(*) AS n FROM project_issues")).n > 0) bad("The tracker already has issues; starter issues only load into an empty one.");

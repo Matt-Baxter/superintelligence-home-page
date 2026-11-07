@@ -6,6 +6,7 @@ dist/
 client/blocks.gen.jsx
 public/m/
 modules/codemap/data/
+modules/project/data/
 out/
 !modules/learn/data/
 __pycache__/
