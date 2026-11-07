@@ -37,7 +37,7 @@ Any agent (Codex, v0, Claude or another) picks up work here. `scripts/project-sy
 ## Phase 3: score the source (REQ-033)
 
 - [x] T020 [rules] [REQ-033] `fidelity(source, paraphrase)` with number/unit, entity, hedge, negation and claim-count checks, passing bench/fidelity-cases.json (modules/review/fidelity.js) (done: 52 of 52 right, each unfaithful pair fails only its expected check; `node test/fidelity-unit.js`; bench metric `review.fidelity_accuracy`)
-- [ ] T021 [rules] [REQ-033] The watcher scores the abstract and stores the paraphrase for display only, withheld when fidelity fails; only a hash and the 400-character excerpt are stored (scripts/watch.js, modules/review/store.js)
+- [x] T021 [rules] [REQ-033] The watcher scores the abstract and stores the paraphrase for display only, withheld when fidelity fails; only a hash and the 400-character excerpt are stored (scripts/watch.js, modules/review/store.js) (done: JSON input `abstract` + `summary`; the paraphrase is shown in the digest only, never stored; `review_docs.result.input` holds the abstract's sha256 and the fidelity verdict; test/watch-unit.js 15/0)
 
 ## Phase 4: wording and negation (REQ-034, REQ-035)
 
