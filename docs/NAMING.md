@@ -16,11 +16,14 @@ One way to name routes, tables, labels, tags and metadata, so people, agents and
   | `concept:` | `concept:attention` | Learn concept |
   | `req:` | `req:REQ-003` | shared-spec requirement |
   | `module:` | `module:learn` | plug-in module |
+  | `doc:` | `doc:6fedfb496fb2` | a reviewed paper, article or comment (Review desk; hash of its title and text) |
   | `source:`, `story:` | `story:42` | database rows |
+
+- **Knowledge-graph edge relations** are kebab-case verbs from a fixed list: `about` (to a topic), `explains` (to a concept), `evaluates-on` (to a benchmark), `mentions` (to a person or organisation, matched by name only), `co-occurs` (tags seen together), `part-of` (child topic to parent), plus the Learn concept relations listed in `modules/learn/data/concepts.json`.
 
 - **Every tag carries its `qid`**, the words that `matched` and, for parent topics, `via` (the child topic that implied it). A tag must be able to explain itself (REQ-005/SC-006).
 - **Filter by tag** with qualified ids: `GET /api/stories?tag=topic:alignment,org:openai` (all must match).
-- **Ids are unique within their namespace** **(checked)**. References point at real ids: topic `parent`, benchmark `measures`, concept `topic` and relations **(checked)**.
+- **Ids are unique within their namespace** **(checked)**. References point at real ids: topic `parent`, benchmark `measures`, concept `topic` and relations, the paper watcher's query and paper-to-code topics (`modules/review/watch.json`) and Lab example `topics` and `concept` (`modules/lab/examples.json`), which must be qualified ids **(checked)**.
 - **Top-level topics are the spec's fixed list** of nine **(checked)**. Their labels match the spec's Assumptions word for word.
 - **Labels** (what people read) are sentence case: "Automating AI research", not "Automating Ai Research".
 - **Project labels** are kebab-case, or a requirement id that exists in the spec (`REQ-007`) **(checked)**.
