@@ -23,7 +23,13 @@ ok(JSON.stringify(rq(1, 3)) === JSON.stringify(refine), "role-play self-improvem
 ok(fixed.bad_rate > fixed.start_rate, `with fixed repair rules, wrong-artifact repairs cause drift (${fixed.start_rate} -> ${fixed.bad_rate})`);
 ok(refine.bad_rate < fixed.bad_rate - 0.1 && refine.rules_right > fixed.rules_right, `refining its own rules cuts the bad-reply rate (${fixed.bad_rate} -> ${refine.bad_rate})`);
 ok(loose.rules_right < refine.rules_right, `a looser edit bound makes rules thrash rather than settle (${refine.rules_right} at 3, ${loose.rules_right} at 6)`);
-const ex = ["rsi-hidden-evals", "rrsi-edit-budget", "oversight-recompute", "cosine-sae", "roleplay-bounded-rsi"].map((id) => [id, L.runExample(id)]);
+const mo = P.runners.find((r) => r.id === "moe-sae-attribution"), mq = (p) => mo.run({ router_info: 0, leak: 0.1, enc_noise: 0.2, tokens: 400, seed: 11, ...p }).metrics;
+const moe = mq({});
+ok(JSON.stringify(mq({})) === JSON.stringify(moe), "MoE expert-attribution toy is deterministic");
+ok(moe.split_error < 1e-6, `per-expert contributions add up exactly to each SAE latent's pre-activation (gap ${moe.split_error})`);
+ok(moe.contrib_acc > moe.gate_acc + 0.15 && moe.contrib_conc > moe.gate_conc, `crediting latents by contribution finds the owning expert more often than gate weight (${moe.gate_acc} -> ${moe.contrib_acc}) and is more concentrated (${moe.gate_conc} -> ${moe.contrib_conc})`);
+ok(mq({ router_info: 0.5 }).gate_acc > moe.gate_acc, "gate weight only catches up when the router itself knows the fine-grained owner");
+const ex = ["rsi-hidden-evals", "rrsi-edit-budget", "oversight-recompute", "cosine-sae", "roleplay-bounded-rsi", "moe-sae-expert-split"].map((id) => [id, L.runExample(id)]);
 ok(ex.every(([, r]) => r.example.source && /^https:\/\/arxiv\.org\/abs\/\d{4}\.\d{4,5}$/.test(r.example.source.url)), "every paper example links its arXiv source");
-ok(ex.filter(([, r]) => !r.verdict.supported).map(([id]) => id).join() === "rrsi-edit-budget,roleplay-bounded-rsi", "the edit-budget and looser-bound hypotheses are kept as refuted at toy scale");
+ok(ex.filter(([, r]) => !r.verdict.supported).map(([id]) => id).join() === "rrsi-edit-budget,roleplay-bounded-rsi,moe-sae-expert-split", "the edit-budget, looser-bound and noisy-encoder hypotheses are kept as refuted at toy scale");
 console.log(`\npapers unit: ${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

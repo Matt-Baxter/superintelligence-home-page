@@ -131,6 +131,12 @@
       "tol": 0.02,
       "about": "drop in the bad-reply rate when a role-play updater refines its own repair rules (arXiv 2611.07469 toy)"
     },
+    "papers.moe_contrib_advantage": {
+      "value": 0.288,
+      "better": "higher",
+      "tol": 0.05,
+      "about": "how much more often crediting SAE latents by per-expert contribution, rather than gate weight, names the owning expert (arXiv 2611.08089 toy)"
+    },
     "analysis.scope_accuracy": {
       "value": 1,
       "better": "higher",
