@@ -320,6 +320,7 @@ Quoted from the repo's own pitfall, trap, troubleshooting and habits sections (n
 **docs/**
 
 - [docs/DEPLOY.md](DEPLOY.md): The site runs on Vercel from John's v0/Vercel account, with the code on Matt's GitHub repo and a Neon Postgres database.
+- [docs/DESIGN_REFERENCES.md](DESIGN_REFERENCES.md): Sections: Details inspiration, 2026-11-07.
 - [docs/HANDOFF.md](HANDOFF.md): Written 2026-11-07 for whoever picks this up next (Codex for code, v0 for the bake-off UI).
 - [docs/INTERFACES.md](INTERFACES.md): The data model, API, auth and rules of **John's build** (the code in this repo).
 - [docs/NAMING.md](NAMING.md): One way to name routes, tables, labels, tags and metadata, so people, agents and the codebase map all agree.

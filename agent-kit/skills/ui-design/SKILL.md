@@ -26,3 +26,7 @@ description: Design and review UI so it reads as deliberate rather than AI-gener
 8. **Look at it.** Take a screenshot at 1280 px and at 390 px in light and dark (`test/e2e.js` already shoots the main pages into `shots/`). Then ask: would a careful human designer have made each choice on purpose?
 
 Load `references/motion.md` when adding any animation, `references/slop-gates.md` when the check fails or for a full review, and `references/external-skills.md` when the humans want to install more design skills.
+
+## Project references
+
+[Design references](../../../docs/DESIGN_REFERENCES.md) records source links, the patterns actually applied, their requirements and verification. Consult it for related work and preserve the existing visual system.

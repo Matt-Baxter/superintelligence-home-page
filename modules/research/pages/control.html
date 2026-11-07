@@ -2,70 +2,120 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Research control room · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css">
 <style>
-  #out { display: grid; gap: 16px; } #out > section { margin: 0; }
-  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
-  .tiles a, .tiles div { background: var(--surface); padding: 12px 14px; display: grid; gap: 2px; text-decoration: none; color: inherit; }
-  .tiles b { font-size: 26px; font-weight: 500; font-variant-numeric: tabular-nums; } .tiles span { font-size: 13px; color: var(--muted); }
-  .tiles .due b { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
+  .control-head { align-items: start; } .control-head p { max-width: 62ch; } .control-head .actions { padding-top: 4px; }
+  .research-shell { display: grid; grid-template-columns: 204px minmax(0, 1fr); gap: 40px; align-items: start; }
+  .research-nav { position: sticky; top: 132px; display: grid; gap: 24px; min-width: 0; }
+  .research-nav nav { display: grid; gap: 4px; } .research-nav nav a { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 10px; color: var(--muted); text-decoration: none; border-radius: var(--radius); font-size: 14px; }
+  .research-nav nav a[aria-current], .research-nav nav a:hover { color: var(--fg); background: var(--accent-soft); }
+  .nav-count { font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .research-work { display: grid; gap: 28px; min-width: 0; } .research-work > section, .research-work > details { scroll-margin-top: 140px; }
+  .research-work .panel { background: transparent; border: 0; border-top: 1px solid var(--line); border-radius: 0; padding: 24px 0 0; margin: 0; gap: 14px; }
+  .inbox-summary { display: flex; flex-wrap: wrap; gap: 24px 40px; padding-bottom: 4px; }
+  .inbox-summary a { display: grid; gap: 2px; text-decoration: none; color: inherit; } .inbox-summary b { font-size: 26px; font-weight: 500; line-height: 1.2; font-variant-numeric: tabular-nums; } .inbox-summary span { font-size: 13px; color: var(--muted); }
+  .section-title { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; } .section-title h2 { margin: 0; } .section-title .small { white-space: nowrap; }
   table.t { width: 100%; border-collapse: collapse; font-size: 14px; } table.t th { text-align: left; font-weight: 500; color: var(--muted); font-size: 13px; }
-  table.t td, table.t th { padding: 8px 8px 8px 0; border-bottom: 1px solid var(--line); vertical-align: top; } table.t td { overflow-wrap: anywhere; } table.t td.n { white-space: nowrap; font-variant-numeric: tabular-nums; }
-  .scroll { overflow-x: auto; }
-  .acts { display: flex; gap: 6px; flex-wrap: wrap; }
+  table.t td, table.t th { padding: 12px 12px 12px 0; border-bottom: 1px solid var(--line); vertical-align: top; } table.t td { overflow-wrap: anywhere; } table.t td.n { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .scroll { overflow-x: auto; } .scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .acts { display: flex; gap: 6px; flex-wrap: wrap; } .acts .btn { font-size: 13px; padding: 7px 10px; }
   .ok-no { font-size: 12px; font-weight: 600; padding: 1px 7px; border: 1px solid var(--fg); border-radius: var(--radius); white-space: nowrap; } .ok-no.yes { background: var(--fg); color: var(--surface); }
-  .links { display: flex; flex-wrap: wrap; gap: 8px; } .links a { font-size: 14px; padding: 4px 10px; border: 1px solid var(--line); border-radius: var(--radius); text-decoration: none; color: var(--fg); background: var(--surface); }
-  .links a:hover { border-color: var(--fg); }
-  .reqs { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-size: 14px; }
+  .research-links { display: grid; gap: 7px; } .research-links h3 { font-size: 13px; font-weight: 500; color: var(--muted); margin-bottom: 2px; }
+  .research-links a { color: var(--fg); text-decoration: none; font-size: 14px; padding: 3px 0; } .research-links a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .disclosure { border-bottom: 1px solid var(--line); padding: 14px 0; } .disclosure summary { cursor: pointer; font-size: 15px; font-weight: 500; padding: 4px 0; } .disclosure summary small { color: var(--muted); font-size: 13px; font-weight: 400; margin-left: 8px; }
+  .disclosure[open] > :not(summary) { margin-top: 14px; } .setup-lines { display: grid; gap: 12px; } .setup-lines > div { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 12px; font-size: 14px; } .setup-lines dt { color: var(--muted); } .setup-lines dd { margin: 0; overflow-wrap: anywhere; }
+  .reqs { margin: 0; padding-left: 20px; display: grid; gap: 12px; font-size: 14px; } .reqs li { padding-left: 4px; } .reqs b { display: block; font-size: 13px; font-family: var(--mono); }
+  .quiet-state { padding: 18px 0; color: var(--muted); font-size: 14px; } .quiet-state a { margin-left: 8px; }
+  @media (prefers-reduced-motion: no-preference) { .research-nav nav a { transition: color var(--dur-1) var(--ease-out), background-color var(--dur-1) var(--ease-out); } }
+  @media (max-width: 760px) {
+    .research-shell { grid-template-columns: minmax(0, 1fr); gap: 24px; } .research-nav { position: static; gap: 0; }
+    .research-nav nav { display: flex; overflow-x: auto; padding-bottom: 6px; } .research-nav nav a { flex: 0 0 auto; white-space: nowrap; } .research-nav > .research-links { display: none; }
+    .control-head .actions { width: 100%; } .control-head .actions .btn { flex: 1; justify-content: center; }
+    .inbox-summary { gap: 18px 28px; } .setup-lines > div { grid-template-columns: 1fr; gap: 2px; }
+  }
 </style></head>
 <body>
 <main>
-  <div class="pagehead"><div><h1>Research control room</h1><p class="muted">Everything the research layer needs from a person, in one place: forecasts to resolve, reviews to label, requirements to approve, and how well the judging is doing on real reviews. Nothing here publishes, merges or deploys.</p></div></div>
+  <div class="pagehead control-head"><div><h1>Research control room</h1><p class="muted">Resolve forecasts, review flagged judgements, and track the decisions waiting on you.</p></div><div class="actions"><a class="btn primary" href="/m/review">Open review desk</a><a class="btn" href="/m/project#/specs">View specs</a></div></div>
   <p id="status" class="small muted" role="status" aria-live="polite">Loading…</p>
   <div id="out"></div>
 </main>
 <script src="/js/api.js"></script>
 <script>
 const OUTCOMES = [["happened", "Happened"], ["did-not", "Did not"], ["unclear", "Unclear"], ["annulled", "Annulled"]];
-async function load() {
+function markSection() {
+  const id = location.hash.slice(1) || "forecasts";
+  $$(".research-nav nav a").forEach((a) => { if (a.hash === `#${id}`) a.setAttribute("aria-current", "location"); else a.removeAttribute("aria-current"); });
+  const target = document.getElementById(id);
+  if (target?.tagName === "DETAILS") { target.open = true; target.scrollIntoView({ block: "start" }); }
+}
+window.addEventListener("hashchange", markSection);
+async function load(message = "") {
   try {
     const r = await api("/api/admin/research/status"), W = r.waiting;
     const due = r.forecasts.filter((f) => f.overdue);
+    const open = new Set($$("details[open]").map((d) => d.id));
+    const groups = [...new Set(r.proposals.map((p) => p.spec || "002"))];
     $("#out").innerHTML = `
-    <section><div class="tiles">
-      <a href="#forecasts" class="${due.length ? "due" : ""}"><b>${due.length}</b><span>forecasts due to resolve (${W.forecastsPending} pending)</span></a>
-      <a href="#flagged" class="${r.flagged.length ? "due" : ""}"><b>${r.flagged.length}</b><span>reviews waiting for a person</span></a>
-      <a href="#approvals"><b>${r.proposals.length}</b><span>proposed requirements to approve</span></a>
-      <a href="#quality"><b>${r.quality.filter((q) => q.ok).length}/${r.quality.length}</b><span>quality checks holding</span></a>
-      <div><b>${r.panel.ready ? "on" : "off"}</b><span>two-model panel ${r.panel.ready ? `(${r.panel.models.map(esc).join(", ")})` : "(set PANEL_MODELS)"}; advisor ${r.panel.advisor ? esc(r.panel.advisor) : "off (set ADVISOR_MODEL)"}</span></div>
-      <div><b>${W.jobsQueued}</b><span>agent jobs queued${W.jobsFailed ? `, ${W.jobsFailed} failed` : ""}</span></div>
-    </div></section>
-
-    <section class="panel"><h2>Go to</h2><div class="links">
-      <a href="/research">Public write-ups${r.public ? "" : " (hidden: RESEARCH_PUBLIC is off)"}</a><a href="/research/criteria">How we judge</a><a href="/research/outlets">Track records</a>
-      <a href="/research/feed.xml">RSS feed</a><a href="/research/data.json">Open data (JSON)</a><a href="/m/review">Review desk</a><a href="/m/dossier">Dossiers</a><a href="/m/map">Map</a><a href="/m/lab">Lab</a><a href="/m/project">Project tracker</a><a href="https://github.com/Matt-Baxter/superintelligence-home-page/blob/fix/sync-with-main/docs/PARITY.md" rel="noopener">Parity matrix</a><a href="https://github.com/Matt-Baxter/superintelligence-home-page/blob/fix/sync-with-main/docs/PRACTICES.md" rel="noopener">Practices</a></div></section>
-
-    <section class="panel" id="forecasts"><h2>Forecasts to resolve</h2>
+    <div class="research-shell">
+    <aside class="research-nav" aria-label="Research workspace">
+      <nav aria-label="Research sections">
+        <a href="#forecasts"><span>Forecasts</span><span class="nav-count">${due.length}</span></a>
+        <a href="#flagged"><span>Review queue</span><span class="nav-count">${r.flagged.length}</span></a>
+        <a href="#quality"><span>Judging quality</span><span class="nav-count">${r.quality.length ? `${r.quality.filter((q) => q.ok).length}/${r.quality.length}` : "—"}</span></a>
+        <a href="#approvals"><span>Approvals</span><span class="nav-count">${r.proposals.length}</span></a>
+        <a href="#setup"><span>Setup & resources</span></a>
+      </nav>
+      <div class="research-links"><h3>Research library</h3><a href="/m/dossier">Topic dossiers</a><a href="/research/outlets">Outlet track records</a><a href="/m/map">Knowledge map</a><a href="/m/lab">Lab experiments</a></div>
+    </aside>
+    <div class="research-work">
+    <section class="inbox-summary" aria-label="Research overview">
+      <a href="#forecasts"><b>${due.length}</b><span>forecasts due</span></a>
+      <a href="#flagged"><b>${r.flagged.length}</b><span>reviews to label</span></a>
+      <a href="/m/learn"><b>${W.jobsQueued}</b><span>studio jobs queued${W.jobsFailed ? ` · ${W.jobsFailed} failed` : ""}</span></a>
+    </section>
+    <section class="panel" id="forecasts"><div class="section-title"><h2>Forecasts to resolve</h2><span class="small muted">${W.forecastsPending} pending</span></div>
       <p class="small muted">Mark each once it's due. Unclear (reality is ambiguous) and annulled (a premise fell away) count for neither side. Forecasts carry no names.</p>
-      ${r.forecasts.length ? `<div class="scroll"><table class="t"><thead><tr><th>Due</th><th>Forecast</th><th>From</th><th>Outcome</th></tr></thead><tbody>${r.forecasts.map((f) => `<tr><td class="n">${esc(f.due)}${f.overdue ? "<br><b class=\"small\">due now</b>" : ""}</td><td>${esc(f.sentence)}${f.probability != null ? ` <span class="small muted">(stated: ${Math.round(f.probability * 100)}%)</span>` : ""}${f.title ? `<br><a class="small" href="/m/review#/doc/${f.doc_id}">${esc(f.title)}</a>` : ""}</td><td>${esc(f.outlet_label)}</td>
-        <td>${f.overdue ? `<div class="acts">${OUTCOMES.map(([v, l]) => `<button class="btn" type="button" data-ev="${f.id}" data-v="${v}">${l}</button>`).join("")}</div>` : `<span class="small muted">due ${esc(f.due)}</span>`}</td></tr>`).join("")}</tbody></table></div>` : '<p class="small muted">No pending forecasts.</p>'}</section>
+      ${r.forecasts.length ? `<div class="scroll" tabindex="0" role="region" aria-label="Forecast resolution table"><table class="t"><thead><tr><th>Due</th><th>Forecast</th><th>From</th><th>Outcome</th></tr></thead><tbody>${r.forecasts.map((f) => `<tr><td class="n">${esc(f.due)}${f.overdue ? "<br><b class=\"small\">due now</b>" : ""}</td><td>${esc(f.sentence)}${f.probability != null ? ` <span class="small muted">(stated: ${Math.round(f.probability * 100)}%)</span>` : ""}${f.title ? `<br><a class="small" href="/m/review#/doc/${f.doc_id}">${esc(f.title)}</a>` : ""}</td><td>${esc(f.outlet_label)}</td>
+        <td>${f.overdue ? `<div class="acts">${OUTCOMES.map(([v, l]) => `<button class="btn" type="button" data-ev="${f.id}" data-v="${v}">${l}</button>`).join("")}</div>` : `<span class="small muted">due ${esc(f.due)}</span>`}</td></tr>`).join("")}</tbody></table></div>` : '<p class="quiet-state">No pending forecasts. <a href="/m/dossier">Explore topic dossiers</a></p>'}</section>
 
     <section class="panel" id="flagged"><h2>Reviews waiting for a person</h2>
       <p class="small muted">The guards sent these to a person. Agree or disagree with the verdict; your labels are how the judges are calibrated.</p>
-      ${r.flagged.length ? `<div class="scroll"><table class="t"><thead><tr><th>Piece</th><th>Verdict</th><th>Why it was flagged</th><th></th></tr></thead><tbody>${r.flagged.map((d) => `<tr><td><a href="/m/review#/doc/${d.id}">${esc(d.title)}</a></td><td class="n">${esc(d.verdict)}, ${d.credibility}</td><td class="small">${d.reasons.map(esc).join("; ")}${d.judges.length ? `<br><span class="muted">Judges: ${d.judges.map(esc).join(", ")}</span>` : ""}${d.advice ? `<br><b>Advisor:</b> ${esc(d.advice)}` : ""}</td>
-        <td><div class="acts"><button class="btn" type="button" data-doc="${d.id}" data-l="agree">Agree</button><button class="btn" type="button" data-doc="${d.id}" data-l="disagree">Disagree</button></div></td></tr>`).join("")}</tbody></table></div>` : '<p class="small muted">Nothing waiting.</p>'}</section>
+      ${r.flagged.length ? `<div class="scroll" tabindex="0" role="region" aria-label="Flagged reviews table"><table class="t"><thead><tr><th>Piece</th><th>Verdict</th><th>Why it was flagged</th><th></th></tr></thead><tbody>${r.flagged.map((d) => `<tr><td><a href="/m/review#/doc/${d.id}">${esc(d.title)}</a></td><td class="n">${esc(d.verdict)}, ${d.credibility}</td><td class="small">${d.reasons.map(esc).join("; ")}${d.judges.length ? `<br><span class="muted">Judges: ${d.judges.map(esc).join(", ")}</span>` : ""}${d.advice ? `<br><b>Advisor:</b> ${esc(d.advice)}` : ""}</td>
+        <td><div class="acts"><button class="btn" type="button" data-doc="${d.id}" data-l="agree">Agree</button><button class="btn" type="button" data-doc="${d.id}" data-l="disagree">Disagree</button></div></td></tr>`).join("")}</tbody></table></div>` : '<p class="quiet-state">The review queue is clear. <a href="/m/review">Review a paper or article</a></p>'}</section>
 
     <section class="panel" id="quality"><h2>Judging quality on real reviews</h2>
       <p class="small muted">Label-free checks: does the judging tell pieces apart, and do its parts agree? A failed check becomes a synthetic benchmark item before any rule changes.</p>
-      ${r.quality.length ? `<div class="scroll"><table class="t"><thead><tr><th>Check</th><th>Value</th><th>Holds</th><th>If not</th></tr></thead><tbody>${r.quality.map((q) => `<tr><td>${esc(q.label)}<br><span class="small muted">${esc(q.why)}</span></td><td class="n">${q.value ?? "n/a"}</td><td><span class="ok-no ${q.ok ? "yes" : ""}">${q.ok ? "yes" : "no"}</span></td><td class="small">${q.ok ? "" : esc(q.fix)}</td></tr>`).join("")}</tbody></table></div>` : '<p class="small muted">No reviews yet.</p>'}</section>
+      ${r.quality.length ? `<div class="scroll" tabindex="0" role="region" aria-label="Judging quality table"><table class="t"><thead><tr><th>Check</th><th>Value</th><th>Holds</th><th>If not</th></tr></thead><tbody>${r.quality.map((q) => `<tr><td>${esc(q.label)}<br><span class="small muted">${esc(q.why)}</span></td><td class="n">${q.value ?? "n/a"}</td><td><span class="ok-no ${q.ok ? "yes" : ""}">${q.ok ? "yes" : "no"}</span></td><td class="small">${q.ok ? "" : esc(q.fix)}</td></tr>`).join("")}</tbody></table></div>` : '<p class="quiet-state">Quality checks appear after the first review. <a href="/m/review">Open review desk</a></p>'}</section>
 
     <section class="panel" id="approvals"><h2>Waiting on both partners</h2>
-      <p class="small muted">${esc(r.specStatus.replace(/\*\*|`/g, ""))}</p>
-      <ol class="reqs">${r.proposals.map((p) => `<li><b>${esc(p.spec || "002")}/${esc(p.id)}</b> ${esc(p.text)}…</li>`).join("")}</ol>
-      <h3 style="font-size:15px;margin:14px 0 6px">People checks in the shared spec</h3>
-      <ul class="small">${Object.entries(r.people).map(([id, t]) => `<li><b>${esc(id)}</b>: ${esc(t)}</li>`).join("")}</ul></section>`;
-    $$("[data-ev]").forEach((b) => (b.onclick = async () => { try { await api(`/api/admin/review/events/${b.dataset.ev}`, { body: { status: b.dataset.v } }); flash($("#status"), `Forecast marked ${b.dataset.v}.`); load(); } catch (e) { showErr($("#status"), e); } }));
-    $$("[data-doc]").forEach((b) => (b.onclick = async () => { try { await api(`/api/admin/review/docs/${b.dataset.doc}/label`, { body: { label: b.dataset.l } }); flash($("#status"), `Labelled: ${b.dataset.l}.`); load(); } catch (e) { showErr($("#status"), e); } }));
-    $("#status").textContent = `As of ${r.today}.`;
+      <p class="small muted">${r.proposals.length} proposed requirements. Both partners decide; these controls do not approve or publish anything.</p>
+      ${groups.map((spec) => `<details class="disclosure" id="spec-${esc(spec)}"><summary>Spec ${esc(spec)}<small>${r.proposals.filter((p) => (p.spec || "002") === spec).length} proposed requirements</small></summary><ol class="reqs">${r.proposals.filter((p) => (p.spec || "002") === spec).map((p) => `<li><b>${esc(p.spec || "002")}/${esc(p.id)}</b> ${esc(p.text)}…</li>`).join("")}</ol><p><a class="small" href="/m/project#/specs">View requirements and linked tasks</a></p></details>`).join("")}
+      <details class="disclosure" id="people-checks"><summary>People checks<small>${Object.keys(r.people).length} checks in the shared spec</small></summary><ul class="reqs">${Object.entries(r.people).map(([id, t]) => `<li><b>${esc(id)}</b> ${esc(t)}</li>`).join("")}</ul></details></section>
+
+    <details class="disclosure" id="setup"><summary>Setup & resources<small>Panel ${r.panel.ready ? "configured" : "not configured"}</small></summary>
+      <dl class="setup-lines"><div><dt>Judge panel</dt><dd>${r.panel.ready ? `Configured: ${r.panel.models.map(esc).join(", ")}. Live coverage is shown under judging quality.` : "Not configured. Set PANEL_MODELS in the worker environment to compare two models."}</dd></div>
+      <div><dt>Advisor</dt><dd>${r.panel.advisor ? esc(r.panel.advisor) : "Not configured. Set ADVISOR_MODEL in the worker environment."}</dd></div>
+      <div><dt>Public research</dt><dd>${r.public ? "Public preview enabled." : "Admin preview only. RESEARCH_PUBLIC is off."}</dd></div></dl>
+      <div class="research-links"><h3>Read & explore</h3><a href="/research">Research write-ups</a><a href="/m/dossier">Topic dossiers</a><a href="/research/outlets">Outlet track records</a><a href="/m/map">Knowledge map</a><a href="/m/lab">Lab experiments</a><a href="/m/learn">Studio jobs</a><a href="/research/criteria">Published judging criteria</a><a href="/research/feed.xml">RSS feed</a><a href="/research/data.json">Open data (JSON)</a><a href="/m/project#/specs">Specs & decisions</a><a href="https://github.com/Matt-Baxter/superintelligence-home-page/blob/feature/si-combined/docs/PARITY.md" rel="noopener noreferrer">Parity matrix</a><a href="https://github.com/Matt-Baxter/superintelligence-home-page/blob/feature/si-combined/docs/PRACTICES.md" rel="noopener noreferrer">Practices</a></div>
+    </details>
+    </div></div>`;
+    for (const id of open) { const d = document.getElementById(id); if (d?.tagName === "DETAILS") d.open = true; }
+    $$(".research-nav nav a").forEach((a) => a.addEventListener("click", () => {
+      const target = document.getElementById(a.hash.slice(1)); if (target?.tagName === "DETAILS") target.open = true;
+    }));
+    markSection();
+    $$("[data-ev]").forEach((b) => (b.onclick = () => act(b, `/api/admin/review/events/${b.dataset.ev}`, { status: b.dataset.v }, `Forecast marked ${b.dataset.v}.`)));
+    $$("[data-doc]").forEach((b) => (b.onclick = () => act(b, `/api/admin/review/docs/${b.dataset.doc}/label`, { label: b.dataset.l }, `Labelled: ${b.dataset.l}.`)));
+    $("#status").textContent = message || `As of ${r.today}.`;
   } catch (e) { showErr($("#status"), e); }
+}
+async function act(button, url, body, message) {
+  const buttons = [...button.closest(".acts").querySelectorAll("button")];
+  buttons.forEach((b) => (b.disabled = true));
+  $("#status").textContent = "Saving…";
+  try { await api(url, { body }); await load(message); }
+  catch (e) { showErr($("#status"), e); }
+  finally { buttons.forEach((b) => (b.disabled = false)); }
+
 }
 requireUser().then((u) => { if (!u.admin) { $("#status").textContent = "Only an admin can open the research control room."; return; } load(); });
 </script>
