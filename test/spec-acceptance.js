@@ -9,6 +9,7 @@ const root = path.join(__dirname, "..");
 const BROWSER = process.argv.includes("--browser");
 const port = 3600 + Math.floor(Math.random() * 300), B = `http://localhost:${port}`;
 const results = [];
+let restartServer;
 const check = (ids, name, pass, detail = "") => results.push({ ids: [].concat(ids), name, pass: !!pass, detail });
 
 function client() {
@@ -25,10 +26,22 @@ function client() {
 async function main() {
   const env = { ...process.env, PORT: String(port), SITE_PROFILE: "spec", FIXTURE_SET: "spec", DATA_DIR: fs.mkdtempSync(path.join(os.tmpdir(), "si-spec-")) };
   delete env.DATABASE_URL; delete env.POSTGRES_URL;
-  const server = spawn(process.execPath, ["--no-warnings", "test/serve-fixtures.js"], { cwd: root, env, stdio: ["ignore", "pipe", "pipe"] });
-  let err = ""; server.stderr.on("data", (d) => (err += d));
+  let err = "", server;
+  const launch = () => {
+    const child = spawn(process.execPath, ["--no-warnings", "test/serve-fixtures.js"], { cwd: root, env, stdio: ["ignore", "pipe", "pipe"] });
+    child.stderr.on("data", (d) => (err += d)); return child;
+  };
+  const ready = async () => {
+    for (let i = 0; i < 100; i++) { if (server.exitCode !== null) throw new Error(`Fixture server exited: ${err}`); try { if ((await fetch(B + "/api/me")).ok) return; } catch {} await new Promise((r) => setTimeout(r, 100)); }
+    throw new Error("Fixture server did not become ready.");
+  };
+  restartServer = async () => {
+    await new Promise((resolve) => { server.once("exit", resolve); server.kill(); });
+    server = launch(); await ready();
+  };
+  server = launch();
   try {
-    for (let i = 0; i < 100; i++) { try { const r = await fetch(B + "/api/me"); if (r.ok) break; } catch {} await new Promise((r) => setTimeout(r, 100)); }
+    await ready();
     await api();
     if (BROWSER) await browser();
   } catch (e) { check("RUN", "suite ran", false, e.message + (err ? ` | ${err.slice(0, 300)}` : "")); }
@@ -96,6 +109,10 @@ async function api() {
   const again = client(); await again.call("/api/login", { body: { username: ua, password: pw } });
   const savedA = (await again.call("/api/stories?saved=1")).json.stories || [];
   check(["REQ-014", "REQ-015", "US3-3", "SC-007"], "saves are still there after signing out and back in", [sid, sid2].every((x) => savedA.some((s) => s.id === x)));
+  await restartServer();
+  const afterRestart = (await again.call("/api/stories?saved=1")).json.stories || [];
+  const voteAfterRestart = (await b.call(`/api/stories/${sid}`)).json.story;
+  check(["REQ-010", "REQ-015", "SC-007"], "saved stories, votes and the existing session survive a server process restart on the same database", [sid, sid2].every((id) => afterRestart.some((story) => story.id === id)) && voteAfterRestart?.voted === true && voteAfterRestart.votes === (feed[0].votes || 0) + 1);
   check(["REQ-014", "US3-4"], "A's saves don't appear in B's saved list", ((await b.call("/api/stories?saved=1")).json.stories || []).every((s) => ![sid, sid2].includes(s.id)));
   const un = await a.call(`/api/stories/${sid2}/save`, { method: "POST" });
   check(["REQ-014"], "a story can be unsaved", un.json.saved === false);

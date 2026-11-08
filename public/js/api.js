@@ -12,7 +12,7 @@ async function api(path, opts = {}) {
     credentials: "same-origin",
   });
   let data = {}; try { data = await res.json(); } catch (e) {}
-  if (res.status === 401 && !opts.allow401) { location.href = "/?next=" + encodeURIComponent(location.pathname + location.search); throw new Error("Please sign in."); }
+  if (res.status === 401 && !opts.allow401) { location.href = "/?next=" + encodeURIComponent(location.pathname + location.search + location.hash); throw new Error("Please sign in."); }
   if (!res.ok) throw new Error(data.error || `Request failed (${res.status}).`);
   return data;
 }
@@ -23,7 +23,7 @@ const NAV = [["/", "Feed"], ["/brief", "Weekly brief", "brief"], ["/lists", "Rea
 const PAGE_FEATURE = { "/brief": "brief", "/lists": "lists" };
 async function requireUser() {
   const { user } = await api("/api/me", { allow401: true });
-  if (!user) { location.href = "/?next=" + encodeURIComponent(location.pathname + location.search); throw new Error("Not signed in"); }
+  if (!user) { location.href = "/?next=" + encodeURIComponent(location.pathname + location.search + location.hash); throw new Error("Not signed in"); }
   topbar(user);
   const need = PAGE_FEATURE[location.pathname.replace(/\.html$/, "")];
   if (need && !(user.features || []).includes(need)) { const m = document.querySelector("main"); if (m) m.innerHTML = `<div class="panel"><h1>Not in this version</h1><p class="muted">This page is an extra beyond the shared spec. It runs when the site uses the extended profile (SITE_PROFILE=extended).</p><p><a href="/">Back to the feed</a></p></div>`; return new Promise(() => {}); } // stop here: the page stays on the notice
@@ -85,3 +85,10 @@ function storyCard(s, opts = {}) {
   return li;
 }
 const fmtDate = (s) => s ? new Date(s.replace(" ", "T") + (s.includes("Z") ? "" : "Z")).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+
+// Keep sign-in return navigation inside this app, including its workspace fragment.
+function localReturnPath(value) {
+  if (typeof value !== "string" || !value.startsWith("/")) return "/";
+  try { const url = new URL(value, location.origin); return url.origin === location.origin ? `${url.pathname}${url.search}${url.hash}` : "/"; }
+  catch { return "/"; }
+}

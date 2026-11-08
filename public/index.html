@@ -54,7 +54,7 @@ $$(".tabs button").forEach((b) => b.onclick = () => {
 $("#authForm").onsubmit = async (e) => {
   e.preventDefault(); $("#authBtn").disabled = true;
   try { await api(mode === "signup" ? "/api/signup" : "/api/login", { body: { username: $("#username").value, password: $("#password").value, displayName: $("#displayName").value }, allow401: true });
-    const next = params.get("next"); location.href = next && next.startsWith("/") ? next : "/"; }
+    const next = params.get("next"); location.href = localReturnPath(next); }
   catch (err) { showErr($("#authErr"), err); } finally { $("#authBtn").disabled = false; }
 };
 function state() { return { topic: params.get("topic") || "", org: params.get("org") || "", benchmark: params.get("benchmark") || "", person: params.get("person") || "", kind: $("#kind").value, days: $("#days").value, q: $("#q").value.trim(), saved: $("#savedOnly").checked ? "1" : "" }; }
