@@ -1,0 +1,791 @@
+{
+  "title": "33 research-backed UI/UX implementation ideas",
+  "date": "2026-11-07",
+  "base_commit": "be6a524",
+  "purpose": "A proposed implementation map, not approval or a new audit.",
+  "method": "Reviewed current code/design records and fresh primary guidance. No fresh competitor feature verification, participant study, production measurement or accessibility certification.",
+  "already_implemented": [
+    "Public feed and story reading",
+    "URL-backed filters and individual chips",
+    "Lazy inline factor meters",
+    "Story h1 and source action",
+    "Return-to-results filter/page context",
+    "Local reader/admin accounts and browser emulations",
+    "Reduced-motion-aware reader feedback"
+  ],
+  "gates": {
+    "R": "Existing-intent refinement candidate; still trace to the current specification before implementation.",
+    "C": "Interface/data/auth contract review and documented tests required before implementation.",
+    "H": "Human product/privacy/spec approval required; proposed spec 004 tasks remain blocked by T000."
+  },
+  "effort": {
+    "S": "Localized UI refinement",
+    "M": "Several surfaces or additional verification",
+    "L": "New data contracts, architecture or substantial workflow"
+  },
+  "priority_note": "Relative judgment, not measured ROI. Validate against task-based research.",
+  "recommended_order": [
+    [
+      29,
+      31,
+      33
+    ],
+    [
+      1,
+      3,
+      4,
+      5,
+      6,
+      8,
+      9,
+      10,
+      11,
+      19,
+      25,
+      26,
+      30
+    ],
+    [
+      2,
+      7,
+      18,
+      21,
+      28,
+      32
+    ],
+    [
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      20,
+      22,
+      23,
+      24,
+      27
+    ]
+  ],
+  "sources": {
+    "scent": {
+      "url": "https://www.nngroup.com/articles/information-scent/",
+      "kind": "usability guidance",
+      "principle": "Labels and surrounding cues should help readers predict destination value."
+    },
+    "filters": {
+      "url": "https://www.nngroup.com/articles/applying-filters/",
+      "kind": "usability guidance",
+      "principle": "Filtering should preserve continuity; interaction design depends on intent and response time."
+    },
+    "disclosure": {
+      "url": "https://www.nngroup.com/articles/progressive-disclosure/",
+      "kind": "usability guidance",
+      "principle": "Defer specialized controls while keeping primary tasks available."
+    },
+    "details": {
+      "url": "https://design-system.service.gov.uk/components/details/",
+      "kind": "design-system guidance",
+      "principle": "Disclose secondary information; do not hide information most users need."
+    },
+    "errors": {
+      "url": "https://design-system.service.gov.uk/components/error-summary/",
+      "kind": "design-system guidance",
+      "principle": "Pair an error summary with field errors and links to the relevant inputs."
+    },
+    "check": {
+      "url": "https://design-system.service.gov.uk/patterns/check-answers/",
+      "kind": "design-system guidance",
+      "principle": "Let people verify and edit consequential structured submissions before committing them."
+    },
+    "status": {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html",
+      "kind": "informative accessibility guidance",
+      "principle": "Announce action results without moving focus unnecessarily."
+    },
+    "auth": {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/accessible-authentication-minimum.html",
+      "kind": "informative accessibility guidance",
+      "principle": "Support password managers and paste; avoid unaided cognitive authentication tests."
+    },
+    "reflow": {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/reflow.html",
+      "kind": "informative accessibility guidance",
+      "principle": "Retain information and functionality at equivalent 320 CSS pixel width; test zoom as well as width."
+    },
+    "focus": {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-minimum.html",
+      "kind": "informative accessibility guidance",
+      "principle": "Sticky UI must not completely obscure keyboard focus."
+    },
+    "motion": {
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/animation-from-interactions.html",
+      "kind": "informative accessibility guidance, AAA criterion",
+      "principle": "Allow nonessential interaction animation to be disabled."
+    },
+    "charts": {
+      "url": "https://data.europa.eu/apps/data-visualisation-guide/understandable-chart-design",
+      "kind": "public-sector visualization guidance",
+      "principle": "Keep chart encoding simple and focus each chart on one message."
+    },
+    "vitals": {
+      "url": "https://web.dev/articles/vitals",
+      "kind": "primary performance guidance",
+      "principle": "Evaluate loading, responsiveness and stability; distinguish lab measurements from field data."
+    },
+    "inspiration": {
+      "url": "https://www.details.so/inspo",
+      "kind": "visual inspiration, not usability evidence",
+      "principle": "Reference composition and navigation selectively; do not equate visual novelty with usability."
+    }
+  },
+  "ideas": [
+    {
+      "id": 1,
+      "category": "Reading and navigation",
+      "title": "Direct guest navigation",
+      "priority": "P1",
+      "effort": "S",
+      "gate": "R",
+      "status": "proposed",
+      "entrypoints": [
+        "public/js/api.js",
+        "public/css/app.css"
+      ],
+      "implementation": "Show Feed and About directly when the guest navigation has only two destinations; keep the larger signed-in workspace disclosure.",
+      "acceptance": "Guest destinations remain visible at 320px without overlap; keyboard order remains logical.",
+      "research_sources": [
+        "scent",
+        "disclosure"
+      ]
+    },
+    {
+      "id": 2,
+      "category": "Reading and navigation",
+      "title": "Optional reading density",
+      "priority": "P2",
+      "effort": "M",
+      "gate": "R",
+      "status": "proposed",
+      "entrypoints": [
+        "public/css/app.css",
+        "public/js/api.js"
+      ],
+      "implementation": "Offer compact and comfortable spacing with a browser-local preference; preserve readable line lengths and touch targets.",
+      "acceptance": "Both densities pass narrow-width, large-text and keyboard checks; preference storage failure falls back safely.",
+      "research_sources": [
+        "reflow",
+        "disclosure"
+      ]
+    },
+    {
+      "id": 3,
+      "category": "Reading and navigation",
+      "title": "Compact local-demo controls",
+      "priority": "P1",
+      "effort": "S",
+      "gate": "R",
+      "status": "proposed",
+      "entrypoints": [
+        "public/index.html",
+        "public/css/app.css"
+      ],
+      "implementation": "Allow the test-role instructions to collapse after selection while retaining a persistent local/synthetic-data label and role entry points.",
+      "acceptance": "The local environment remains unmistakable; test-role controls remain discoverable; normal server has no demo UI.",
+      "research_sources": [
+        "disclosure",
+        "details"
+      ]
+    },
+    {
+      "id": 4,
+      "category": "Reading and navigation",
+      "title": "Consistent page landmarks",
+      "priority": "P1",
+      "effort": "M",
+      "gate": "R",
+      "status": "proposed",
+      "entrypoints": [
+        "public/js/api.js",
+        "public/story.html",
+        "modules/research/pages/control.html"
+      ],
+      "implementation": "Normalize primary headings, landmarks and skip destinations across reader and module pages.",
+      "acceptance": "One useful primary heading and working skip target per screen; focus is visible below the sticky header.",
+      "research_sources": [
+        "focus",
+        "reflow"
+      ]
+    },
+    {
+      "id": 5,
+      "category": "Reading and navigation",
+      "title": "Exact dates on demand",
+      "priority": "P1",
+      "effort": "S",
+      "gate": "R",
+      "status": "proposed",
+      "entrypoints": [
+        "public/js/api.js",
+        "public/story.html"
+      ],
+      "implementation": "Keep relative age for scanning, with an accessible exact publication timestamp and timezone on demand; distinguish first seen from published.",
+      "acceptance": "Keyboard and touch can reveal the date; missing publication time is explicitly labeled first seen.",
+      "research_sources": [
+        "scent",
+        "disclosure"
+      ]
+    },
+    {
+      "id": 6,
+      "category": "Reading and navigation",
+      "title": "Explain each sort order",
+      "priority": "P1",
+      "effort": "S",
+      "gate": "R",
+      "status": "proposed",
+      "entrypoints": [
+        "public/index.html",
+        "public/js/api.js"
+      ],
+      "implementation": "Explain Newest, Top, Most voted and Significance next to the sort control, including the time window.",
+      "acceptance": "Readers can identify which sort is time-, vote- or signal-driven without hover; no ranking rule changes.",
+      "research_sources": [
+        "scent",
+        "disclosure"
+      ]
+    },
+    {
+      "id": 7,
+      "category": "Search and discovery",
+      "title": "Honest facet counts",
+      "priority": "P2",
+      "effort": "M",
+      "gate": "C",
+      "status": "proposed",
+      "entrypoints": [
+        "server.js",
+        "public/index.html",
+        "docs/INTERFACES.md"
+      ],
+      "implementation": "Show contextual counts beside source/topic choices, computed under the same admission and filter rules as the feed.",
+      "acceptance": "Counts exclude hidden/off-topic rows and private account state; count semantics and performance are tested.",
+      "research_sources": [
+        "filters",
+        "status"
+      ]
+    },
+    {
+      "id": 8,
+      "category": "Search and discovery",
+      "title": "Keep the selected topic visible",
+      "priority": "P1",
+      "effort": "S",
+      "gate": "R",
+      "status": "proposed",
+      "entrypoints": [
+        "public/index.html",
+        "public/css/app.css"
+      ],
+      "implementation": "Scroll the active topic into the horizontal strip when navigation changes, without shifting page focus.",
+      "acceptance": "A selected offscreen topic becomes visible on phones; reduced motion and keyboard position are preserved.",
+      "research_sources": [
+        "filters",
+        "focus"
+      ]
+    },
+    {
+      "id": 9,
+      "category": "Search and discovery",
+      "title": "Safe search-match highlighting",
+      "priority": "P2",
+      "effort": "S",
+      "gate": "R",
+      "status": "proposed",
+      "entrypoints": [
+        "public/js/api.js",
+        "public/index.html"
+      ],
+      "implementation": "Mark query matches in titles and summaries with text nodes and mark elements rather than interpolated HTML.",
+      "acceptance": "Matches explain relevance; malicious query text renders literally; source titles and URLs remain intact.",
+      "research_sources": [
+        "scent",
+        "filters"
+      ]
+    },
+    {
+      "id": 10,
+      "category": "Search and discovery",
+      "title": "Search scope and useful examples",
+      "priority": "P1",
+      "effort": "S",
+      "gate": "R",
+      "status": "proposed",
+      "entrypoints": [
+        "public/index.html",
+        "public/welcome.html"
+      ],
+      "implementation": "Explain that current search covers stored titles and summaries; offer a few curated query examples without suggesting unsupported syntax or full text.",
+      "acceptance": "Example queries produce expected synthetic hits; no unsupported semantic-search claim.",
+      "research_sources": [
+        "scent",
+        "filters"
+      ]
+    },
+    {
+      "id": 11,
+      "category": "Search and discovery",
+      "title": "Preserve filters when changing topic",
+      "priority": "P1",
+      "effort": "S",
+      "gate": "R",
+      "status": "proposed",
+      "entrypoints": [
+        "public/index.html"
+      ],
+      "implementation": "Make topic changes alter the topic only, preserving query, source kind and time; retain a separate Reset filters action.",
+      "acceptance": "Topic switching retains other criteria and URL/Back behavior; restoring an empty result is clear.",
+      "research_sources": [
+        "filters"
+      ]
+    },
+    {
+      "id": 12,
+      "category": "Search and discovery",
+      "title": "Saved searches",
+      "priority": "P3",
+      "effort": "L",
+      "gate": "H",
+      "status": "proposed",
+      "entrypoints": [
+        "public/index.html",
+        "public/lists.html",
+        "server.js",
+        "specs/004-parity/tasks.md"
+      ],
+      "implementation": "Let readers name and reopen filter combinations; decide browser-local versus account synchronization before adding storage.",
+      "acceptance": "A saved query restores the same filter semantics; readers can rename/delete it; storage/privacy decision is approved.",
+      "research_sources": [
+        "filters",
+        "disclosure"
+      ]
+    },
+    {
+      "id": 13,
+      "category": "Evidence and visualization",
+      "title": "Source-role legend",
+      "priority": "P2",
+      "effort": "L",
+      "gate": "H",
+      "status": "proposed",
+      "entrypoints": [
+        "public/js/api.js",
+        "public/sources.html",
+        "specs/004-parity/tasks.md"
+      ],
+      "implementation": "Agree primary/secondary, preprint/reviewed and vendor/independent labels with reasons; show unknown rather than inferring credibility.",
+      "acceptance": "Approved labels describe sources, never people; missing labels stay unknown; no automatic score-weight change.",
+      "research_sources": [
+        "charts",
+        "scent"
+      ]
+    },
+    {
+      "id": 14,
+      "category": "Evidence and visualization",
+      "title": "Compare source coverage",
+      "priority": "P2",
+      "effort": "L",
+      "gate": "H",
+      "status": "proposed",
+      "entrypoints": [
+        "public/story.html",
+        "server.js",
+        "specs/004-parity/tasks.md"
+      ],
+      "implementation": "Extend Covered by into a compact comparison of source role, first-seen time and coverage lag; do not equate domain count with independent evidence.",
+      "acceptance": "Every comparison field has provenance; time semantics are explicit; unavailable fields remain unavailable.",
+      "research_sources": [
+        "charts",
+        "scent"
+      ]
+    },
+    {
+      "id": 15,
+      "category": "Evidence and visualization",
+      "title": "Comparable benchmark charts",
+      "priority": "P3",
+      "effort": "L",
+      "gate": "H",
+      "status": "proposed",
+      "entrypoints": [
+        "modules/capabilities/pages/capabilities.html",
+        "public/story.html",
+        "docs/INTERFACES.md"
+      ],
+      "implementation": "Compare reported results only when benchmark version, metric, unit and evaluation setting align; otherwise show a table marked not comparable.",
+      "acceptance": "No incompatible scores share an axis; chart has textual values, source links and unknown-state handling.",
+      "research_sources": [
+        "charts"
+      ]
+    },
+    {
+      "id": 16,
+      "category": "Evidence and visualization",
+      "title": "Claim-to-evidence map",
+      "priority": "P3",
+      "effort": "L",
+      "gate": "H",
+      "status": "proposed",
+      "entrypoints": [
+        "public/story.html",
+        "modules/research/pages/control.html",
+        "docs/INTERFACES.md"
+      ],
+      "implementation": "Map specific claims to supporting, challenging or unverified evidence, retaining source excerpts/links within content policy and human review.",
+      "acceptance": "No unsupported truth/confidence score; every edge is attributed; unknown and disputed states remain visible.",
+      "research_sources": [
+        "charts",
+        "scent"
+      ]
+    },
+    {
+      "id": 17,
+      "category": "Evidence and visualization",
+      "title": "Score provenance and rule version",
+      "priority": "P2",
+      "effort": "L",
+      "gate": "H",
+      "status": "proposed",
+      "entrypoints": [
+        "public/story.html",
+        "lib/analysis.js",
+        "specs/004-parity/tasks.md"
+      ],
+      "implementation": "Show the rule version and scoring timestamp separately from publication time; link to an approved change history.",
+      "acceptance": "Current explanation is reproducible from the recorded version; old values are not invented or silently recomputed as historical facts.",
+      "research_sources": [
+        "charts",
+        "scent"
+      ]
+    },
+    {
+      "id": 18,
+      "category": "Evidence and visualization",
+      "title": "Copy a verified citation",
+      "priority": "P2",
+      "effort": "M",
+      "gate": "C",
+      "status": "proposed",
+      "entrypoints": [
+        "public/story.html",
+        "server.js",
+        "docs/INTERFACES.md"
+      ],
+      "implementation": "Copy title, known author, actual date and canonical URL; include DOI only when verified and never fabricate missing bibliographic data.",
+      "acceptance": "Plain-text citation matches stored evidence; missing fields are omitted or explicit; copy success/failure is announced.",
+      "research_sources": [
+        "scent",
+        "status"
+      ]
+    },
+    {
+      "id": 19,
+      "category": "Reader workflow",
+      "title": "First-class saved-story destination",
+      "priority": "P1",
+      "effort": "S",
+      "gate": "R",
+      "status": "proposed",
+      "entrypoints": [
+        "public/js/api.js",
+        "public/index.html"
+      ],
+      "implementation": "Expose Saved as a signed-in navigation destination, using the existing saved filter and per-user authorization.",
+      "acceptance": "One clear route to saved stories on desktop/phone; guest action returns through sign-in without exposing another account.",
+      "research_sources": [
+        "scent"
+      ]
+    },
+    {
+      "id": 20,
+      "category": "Reader workflow",
+      "title": "Batch organization",
+      "priority": "P3",
+      "effort": "L",
+      "gate": "H",
+      "status": "proposed",
+      "entrypoints": [
+        "public/lists.html",
+        "public/index.html",
+        "server.js",
+        "docs/INTERFACES.md"
+      ],
+      "implementation": "Select a bounded set of stories for adding to a list; explicitly define filtered-page versus all-results selection.",
+      "acceptance": "Selection count and scope are visible; partial failures are attributable and retryable; no global hidden selection.",
+      "research_sources": [
+        "check",
+        "status"
+      ]
+    },
+    {
+      "id": 21,
+      "category": "Reader workflow",
+      "title": "Reliable undo for saved actions",
+      "priority": "P2",
+      "effort": "M",
+      "gate": "C",
+      "status": "proposed",
+      "entrypoints": [
+        "public/js/api.js",
+        "server.js",
+        "docs/INTERFACES.md"
+      ],
+      "implementation": "Offer Undo after saving/removing, backed by explicit desired-state operations rather than blindly toggling again.",
+      "acceptance": "Rapid clicks, retries and concurrent tabs cannot invert the wrong state; status and focus remain useful.",
+      "research_sources": [
+        "status"
+      ]
+    },
+    {
+      "id": 22,
+      "category": "Reader workflow",
+      "title": "Opt-in reading history",
+      "priority": "P3",
+      "effort": "L",
+      "gate": "H",
+      "status": "proposed",
+      "entrypoints": [
+        "public/index.html",
+        "public/story.html",
+        "server.js",
+        "docs/INTERFACES.md"
+      ],
+      "implementation": "Provide Continue reading with a documented retention period, opt-in and clear/delete controls; avoid background tracking by default.",
+      "acceptance": "Scope, retention and deletion are approved; shared-device logout removes any local account data.",
+      "research_sources": [
+        "scent",
+        "disclosure"
+      ]
+    },
+    {
+      "id": 23,
+      "category": "Reader workflow",
+      "title": "What changed since the last visit",
+      "priority": "P3",
+      "effort": "L",
+      "gate": "H",
+      "status": "proposed",
+      "entrypoints": [
+        "public/index.html",
+        "public/brief.html",
+        "specs/004-parity/tasks.md"
+      ],
+      "implementation": "Separate genuinely new stories from updated coverage using real timestamps and approved last-visit semantics.",
+      "acceptance": "No change history is fabricated from current rows; reader can reset the marker; update and publication times stay distinct.",
+      "research_sources": [
+        "scent",
+        "status"
+      ]
+    },
+    {
+      "id": 24,
+      "category": "Accounts and forms",
+      "title": "A real account-recovery path",
+      "priority": "P2",
+      "effort": "L",
+      "gate": "H",
+      "status": "proposed",
+      "entrypoints": [
+        "public/index.html",
+        "server.js",
+        "docs/INTERFACES.md"
+      ],
+      "implementation": "Agree a secure owner-assisted or credential-recovery workflow compatible with the username/password-only agreement before implementing it.",
+      "acceptance": "Recovery cannot enumerate or take over accounts; no email collection or security-policy change without partner approval.",
+      "research_sources": [
+        "auth"
+      ]
+    },
+    {
+      "id": 25,
+      "category": "Accounts and forms",
+      "title": "Password-manager compatibility tests",
+      "priority": "P1",
+      "effort": "M",
+      "gate": "R",
+      "status": "proposed",
+      "entrypoints": [
+        "public/index.html",
+        "test/e2e.js",
+        "test/demo-e2e.js"
+      ],
+      "implementation": "Extend current autocomplete/paste support with cross-browser and real password-manager testing; retain generic credential errors.",
+      "acceptance": "Pasting and autofill work in sign-in/signup; visibility control does not erase entries or break submission.",
+      "research_sources": [
+        "auth"
+      ]
+    },
+    {
+      "id": 26,
+      "category": "Accounts and forms",
+      "title": "Field-linked validation summaries",
+      "priority": "P1",
+      "effort": "S",
+      "gate": "R",
+      "status": "proposed",
+      "entrypoints": [
+        "public/index.html",
+        "public/story.html",
+        "public/sources.html"
+      ],
+      "implementation": "For multi-field forms, focus a concise error summary with links to inline field errors while preserving safe input.",
+      "acceptance": "Errors are associated with fields; links focus the correct input; password values are not logged or echoed in messages.",
+      "research_sources": [
+        "errors"
+      ]
+    },
+    {
+      "id": 27,
+      "category": "Accounts and forms",
+      "title": "Recover unsent drafts safely",
+      "priority": "P3",
+      "effort": "L",
+      "gate": "H",
+      "status": "proposed",
+      "entrypoints": [
+        "public/story.html",
+        "public/index.html",
+        "docs/INTERFACES.md"
+      ],
+      "implementation": "Offer explicit draft recovery for notes/submissions with account-scoped storage, retention and logout behavior.",
+      "acceptance": "Another account or guest cannot recover private drafts; storage-disabled mode works; logout/deletion behavior is approved.",
+      "research_sources": [
+        "status",
+        "auth"
+      ]
+    },
+    {
+      "id": 28,
+      "category": "Accounts and forms",
+      "title": "Session-expiry continuation",
+      "priority": "P2",
+      "effort": "M",
+      "gate": "C",
+      "status": "proposed",
+      "entrypoints": [
+        "public/js/api.js",
+        "public/index.html",
+        "server.js",
+        "docs/INTERFACES.md"
+      ],
+      "implementation": "On expired-session writes, preserve the intended destination and offer reauthentication; require explicit resubmission of actions.",
+      "acceptance": "No automatic replay of votes, notes or admin actions; users can retry without losing context or leaking private content.",
+      "research_sources": [
+        "auth",
+        "status"
+      ]
+    },
+    {
+      "id": 29,
+      "category": "Accessibility and quality",
+      "title": "Zoom and assistive-technology matrix",
+      "priority": "P1",
+      "effort": "M",
+      "gate": "R",
+      "status": "proposed",
+      "entrypoints": [
+        "test/e2e.js",
+        "test/demo-e2e.js",
+        "public/css/app.css"
+      ],
+      "implementation": "Add 200%/400% zoom, text spacing, contrast checks, keyboard-only flows and manual screen-reader checks beyond screenshot widths.",
+      "acceptance": "Controls remain usable at equivalent 320 CSS pixels; focus stays visible; automated checks are not called full compliance.",
+      "research_sources": [
+        "reflow",
+        "focus"
+      ]
+    },
+    {
+      "id": 30,
+      "category": "Accessibility and quality",
+      "title": "Consistent motion language",
+      "priority": "P1",
+      "effort": "M",
+      "gate": "R",
+      "status": "proposed",
+      "entrypoints": [
+        "public/css/app.css",
+        "public/js/api.js",
+        "test/e2e.js"
+      ],
+      "implementation": "Inventory transitions across modules; use short state-relevant motion only, honor reduced motion everywhere and never imply success before confirmation.",
+      "acceptance": "Reduced-motion checks cover all modules; loading/error/success remain understandable with animation disabled.",
+      "research_sources": [
+        "motion",
+        "status"
+      ]
+    },
+    {
+      "id": 31,
+      "category": "Accessibility and quality",
+      "title": "Performance budgets with evidence",
+      "priority": "P1",
+      "effort": "M",
+      "gate": "R",
+      "status": "proposed",
+      "entrypoints": [
+        "test/e2e.js",
+        "scripts/preflight.js",
+        "public/js/api.js",
+        "public/css/app.css"
+      ],
+      "implementation": "Capture reproducible lab baselines for feed/filter/evidence interactions and set bundle/DOM/request budgets; distinguish them from production field data.",
+      "acceptance": "Track LCP, INP and CLS with appropriate tooling; target good p75 field thresholds only when actual field data exists; no fabricated production measurements.",
+      "research_sources": [
+        "vitals"
+      ]
+    },
+    {
+      "id": 32,
+      "category": "Accessibility and quality",
+      "title": "Scale server-side result retrieval",
+      "priority": "P2",
+      "effort": "L",
+      "gate": "C",
+      "status": "proposed",
+      "entrypoints": [
+        "server.js",
+        "lib/db.js",
+        "docs/INTERFACES.md"
+      ],
+      "implementation": "Profile the current gather/sort/slice path before moving eligible filtering/order/pagination into indexed SQL; keep guest and personalized responses cache-isolated.",
+      "acceptance": "SQLite/Postgres result parity, hidden/off-topic exclusion and user privacy survive changes; actual query costs and response size are measured.",
+      "research_sources": [
+        "vitals",
+        "filters"
+      ]
+    },
+    {
+      "id": 33,
+      "category": "Accessibility and quality",
+      "title": "Task-based usability benchmark",
+      "priority": "P1",
+      "effort": "M",
+      "gate": "R",
+      "status": "proposed",
+      "entrypoints": [
+        "test/e2e.js",
+        "test/demo-e2e.js",
+        "docs/research/ui-ux-33.json"
+      ],
+      "implementation": "Use fixed tasks: find a relevant story, explain a score, recover no results, return from page two, save as reader and inspect admin boundaries; then run consented human sessions.",
+      "acceptance": "Record task success, errors, time and comprehension against a baseline; keep synthetic automation separate from human usability evidence.",
+      "research_sources": [
+        "scent",
+        "filters",
+        "status"
+      ]
+    }
+  ]
+}
