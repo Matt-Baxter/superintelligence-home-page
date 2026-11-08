@@ -2,13 +2,16 @@
 
 SEIS 606 Project 2 · Superintelligence Homepage · John Affolter and Matthew Baxter
 
-**Version 1.12 · November 7, 2026.**
+**Version 1.13 · November 7, 2026.**
 
 The data model, API, auth and rules of **John's build** (the code in this repo). Under the [constitution](../.specify/memory/constitution.md), each bake-off build may differ in database, framework and internal structure, so this is not the shared contract. What both builds must meet is the [shared spec](../specs/001-superintelligence-homepage/spec.md) and the bake-off rules in [CONTRACT.md](../CONTRACT.md); [SPEC_TRACE.md](SPEC_TRACE.md) shows how this build meets each requirement.
 
 Log every change to a table, route or shape here, so whoever merges the builds (or reads this API) can follow it. Rows up to 0.8 were drafted when we planned a split; their approval boxes are history, not a requirement.
 
 ## Change log
+
+- **1.13, Nov 7, 2026 — graph assertion explanations (existing extended REQ-023/027).** Graph edges add `meaning: {kind, directed, weight_unit, explanation}`. `kind` is `co-occurrence`, `review-derived`, `curated` or `recorded`, based on the stored relation/evidence origin. This is provenance classification, not truth or confidence. Co-occurrence weight counts indexed passages, with up to five example-story references; other edge weights remain explicitly labeled stored relationship weights. Graph limits normalize to finite integers in 1–60. No authorization, table or shared-spec changes.
+
 
 - **1.12, Nov 7, 2026 — shared query and analysis alignment (REQ-002, REQ-003, REQ-005; existing research REQ-031/033).** No new tables or columns. Newest/votes/significance sorts now order and paginate in SQL with a descending-ID tie break. Guest queries omit personal-state subqueries. Top retains the existing computed rank. Story payload shapes remain unchanged; missing source names now say “Uncatalogued source” rather than inventing a reader attribution. Ingestion bounds external attention to finite nonnegative 32-bit integer counts and normalizes valid publication timestamps to UTC, retaining date-only precision and using null for invalid dates. Rising attention on an existing link triggers a rescore.
 - Analysis now adds all topic ancestors, treats coverage as linked-source count rather than proven independence, and requires affirmative venue context without common negations for the existing preprint evidence upgrade. These are deterministic cues, not independent verification of peer review. Dossiers use stored feed significance, the same fail-closed story admission, and source identities rather than display names. Buzz counts valid dated records within the requested UTC calendar-day window; invalid/future/missing dates are excluded, and hype averages finite scores bounded to 0–100.

@@ -101,3 +101,21 @@ DATABASE_URL="<your local Postgres URL>" npm start
 DATABASE_URL="<a throwaway database URL>" npm run dev:sample:pg      # resets that database, so use a throwaway one
 BASE=http://localhost:3300 npm test
 ```
+
+## Graph preview readiness — November 7, 2026
+
+John explicitly requested deployment and connected-tool verification. Read-only checks of the connected personal Hobby team and both connected work teams found no matching project. The local checkout has no `.vercel/project.json`. A target project/account and a persistent preview Postgres database are therefore still needed before an honest end-to-end deployment can be verified. No project, paid resource, public test admin, database or production alias was created during these checks.
+
+The graph exists only in `SITE_PROFILE=extended`. Set that profile consistently at **build and runtime** for the selected preview. The default spec build intentionally has no extended blocks. Build from `feature/si-combined`; use Node 22 or 24 and the existing Express API entry point. Never run the destructive fixture browser suite against a hosted database. Real preview smoke tests should read the feed, verify guest writes are refused, sign in with a designated test account, inspect graph evidence and JSON-LD, then inspect deployment/runtime logs through the connected Vercel tools.
+
+Preview must use its own Postgres database; local SQLite and loopback-only demo accounts are not a hosted persistence or authentication setup. Existing first-account-admin behavior also requires controlled account bootstrap before admitting visitors. Confirm whether preview inherits production database variables before making any API request: boot creates/backfills tables.
+
+Research sources: [Express on Vercel](https://vercel.com/docs/frameworks/backend/express), [cron usage and pricing](https://vercel.com/docs/cron-jobs/usage-and-pricing), [Vercel deployment protection](https://vercel.com/docs/deployment-protection). Keep the current schedules subject to project/plan validation; this work did not reinterpret the repository's daily-only rule or change schedules.
+
+## Graph logic research and implementation
+
+Keep the existing relational adjacency tables for now. [PostgreSQL recursive queries](https://www.postgresql.org/docs/current/queries-with.html) support traversal with cycle tracking, but this app also targets SQLite. A future multi-hop view should use a portable bounded traversal (explicit relation filter, direction, visited set, depth/node/edge caps) and return paths with source evidence. Do not infer transitive scientific support from shared mentions. No multi-hop inference, graph database dependency or automatic relation generation was added in this pass.
+
+[W3C PROV-O](https://www.w3.org/TR/prov-o/) provides a reference for separating an assertion from its derivation. Applied here: graph edges disclose the recorded origin, direction, weight unit and evidence examples. Co-occurrence means tags share indexed passages; it never proves causation, agreement or independent corroboration. Reviewed relationships are derived from saved reviews, not independently verified facts. Full PROV-O conformance is not claimed.
+
+Local validation of graph explanations: `Graph logic: 6 passed, 0 failed.`, isolated SQLite HTTP/database `19 passed, 0 failed.`, browser `331 passed, 0 failed`; `page errors: none`; preflight `Preflight passed.` [Expanded connection evidence](../shots/graph-connection-evidence.png) uses the synthetic fixture app. No hosted result is claimed.

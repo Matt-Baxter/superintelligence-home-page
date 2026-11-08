@@ -73,6 +73,16 @@ function coOccurrence(chunks) {
   }
   return [...edges.values()];
 }
+// Explain the stored assertion without treating graph connectivity as research confidence.
+function explainEdge(edge) {
+  const evidence = Array.isArray(edge.evidence) ? edge.evidence : [];
+  const kind = edge.rel === "co-occurs" ? "co-occurrence" : evidence.some(x => typeof x === "string" && x.startsWith("doc:")) ? "review-derived" : evidence.some(x => typeof x === "string" && /^(lib|modules)\//.test(x)) ? "curated" : "recorded";
+  return {
+    kind, directed: edge.rel !== "co-occurs",
+    weight_unit: edge.rel === "co-occurs" ? "shared passages" : "stored relationship weight",
+    explanation: edge.rel === "co-occurs" ? "These tags occur in the same indexed passages. This does not establish causation, agreement or independent corroboration. Evidence lists up to five example stories." : kind === "review-derived" ? "Extracted from a saved review. Inspect that review before relying on this relationship." : kind === "curated" ? "Defined in the project's curated topic or concept data." : "A stored relationship; inspect its evidence for context.",
+  };
+}
 // Neighbourhood of one node: edges touching it, strongest first.
 function neighbours(edges, qid, limit = 25) {
   return edges.filter((e) => e.src === qid || e.dst === qid).sort((a, b) => b.weight - a.weight).slice(0, limit)
@@ -90,4 +100,4 @@ function toJsonLd({ chunks = [], edges = [], base = "" }) {
   };
 }
 
-module.exports = { chunk, embedders, cosine, coOccurrence, neighbours, toJsonLd };
+module.exports = { chunk, embedders, cosine, coOccurrence, explainEdge, neighbours, toJsonLd };

@@ -53,11 +53,11 @@ module.exports = function mountKnowledge(app, { db, auth, admin, wrap, str, bad,
     embedders: K.embedders.list().map(({ id, about }) => ({ id, about })),
   })));
 
-  const edgeRow = (r) => ({ src: r.src, rel: r.rel, dst: r.dst, weight: Number(r.weight), evidence: JSON.parse(r.evidence || "[]") });
+  const edgeRow = (r) => { const edge = { src: r.src, rel: r.rel, dst: r.dst, weight: Number(r.weight), evidence: JSON.parse(r.evidence || "[]") }; return { ...edge, meaning: K.explainEdge(edge) }; };
   // Graph: one node's neighbourhood, or the best-connected nodes when no qid is given.
   app.get("/api/knowledge/graph", auth, wrap(async (req) => {
     const stale = await staleIndex();
-    const q = str(req.query.qid, 80), limit = Math.min(60, Number(req.query.limit) || 25);
+    const q = str(req.query.qid, 80), requestedLimit = Number(req.query.limit), limit = Number.isFinite(requestedLimit) ? Math.max(1, Math.min(60, Math.trunc(requestedLimit || 25))) : 25;
     if (q) {
       const node = ids.parse(q); if (!node) bad("qid must look like topic:alignment or concept:attention");
       const rows = (await db.all(`SELECT * FROM knowledge_edges WHERE (src = ? OR dst = ?)${stale ? " AND rel <> 'co-occurs'" : ""} ORDER BY weight DESC LIMIT ?`, q, q, limit)).map(edgeRow);

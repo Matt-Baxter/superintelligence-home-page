@@ -22,7 +22,7 @@
   <div class="kgrid">
     <section class="panel"><h2>Graph</h2>
       <form class="row" id="gform"><input id="qid" placeholder="topic:alignment or concept:attention" aria-label="Qualified id"><button class="btn" type="submit">Show</button></form>
-      <div id="graph"></div><div id="edges"></div></section>
+      <p class="small muted">Shared mentions are associations, not proof. Open a connection’s evidence to inspect its origin and direction.</p><div id="graph"></div><div id="edges"></div></section>
     <section class="panel"><h2>Find similar passages</h2>
       <form class="row" id="sform"><input id="q" placeholder="e.g. models that improve themselves" aria-label="Search text"><button class="btn" type="submit">Search</button></form>
       <div id="similar"></div>
@@ -32,6 +32,17 @@
 </main>
 <script src="/js/api.js"></script>
 <script>
+function evidenceLink(value) {
+  const text = String(value);
+  const story = /^story:([1-9][0-9]*)$/.exec(text);
+  if (story) return `<a href="/story?id=${story[1]}">Story ${story[1]}</a>`;
+  if (/^doc:[a-f0-9]+$/.test(text)) return `<a href="/m/review">Find ${esc(text)} in the review catalog</a>`;
+  return `<code>${esc(text)}</code>`;
+}
+function edgeEvidence(e) {
+  const m = e.meaning || {}, direction = m.directed === false || e.rel === "co-occurs" ? "Undirected association" : `${e.src} → ${e.rel} → ${e.dst}`;
+  return `<details class="small"><summary>Connection evidence</summary><p>${esc(direction)}</p><p>${esc(m.explanation || "Inspect the recorded evidence for context.")}</p><p>${esc(String(e.weight))} ${esc(m.weight_unit || "stored weight")} · ${esc(m.kind || "recorded")}</p>${(e.evidence || []).length ? `<ul>${e.evidence.map(x => `<li>${evidenceLink(x)}</li>`).join("")}</ul>` : '<p>No evidence recorded.</p>'}</details>`;
+}
 const qidBtn = (q) => `<button type="button" class="qid" data-q="${esc(q)}">${esc(q)}</button>`;
 async function stats() {
   const s = await api("/api/admin/knowledge/stats");
@@ -57,7 +68,7 @@ async function show(q) {
     $("#indexNotice").hidden = !g.stale;
     const max = Math.max(1, ...g.edges.map((e) => e.weight));
     $("#graph").innerHTML = g.edges.length ? nodeDiagram(q, g.edges.slice(0, 14)) : '<p class="small muted">No links yet. Build the index first.</p>';
-    $("#edges").innerHTML = g.edges.map((e) => `<div class="edge"><span class="rel">${esc(e.src === q ? e.rel : "← " + e.rel)}</span><span>${qidBtn(e.other)}<div class="bar"><i style="width:${(100 * e.weight / max).toFixed(0)}%"></i></div></span><span class="small muted">${e.weight}</span></div>`).join("");
+    $("#edges").innerHTML = g.edges.map((e) => `<div class="edge"><span class="rel">${esc(e.rel === "co-occurs" || e.src === q ? e.rel : "← " + e.rel)}</span><span>${qidBtn(e.other)}<div class="bar"><i style="width:${(100 * e.weight / max).toFixed(0)}%"></i></div></span><span class="small muted">${e.weight}</span></div>${edgeEvidence(e)}`).join("");
     $("#chunks").innerHTML = c.chunks.length ? c.chunks.slice(0, 12).map((x) => `<div class="chunk"><a href="/story?id=${x.story_id}">${esc(x.title)}</a><div class="muted">${esc(x.text)}</div><div class="tags">${x.tags.filter((t) => !t.via).map((t) => qidBtn(t.qid)).join("")}</div></div>`).join("") : "No passages carry this tag.";
     return true;
   } catch (err) { if (request === graphRequest) showErr($("#stats"), err); return false; }

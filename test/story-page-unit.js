@@ -44,6 +44,8 @@ await db.run("INSERT INTO knowledge_edges (src,rel,dst,weight,evidence) VALUES (
 const build=await fetch(base+'/api/admin/knowledge/build',{method:'POST',headers:{...headers,'content-type':'application/json'},body:JSON.stringify({limit:5})});assert.equal(build.status,200);assert.equal((await db.get('SELECT COUNT(*) AS n FROM knowledge_chunks WHERE story_id IN (?,?)',ids[240],ids[241])).n,0);pass++;
 assert.ok(!(await db.get('SELECT tags FROM knowledge_chunks WHERE story_id=? AND ord=?',ids[239],cached.ord)).tags.includes('obsolete'));pass++;
 assert.equal((await read('/api/knowledge/graph')).stale,false);pass++;
+const explained=await read('/api/knowledge/graph?qid=topic:alignment&limit=-1');assert.equal(explained.edges.length,1);assert.ok(explained.edges.every(e=>typeof e.meaning.directed==='boolean'&&e.meaning.weight_unit));pass++;
+const infinite=await read('/api/knowledge/graph?qid=topic:alignment&limit=Infinity');assert.ok(infinite.edges.length<=25);pass++;
 assert.ok(await db.get('SELECT src FROM knowledge_edges WHERE src=?',eventQid));pass++;
 await db.run("UPDATE stories SET hidden=1 WHERE id=?",ids[0]);
 let prune;require('../modules/knowledge/module').setup({point:()=>({addSql:()=>{},addPrune:fn=>prune=fn,add:()=>{}})});await prune(db);

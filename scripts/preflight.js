@@ -46,6 +46,7 @@ const src = fs.readFileSync(path.join(root, "lib/sources.json"), "utf8");
 // 5b. No Twitter/X in the source catalog either; analysis rules behave
 const cat = fs.readFileSync(path.join(root, "lib/source-catalog.json"), "utf8");
 /(twitter\.com|x\.com\/|nitter)/i.test(cat) ? fail("No Twitter/X in catalog", "lib/source-catalog.json") : ok("No Twitter/X in catalog");
+try { ok("Graph logic", sh("node test/graph-logic-unit.js").trim()); } catch (e) { fail("Graph logic", String(e.stderr || e.message)); }
 try { ok("Pipeline quality", sh("node test/pipeline-quality-unit.js").trim()); ok("Story paging", sh("node --no-warnings test/story-page-unit.js").trim().split("\n").pop()); }
 catch (e) { fail("Pipeline quality / paging", String(e.stderr || e.message).split("\n").find((l) => /Assertion|Error/.test(l)) || "failed"); }
 try { ok("UI dates", sh("node test/ui-date-unit.js").trim()); }

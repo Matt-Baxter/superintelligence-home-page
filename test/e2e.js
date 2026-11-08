@@ -469,6 +469,9 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   await john.unroute('**/api/knowledge/graph?qid=*');
   await john.setViewportSize({width:1200,height:900});
 
+  await john.goto(B + '/m/knowledge'); await john.waitForSelector('#edges [data-q]'); await john.locator('#edges [data-q]').first().click(); await john.waitForSelector('#edges details summary');
+  await john.locator('#edges details summary').first().click();
+  ok((await john.locator('#edges details[open]').first().textContent()).includes('weight') || (await john.locator('#edges details[open]').first().textContent()).includes('shared passages'), 'graph connections disclose their weight meaning and evidence');
   console.log('Lab: ideas, reproductions, hypotheses, self-improvement');
   const lx = await j(matt, '/api/lab/examples');
   const EXN = require('../modules/lab/examples.json').examples.length;
