@@ -14,6 +14,7 @@ pub enum Namespace {
     Module,
     Source,
     Story,
+    Term,
 }
 
 /// How a tag was made
@@ -26,6 +27,7 @@ pub enum TagMethod {
     Embedding,
     Rule,
     Human,
+    GlossaryMention,
 }
 
 /// Which part of the REQ-003 rule decided

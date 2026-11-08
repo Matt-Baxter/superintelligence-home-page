@@ -70,6 +70,7 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   await quality.goto(B); await quality.waitForSelector('#feed .story');
   ok(await quality.isHidden('#kind') && await quality.locator('#feed .title').first().evaluate(el => el.getBoundingClientRect().bottom <= innerHeight), 'intermediate-width feed shows the complete first title before scrolling');
   let evidenceRequests = 0; quality.on('request', r => { if (r.url().includes('/api/')) evidenceRequests++; });
+  await quality.waitForFunction(()=>['ready','unavailable'].includes(document.documentElement.getAttribute('data-term-pointers')));
   const beforeEvidence = evidenceRequests; await quality.locator('.evidence-toggle').first().click();
   ok(await quality.locator('.evidence-panel').first().isVisible() && await quality.locator('.evidence-factors meter').count() > 0 && evidenceRequests === beforeEvidence, 'inline evidence visualizes existing factors without another request');
   const firstStory = await quality.evaluate(async () => (await (await fetch('/api/stories')).json()).stories[0]);
@@ -646,7 +647,7 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   console.log('Phone width');
   const ph = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })).newPage();
   await ph.goto(B + '/?signin=1'); await ph.fill('#username', 'john'); await ph.fill('#password', 'correct-horse-9'); await ph.click('#authBtn'); await ph.waitForSelector('#feed .story');
-  for (const path of ['/', '/story?id=' + sid, '/brief', '/lists', '/sources', '/m/admin', '/m/content', '/m/editorial', '/m/journal', '/m/project', '/m/capabilities', '/m/studio', '/m/decide', '/m/view?name=capability-snapshot', '/m/codemap', '/m/project#/timeline', '/m/project#/specs', '/m/control', '/m/learn', '/m/learn#/c/attention', '/m/learn#/how', '/m/knowledge', '/m/lab', '/m/lab#/x/rsi-decision-gym']) { await ph.goto(B + path); await ph.waitForTimeout(600); ok(!(await ph.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'no sideways scroll: ' + path.split('?')[0]); }
+  for (const path of ['/', '/story?id=' + sid, '/brief', '/lists', '/sources', '/m/admin', '/m/content', '/m/editorial', '/m/journal', '/m/glossary', '/m/project', '/m/capabilities', '/m/studio', '/m/decide', '/m/view?name=capability-snapshot', '/m/codemap', '/m/project#/timeline', '/m/project#/specs', '/m/control', '/m/learn', '/m/learn#/c/attention', '/m/learn#/how', '/m/knowledge', '/m/lab', '/m/lab#/x/rsi-decision-gym']) { await ph.goto(B + path); await ph.waitForTimeout(600); ok(!(await ph.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'no sideways scroll: ' + path.split('?')[0]); }
   await ph.goto(B); await ph.waitForSelector('#feed .story'); await ph.screenshot({ path: 'shots/phone-feed.png' });
   await john.goto(B); await john.waitForSelector('#feed .story'); await john.screenshot({ path: 'shots/feed.png', fullPage: true });
   await john.goto(B + '/brief'); await john.waitForSelector('#brief .jr-metric'); await john.screenshot({ path: 'shots/brief.png', fullPage: true });

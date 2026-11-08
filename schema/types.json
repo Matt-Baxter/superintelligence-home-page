@@ -1,11 +1,11 @@
 {
   "about": "Canonical types for the Superintelligence Homepage's knowledge layer, the one source for every runtime. `npm run schema` generates JSON Schema, zod (Node/browser), pydantic (Python), protobuf with a gRPC service, Arrow (columnar, pyarrow), a JSON-LD context, OpenRPC (JSON-RPC) and Rust serde structs into schema/gen/. Field types: string, int, float, bool, datetime (ISO 8601 text), json (any), T[] (list), T? (optional), or another type's name. `ld` maps a field or type to a JSON-LD term (schema.org where one fits). Naming follows docs/NAMING.md: types are PascalCase, fields snake_case, ids qualified (namespace:id).",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "package": "si.v1",
   "ld": { "@vocab": "https://github.com/Matt-Baxter/superintelligence-home-page/blob/main/schema/gen/vocab.md#", "schema": "https://schema.org/", "si": "https://github.com/Matt-Baxter/superintelligence-home-page/blob/main/schema/gen/vocab.md#" },
   "enums": {
-    "Namespace": { "about": "Namespaces of qualified ids (lib/ids.js)", "values": ["topic", "org", "benchmark", "person", "concept", "req", "module", "source", "story"] },
-    "TagMethod": { "about": "How a tag was made", "values": ["ontology-term", "entity", "concept-term", "embedding", "rule", "human"] },
+    "Namespace": { "about": "Namespaces of qualified ids (lib/ids.js)", "values": ["topic", "org", "benchmark", "person", "concept", "req", "module", "source", "story", "term"] },
+    "TagMethod": { "about": "How a tag was made", "values": ["ontology-term", "entity", "concept-term", "embedding", "rule", "human", "glossary-mention"] },
     "ScopeRule": { "about": "Which part of the REQ-003 rule decided", "values": ["strong", "topics", "none"] }
   },
   "types": {

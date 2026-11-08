@@ -52,5 +52,9 @@ let prune;require('../modules/knowledge/module').setup({point:()=>({addSql:()=>{
 assert.ok(!await db.get('SELECT story_id FROM knowledge_chunks WHERE story_id=?',ids[0]));
 assert.ok(!(await db.all("SELECT evidence FROM knowledge_edges WHERE rel='co-occurs'")).some(e=>JSON.parse(e.evidence).includes(`story:${ids[0]}`)));assert.ok(await db.get('SELECT src FROM knowledge_edges WHERE src=?',eventQid));pass++;
 
+const glossaryResponse=await fetch(base+'/api/learn/glossary');assert.equal(glossaryResponse.status,200);assert.equal((await glossaryResponse.json()).entries.length,22);pass++;
+const termGraph=await read('/api/knowledge/graph?qid=term:softmax');assert.ok(termGraph.edges.some(e=>e.rel==='uses-notation'));pass++;
+for(const id of [ids[1],ids[240],ids[241]])await db.run('UPDATE stories SET title=? WHERE id=?',prefix+' neural network '+id,id);
+const learned=await read('/api/learn/concepts/neural-network');assert.ok(learned.stories.some(s=>s.id===ids[1]));assert.ok(!learned.stories.some(s=>s.id===ids[240]||s.id===ids[241]));pass++;
 db.all=original;console.log(`Story pagination ${db.engine}: ${pass} passed, 0 failed.`);
 }finally{await db.run('DELETE FROM knowledge_edges WHERE src=?',eventQid);for(const id of ids)await db.run('DELETE FROM stories WHERE id=?',id);for(const id of actors)await db.run('DELETE FROM users WHERE id=?',id);for(const id of sources)await db.run('DELETE FROM sources WHERE id=?',id);if(server)await new Promise(r=>server.close(r));if(db.end)await db.end();}})().catch(e=>{console.error(e);process.exitCode=1});

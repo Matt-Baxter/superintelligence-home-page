@@ -88,3 +88,7 @@ The admin, generative-UI and decision modules run in both versions: admin runs t
 ## Original content and navigation evidence
 
 The existing extended REQ-031/032 authoring and publication paths now include `modules/editorial`: admin drafts, independent published snapshots, retained revisions and a public journal. `test/editorial-unit.js` verifies both databases, concurrency, audit rollback and exclusion from the spec profile; `test/cms-e2e.js` verifies the human publishing journey. Imported-story provenance and reversible moderation serve REQ-002/004/005/007/018 through `modules/admin/pages/content.html` and `test/content-desk-unit.js`. Graph-to-review navigation extends existing REQ-023/027 checks without changing shared specifications or the pending approval gates.
+
+## Term, symbol and function pointers
+
+Existing extended REQ-023/027 now share `modules/learn/data/glossary.json` across definition pages, mention tagging and curated graph pointers. `public/js/term-model.js` holds literal matching and stable bounded teaching functions; `test/terms-property-unit.js` checks generated vectors, symbol identity and span invariants. `test/terms-e2e.js` checks guest navigation, source pointers, safe dynamic decoration, editor/code exclusion and phone layouts. `test/story-page-unit.js` verifies public registry access, term graph lookup and fail-closed Learn story admission on both databases. Shared REQ-005/007/018 remain served without changing scoring rules or hosting full source texts.

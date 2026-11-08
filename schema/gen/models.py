@@ -17,6 +17,7 @@ class Namespace(str, Enum):
     module = "module"
     source = "source"
     story = "story"
+    term = "term"
 
 
 class TagMethod(str, Enum):
@@ -27,6 +28,7 @@ class TagMethod(str, Enum):
     embedding = "embedding"
     rule = "rule"
     human = "human"
+    glossary_mention = "glossary-mention"
 
 
 class ScopeRule(str, Enum):

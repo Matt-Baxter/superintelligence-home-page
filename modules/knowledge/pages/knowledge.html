@@ -43,13 +43,14 @@ function edgeEvidence(e) {
   const m = e.meaning || {}, direction = m.directed === false || e.rel === "co-occurs" ? "Undirected association" : `${e.src} → ${e.rel} → ${e.dst}`;
   return `<details class="small"><summary>Connection evidence</summary><p>${esc(direction)}</p><p>${esc(m.explanation || "Inspect the recorded evidence for context.")}</p><p>${esc(String(e.weight))} ${esc(m.weight_unit || "stored weight")} · ${esc(m.kind || "recorded")}</p>${(e.evidence || []).length ? `<ul>${e.evidence.map(x => `<li>${evidenceLink(x)}</li>`).join("")}</ul>` : '<p>No evidence recorded.</p>'}</details>`;
 }
-const qidBtn = (q) => `<button type="button" class="qid" data-q="${esc(q)}">${esc(q)}</button>`;
+const qidBtn = (q) => `<button type="button" class="qid" data-q="${esc(q)}">${esc(q)}</button>${/^term:[a-z0-9-]+$/.test(q) ? ` <a class="small" href="/m/glossary#${encodeURIComponent(q.slice(5))}">Definition</a>` : ""}`;
 async function stats() {
   const s = await api("/api/admin/knowledge/stats");
   $("#stats").textContent = `${s.chunks} chunks · ${s.edges} links`;
   $("#adapters").innerHTML = s.taggers.map((t) => `<tr><td><code>${esc(t.id)}</code></td><td>${esc(t.namespace)}:</td><td>${esc(t.module)}</td><td class="small">${esc(t.about)}</td></tr>`).join("") + s.embedders.map((e) => `<tr><td><code>${esc(e.id)}</code></td><td>embedding</td><td>knowledge</td><td class="small">${esc(e.about)}</td></tr>`).join("");
 }
 function nodeDiagram(center, edges) {
+  const seen = new Set(); edges = edges.filter(e => { if (seen.has(e.other)) return false; seen.add(e.other); return true; }).slice(0, 14);
   const W = 660, H = Math.max(240, edges.length * 32 + 32), cx = 220, cy = H / 2, max = Math.max(...edges.map(e => e.weight), 1);
   const short = (text, length = 32) => text.length > length ? text.slice(0, length - 1) + "…" : text;
   const pts = edges.map((e, i) => ({ ...e, x: 380, y: 32 + i * 32 }));
@@ -67,8 +68,8 @@ async function show(q) {
     if (request !== graphRequest) return false;
     $("#indexNotice").hidden = !g.stale;
     const max = Math.max(1, ...g.edges.map((e) => e.weight));
-    $("#graph").innerHTML = g.edges.length ? nodeDiagram(q, g.edges.slice(0, 14)) : '<p class="small muted">No links yet. Build the index first.</p>';
-    $("#edges").innerHTML = g.edges.map((e) => `<div class="edge"><span class="rel">${esc(e.rel === "co-occurs" || e.src === q ? e.rel : "← " + e.rel)}</span><span>${qidBtn(e.other)}<div class="bar"><i style="width:${(100 * e.weight / max).toFixed(0)}%"></i></div></span><span class="small muted">${e.weight}</span></div>${edgeEvidence(e)}`).join("");
+    $("#graph").innerHTML = g.edges.length ? nodeDiagram(q, g.edges) : '<p class="small muted">No links yet. Build the index first.</p>';
+    $("#edges").innerHTML = (/^term:[a-z0-9-]+$/.test(q) ? `<p><a href="/m/glossary#${encodeURIComponent(q.slice(5))}">Definition, properties and sources</a></p>` : "") + g.edges.map((e) => `<div class="edge"><span class="rel">${esc(e.rel === "co-occurs" || e.src === q ? e.rel : "← " + e.rel)}</span><span>${qidBtn(e.other)}<div class="bar"><i style="width:${(100 * e.weight / max).toFixed(0)}%"></i></div></span><span class="small muted">${e.weight}</span></div>${edgeEvidence(e)}`).join("");
     $("#chunks").innerHTML = c.chunks.length ? c.chunks.slice(0, 12).map((x) => `<div class="chunk"><a href="/story?id=${x.story_id}">${esc(x.title)}</a><div class="muted">${esc(x.text)}</div><div class="tags">${x.tags.filter((t) => !t.via).map((t) => qidBtn(t.qid)).join("")}</div></div>`).join("") : "No passages carry this tag.";
     return true;
   } catch (err) { if (request === graphRequest) showErr($("#stats"), err); return false; }
@@ -86,7 +87,7 @@ document.addEventListener("keydown", (e) => { const q = e.target.closest("svg [d
 $("#gform").onsubmit = (e) => { e.preventDefault(); const q = $("#qid").value.trim(); if (q) show(q).catch((err) => showErr($("#stats"), err)); };
 $("#sform").onsubmit = async (e) => { e.preventDefault(); const r = await api(`/api/knowledge/similar?q=${encodeURIComponent($("#q").value)}`);
   $("#similar").innerHTML = r.results.length ? r.results.map((x) => `<div class="chunk"><span class="small muted">${x.score}</span> <a href="/story?id=${x.story_id}">${esc(x.title)}</a><div class="muted">${esc(x.text)}</div></div>`).join("") : '<p class="small muted">Nothing similar yet.</p>'; };
-$("#build").onclick = async () => { $("#build").disabled = true; try { const r = await api("/api/admin/knowledge/build", { body: {} }); $("#stats").textContent = `Indexed ${r.stories} stories: ${r.chunks_changed} passages updated, ${r.chunks_kept} unchanged, ${r.edges} links.`; $("#build").classList.add("pulse"); await topNodes(); } catch (err) { showErr($("#stats"), err); } finally { $("#build").disabled = false; } };
+$("#build").onclick = async () => { $("#build").disabled = true; try { const r = await api("/api/admin/knowledge/build", { body: {} }); $("#stats").textContent = `Indexed ${r.stories} stories: ${r.chunks_changed} passages updated, ${r.chunks_kept} unchanged, ${r.edges} links.`; $("#build").classList.add("pulse"); const selected = $("#qid").value.trim(); if (selected) await show(selected); else await topNodes(); } catch (err) { showErr($("#stats"), err); } finally { $("#build").disabled = false; } };
 requireUser().then(() => Promise.all([stats(), params.get("qid") ? show(params.get("qid")) : topNodes()])).catch(err => showErr($("#stats"), err));
 </script>
 </body></html>

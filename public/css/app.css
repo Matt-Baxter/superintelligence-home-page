@@ -438,3 +438,10 @@ code, .mono, pre { font-family: var(--mono); }
 #postForm > label { margin-top: 12px; }
 .editorial-attestation { display: flex; align-items: flex-start; gap: 10px; }
 .editorial-attestation input { flex: none; margin: 4px 0 0; }
+.term-pointer { text-decoration: underline dotted; text-underline-offset: 3px; }
+.term-pointer:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; }
+.term-index { display: flex; flex-wrap: wrap; gap: 10px 16px; }
+.term-entry { margin-top: 18px; scroll-margin-top: 100px; overflow-wrap: anywhere; }
+.term-formula { font-family: var(--mono); white-space: pre-wrap; border-left: 2px solid var(--line); padding-left: 12px; }
+#functionOutput { overflow-wrap: anywhere; margin-top: 12px; }
+.term-entry:focus { outline: 2px solid var(--fg); outline-offset: 2px; }

@@ -17,6 +17,7 @@ enum Namespace {
   NAMESPACE_MODULE = 7;
   NAMESPACE_SOURCE = 8;
   NAMESPACE_STORY = 9;
+  NAMESPACE_TERM = 10;
 }
 
 // How a tag was made
@@ -28,6 +29,7 @@ enum TagMethod {
   TAG_METHOD_EMBEDDING = 4;
   TAG_METHOD_RULE = 5;
   TAG_METHOD_HUMAN = 6;
+  TAG_METHOD_GLOSSARY_MENTION = 7;
 }
 
 // Which part of the REQ-003 rule decided

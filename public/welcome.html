@@ -16,4 +16,6 @@
   <section id="access" class="panel public-access" aria-labelledby="accessTitle"><h2 id="accessTitle">Start reading</h2><a class="btn primary" href="/">Browse the actual feed</a><p>Create an account with a username and password, or return to your existing workspace. No email address is required.</p><div class="actions"><a class="btn" href="/?mode=signup">Create account</a><a class="btn" href="/?signin=1">Sign in</a></div><details><summary>Testing this locally?</summary><p>Run <code>npm run demo</code> in the repository. The sign-in page will offer separate reader and admin test accounts, using synthetic data in a fresh local database. The normal server never offers these accounts.</p></details></section>
   <footer class="small muted">Superintelligence Homepage · A focused research reader. <a href="#publicMain">Back to top</a></footer>
 </main>
-</body></html>
+<script src="/js/api.js"></script><script>
+api('/api/me',{allow401:true}).then(({publicNav=[]})=>{if(publicNav.some(n=>n.href==='/m/glossary')){const a=document.createElement('a');a.href='/m/glossary';a.textContent='Terms and symbols';document.querySelector('.public-header nav').append(a);const s=document.createElement('script');s.src='/js/terms.js';document.head.append(s);}}).catch(()=>{});
+</script></body></html>

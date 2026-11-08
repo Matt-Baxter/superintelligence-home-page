@@ -7,13 +7,13 @@ Canonical types for the Superintelligence Homepage's knowledge layer, the one so
 
 Namespaces of qualified ids (lib/ids.js)
 
-`topic` · `org` · `benchmark` · `person` · `concept` · `req` · `module` · `source` · `story`
+`topic` · `org` · `benchmark` · `person` · `concept` · `req` · `module` · `source` · `story` · `term`
 
 ## TagMethod
 
 How a tag was made
 
-`ontology-term` · `entity` · `concept-term` · `embedding` · `rule` · `human`
+`ontology-term` · `entity` · `concept-term` · `embedding` · `rule` · `human` · `glossary-mention`
 
 ## ScopeRule
 

@@ -15,7 +15,8 @@
         "req",
         "module",
         "source",
-        "story"
+        "story",
+        "term"
       ]
     },
     "TagMethod": {
@@ -26,7 +27,8 @@
         "concept-term",
         "embedding",
         "rule",
-        "human"
+        "human",
+        "glossary-mention"
       ]
     },
     "ScopeRule": {

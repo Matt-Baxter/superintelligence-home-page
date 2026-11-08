@@ -13,3 +13,7 @@ The ideas behind superintelligence research in plain words, mapped as a graph an
   - `/m/explainer?c=<id>`, the video player.
 - **Worker:** `npm run learn:worker` (`scripts/learn-worker.js`) makes drafts, videos (Playwright recording, ffmpeg, Manim scene) and Lean checks. Agent jobs get a brief. See the teach-a-concept skill.
 - **Nothing is posted automatically.** A person publishes a post to the RSS feed or uploads a video.
+
+## Term pointers
+
+The public `/m/glossary` and `/api/learn/glossary` serve the sourced registry in `data/glossary.json`. `glossary.js` validates pointers and contributes `term:` mention tags and related graph edges. Browser reading pointers skip editable/interactive/code regions and preserve exact text. `public/js/term-model.js` is shared with Node for literal matching and bounded numeric examples. Run `node test/terms-property-unit.js` and `npm run test:terms` against synthetic fixtures. After registry changes, an admin may rebuild Knowledge; this does not alter significance scoring or publish content.

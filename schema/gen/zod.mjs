@@ -2,10 +2,10 @@
 import { z } from "zod";
 
 /** Namespaces of qualified ids (lib/ids.js) */
-export const Namespace = z.enum(["topic","org","benchmark","person","concept","req","module","source","story"]);
+export const Namespace = z.enum(["topic","org","benchmark","person","concept","req","module","source","story","term"]);
 
 /** How a tag was made */
-export const TagMethod = z.enum(["ontology-term","entity","concept-term","embedding","rule","human"]);
+export const TagMethod = z.enum(["ontology-term","entity","concept-term","embedding","rule","human","glossary-mention"]);
 
 /** Which part of the REQ-003 rule decided */
 export const ScopeRule = z.enum(["strong","topics","none"]);

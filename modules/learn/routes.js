@@ -7,12 +7,13 @@ const iso = () => new Date().toISOString();
 const xml = (s) => String(s ?? "").replace(/[<>&'"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", '"': "&quot;" }[c]));
 
 module.exports = function mountLearn(app, { db, auth, admin, wrap, str, bad, notFound }) {
+  app.get("/api/learn/glossary", wrap(() => require("./glossary").DATA));
   const parseJob = (j) => j && { ...j, files: JSON.parse(j.files || "[]"), concept: j.concept_id ? (L.BY_ID[j.concept_id]?.name || j.concept_id) : null };
 
   // Recent in-scope stories that mention a concept (one bounded query, matching done in memory).
   async function storiesFor(id, limit = 8) {
     const c = L.BY_ID[id]; if (!c) return [];
-    const rows = await db.all("SELECT id, title, url, summary, published_at FROM stories WHERE COALESCE(in_scope, 1) = 1 ORDER BY id DESC LIMIT 400");
+    const rows = await db.all("SELECT id, title, url, summary, published_at FROM stories WHERE COALESCE(in_scope, 0) = 1 AND COALESCE(hidden, 0) = 0 ORDER BY id DESC LIMIT 400");
     return rows.filter((s) => L.conceptsIn(`${s.title}\n${s.summary || ""}`).some((x) => x.id === id)).slice(0, limit).map(({ summary, ...s }) => s);
   }
 

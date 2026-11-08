@@ -1,7 +1,7 @@
 {
   "about": "One valid example of each type in schema/types.json (test data). scripts/schema.js check --runtimes loads each in zod, pydantic, pyarrow, protobuf and Rust serde.",
   "examples": {
-    "Tag": { "qid": "topic:alignment", "label": "Alignment", "matched": ["alignment"], "method": "ontology-term" },
+    "Tag": { "qid": "term:softmax", "label": "Softmax", "matched": ["softmax"], "method": "glossary-mention" },
     "ScopeDecision": { "in": true, "rule": "strong", "reason": "Superintelligence term: \"agi\"", "term": "agi", "topics": [] },
     "Story": { "id": 1, "title": "Sample: an alignment result (test data)", "url": "https://example.org/sample", "summary": "Test data.", "published_at": "2026-11-07T08:00:00Z", "tags": [{ "qid": "topic:alignment", "label": "Alignment", "matched": ["alignment"], "method": "ontology-term" }], "scope": { "in": true, "rule": "topics", "reason": "2 superintelligence topics: Alignment, Interpretability", "topics": ["alignment", "interpretability"] }, "significance": 42 },
     "Chunk": { "story_id": 1, "ord": 0, "text": "Sample passage about alignment (test data).", "hash": "0f1e2d", "tags": [{ "qid": "concept:rlhf", "label": "Learning from human feedback", "matched": ["human feedback"], "method": "concept-term" }] },

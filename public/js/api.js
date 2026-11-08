@@ -35,7 +35,7 @@ function workspaceNavigation(user, current) {
   const nav = user?.nav || [], available = [...(user ? NAV.filter(([, , f]) => !f || user.features?.includes(f)).map(([href,label])=>({href,label})) : [{href:"/",label:"Feed"},{href:"/welcome",label:"About"}]), ...nav, ...(!user ? (window.SI_PUBLIC_NAV || []) : [])];
   const known = {"/story":"Story", "/m/content":"Content desk"};
   if (nav.some(x=>x.href==='/m/review')) available.push({href:'/m/dossier',label:'Topic dossiers'});
-  const group = entry => entry.admin ? "Administration" : /^\/m\/(review|map|learn|lab|dossier|sources|arena|journal)/.test(entry.href) ? "Research" : "Reading";
+  const group = entry => entry.admin ? "Administration" : /^\/m\/(review|map|learn|lab|dossier|sources|arena|journal|glossary)/.test(entry.href) ? "Research" : "Reading";
   const selected = available.find(x => new URL(x.href, location.origin).pathname === current && (current !== "/" || new URL(x.href, location.origin).search === location.search));
   const label = known[current] || selected?.label || document.title.split(" · ")[0];
   const category = selected ? group(selected) : "Reading";
@@ -71,6 +71,7 @@ function topbar(user) {
   bar.addEventListener("keydown", (e) => { if (e.key === "Escape") { if (bar.hasAttribute("data-nav-open")) { setOpen(false); toggle.focus(); } for (const d of bar.querySelectorAll("details[open]")) { d.open = false; d.querySelector("summary").focus(); } } });
   document.addEventListener("pointerdown", (e) => { if (!bar.contains(e.target)) { setOpen(false); for (const d of bar.querySelectorAll("details[open]")) d.open = false; } });
   workspaceNavigation(user, here);
+  if ((window.SI_PUBLIC_NAV || []).some(n=>n.href==="/m/glossary") && !document.querySelector('script[data-term-loader]')) { const script=document.createElement("script"); script.src="/js/terms.js"; script.dataset.termLoader=""; document.head.append(script); }
   const lo = $("#logout"); if (lo) lo.onclick = async () => { lo.disabled = true; try { await api("/api/logout", { method: "POST" }); location.href = "/?signin=1"; } catch (e) { lo.disabled = false; lo.textContent = "Retry sign out"; lo.title = e.message; } };
 
 }
