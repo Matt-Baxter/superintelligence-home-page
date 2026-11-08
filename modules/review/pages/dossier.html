@@ -36,14 +36,24 @@
 <main>
   <div class="pagehead"><div><h1>Evidence dossier</h1><p class="muted">Everything we have on one topic, weighed and traced: reviewed papers, our own toy experiments, feed coverage and who is being talked about. It becomes a blog draft, short posts and an explainer video, each sentence citing its source. A person publishes; nothing is posted for you.</p></div></div>
   <section class="panel">
-    <div class="pick"><label>Topic<select id="topic"></select></label><a class="btn" id="watch" href="#">Watch the explainer</a><button class="btn" type="button" id="queue" hidden>Queue blog and video</button></div>
+    <div class="pick"><label>Topic<select id="topic"></select></label><a class="btn" id="watch" hidden>Watch the explainer</a><button class="btn" type="button" id="queue" hidden>Queue blog and video</button></div>
     <p id="status" class="small muted" role="status" aria-live="polite"></p>
   </section>
-  <div id="out"></div>
+  <section class="panel" id="question-workspace" aria-labelledby="question-title">
+    <h2 id="question-title">Frame a research question</h2>
+    <p class="small muted" id="question-help">Use this topic's existing evidence to prepare a brief. Your question stays in this browser session; it does not create a monitor, send alerts or run a new analysis.</p>
+    <label>Question<textarea id="researchQuestion" maxlength="600" rows="2" placeholder="What evidence would change our view of this topic?" aria-describedby="question-help"></textarea></label>
+    <div class="actions"><button class="btn" type="button" id="copyBrief" disabled>Copy evidence brief</button><button class="btn" type="button" id="clearQuestion">Clear question</button></div>
+    <p class="small muted" id="briefStatus" role="status"></p>
+    <label id="manualBrief" hidden>Copy the complete evidence brief<textarea id="manualBriefText" readonly rows="10" aria-describedby="briefStatus"></textarea></label>
+    <nav class="trace-links" aria-label="Evidence workflow" id="evidenceWorkflow"></nav>
+  </section>
+  <div id="out" aria-busy="false"></div>
 </main>
 <script src="/js/api.js"></script>
 <script>
-let user;
+let user, currentDossier = null, dossierRequest = 0;
+const knownTopics = new Set();
 const LEVELS = ["none yet", "thin", "early", "some support"];
 const ladder = (steps, on) => `<div class="ladder" role="img" aria-label="${esc(on)} on a scale of ${esc(steps.join(", "))}">${steps.map((x) => `<span class="${x === on ? "on" : ""}">${esc(x)}</span>`).join("")}</div>`;
 // Small, safe markdown for the draft preview: headings, bullets, numbered lists, bold, links, code.
@@ -57,13 +67,35 @@ function md(text) {
   }
   if (list) out.push(`</${list}>`); return out.join("");
 }
+function questionKey(topic) { return "si:dossier-question:" + user.id + ":" + topic; }
+function resetManualBrief() { $("#manualBrief").hidden=true; $("#manualBriefText").value=""; }
+function rememberQuestion() { resetManualBrief(); try { sessionStorage.setItem(questionKey($("#topic").value), $("#researchQuestion").value); } catch { $("#briefStatus").textContent = "Session storage is unavailable. You can still copy this brief."; } }
+function evidenceBrief(d, question) {
+  return ["# Evidence brief: " + d.label, "", "Question: " + (question.trim() || "No research question entered."), "Snapshot: " + d.at,
+    "", "## Current evidence", d.strength + ": " + d.why,
+    `${d.counts.credible} credible primary papers; ${d.counts.checks} toy checks (${d.counts.supported} held up); ${d.counts.stories} feed stories.`,
+    "", "## Limitations", "Abstract-based judgments and toy checks do not establish real-world capability or reproducibility. This brief organizes existing records; it does not answer the question automatically.",
+    ...d.weak.map(w => "- " + w.text + " [" + w.n + "]"), ...(d.weak.length ? [] : ["No specific gap flagged by the current dossier; that is not evidence of completeness."]),
+    "", "## References", ...d.refs.map((r,i) => `[${i+1}] ${r.title} — ${new URL(r.url,location.origin).href} (${r.trace})`),
+    "", "Dossier: " + location.origin + location.pathname + "#" + encodeURIComponent(d.topic || $("#topic").value),
+    "", "Draft for human review. No recommendation or new research conclusion was generated."].join("\n");
+}
 async function load() {
-  const topic = location.hash.slice(1) || $("#topic").value; if (!topic) return;
-  $("#topic").value = topic; $("#watch").href = `/m/explainer?d=${encodeURIComponent(topic)}`; $("#status").textContent = "Weighing the evidence…";
+  const request = ++dossierRequest;
+  let topic; try { topic = decodeURIComponent(location.hash.slice(1)) || $("#topic").value; } catch { topic = ""; }
+  resetManualBrief(); currentDossier = null; $("#queue").disabled = true; $("#watch").hidden = true; $("#watch").removeAttribute("href"); $("#copyBrief").disabled = true; $("#out").replaceChildren(); $("#evidenceWorkflow").replaceChildren();
+  if (!knownTopics.has(topic)) { $("#topic").value=""; $("#out").setAttribute("aria-busy", "false"); $("#status").textContent = "That topic pointer is not recognized. Choose a topic above to continue."; return; }
+  $("#out").setAttribute("aria-busy", "true");
+  try { $("#researchQuestion").value = sessionStorage.getItem(questionKey(topic)) || ""; } catch { $("#researchQuestion").value = ""; }
+  $("#briefStatus").textContent = "";
+  $("#topic").value = topic; $("#status").textContent = "Weighing the evidence…";
   try {
     const r = await api(`/api/review/dossier/${encodeURIComponent(topic)}`), d = r.dossier, c = d.counts;
+    if (request !== dossierRequest) return;
+    currentDossier = d; $("#queue").disabled = false; $("#watch").href = `/m/explainer?d=${encodeURIComponent(topic)}`; $("#watch").hidden = false; $("#copyBrief").disabled = false; setPageContext(d.label + " evidence dossier");
+    $("#evidenceWorkflow").innerHTML = `<a href="/?topic=${encodeURIComponent(topic)}">Topic feed</a><a href="/m/knowledge?qid=${encodeURIComponent("topic:" + topic)}">Graph relationships</a><a href="?section=evidence-rating#${encodeURIComponent(topic)}" data-section="evidence-rating">Evidence rating</a><a href="?section=evidence-gaps#${encodeURIComponent(topic)}" data-section="evidence-gaps">Evidence gaps</a><a href="?section=evidence-references#${encodeURIComponent(topic)}" data-section="evidence-references">Source records</a><a href="?section=evidence-drafts#${encodeURIComponent(topic)}" data-section="evidence-drafts">Draft outputs</a>`;
     $("#out").innerHTML = `
-    <section><div class="rating"><span class="small muted">The evidence on ${esc(d.label)}</span><div class="lv"><b>${esc(d.strength)}</b></div><p class="small" style="margin:0">${esc(d.why)}.</p>
+    <section id="evidence-rating"><div class="rating"><span class="small muted">The evidence on ${esc(d.label)}</span><div class="lv"><b>${esc(d.strength)}</b></div><p class="small" style="margin:0">${esc(d.why)}.</p>
       <div class="scale" aria-label="Rating scale">${LEVELS.map((l) => `<span class="${l === d.strength ? "on" : ""}">${l}</span>`).join("")}</div>
       <p class="small muted" style="margin:0">Rule: "some support" needs two or more credible primary papers (credibility ${d.credibleAt.from} or more; ${d.credibleAt.cutoff - d.credibleAt.margin} to ${d.credibleAt.from - 1} is borderline and not counted) and a toy check of one of their ideas that held up. Papers are judged from their abstracts, so nothing here rates higher than that.</p></div></section>
     <section><div class="counts">
@@ -78,29 +110,50 @@ async function load() {
       <table class="t"><thead><tr><th>Due</th><th>Forecast</th><th>From</th><th>Status</th></tr></thead><tbody>${d.forecasts.map((f) => `<tr><td class="n">${esc(f.due)}${f.overdue ? "<br><span class=\"small\">overdue</span>" : ""}</td><td>${esc(f.sentence)} ${f.n ? `[${f.n}]` : ""}</td><td>${esc(f.outlet)}</td>
         <td>${user.admin && f.id ? `<select data-ev="${f.id}" aria-label="Status">${["pending", "happened", "did-not", "unclear", "annulled"].map((x) => `<option ${x === f.status ? "selected" : ""}>${x}</option>`).join("")}</select>` : esc(f.status)}</td></tr>`).join("")}</tbody></table></section>` : ""}
     <div class="cols">
-      <section class="panel"><h2>Where the evidence is thin</h2>${d.weak.length ? `<ul class="small">${d.weak.map((w) => `<li>${esc(w.text)} [${w.n}]</li>`).join("")}</ul>` : '<p class="small muted">Nothing flagged.</p>'}</section>
+      <section class="panel" id="evidence-gaps"><h2>Where the evidence is thin</h2>${d.weak.length ? `<ul class="small">${d.weak.map((w) => `<li>${esc(w.text)} [${w.n}]</li>`).join("")}</ul>` : '<p class="small muted">Nothing flagged.</p>'}</section>
       <section class="panel"><h2>Who is being talked about</h2><p class="small muted">Mention counts in the papers and stories above. A mention isn't an endorsement, and no claims are attributed to anyone.</p>
         ${d.orgs.length ? `<div class="chips">${d.orgs.map((o) => `<span class="chip2">${esc(o.label)} · ${o.mentions}</span>`).join("")}</div>` : ""}
         ${d.people.length ? `<p class="small muted">Watched people</p><div class="chips">${d.people.map((p) => `<span class="chip2">${esc(p.label)} · ${p.mentions}</span>`).join("")}</div>` : '<p class="small muted">No watched people mentioned.</p>'}</section>
     </div>
-    <section class="panel"><h2>References, traced</h2><p class="small muted">Each reference names the record it came from: <code>doc:</code> a review, <code>lab:</code> a toy experiment, <code>story:</code> a feed story.</p><ol class="refs">${d.refs.map((x) => `<li><a href="${esc(x.url)}" rel="noopener">${esc(x.title)}</a> <span class="small muted">${esc(x.type)}, ${esc(x.note)}</span> <code>${esc(x.trace)}</code></li>`).join("")}</ol></section>
-    <section class="panel"><h2>Short posts</h2><p class="small muted">Drafts to copy. You post them; no Twitter/X.</p><div class="posts">${r.posts.map((p, i) => `<div class="post"><span class="small muted">${esc(p.channel)}</span><p id="post${i}">${esc(p.text)}</p><button class="btn" type="button" data-copy="post${i}">Copy</button></div>`).join("")}</div></section>
+    <section class="panel" id="evidence-references"><h2>References, traced</h2><p class="small muted">Each reference names the record it came from: <code>doc:</code> a review, <code>lab:</code> a toy experiment, <code>story:</code> a feed story.</p><ol class="refs">${d.refs.map((x,i) => `<li id="reference-${i+1}"><a href="${esc(x.url)}" rel="noopener">${esc(x.title)}</a> <span class="small muted">${esc(x.type)}, ${esc(x.note)}</span> <code>${esc(x.trace)}</code></li>`).join("")}</ol></section>
+    <section class="panel" id="evidence-drafts"><h2>Short posts</h2><p class="small muted">Drafts to copy. You post them; no Twitter/X.</p><div class="posts">${r.posts.map((p, i) => `<div class="post"><span class="small muted">${esc(p.channel)}</span><p id="post${i}">${esc(p.text)}</p><button class="btn" type="button" data-copy="post${i}">Copy</button></div>`).join("")}</div></section>
     <section class="panel"><details class="draft"><summary><h2 style="display:inline">Blog draft</h2> <span class="small muted">(${d.refs.length} references)</span></summary><div class="md">${md(r.blog)}</div>
       <div class="actions" style="margin-top:12px"><button class="btn" type="button" data-copy-md>Copy as Markdown</button></div></details></section>`;
     $$("[data-copy]").forEach((b) => (b.onclick = () => copy($("#" + b.dataset.copy).textContent, b)));
     $$("[data-ev]").forEach((x) => (x.onchange = async () => { try { await api(`/api/admin/review/events/${x.dataset.ev}`, { body: { status: x.value } }); $("#status").textContent = "Forecast marked " + x.value + "."; } catch (e) { showErr($("#status"), e); } }));
     $("[data-copy-md]").onclick = (e) => copy(r.blog, e.target);
     $("#status").textContent = `Weighed on ${d.at}. ${d.refs.length} references.`;
-  } catch (e) { showErr($("#status"), e); }
+    const section=new URLSearchParams(location.search).get("section");if(["evidence-rating","evidence-gaps","evidence-references","evidence-drafts"].includes(section)){const target=document.getElementById(section);target.setAttribute("tabindex","-1");target.focus();target.scrollIntoView({block:"start"});}
+  } catch (e) { if(request===dossierRequest)showErr($("#status"), e); }
+  finally { if(request===dossierRequest)$("#out").setAttribute("aria-busy", "false"); }
 }
 function copy(text, b) { navigator.clipboard.writeText(text).then(() => { b.textContent = "Copied"; setTimeout(() => (b.textContent = b.dataset.copy ? "Copy" : "Copy as Markdown"), 1500); }, () => { b.textContent = "Select and copy"; }); }
 requireUser().then(async (u) => {
   user = u;
   const m = await api("/api/review/map");
-  $("#topic").innerHTML = m.topics.map((t) => `<option value="${esc(t.id)}">${esc(t.label)} (${t.docs} docs)</option>${t.children.map((c) => `<option value="${esc(c.id)}">  · ${esc(c.label)}</option>`).join("")}`).join("");
+  for(const t of m.topics){knownTopics.add(t.id);for(const child of t.children)knownTopics.add(child.id);}
+  $("#topic").innerHTML = '<option value="">Choose a topic…</option>' + m.topics.map((t) => `<option value="${esc(t.id)}">${esc(t.label)} (${t.docs} docs)</option>${t.children.map((c) => `<option value="${esc(c.id)}">  · ${esc(c.label)}</option>`).join("")}`).join("");
+  $("#topic").value = m.topics[0]?.id || "";
   $("#topic").onchange = () => { location.hash = $("#topic").value; };
-  if (u.admin) { $("#queue").hidden = false; $("#queue").onclick = async () => { try { const j = await api("/api/admin/learn/jobs", { body: { kind: "dossier", note: `topic:${$("#topic").value}` } }); $("#status").textContent = `Queued job #${j.id || (j.job && j.job.id) || ""}: the worker writes the blog draft and posts and records the video (npm run learn:worker).`; } catch (e) { showErr($("#status"), e); } }; }
+  if (u.admin) { $("#queue").hidden = false; $("#queue").onclick = async () => { if(!currentDossier)return;const request=dossierRequest,topic=currentDossier.topic;$("#queue").disabled=true;try { const j = await api("/api/admin/learn/jobs", { body: { kind: "dossier", note: `topic:${topic}` } }); if(request===dossierRequest)$("#status").textContent = `Queued job #${j.id || (j.job && j.job.id) || ""}: the worker writes the blog draft and posts and records the video (npm run learn:worker).`; } catch (e) { if(request===dossierRequest)showErr($("#status"), e); } finally { if(request===dossierRequest)$("#queue").disabled=!currentDossier; } }; }
+  $("#researchQuestion").oninput = rememberQuestion;
+  $("#clearQuestion").onclick = () => { $("#researchQuestion").value = ""; rememberQuestion(); $("#briefStatus").textContent = "Question cleared for this topic."; };
+  $("#copyBrief").onclick = async () => {
+    if(!currentDossier)return;
+    const request=dossierRequest,question=$("#researchQuestion").value,text=evidenceBrief(currentDossier,question);
+    const isCurrent=()=>request===dossierRequest&&question===$("#researchQuestion").value;
+    try {
+      await navigator.clipboard.writeText(text);if(!isCurrent())return;resetManualBrief();
+      $("#briefStatus").textContent = "Evidence brief copied. Review the sources before using it.";
+    } catch {
+      if(!isCurrent())return;
+      $("#manualBriefText").value=text;$("#manualBrief").hidden=false;
+      $("#briefStatus").textContent = "Clipboard access is unavailable. The complete brief is selected below; use your device's Copy command. Review the sources before using it.";
+      $("#manualBriefText").focus();$("#manualBriefText").select();
+    }
+  };
+  $("#evidenceWorkflow").onclick = e => { const link=e.target.closest("[data-section]");if(!link)return;e.preventDefault();const target=document.getElementById(link.dataset.section);if(target){target.setAttribute("tabindex","-1");target.focus();target.scrollIntoView({block:"start"});} };
   addEventListener("hashchange", load); load();
-});
+}).catch(e=>showErr($("#status"),e));
 </script>
 </body></html>

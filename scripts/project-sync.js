@@ -42,6 +42,8 @@ function tasks() {
 const JOB_STATUS = { queued: "todo", "needs-agent": "todo", running: "in_progress", done: "done", published: "done", failed: "todo" };
 
 async function main() {
+  // Validate the entire proposed idea registry before opening or writing any database.
+  const productItems = require("../modules/project/product-backlog").items(require("../docs/research/product-backlog.json"));
   // The Project tracker is an extended-version module; its tables only exist with that profile loaded.
   process.env.SITE_PROFILE = process.env.SITE_PROFILE || "extended";
   const db = require("../lib/db"), { createKernel } = require("../kernel/kernel"), k = createKernel();
@@ -50,7 +52,7 @@ async function main() {
   let ms = await db.get("SELECT id FROM project_milestones WHERE name = ?", CFG.milestone.name);
   if (!ms && !dry) ms = { id: await db.insert("INSERT INTO project_milestones (name, description, created_at) VALUES (?, ?, ?)", CFG.milestone.name, CFG.milestone.description, now()) };
 
-  const items = [];
+  const items = [...productItems];
   for (const [id, text] of Object.entries(CFG.people)) items.push({ key: `people:${id}`, title: `People check: ${id}`, description: text, labels: [id.startsWith("REQ") ? id : "spec", "people"], priority: 2 });
   for (const p of proposals()) items.push({ key: p.dir.startsWith("002-") ? `approve:${p.id}` : `approve:${p.dir}:${p.id}`, title: `Approve ${p.id} with Matt (or drop it)`, description: `${p.text}\n\nProposed in specs/${p.dir}/spec.md. Both partners decide; until then it's extended-version only.`, labels: [p.id, `spec:${p.dir.slice(0, 3)}`, "spec", "approval"], priority: 3, milestone: true });
   for (const t of tasks()) items.push({ key: `task:${t.dir}:${t.id}`, title: `${t.id} (${t.dir.split("-")[0]}): ${t.text}`.slice(0, 200),

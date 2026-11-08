@@ -17,6 +17,8 @@ function descriptionFor(item, previous = '') {
 }
 function labelsFor(item, previous = []) {
   const authoritativeScope = item.labels.find((l) => /^spec:\d{3}$/.test(l));
-  return [...new Set([...item.labels, ...previous.filter((l) => !authoritativeScope || !/^spec:\d{3}$/.test(l))])];
+  const product = /^product-(?:idea|slice):/.test(item.key || '');
+  const sourceOwned = label => product && (/^(phase:|epic:)/.test(label) || ['scope-review','needs-spec'].includes(label));
+  return [...new Set([...item.labels, ...previous.filter((l) => !sourceOwned(l) && (!authoritativeScope || !/^spec:\d{3}$/.test(l)))])];
 }
 module.exports = { keys, descriptionFor, labelsFor };

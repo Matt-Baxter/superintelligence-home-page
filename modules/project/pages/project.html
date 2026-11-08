@@ -138,6 +138,7 @@
     <button class="nv" data-view="mine">My issues <span class="n" data-count="mine"></span></button>
     <button class="nv" data-view="active">Active <span class="n" data-count="active"></span></button>
     <button class="nv" data-view="backlog">Backlog <span class="n" data-count="backlog"></span></button>
+    <button class="nv" data-view="product">Product ideas</button>
     <button class="nv" data-view="all">All issues <span class="n" data-count="all"></span></button>
     <button class="nv" data-view="board">Board</button>
     <button class="nv" data-view="timeline">Timeline</button>
@@ -196,6 +197,7 @@ const VIEWS = {
   mine: { title: "My issues", query: { assignee: "me", status: "backlog,todo,in_progress,in_review" }, groups: true },
   active: { title: "Active", query: { status: "todo,in_progress,in_review" }, groups: true },
   backlog: { title: "Backlog", query: { status: "backlog" }, groups: true },
+  product: { title: "Product ideas", query: { label: "product-backlog" }, groups: true },
   all: { title: "All issues", query: {}, groups: true },
   board: { title: "Board", query: { status: "backlog,todo,in_progress,in_review,done", sort: "manual" }, board: true },
   timeline: { title: "Timeline", query: { status: "backlog,todo,in_progress,in_review,done" }, timeline: true },
@@ -219,7 +221,9 @@ async function loadMeta() {
   fill($("#fMilestone"), "Any milestone", M.milestones.map((m) => [m.id, m.name]), filters.milestone);
 }
 function go(v) { view = VIEWS[v] ? v : "active"; sel = -1; history.replaceState(null, "", "#/" + view + (open ? "/" + open : "")); render(); }
+let issueRenderRequest=0;
 async function render() {
+  const request=++issueRenderRequest;
   const V = VIEWS[view];
   $$(".pm-side [data-view]").forEach((b) => b.setAttribute("aria-current", b.dataset.view === view));
   $("#viewTitle").textContent = V.title; $("#filters").hidden = !!V.special;
@@ -227,11 +231,13 @@ async function render() {
   if (view === "milestones") return renderMilestones();
   if (view === "activity") return renderActivity();
   if (view === "specs") return renderSpecs();
-  const q = new URLSearchParams({ ...V.query }); for (const [k, v] of Object.entries(filters)) if (v !== "") q.set(k, v);
-  const resp = await api("/api/admin/project/issues?" + q); issues = resp.issues;
+  const q = new URLSearchParams({ ...V.query }); for (const [k, v] of Object.entries(filters)) if (v !== "" && !(view==="product"&&k==="label")) q.set(k, v);
+
+  const resp = await api("/api/admin/project/issues?" + q); if(request!==issueRenderRequest)return; issues = view==="product"&&filters.label ? resp.issues.filter(i=>i.labels.includes(filters.label)) : resp.issues;
   $("#viewCount").textContent = `${issues.length} issue${issues.length === 1 ? "" : "s"}`;
   if (!M.counts || !Object.keys(M.counts).length) { $("#body").innerHTML = `<div class="empty-st"><p>No issues yet.</p><p><button class="btn primary" id="starter" type="button">Load the project's open to-dos</button> <button class="btn" type="button" onclick="newIssue()">New issue</button></p><p class="small">Loads the checklist from docs/OUR_PARTS.md as issues in three milestones: Week 9 homework, Live site, Bake-off.</p></div>`; $("#starter").onclick = loadStarter; return; }
   V.timeline ? renderTimeline(resp.conflicts || []) : V.board ? renderBoard() : renderList();
+  if(view==="product")$("#body").insertAdjacentHTML("afterbegin",`<section class="panel" id="productPlan"><h2>Research product roadmap</h2><p class="small muted">200 proposals across 20 epics and 5 phases, plus scoped delivery tasks. Search by IDEA number, buyer or outcome; filter by phase or epic using Labels.</p><details><summary>Delivery sequence and scope</summary><p class="small muted">Baseline → research workflow → evidence synthesis → decisions → integrations. Tracker status records work, not approval of new requirements. Validate a paid pilot before commercial expansion.</p></details><nav class="trace-links" aria-label="Roadmap actions"><a href="/m/dossier">Try the evidence workflow</a>${resp.issues.filter(i=>i.labels.includes("delivery-slice")).map(i=>`<a href="#/product/${i.number}">${esc(i.title)} (${esc(statusLabel(i.status))})</a>`).join("")}</nav></section>`);
 }
 function rowHtml(i, idx) {
   return `<div class="irow ${idx === sel ? "sel" : ""}" data-n="${i.number}" data-idx="${idx}" role="button" tabindex="-1">

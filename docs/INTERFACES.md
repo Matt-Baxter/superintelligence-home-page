@@ -2,13 +2,15 @@
 
 SEIS 606 Project 2 · Superintelligence Homepage · John Affolter and Matthew Baxter
 
-**Version 1.17 · November 7, 2026.**
+**Version 1.18 · November 7, 2026.**
 
 The data model, API, auth and rules of **John's build** (the code in this repo). Under the [constitution](../.specify/memory/constitution.md), each bake-off build may differ in database, framework and internal structure, so this is not the shared contract. What both builds must meet is the [shared spec](../specs/001-superintelligence-homepage/spec.md) and the bake-off rules in [CONTRACT.md](../CONTRACT.md); [SPEC_TRACE.md](SPEC_TRACE.md) shows how this build meets each requirement.
 
 Log every change to a table, route or shape here, so whoever merges the builds (or reads this API) can follow it. Rows up to 0.8 were drafted when we planned a split; their approval boxes are history, not a requirement.
 
 ## Change log
+
+- **1.18, Nov 7, 2026 — product backlog and bounded dossier workflow (REQ-018; extended 002/REQ-030/031).** Project sync imports a validated, versioned registry of 200 proposed ideas plus separately scoped delivery tasks. Stable `product-idea:NNN` and `product-slice:SLICE-NNN` markers refresh source context without following over human status, title, priority or notes. New ideas start in Backlog; related requirement pointers are not approvals. `/m/project#/product` filters existing issue APIs by `product-backlog`. The dossier adds a per-user, per-topic browser-session question and a deterministic copyable brief containing existing evidence, limits and source records. It neither saves a monitor nor generates a new answer. Existing tables, routes, response shapes, publication policy and default profile are unchanged.
 
 - **1.17, Nov 7, 2026 — reliable research navigation (REQ-018; extended REQ-023/025/027).** Graph selection updates `qid`, supports Back/Forward and an All nodes reset; Learn rejects stale route responses and reports broken pointers. Glossary search preserves Greek mathematical case. Directory active links distinguish Feed and Saved. Public RSS now links to `/m/published-explainer?id=<id>` and `GET /api/learn/published/:id` returns `{post:{id,concept_id,output,published_at}}` only for published post jobs; all other records return 404. Existing `/api/learn/posts/:id` keeps authentication. The public reader escapes output as text and links to glossary, RSS, feed and the signed-in concept workspace. No table, score, shared-spec or publication-policy changes.
 
