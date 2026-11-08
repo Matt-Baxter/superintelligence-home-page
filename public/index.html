@@ -54,6 +54,8 @@
     <div class="actions"><button class="btn primary" type="submit">Submit</button><button class="btn" type="button" id="sCancel">Cancel</button></div>
     <p class="err" id="sErr" role="alert"></p>
   </form>
+  <div id="appliedFilters" class="applied-filters" aria-label="Applied filters" hidden></div>
+  <p id="laterPage" class="small muted" hidden>You’re viewing a later results page. <button class="linkish" id="showFirst" type="button">Show first results</button></p>
   <div class="feed-results"><p id="feedStatus" class="small muted" role="status" aria-live="polite">Loading stories…</p><button class="btn" id="clearFilters" type="button" hidden>Clear filters</button></div>
   <div class="feed-error" id="feedError" role="alert" hidden><span id="feedErrorMessage"></span><button class="btn" id="retryFeed" type="button">Try again</button></div>
   <ol class="feed" id="feed" aria-label="Stories"></ol>
@@ -62,7 +64,7 @@
 <script src="/js/api.js"></script>
 <script>
 const SORTS = ["new", "top", "votes", "signal"];
-let mode = "login", sort = SORTS.includes(params.get("sort")) ? params.get("sort") : "new", offset = 0, ONT, feedRequest = 0, feedController, failedAppend = false, renderedView = null;
+let mode = "login", sort = SORTS.includes(params.get("sort")) ? params.get("sort") : "new", offset = 0, ONT, feedRequest = 0, feedController, failedAppend = false, renderedView = null, restoreOffset = 0;
 function setAuthMode(nextMode) {
   mode = nextMode; $$(".tabs button").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.mode === mode)));
   $("#nameWrap").hidden = mode !== "signup" || !window.SI_DISPLAY_NAME;
@@ -102,56 +104,81 @@ function updateAddress(replace = false) {
 }
 function setControlsFromAddress() {
   const current = new URLSearchParams(location.search); for (const key of [...params.keys()]) params.delete(key); current.forEach((v, k) => params.set(k, v));
+  const requestedOffset = Number(params.get("offset")); restoreOffset = Number.isSafeInteger(requestedOffset) && requestedOffset > 0 && requestedOffset <= 100000 ? requestedOffset : 0;
   sort = SORTS.includes(params.get("sort")) ? params.get("sort") : "new";
   $("#kind").value = params.get("kind") || ""; $("#days").value = params.has("days") ? params.get("days") : (params.get("topic") || params.get("org") || params.get("benchmark") || params.get("person") ? "" : "7");
   $("#q").value = params.get("q") || ""; $("#savedOnly").checked = params.get("saved") === "1";
   $$(".seg-btns button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.sort === sort)));
   header(); $("#clearFilters").hidden = !activeFilters();
 }
-function resultStatus() { const n = $$("#feed .story").length; $("#feedStatus").textContent = `${n} ${n === 1 ? "story" : "stories"} loaded${$("#more").hidden ? "" : " · More available"}.`; }
+function resultStatus() { const n = $$("#feed .story").length; $("#feedStatus").textContent = n ? `${n} ${n === 1 ? "story" : "stories"} shown${$("#more").hidden ? "" : " · More available"}.` : $("#more").hidden ? "No matching stories." : "No stories on this page · More available."; }
 function emptyFeed(s) {
   const label = (ONT.topics.find((t) => t.id === s.topic) || {}).label || s.topic;
-  return `<li class="empty">${s.saved ? "No saved stories match these filters." : s.topic ? `No stories yet on ${esc(label)}.` : "No stories match these filters."} <button class="linkish" type="button" data-reset-filters>Clear filters</button> or check <a href="/sources">Sources</a>.</li>`;
+  return `<li class="empty">${s.saved ? "No saved stories match these filters." : s.topic ? `No stories yet on ${esc(label)}.` : "No stories match these filters."} ${s.q ? '<button class="linkish" type="button" data-remove-filter="q">Clear search</button> or ' : ""}${s.days ? '<button class="linkish" type="button" data-remove-filter="days">search any time</button>, or ' : ""}<button class="linkish" type="button" data-reset-filters>clear all filters</button>.</li>`;
 }
 async function load(append = false) {
   const currentView = new URLSearchParams({ ...state(), sort }).toString();
   if (append && currentView !== renderedView) append = false;
   if (!append) $("#more").hidden = true;
   const request = ++feedRequest; feedController?.abort(); feedController = new AbortController();
-  const s = state(), start = append ? offset : 0, qs = new URLSearchParams({ ...s, sort, offset: start });
+  const s = state(), start = append ? offset : restoreOffset, qs = new URLSearchParams({ ...s, sort, offset: start });
   $("#feed").setAttribute("aria-busy", "true"); $("#more").disabled = true; $("#feedError").hidden = true; $("#feedStatus").textContent = $$("#feed .story").length ? "Updating stories…" : "Loading stories…";
   try {
     const { stories } = await api("/api/stories?" + qs, { signal: feedController.signal });
     if (request !== feedRequest) return; if (!Array.isArray(stories)) throw new Error("The story list could not be read.");
     const feed = $("#feed"); if (!append) feed.replaceChildren(); else feed.querySelectorAll(".empty").forEach((el) => el.remove());
-    for (const story of stories) feed.append(storyCard(story, { onChange: (updated, kind) => {
+    const fragment = document.createDocumentFragment();
+    for (const story of stories) {
+      const returnURL = new URL(location.href); returnURL.searchParams.delete("offset"); if (start) returnURL.searchParams.set("offset", String(start)); returnURL.hash = `story-${story.id}`;
+      fragment.append(storyCard(story, { returnTo: returnURL.pathname + returnURL.search + returnURL.hash, onChange: (updated, kind) => {
       if (kind === "save" && state().saved && !updated.saved) { const card = feed.querySelector(`[data-id="${updated.id}"]`); if (card) { card.remove(); offset = Math.max(0, offset - 1); if (!feed.querySelector(".story")) feed.innerHTML = $("#more").hidden ? emptyFeed(state()) : '<li class="empty">No saved stories on this page. Load more to keep reading.</li>'; } }
       resultStatus();
-    } }));
+    } })); }
+    feed.append(fragment);
     if (!feed.querySelector(".story")) feed.innerHTML = emptyFeed(s);
-    $("#more").hidden = stories.length < 40; offset = start + stories.length; renderedView = currentView; failedAppend = false; resultStatus();
+    $("#more").hidden = stories.length < 40; offset = start + stories.length; renderedView = currentView; failedAppend = false; if (!append) $("#laterPage").hidden = !start; resultStatus();
+    if (!append && /^#story-\d+$/.test(location.hash)) requestAnimationFrame(() => { const card = document.getElementById(location.hash.slice(1)); if (card) { card.focus({ preventScroll: true }); card.scrollIntoView({ block: "center" }); } });
   } catch (e) {
     if (request !== feedRequest || e.name === "AbortError") return;
     failedAppend = append; $("#feedErrorMessage").textContent = `${e.message} ${$("#feed .story") ? "Previous results are still shown." : "Please try again."}`; $("#feedError").hidden = false; $("#feedStatus").textContent = "Stories could not be updated.";
   } finally { if (request === feedRequest) { $("#feed").setAttribute("aria-busy", "false"); $("#more").disabled = false; } }
 }
-const filterMedia = matchMedia("(max-width: 640px)");
+const filterMedia = matchMedia("(max-width: 900px)");
 function fitFilters() { $("#feedFilterDetails").open = !filterMedia.matches; }
 filterMedia.addEventListener("change", fitFilters); fitFilters();
+let topicSignature;
 function header() {
   const s = state(), t = ONT.topics.find((x) => x.id === s.topic), o = ONT.orgs.find((x) => x.id === s.org);
   const bm = (ONT.benchmarks || []).find((x) => x.id === s.benchmark), pp = (ONT.people || []).find((x) => x.id === s.person);
   $("#feedTitle").textContent = bm ? `Benchmark: ${bm.label}` : pp ? `Mentions of ${pp.label}` : t ? t.label : o ? o.label : s.saved ? "Saved for later" : "The path to superintelligence";
   $("#filterSummary").textContent = [s.kind ? KIND[s.kind] : "All sources", $("#days").selectedOptions[0]?.textContent || "Any time", ...(s.saved ? ["Saved"] : [])].join(" · ");
+  renderAppliedFilters(s);
+  const signature = `${s.topic}|${s.org}`; if (signature === topicSignature) return; topicSignature = signature;
   $("#topicbar").innerHTML = `<a href="/" ${!s.topic && !s.org ? 'aria-current="true"' : ""}>All</a>` + ONT.topics.filter((x) => !x.parent).map((x) => `<a href="/?topic=${x.id}" ${x.id === s.topic ? 'aria-current="true"' : ""}>${esc(x.label)}</a>`).join("")
     + (t && t.parent ? `<a href="/?topic=${t.id}" aria-current="true">${esc(t.label)}</a>` : "");
 }
-function refresh(replace = false) { clearTimeout(tmr); header(); updateAddress(replace); load(); }
+function renderAppliedFilters(s) {
+  const labels = { topic: ONT.topics.find((x) => x.id === s.topic)?.label || s.topic, org: ONT.orgs.find((x) => x.id === s.org)?.label || s.org, benchmark: ONT.benchmarks?.find((x) => x.id === s.benchmark)?.label || s.benchmark, person: ONT.people?.find((x) => x.id === s.person)?.label || s.person, kind: KIND[s.kind], q: s.q ? `Search: ${s.q}` : "", days: $("#days").selectedOptions[0]?.textContent, saved: "Saved stories" };
+  const items = activeFilters(s) ? Object.entries(s).filter(([,value]) => value).map(([key]) => `<button class="btn filter-chip" type="button" data-remove-filter="${key}" aria-label="Remove filter: ${esc(labels[key])}">${esc(labels[key])} <span aria-hidden="true">×</span></button>`) : [];
+  if (sort !== "new") items.push('<button class="btn filter-chip" type="button" data-remove-filter="sort" aria-label="Remove sort filter">Sort: ' + esc($(".seg-btns [aria-pressed=true]").textContent) + ' ×</button>');
+  $("#appliedFilters").innerHTML = items.join(""); $("#appliedFilters").hidden = !items.length;
+}
+function removeFilter(key) {
+  if (["topic", "org", "benchmark", "person"].includes(key)) params.delete(key);
+  else if (key === "q") $("#q").value = "";
+  else if (key === "saved") $("#savedOnly").checked = false;
+  else if (key === "sort") { sort = "new"; $$(".seg-btns button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.sort === sort))); }
+  else if (["kind", "days"].includes(key)) $("#" + key).value = "";
+  refresh(); $("#q").focus();
+}
+$("#feedView").addEventListener("click", (e) => { const remove = e.target.closest("[data-remove-filter]"); if (remove) removeFilter(remove.dataset.removeFilter); });
+function refresh(replace = false) { restoreOffset = 0; clearTimeout(tmr); header(); updateAddress(replace); load(); }
 $$(".seg-btns button").forEach((b) => b.onclick = () => { sort = b.dataset.sort; $$(".seg-btns button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); refresh(); });
 let tmr; $("#q").oninput = () => { clearTimeout(tmr); $("#more").hidden = true; feedController?.abort(); ++feedRequest; tmr = setTimeout(() => refresh(true), 250); };
 ["#kind", "#days", "#savedOnly"].forEach((id) => $(id).onchange = () => refresh());
 $("#more").onclick = () => load(true); $("#retryFeed").onclick = () => load(failedAppend);
 function resetFilters() { for (const key of [...params.keys()]) params.delete(key); sort = "new"; $("#kind").value = ""; $("#days").value = "7"; $("#q").value = ""; $("#savedOnly").checked = false; $$(".seg-btns button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.sort === sort))); refresh(); }
+$("#showFirst").onclick = () => refresh();
 $("#clearFilters").onclick = resetFilters;
 $("#feed").addEventListener("click", (e) => { if (e.target.closest("[data-reset-filters]")) resetFilters(); });
 window.addEventListener("popstate", () => { clearTimeout(tmr); setControlsFromAddress(); load(); });

@@ -3,11 +3,11 @@
 <title>Story · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css"></head>
 <body>
 <main>
-  <p class="small"><a href="/">← Feed</a></p>
+  <p class="small"><a href="/" id="backToResults">← Back to results</a></p>
   <ol class="feed" id="card"></ol>
   <div class="cols side">
     <section class="panel">
-      <h2>How significant is it?</h2>
+      <h2>Significance and evidence</h2>
       <div id="analysis"></div>
       <h2 style="margin-top:8px">Why it's tagged this way</h2>
       <div id="why"></div>
@@ -37,7 +37,8 @@ const id = Number(params.get("id"));
 async function load() {
   const d = await api(`/api/stories/${id}`); const s = d.story;
   document.title = s.title + " · Superintelligence Homepage";
-  $("#card").innerHTML = ""; $("#card").append(storyCard(s));
+  $("#card").innerHTML = ""; $("#card").append(storyCard(s, { detail: true }));
+  $("#backToResults").href = localReturnPath(params.get("from"));
   $("#why").innerHTML = (s.topics.length ? s.topics.map((t) => `<p><a class="tag" href="/?topic=${t.id}">${esc(t.label)}</a> ${t.via ? `<span class="small muted">because it's tagged ${esc(s.topics.find((x) => x.id === t.via)?.label || t.via)}</span>` : `<span class="small muted">matched “${t.matched.map(esc).join("”, “")}”</span>`}</p>`).join("") : `<p class="muted">No topic in the ontology matched this story's title or summary.</p>`)
     + (s.orgs.length ? `<p class="small muted">Organizations: ${s.orgs.map((o) => `${esc(o.label)} (“${o.matched.map(esc).join("”, “")}”)`).join(", ")}</p>` : "");
   const an = s.analysis || {};
@@ -49,6 +50,7 @@ async function load() {
       <span class="muted">Scores are read from the text next to the benchmark's name; check the source before quoting them.</span></p>` : ""}
     ${(an.people || []).length ? `<p class="small">People: ${an.people.map((p) => `<a class="tag" href="/?person=${esc(p.id)}">${esc(p.label)}</a>`).join(" ")}</p>` : ""}
     <p class="small muted">The score is rule-based and explainable: stronger evidence, more independent sources, reported benchmark results and frontier claims raise it. <a href="/m/capabilities">Capability tracker</a></p>`;
+  $("#analysis").insertAdjacentHTML("beforeend", evidenceBreakdown(s));
   $("#covered").innerHTML = s.sources.map((x) => `<tr><td>${esc(x.name)}</td><td>${esc(KIND[x.kind] || x.kind)}</td><td><a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.title)}</a>${x.rigor && x.rigor.verdict ? `<br><span class="small muted">Research write-up: ${esc(x.rigor.verdict)}, credibility ${esc(x.rigor.credibility || "?")}/100, source grade ${esc(x.rigor.grade || "?")}</span>` : ""}</td></tr>`).join("");
   $("#notes").innerHTML = d.notes.length ? d.notes.map((n) => `<div class="note"><div class="who">${esc(n.name)} · ${ago(n.created_at)} · ${n.private ? "only you" : "shared"}${n.mine ? ` · <button class="linkish" data-del="${n.id}" type="button">Delete</button>` : ""}</div>${esc(n.text)}</div>`).join("") : `<p class="muted small">No notes yet.</p>`;
   $$("[data-del]").forEach((b) => b.onclick = async () => { await api(`/api/notes/${b.dataset.del}`, { method: "DELETE" }); load(); });

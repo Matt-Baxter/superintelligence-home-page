@@ -35,3 +35,17 @@ Final reader validation: `Preflight passed.`; `262 passed, 0 failed`; `page erro
 REQ-009–012 and REQ-018: the sign-in form now explains account requirements, supports password visibility and password managers, preserves retry state, and describes the local return destination. The public `/welcome` page uses a short section navigation, ruled sample stories and plain explanations of source grouping and significance. Samples are explicitly synthetic. Local demo role controls appear only in the disposable demo runner. See [access testing](TESTING_ACCESS.md) for use and validation.
 
 Public reading follow-up: the actual feed now opens at `/` without an account. Guest navigation contains Feed, About and Sign in. Read-story actions expose source explanations; vote/save actions preserve a return link through sign-in. Account editors and admin navigation remain hidden for guests, with server authorization still enforced. `/welcome` remains the orientation page.
+
+## Reading quality and evidence visualization, 2026-11-07
+
+REQ-002, REQ-007, REQ-017 and REQ-018: compact feed controls now apply through 900px, including short intermediate-width windows. Individual applied-filter controls preserve the remaining selection. Empty states offer Clear search and Search any time rather than sending guests into authenticated sources administration. Result counts distinguish an exhausted query from an empty saved page with more available.
+
+A keyboard/touch score button opens the existing factor breakdown inline. Native meters show each factor's actual points on the same 0–100 scale, with text equivalents and a clear rule-based-significance disclaimer. They are not confidence estimates. Factor markup is created only when requested; opening it makes no extra API request. The story page has a real primary heading, an explicit original-source action and Back to results. Return URLs retain filters, the originating page offset and story anchor; a later-page view has a first-results escape.
+
+Motion uses existing entrance and opacity tokens under `prefers-reduced-motion: no-preference`. Reduced motion has no evidence/menu entrance animation. Feed rendering batches cards through a DocumentFragment; unrelated filter changes retain topic navigation nodes. These are bounded rendering improvements, not a claim of measured production speedup. No scoring, server routes, response shapes or database code changed.
+
+Browser coverage lives in `test/e2e.js`, “Reading quality”. Screenshots: `shots/quality-{light,dark}-{390,676,1280}.png`. The local fixture data is synthetic. New proposed spec 004 capabilities remain gated by T000.
+
+Validation: `Preflight passed.`; full browser suite `306 passed, 0 failed`, `page errors: none`. A focused short-window check at 676×504 in both themes confirmed the complete first title ended at 456px, within the viewport. Inline evidence made zero additional API requests in the regression check. Screenshots and synthetic fixtures support local verification, not production performance or accessibility certification.
+
+Demo-role regression after this pass: `24 passed, 0 failed`; guest, reader and admin at 390px/1280px in light/dark, `page errors: none`.

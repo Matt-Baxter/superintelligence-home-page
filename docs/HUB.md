@@ -323,7 +323,7 @@ Quoted from the repo's own pitfall, trap, troubleshooting and habits sections (n
 **docs/**
 
 - [docs/DEPLOY.md](DEPLOY.md): The site runs on Vercel from John's v0/Vercel account, with the code on Matt's GitHub repo and a Neon Postgres database.
-- [docs/DESIGN_REFERENCES.md](DESIGN_REFERENCES.md): Sections: Details inspiration, 2026-11-07; Reader workspace, 2026-11-07; Public orientation and sign-in, 2026-11-07.
+- [docs/DESIGN_REFERENCES.md](DESIGN_REFERENCES.md): Sections: Details inspiration, 2026-11-07; Reader workspace, 2026-11-07; Public orientation and sign-in, 2026-11-07; Reading quality and evidence…
 - [docs/HANDOFF.md](HANDOFF.md): Written 2026-11-07 for whoever picks this up next (Codex for code, v0 for the bake-off UI).
 - [docs/INTERFACES.md](INTERFACES.md): The data model, API, auth and rules of **John's build** (the code in this repo).
 - [docs/LOGIC_AUDIT.md](LOGIC_AUDIT.md): Scope: shared spec 001, the implemented research layer, and the work-tracking path.
