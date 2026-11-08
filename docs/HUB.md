@@ -163,6 +163,7 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | --- | --- |
 | `npm run build` | write client/blocks.gen.jsx (browser block registry) and copy module pages to public/m/; write modules/codemap/data/codemap.json (npm run build does this); Snapshot of the specs for the Project page's Specs view (REQ-030, proposed), written by `npm run build`.; esbuild: bundle client/jr.jsx into public/js/jr.js |
 | `npm run start` | Superintelligence Homepage: multi-source AI-progress feed with accounts, curation, and a weekly brief (the agent log is AGENT_LOG.md in the repo,… |
+| `npm run demo` | Disposable, loopback-only demonstration. |
 | `npm run dev:sample` | Starts the server on a throwaway SQLite database preloaded with SYNTHETIC sample feeds (test/fixtures). |
 | `npm run test` | Two-user browser test against test/serve-fixtures.js (synthetic data). |
 | `npm run dev:sample:pg` | Same as serve-fixtures.js but against a Postgres database (DATABASE_URL must point at a throwaway test database). |
@@ -321,7 +322,7 @@ Quoted from the repo's own pitfall, trap, troubleshooting and habits sections (n
 **docs/**
 
 - [docs/DEPLOY.md](DEPLOY.md): The site runs on Vercel from John's v0/Vercel account, with the code on Matt's GitHub repo and a Neon Postgres database.
-- [docs/DESIGN_REFERENCES.md](DESIGN_REFERENCES.md): Sections: Details inspiration, 2026-11-07; Reader workspace, 2026-11-07.
+- [docs/DESIGN_REFERENCES.md](DESIGN_REFERENCES.md): Sections: Details inspiration, 2026-11-07; Reader workspace, 2026-11-07; Public orientation and sign-in, 2026-11-07.
 - [docs/HANDOFF.md](HANDOFF.md): Written 2026-11-07 for whoever picks this up next (Codex for code, v0 for the bake-off UI).
 - [docs/INTERFACES.md](INTERFACES.md): The data model, API, auth and rules of **John's build** (the code in this repo).
 - [docs/LOGIC_AUDIT.md](LOGIC_AUDIT.md): Scope: shared spec 001, the implemented research layer, and the work-tracking path.
@@ -335,6 +336,7 @@ Quoted from the repo's own pitfall, trap, troubleshooting and habits sections (n
 - [docs/SPEC_STATUS.md](SPEC_STATUS.md): Measured on 2026-11-07 (America/Chicago) by `scripts/spec-status.js`, from the spec acceptance suite (`test/spec-acceptance.js --browser`, 48 of 48…
 - [docs/SPEC_TRACE.md](SPEC_TRACE.md): How this build meets the shared spec…
 - [docs/START_HERE.md](START_HERE.md): The current checkout continues on `feature/si-combined`.
+- [docs/TESTING_ACCESS.md](TESTING_ACCESS.md): Run `npm run demo` from the repository and open http://localhost:3200/.
 - [docs/V0.md](V0.md): John builds his version of the homepage experience in **v0**; Matt builds his in **Claude**.
 - [docs/speckit-prompts.md](speckit-prompts.md): The prompts we gave each Spec Kit command, kept here so we can show how the spec was produced.
 

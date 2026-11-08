@@ -12,6 +12,7 @@ The current checkout continues on `feature/si-combined`. Use this index to find 
 | End-to-end logic audit | [audit record](LOGIC_AUDIT.md) | Findings, fixes, evidence and explicit limits |
 | All skills and checks | [generated hub](HUB.md) | Generated index; edit its inputs |
 | Current interface contracts | [interfaces](INTERFACES.md) | Build-specific routes and data shapes |
+| Sign-in, public overview and local demo | [access testing](TESTING_ACCESS.md) | Disposable reader/admin testing; no production bypass |
 | Design decisions | [design references](DESIGN_REFERENCES.md) | Applied UI patterns and screenshots |
 | Original integration | [combined handoff](../handoff/COMBINED.md) | Historical integration evidence |
 

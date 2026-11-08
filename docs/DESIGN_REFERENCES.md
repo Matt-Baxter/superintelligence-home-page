@@ -29,3 +29,7 @@ Filters are restored from the URL and browser Back; clear filters returns to new
 Verification: `test/e2e.js`, “Reader robustness (REQ-002, REQ-014, REQ-017, REQ-018)”, exercises URL state, delayed responses, injected failures, duplicate clicks, pagination, startup recovery and 320/390/768/1280px layouts in both themes. Screenshots: `shots/reader-{light,dark}-{390,1280}.png`. All data is synthetic. These changes retain existing routes and response shapes; proposed spec 004 capabilities still await T000 approval.
 
 Final reader validation: `Preflight passed.`; `262 passed, 0 failed`; `page errors: none`. Browser checks ran against throwaway SQLite fixtures. Independent review found no remaining concrete blockers after the pagination fixes. No database code changed in this pass.
+
+## Public orientation and sign-in, 2026-11-07
+
+REQ-009–012 and REQ-018: the sign-in form now explains account requirements, supports password visibility and password managers, preserves retry state, and describes the local return destination. The public `/welcome` page uses a short section navigation, ruled sample stories and plain explanations of source grouping and significance. Samples are explicitly synthetic. Local demo role controls appear only in the disposable demo runner. See [access testing](TESTING_ACCESS.md) for use and validation.

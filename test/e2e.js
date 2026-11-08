@@ -19,6 +19,30 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   ok((await matt.evaluate(async () => (await (await fetch('/api/me')).json()).user.admin)) === false, 'second account is not');
   ok((await fetch(B + '/api/stories')).status === 401, 'feed API needs a session');
 
+  console.log('Public orientation and account access (REQ-009–012, REQ-018)');
+  const visitorContext = await b.newContext({ viewport: { width: 1280, height: 900 } }), visitor = await visitorContext.newPage();
+  visitor.on('pageerror', e => errs.push('visitor: ' + e.message));
+  await visitor.goto(B + '/welcome');
+  ok(await visitor.isVisible('#previewTitle') && await visitor.isVisible('a[href="/?mode=signup"]'), 'public overview explains the reader without requiring an account');
+  ok((await visitor.textContent('#preview')).includes('synthetic') && (await fetch(B + '/api/admin/project/meta')).status === 401, 'public samples are labeled and private administration remains protected');
+  await visitor.click('a[href="/?mode=signup"]'); await visitor.waitForSelector('#auth:not([hidden])');
+  ok(await visitor.getAttribute('#password', 'autocomplete') === 'new-password' && await visitor.getAttribute('[data-mode="signup"]', 'aria-pressed') === 'true', 'create-account links select signup with password-manager hints');
+  await visitor.fill('#password', 'sample-password'); await visitor.click('#showPassword');
+  ok(await visitor.getAttribute('#password', 'type') === 'text' && await visitor.getAttribute('#showPassword', 'aria-pressed') === 'true', 'show-password control exposes its state');
+  await visitor.click('#showPassword'); ok(await visitor.getAttribute('#password', 'type') === 'password', 'password can be hidden again');
+  await visitor.goto(B + '/?next=%2Fm%2Fproject'); await visitor.waitForSelector('#auth:not([hidden])');
+  ok((await visitor.textContent('#returnHint')).includes('/m/project'), 'sign-in explains the protected destination');
+  await visitor.fill('#username', 'john'); await visitor.fill('#password', 'wrong-password'); await visitor.click('#authBtn'); await visitor.waitForSelector('#authErr:not(:empty)');
+  ok((await visitor.textContent('#authErr')).includes('Wrong') && await visitor.isEnabled('#authBtn') && await visitor.inputValue('#username') === 'john', 'failed login retains the username and permits retry');
+  await visitor.fill('#password', 'correct-horse-9'); await visitor.click('#authBtn'); await visitor.waitForURL('**/m/project');
+  ok(true, 'successful login returns to the requested local page');
+  ok(!(await (await fetch(B + '/api/me')).json()).demo, 'normal fixture server never advertises demo credentials');
+  for (const colorScheme of ['light', 'dark']) for (const width of [390, 1280]) {
+    await visitorContext.clearCookies(); await visitor.setViewportSize({ width, height: 900 }); await visitor.emulateMedia({ colorScheme });
+    for (const page of ['/', '/welcome']) { await visitor.goto(B + page); await visitor.waitForSelector(page === '/' ? '#auth:not([hidden])' : '#previewTitle'); ok(!(await visitor.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), `public access fits ${width}px in ${colorScheme}: ${page}`); await visitor.screenshot({ path: `shots/access-${page === '/' ? 'login' : 'public'}-${colorScheme}-${width}.png`, animations: 'disabled' }); }
+  }
+  await visitorContext.close();
+
   console.log('Feed, grouping and tags');
   ok((await john.$$('#feed .story')).length === 4, 'feed shows 4 superintelligence stories from 3 sample sources (the general-AI robot item is left out)');
   const grouped = story(john, 'Scaling Laws'); ok((await grouped.locator('.multi').textContent()).includes('2 more'), 'one paper from 3 sources is one story (“+ 2 more sources”)');

@@ -34,6 +34,17 @@ const feeds = require("../lib/feeds");
   }
   // Real default sources stay listed but paused here, since the test machine may not reach them.
   await db.run("UPDATE sources SET status = 'paused' WHERE url NOT LIKE 'fixture://%'");
+  if (process.env.DEMO_ACCOUNTS === "1") {
+    if (process.env.NODE_ENV === "production") throw new Error("Demo accounts are only for local testing.");
+    const crypto = require("node:crypto");
+    const accounts = [{ role: "reader", username: "demo-reader", password: "local-reader-2026" }, { role: "admin", username: "demo-admin", password: "local-admin-2026" }];
+    for (const account of accounts) {
+      if (await db.get("SELECT id FROM users WHERE username = ?", account.username)) throw new Error("Use a fresh DATA_DIR for the demo.");
+      const salt = crypto.randomBytes(16).toString("hex"), hash = salt + ":" + crypto.scryptSync(account.password, salt, 64).toString("hex");
+      await db.insert("INSERT INTO users (username, display_name, pass_hash, is_admin, created_at) VALUES (?, ?, ?, ?, ?)", account.username, `Sample ${account.role} (test data)`, hash, account.role === "admin" ? 1 : 0, db.now());
+    }
+    app.locals.demo = { accounts };
+  }
   const port = Number(process.env.PORT || 3200);
-  app.listen(port, () => console.log(`Test server with sample data on http://localhost:${port} (${db.engine}, data in ${process.env.DATA_DIR})`));
+  app.listen(port, process.env.DEMO_ACCOUNTS === "1" ? "127.0.0.1" : undefined, () => console.log(`Test server with sample data on http://localhost:${port} (${db.engine}, data in ${process.env.DATA_DIR})`));
 })();

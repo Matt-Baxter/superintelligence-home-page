@@ -10,6 +10,9 @@ Log every change to a table, route or shape here, so whoever merges the builds (
 
 ## Change log
 
+- Nov 7, 2026 — Account access usability (REQ-009–012, REQ-018): `/welcome` is a static public overview with labeled synthetic samples. Existing data and admin authorization is unchanged. `GET /api/me` may include optional `demo: {accounts:[{role,username,password}]}` only when the dedicated local fixture runner sets it, fixture feeds are enabled and NODE_ENV is not production. `npm run demo` always creates a fresh temporary SQLite database, binds to loopback, creates synthetic reader/admin users and refuses production mode. Normal servers omit this field; sign-up/sign-in/session contracts are unchanged. `node test/demo-access.js` checks demo roles, logout and production refusal.
+
+
 Every interface change gets a row here. Breaking changes bump the major version (1.0 → 2.0).
 
 | Version | Date | Change | Approved by |
@@ -201,7 +204,7 @@ JSON over HTTPS. Requests send `Content-Type: application/json`.
 | --- | --- | --- |
 | POST /api/signup | `{username, password, displayName}` | `{user:{id, username, name, admin}}` + session cookie |
 | POST /api/login, /api/logout | `{username, password}` | `{user}` / `{ok:true}` |
-| GET /api/me | none | `{user}` or `{user:null}` |
+| GET /api/me | none | `{user,profile,features}`; optional local-fixture-only `demo` as logged above |
 | GET /api/stories | query: `topic, kind, org, q, days, saved=1, sort=top\|new\|votes\|signal, benchmark, person, min, offset` | `{stories:[{id, title, url, summary, topics, orgs, votes, voted, saved, notes, sources:[{name, kind, url}], nsources, significance, analysis}]}`, 40 per page |
 | GET /api/stories/:id | none | `{story, notes:[…], lists:[…], inPublicLists:[…]}` |
 | POST /api/stories/:id/vote, /save | none | `{voted, votes}` / `{saved}` (toggles) |
