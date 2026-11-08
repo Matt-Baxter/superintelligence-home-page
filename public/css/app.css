@@ -383,3 +383,21 @@ code, .mono, pre { font-family: var(--mono); }
   #feedView .public-reading { padding-bottom: 6px; }
   #feedView .feed-results { min-height: 24px; }
 }
+
+.story-date summary { cursor: pointer; min-height: 24px; padding: 2px; }
+.story-date[open] { flex-basis: 100%; } .story-date p { padding: 8px 0; overflow-wrap: anywhere; }
+.story-date time { font-variant-numeric: tabular-nums; }
+.sort-explanation { border-left: 2px solid var(--line-strong); padding: 10px 12px; }
+#sortInfo { min-height: 44px; } .feed-results { flex-wrap: wrap; }
+@media (max-width: 900px) {
+  .topbar.guest .in { gap: 6px; padding: 10px 12px; }
+  .topbar.guest .nav-toggle { display: none; }
+  .topbar.guest .nav { order: 0; display: flex; position: static; width: auto; padding: 0; border: 0; max-height: none; background: none; overflow: visible; gap: 2px; }
+  .topbar.guest .nav a { min-height: 44px; padding: 10px 6px; }
+  .topbar.guest .brand { font-size: 15px; }
+  .story-date summary { min-height: 44px; padding: 10px 2px; }
+}
+@media (max-width: 420px) {
+  .evidence-factors li { grid-template-columns: minmax(0, 1fr); }
+  .evidence-factors meter { min-width: 0; }
+}

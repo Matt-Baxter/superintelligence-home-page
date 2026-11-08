@@ -20,7 +20,7 @@ async function api(path, opts = {}) {
 
 // Core pages; modules add theirs through the "ui.nav" extension point (returned with /api/me as user.nav).
 // Core pages; [href, label, feature]: a page with a feature shows only when this version of the site has it (lib/profile.js).
-const NAV = [["/", "Feed"], ["/brief", "Weekly brief", "brief"], ["/lists", "Reading lists", "lists"], ["/sources", "Sources"]];
+const NAV = [["/", "Feed"], ["/?saved=1&days=", "Saved"], ["/brief", "Weekly brief", "brief"], ["/lists", "Reading lists", "lists"], ["/sources", "Sources"]];
 const PAGE_FEATURE = { "/brief": "brief", "/lists": "lists" };
 async function requireUser() {
   const { user } = await api("/api/me", { allow401: true });
@@ -32,10 +32,10 @@ async function requireUser() {
 }
 function topbar(user) {
   const here = location.pathname.replace(/\.html$/, "").replace(/\/index$/, "/") || "/";
-  const bar = document.createElement("header"); bar.className = "topbar";
+  const bar = document.createElement("header"); bar.className = user ? "topbar" : "topbar guest";
   // Module links from "ui.nav": reader-facing ones sit in the bar; admin tools go in one Admin menu.
   window.SI_USER = user || null;
-  const nav = user?.nav || [], isHere = (h) => (h === "/" ? here === "/" : here.startsWith(h));
+  const nav = user?.nav || [], isHere = (h) => { const destination = new URL(h, location.origin); return destination.pathname === "/" ? here === "/" && ((destination.searchParams.get("saved") === "1") === (new URLSearchParams(location.search).get("saved") === "1")) : here.startsWith(destination.pathname); };
   const mod = nav.filter((n) => !n.admin), tools = nav.filter((n) => n.admin);
   const core = (user ? NAV : [["/", "Feed"], ["/welcome", "About"]]).filter(([, , f]) => !f || (user?.features || []).includes(f));
   const links = [core[0], ...mod.filter((n) => (n.order ?? 50) < 20).map((n) => [n.href, n.label]), ...core.slice(1), ...mod.filter((n) => (n.order ?? 50) >= 20).map((n) => [n.href, n.label])];
@@ -71,6 +71,19 @@ const KIND = { papers: "Paper", journal: "Journal", people: "Person", lab: "Lab"
 // Significance score explanation, one line per factor (the same lines the story page shows as a table).
 const sigWhy = (an) => ["Significance " + (an.significance ?? 0) + "/100", ...(an.why || []).map((w) => `+${w.points} ${w.factor}${w.detail ? ": " + w.detail : ""}`)].join("\n");
 const fmtScore = (sc) => sc.unit === "%" ? `${sc.value}%` : sc.unit === "hours" ? (sc.value >= 1 ? `${+sc.value.toFixed(1)} h` : `${Math.round(sc.value * 60)} min`) : String(sc.value);
+// Dates are disclosed as UTC, with publication and first-seen semantics kept separate.
+function storyDate(s) {
+  const raw = s.published_at || s.first_seen, label = s.published_at ? "Published" : "First seen";
+  let value = String(raw || "").replace(" ", "T");
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value), originalDate = value;
+  if (dateOnly) value += "T00:00:00";
+  if (value && !/(Z|[+-]\d{2}:?\d{2})$/i.test(value)) value += "Z";
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return '<span class="muted">Date unavailable</span>';
+  const iso = date.toISOString();
+  if (dateOnly && iso.slice(0, 10) !== originalDate) return '<span class="muted">Date unavailable</span>';
+  return `<details class="story-date"><summary aria-label="${label}: ${esc(ago(iso))}; expand for date details">${esc(ago(iso))}</summary><p>${label}: <time datetime="${dateOnly ? originalDate : iso}">${esc(dateOnly ? originalDate + " (time unavailable)" : iso.replace("T", " ").replace(".000Z", " UTC"))}</time></p></details>`;
+}
 // A view of the existing score factors; meters show points out of the same 100-point scale.
 function evidenceBreakdown(s) {
   const factors = s.analysis?.why || [];
@@ -91,14 +104,16 @@ function storyCard(s, opts = {}) {
   const bench = (an.benchmarks || []).slice(0, 3).map((b) => `<a class="tag bench" href="/?benchmark=${esc(b.id)}" title="Benchmark${b.score ? `: reported ${esc(b.score.raw)}` : ""}">${esc(b.label)}${b.score ? ` <b>${esc(fmtScore(b.score))}</b>` : ""}</a>`).join("");
   li.innerHTML = `<button class="vote ${s.voted ? "on" : ""}" type="button" aria-pressed="${s.voted}" aria-label="Upvote"><span aria-hidden="true">▲</span><b>${s.votes}</b></button>
     <div class="body"><a class="title" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.title)}</a>
-    <div class="meta">${sigBadge}${rigorBadge}${an.type ? `<span class="utype">${esc(an.type.label)}</span>` : ""}<span>${esc(s.sources[0]?.name || "")}${s.nsources > 1 ? ` <span class="multi">+ ${s.nsources - 1} more source${s.nsources > 2 ? "s" : ""}</span>` : ""}</span><span>${kinds.map(esc).join(" · ")}</span><span>${ago(s.published_at || s.first_seen)}</span></div>
+    <div class="meta">${sigBadge}${rigorBadge}${an.type ? `<span class="utype">${esc(an.type.label)}</span>` : ""}<span>${esc(s.sources[0]?.name || "")}${s.nsources > 1 ? ` <span class="multi">+ ${s.nsources - 1} more source${s.nsources > 2 ? "s" : ""}</span>` : ""}</span><span>${kinds.map(esc).join(" · ")}</span>${storyDate(s)}</div>
     <section class="evidence-panel" id="${evidenceId}" aria-label="Significance explanation" hidden></section>
     ${s.summary && !opts.compact ? `<p class="sum">${esc(s.summary.slice(0, 260))}${s.summary.length > 260 ? "…" : ""}</p>` : ""}
     ${opts.listNote ? `<p class="listnote">“${esc(opts.listNote)}”</p>` : ""}
     <div class="row2"><div class="tags">${bench}${tags}${orgs}</div><div class="acts"><a href="/story?id=${s.id}">${s.notes ? `${s.notes} note${s.notes > 1 ? "s" : ""}` : "Notes"}</a><button type="button" class="save linkish" aria-pressed="${s.saved}">${s.saved ? "Saved ✓" : "Save"}</button></div></div><p class="action-feedback small" role="status" aria-live="polite" hidden></p></div>`;
+  const dateDetails = li.querySelector(".story-date");
+  dateDetails?.addEventListener("keydown", (e) => { if (e.key === "Escape" && dateDetails.open) { e.preventDefault(); e.stopPropagation(); dateDetails.open = false; dateDetails.querySelector("summary").focus(); } });
   const toggle = li.querySelector(".evidence-toggle"), panel = li.querySelector(".evidence-panel");
   toggle.onclick = () => { const open = toggle.getAttribute("aria-expanded") !== "true"; toggle.setAttribute("aria-expanded", String(open)); if (open && !panel.childElementCount) panel.innerHTML = evidenceBreakdown(s); panel.hidden = !open; };
-  li.addEventListener("keydown", (e) => { if (e.key === "Escape" && !panel.hidden) { panel.hidden = true; toggle.setAttribute("aria-expanded", "false"); toggle.focus(); } });
+  li.addEventListener("keydown", (e) => { if (e.key === "Escape" && !panel.hidden) { e.preventDefault(); e.stopPropagation(); panel.hidden = true; toggle.setAttribute("aria-expanded", "false"); toggle.focus(); } });
   if (opts.detail) {
     const title = li.querySelector(".title"), heading = document.createElement("h1"); heading.className = "story-heading"; heading.textContent = s.title; title.replaceWith(heading);
     const source = li.querySelector(".acts a"); source.textContent = "Open original source"; source.href = s.url; source.target = "_blank"; source.rel = "noopener noreferrer";

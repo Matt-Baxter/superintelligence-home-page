@@ -79,12 +79,38 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   await quality.click('#showFirst'); await quality.waitForFunction(() => document.querySelectorAll('#feed .story').length === 40);
   ok(!new URL(quality.url()).searchParams.has('offset') && await quality.isHidden('#laterPage'), 'first-results action resets the restoration offset');
   await quality.unroute('**/api/stories?*');
-  for (const colorScheme of ['light','dark']) for (const width of [390,676,1280]) {
+  for (const colorScheme of ['light','dark']) for (const width of [320,390,676,1280]) {
     await quality.setViewportSize({ width, height: 900 }); await quality.emulateMedia({ colorScheme, reducedMotion: 'reduce' }); await quality.goto(B); await quality.waitForSelector('#feed .story'); await quality.locator('.evidence-toggle').first().click();
     ok(!(await quality.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), `evidence view fits ${width}px in ${colorScheme}`);
     ok(await quality.locator('.evidence-panel').first().evaluate(el => getComputedStyle(el).animationName === 'none'), 'reduced motion disables evidence entrance animation');
     await quality.screenshot({ path: `shots/quality-${colorScheme}-${width}.png`, animations: 'disabled' });
   }
+  console.log('Research wave 1: ideas 1, 5, 6, 8, 11, 19');
+  await quality.goto(B); await quality.waitForSelector('#feed .story');
+  await quality.locator('.story-date summary').first().click();
+  const exactDate = await quality.locator('.story-date time').first().getAttribute('datetime');
+  ok(exactDate.endsWith('Z') && (await quality.locator('.story-date[open]').first().textContent()).includes('Published:') && Date.parse(exactDate) === Date.parse(firstStory.published_at), 'exact publication date is available in UTC by disclosure');
+  await quality.keyboard.press('Escape');
+  ok(await quality.locator('.story-date[open]').count() === 0 && await quality.evaluate(() => document.activeElement.tagName === 'SUMMARY'), 'Escape closes the date disclosure and returns focus');
+  ok(await quality.evaluate(() => storyDate({first_seen:'2026-11-01 12:00:00'}).includes('First seen:') && storyDate({first_seen:'bad-date'}).includes('Date unavailable')), 'first-seen fallback and invalid dates are explicit');
+  await quality.click('#sortInfo');
+  for (const [order, phrase] of [['new','publication time'],['top','configured signals'],['votes','total vote count'],['signal','not a confidence estimate']]) {
+    await quality.click(`[data-sort="${order}"]`);
+    ok((await quality.textContent('#sortHelp')).includes(phrase) && (await quality.textContent('#sortHelp')).includes('Time window:'), `sort explanation matches ${order}`);
+  }
+  await quality.keyboard.press('Escape'); ok(await quality.isHidden('#sortHelp'), 'sort help closes with Escape');
+  await quality.goto(B + '/?q=Sparse&kind=papers&days=30&sort=signal'); await quality.waitForSelector('#feed .story');
+  await quality.click('#topicbar a:has-text("Alignment")'); await quality.waitForSelector('#feed .story');
+  const continuity = new URL(quality.url()).searchParams;
+  ok(continuity.get('q') === 'Sparse' && continuity.get('kind') === 'papers' && continuity.get('days') === '30' && continuity.get('sort') === 'signal' && continuity.get('topic') === 'alignment', 'switching topics preserves query, source, time and sort');
+  for (const width of [320,390]) {
+    await quality.setViewportSize({width,height:900}); await quality.goto(B + '/?topic=recursive-self-improvement&days='); await quality.waitForSelector('#topicbar [aria-current="true"]');
+    ok(await quality.isVisible('#siteNav a[href="/welcome"]') && await quality.isHidden('#navToggle') && !(await quality.evaluate(() => document.documentElement.scrollWidth > innerWidth+1)), `guest navigation is direct and fits ${width}px`);
+    ok(await quality.evaluate(() => { const a=document.querySelector('#topicbar [aria-current="true"]'), r=a.getBoundingClientRect(), b=a.parentElement.getBoundingClientRect(); return r.left>=b.left-1 && r.right<=b.right+1 && document.activeElement!==a; }), `active topic is horizontally visible without taking focus at ${width}px`);
+  }
+  await john.goto(B + '/?saved=1&days='); await john.waitForSelector('#siteNav a[aria-current="page"]');
+  ok(await john.getAttribute('#siteNav a[href="/?saved=1&days="]','aria-current') === 'page' && await john.inputValue('#days') === '', 'signed-in Saved destination opens all-time saves and marks itself current');
+  await john.goto(B); await john.waitForSelector('#feed .story');
   await qualityContext.close();
 
   console.log('Feed, grouping and tags');
@@ -519,7 +545,7 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   await reader.selectOption('#kind', 'lab'); await reader.waitForFunction(() => document.querySelector('#feed').getAttribute('aria-busy') === 'false' && new URLSearchParams(location.search).get('kind') === 'lab');
   await reader.goBack(); await reader.waitForFunction(() => document.querySelector('#kind').value === 'papers' && document.querySelector('#feed').getAttribute('aria-busy') === 'false');
   ok(await reader.inputValue('#q') === 'scaling' && await reader.inputValue('#days') === '', 'Back restores filters and their results together');
-  await reader.click('#clearFilters'); await reader.waitForSelector('#feed .story');
+  await reader.click('#clearFilters'); await reader.waitForSelector('#feed .story'); await reader.waitForFunction(() => document.querySelector('#feed').getAttribute('aria-busy') === 'false');
   ok(await reader.inputValue('#q') === '' && await reader.inputValue('#days') === '7' && !(await reader.isVisible('#clearFilters')), 'clear filters returns to the default reading view');
   const originalTitles = await reader.$$eval('#feed .title', (els) => els.map((el) => el.textContent));
   await reader.route('**/api/stories?*', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'Sample feed failure (test data)' }) }));
@@ -527,7 +553,7 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   ok(JSON.stringify(await reader.$$eval('#feed .title', (els) => els.map((el) => el.textContent))) === JSON.stringify(originalTitles) && (await reader.textContent('#feedError')).includes('Previous results'), 'a failed feed refresh preserves earlier results and explains the failure');
   await reader.unroute('**/api/stories?*'); await reader.click('#retryFeed'); await reader.waitForFunction(() => document.querySelector('#feedError').hidden && document.querySelector('#feed').getAttribute('aria-busy') === 'false');
   ok((await reader.textContent('#feedStatus')).includes('No matching stories'), 'retry recovers the latest filter request without reloading the page');
-  await reader.click('#clearFilters'); await reader.waitForSelector('#feed .story');
+  await reader.click('#clearFilters'); await reader.waitForSelector('#feed .story'); await reader.waitForFunction(() => document.querySelector('#feed').getAttribute('aria-busy') === 'false');
   const readerStories = await reader.evaluate(async () => (await (await fetch('/api/stories?days=7')).json()).stories);
   let slowStarted, releaseSlow, slowDone;
   const started = new Promise((r) => (slowStarted = r)), release = new Promise((r) => (releaseSlow = r)), done = new Promise((r) => (slowDone = r));
@@ -539,7 +565,7 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   });
   await reader.fill('#q', 'sample-slow'); await started; await reader.fill('#q', 'sample-fast'); await reader.waitForSelector('#feed .title:has-text("Sample newest result")'); releaseSlow(); await done;
   ok(!(await reader.textContent('#feed')).includes('Sample stale result') && new URL(reader.url()).searchParams.get('q') === 'sample-fast', 'a slower earlier response cannot overwrite a newer search');
-  await reader.unroute('**/api/stories?*'); await reader.click('#clearFilters'); await reader.waitForSelector('#feed .story');
+  await reader.unroute('**/api/stories?*'); await reader.click('#clearFilters'); await reader.waitForSelector('#feed .story'); await reader.waitForFunction(() => document.querySelector('#feed').getAttribute('aria-busy') === 'false');
   const first = readerStories.find((s) => !s.saved); const row = reader.locator(`.story[data-id="${first.id}"]`);
   const beforeVote = await row.locator('.vote b').textContent();
   await reader.route(`**/api/stories/${first.id}/vote`, (route) => route.fulfill({ status: 503, json: { error: 'Sample vote failure (test data)' } }));

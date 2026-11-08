@@ -56,7 +56,8 @@
   </form>
   <div id="appliedFilters" class="applied-filters" aria-label="Applied filters" hidden></div>
   <p id="laterPage" class="small muted" hidden>You’re viewing a later results page. <button class="linkish" id="showFirst" type="button">Show first results</button></p>
-  <div class="feed-results"><p id="feedStatus" class="small muted" role="status" aria-live="polite">Loading stories…</p><button class="btn" id="clearFilters" type="button" hidden>Clear filters</button></div>
+  <div class="feed-results"><p id="feedStatus" class="small muted" role="status" aria-live="polite">Loading stories…</p><button class="btn" id="sortInfo" type="button" aria-expanded="false" aria-controls="sortHelp">Explain sort</button><button class="btn" id="clearFilters" type="button" hidden>Clear filters</button></div>
+  <p id="sortHelp" class="sort-explanation small" hidden></p>
   <div class="feed-error" id="feedError" role="alert" hidden><span id="feedErrorMessage"></span><button class="btn" id="retryFeed" type="button">Try again</button></div>
   <ol class="feed" id="feed" aria-label="Stories"></ol>
   <div class="actions"><button class="btn" id="more" type="button" hidden>Load more</button></div>
@@ -153,9 +154,25 @@ function header() {
   $("#feedTitle").textContent = bm ? `Benchmark: ${bm.label}` : pp ? `Mentions of ${pp.label}` : t ? t.label : o ? o.label : s.saved ? "Saved for later" : "The path to superintelligence";
   $("#filterSummary").textContent = [s.kind ? KIND[s.kind] : "All sources", $("#days").selectedOptions[0]?.textContent || "Any time", ...(s.saved ? ["Saved"] : [])].join(" · ");
   renderAppliedFilters(s);
-  const signature = `${s.topic}|${s.org}`; if (signature === topicSignature) return; topicSignature = signature;
-  $("#topicbar").innerHTML = `<a href="/" ${!s.topic && !s.org ? 'aria-current="true"' : ""}>All</a>` + ONT.topics.filter((x) => !x.parent).map((x) => `<a href="/?topic=${x.id}" ${x.id === s.topic ? 'aria-current="true"' : ""}>${esc(x.label)}</a>`).join("")
-    + (t && t.parent ? `<a href="/?topic=${t.id}" aria-current="true">${esc(t.label)}</a>` : "");
+  const descriptions = { new: "Newest uses publication time, or first-seen time when publication time is missing.", top: "Top combines votes, source coverage and configured signals, with older stories gradually weighted lower.", votes: "Most voted orders by the total vote count, then newer stories.", signal: "Significance uses the explained rule-based score. It is not a confidence estimate." };
+  $("#sortHelp").textContent = `${descriptions[sort]} Time window: ${$("#days").selectedOptions[0]?.textContent || "Any time"}.`;
+  for (const link of $$("#siteNav a")) if (new URL(link.href).pathname === "/") {
+    const savedLink = new URL(link.href).searchParams.get("saved") === "1";
+    if (savedLink === !!s.saved) link.setAttribute("aria-current", "page"); else link.removeAttribute("aria-current");
+  }
+  const signature = `${s.topic}|${s.org}`, changed = signature !== topicSignature;
+  if (changed) {
+    topicSignature = signature;
+    $("#topicbar").innerHTML = `<a data-topic="" href="/" ${!s.topic ? 'aria-current="true"' : ""}>All</a>` + ONT.topics.filter((x) => !x.parent).map((x) => `<a data-topic="${esc(x.id)}" href="/" ${x.id === s.topic ? 'aria-current="true"' : ""}>${esc(x.label)}</a>`).join("")
+      + (t && t.parent ? `<a data-topic="${esc(t.id)}" href="/" aria-current="true">${esc(t.label)}</a>` : "");
+  }
+  for (const link of $$("#topicbar a")) {
+    const query = new URLSearchParams({ ...s, sort });
+    if (link.dataset.topic) query.set("topic", link.dataset.topic); else query.delete("topic");
+    for (const [key, value] of [...query]) if (!value && key !== "days") query.delete(key);
+    link.href = "/?" + query;
+  }
+  if (changed) requestAnimationFrame(() => { const bar = $("#topicbar"), active = bar.querySelector('[aria-current="true"]'); if (!active) return; const r = active.getBoundingClientRect(), bounds = bar.getBoundingClientRect(); bar.scrollLeft += r.left < bounds.left ? r.left - bounds.left : r.right > bounds.right ? r.right - bounds.right : 0; });
 }
 function renderAppliedFilters(s) {
   const labels = { topic: ONT.topics.find((x) => x.id === s.topic)?.label || s.topic, org: ONT.orgs.find((x) => x.id === s.org)?.label || s.org, benchmark: ONT.benchmarks?.find((x) => x.id === s.benchmark)?.label || s.benchmark, person: ONT.people?.find((x) => x.id === s.person)?.label || s.person, kind: KIND[s.kind], q: s.q ? `Search: ${s.q}` : "", days: $("#days").selectedOptions[0]?.textContent, saved: "Saved stories" };
@@ -176,6 +193,8 @@ function refresh(replace = false) { restoreOffset = 0; clearTimeout(tmr); header
 $$(".seg-btns button").forEach((b) => b.onclick = () => { sort = b.dataset.sort; $$(".seg-btns button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); refresh(); });
 let tmr; $("#q").oninput = () => { clearTimeout(tmr); $("#more").hidden = true; feedController?.abort(); ++feedRequest; tmr = setTimeout(() => refresh(true), 250); };
 ["#kind", "#days", "#savedOnly"].forEach((id) => $(id).onchange = () => refresh());
+$("#sortInfo").onclick = () => { const open = $("#sortInfo").getAttribute("aria-expanded") !== "true"; $("#sortInfo").setAttribute("aria-expanded", String(open)); $("#sortHelp").hidden = !open; };
+$("#feedView").addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#sortHelp").hidden) { $("#sortHelp").hidden = true; $("#sortInfo").setAttribute("aria-expanded", "false"); $("#sortInfo").focus(); } });
 $("#more").onclick = () => load(true); $("#retryFeed").onclick = () => load(failedAppend);
 function resetFilters() { for (const key of [...params.keys()]) params.delete(key); sort = "new"; $("#kind").value = ""; $("#days").value = "7"; $("#q").value = ""; $("#savedOnly").checked = false; $$(".seg-btns button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.sort === sort))); refresh(); }
 $("#showFirst").onclick = () => refresh();

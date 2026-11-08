@@ -2,7 +2,7 @@
   "title": "33 research-backed UI/UX implementation ideas",
   "date": "2026-11-07",
   "base_commit": "be6a524",
-  "purpose": "A proposed implementation map, not approval or a new audit.",
+  "purpose": "Implementation map with verified completed refinements and separately gated proposals; not approval of remaining ideas.",
   "method": "Reviewed current code/design records and fresh primary guidance. No fresh competitor feature verification, participant study, production measurement or accessibility certification.",
   "already_implemented": [
     "Public feed and story reading",
@@ -147,7 +147,7 @@
       "priority": "P1",
       "effort": "S",
       "gate": "R",
-      "status": "proposed",
+      "status": "implemented",
       "entrypoints": [
         "public/js/api.js",
         "public/css/app.css"
@@ -157,7 +157,12 @@
       "research_sources": [
         "scent",
         "disclosure"
-      ]
+      ],
+      "implementation_evidence": {
+        "branch": "feature/si-combined",
+        "test_section": "Research wave 1: ideas 1, 5, 6, 8, 11, 19 in test/e2e.js",
+        "date_unit_tests": null
+      }
     },
     {
       "id": 2,
@@ -224,7 +229,7 @@
       "priority": "P1",
       "effort": "S",
       "gate": "R",
-      "status": "proposed",
+      "status": "implemented",
       "entrypoints": [
         "public/js/api.js",
         "public/story.html"
@@ -234,7 +239,12 @@
       "research_sources": [
         "scent",
         "disclosure"
-      ]
+      ],
+      "implementation_evidence": {
+        "branch": "feature/si-combined",
+        "test_section": "Research wave 1: ideas 1, 5, 6, 8, 11, 19 in test/e2e.js",
+        "date_unit_tests": "test/ui-date-unit.js"
+      }
     },
     {
       "id": 6,
@@ -243,7 +253,7 @@
       "priority": "P1",
       "effort": "S",
       "gate": "R",
-      "status": "proposed",
+      "status": "implemented",
       "entrypoints": [
         "public/index.html",
         "public/js/api.js"
@@ -253,7 +263,12 @@
       "research_sources": [
         "scent",
         "disclosure"
-      ]
+      ],
+      "implementation_evidence": {
+        "branch": "feature/si-combined",
+        "test_section": "Research wave 1: ideas 1, 5, 6, 8, 11, 19 in test/e2e.js",
+        "date_unit_tests": null
+      }
     },
     {
       "id": 7,
@@ -282,7 +297,7 @@
       "priority": "P1",
       "effort": "S",
       "gate": "R",
-      "status": "proposed",
+      "status": "implemented",
       "entrypoints": [
         "public/index.html",
         "public/css/app.css"
@@ -292,7 +307,12 @@
       "research_sources": [
         "filters",
         "focus"
-      ]
+      ],
+      "implementation_evidence": {
+        "branch": "feature/si-combined",
+        "test_section": "Research wave 1: ideas 1, 5, 6, 8, 11, 19 in test/e2e.js",
+        "date_unit_tests": null
+      }
     },
     {
       "id": 9,
@@ -339,7 +359,7 @@
       "priority": "P1",
       "effort": "S",
       "gate": "R",
-      "status": "proposed",
+      "status": "implemented",
       "entrypoints": [
         "public/index.html"
       ],
@@ -347,7 +367,12 @@
       "acceptance": "Topic switching retains other criteria and URL/Back behavior; restoring an empty result is clear.",
       "research_sources": [
         "filters"
-      ]
+      ],
+      "implementation_evidence": {
+        "branch": "feature/si-combined",
+        "test_section": "Research wave 1: ideas 1, 5, 6, 8, 11, 19 in test/e2e.js",
+        "date_unit_tests": null
+      }
     },
     {
       "id": 12,
@@ -496,7 +521,7 @@
       "priority": "P1",
       "effort": "S",
       "gate": "R",
-      "status": "proposed",
+      "status": "implemented",
       "entrypoints": [
         "public/js/api.js",
         "public/index.html"
@@ -505,7 +530,12 @@
       "acceptance": "One clear route to saved stories on desktop/phone; guest action returns through sign-in without exposing another account.",
       "research_sources": [
         "scent"
-      ]
+      ],
+      "implementation_evidence": {
+        "branch": "feature/si-combined",
+        "test_section": "Research wave 1: ideas 1, 5, 6, 8, 11, 19 in test/e2e.js",
+        "date_unit_tests": null
+      }
     },
     {
       "id": 20,

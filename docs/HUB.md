@@ -137,7 +137,7 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | Bundle builds | json-render bundle builds |
 | No secrets | No secrets in tracked files |
 | No Twitter/X sources | No Twitter/X sources |
-| No Twitter/X in catalog / Analysis rules | No Twitter/X in the source catalog either; analysis rules behave |
+| No Twitter/X in catalog / UI dates / Analysis rules | No Twitter/X in the source catalog either; analysis rules behave |
 | Modules | kernel boots, boundaries hold, blocks, views and judges are valid |
 | Codebase map | every API call a page makes has a route |
 | Unslop | UI patterns that read as AI-generated (agent-kit/skills/ui-design) |

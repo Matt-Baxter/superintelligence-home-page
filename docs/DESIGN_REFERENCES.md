@@ -49,3 +49,13 @@ Browser coverage lives in `test/e2e.js`, “Reading quality”. Screenshots: `sh
 Validation: `Preflight passed.`; full browser suite `306 passed, 0 failed`, `page errors: none`. A focused short-window check at 676×504 in both themes confirmed the complete first title ended at 456px, within the viewport. Inline evidence made zero additional API requests in the regression check. Screenshots and synthetic fixtures support local verification, not production performance or accessibility certification.
 
 Demo-role regression after this pass: `24 passed, 0 failed`; guest, reader and admin at 390px/1280px in light/dark, `page errors: none`.
+
+## Research wave 1, 2026-11-07
+
+Implemented research ideas 1, 5, 6, 8, 11 and 19 under REQ-002, REQ-014, REQ-017 and REQ-018. Guest navigation exposes Feed and About directly at narrow widths. Signed-in navigation has a Saved destination with all-time saves and correct active state. Topic changes preserve search, source, date, saved state and sort; the selected topic scrolls within its own strip without taking focus. Sort help explains the four existing orders and time window without changing ranking rules.
+
+Story dates disclose publication or first-seen time in UTC. Date-only values retain their actual precision and explicitly say the time is unavailable; invalid dates do not fabricate a value. Native date disclosures support keyboard access and Escape. The 320px evidence chart now stacks labels and meters to prevent overflow.
+
+Validation: `324 passed, 0 failed`, `page errors: none` in the full browser suite; `UI dates: 6 passed, 0 failed.` The existing failure-recovery test now waits for a completed filter reset before taking its reference results, avoiding comparison against a request still in flight. No API, authentication, database or scoring contract changed. Remaining research ideas keep their original review gates.
+
+Research wave 1 final gates: `Preflight passed.`; demo emulations `24 passed, 0 failed`, `page errors: none`. New snapshots: `shots/wave1-feed-{light,dark}-1280.png` and `shots/quality-{light,dark}-320.png`.
