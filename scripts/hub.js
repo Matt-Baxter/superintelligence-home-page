@@ -209,6 +209,7 @@ function render(root) {
     `- **Who builds with what**: Matt builds with ${c.who.matt}; John builds with ${c.who.john} (${L("handoff/README.md", "handoff")}). Other agents (the paper watch, helpers) follow the same rules.`,
     `- **Rules for every agent**: ${L("AGENTS.md", "AGENTS.md")} (Codex and other tools read this one) and ${L("CLAUDE.md", "CLAUDE.md")} (Claude Code). In short: ${c.rules.join("; ")}.`,
     `- **Picking up work**: ${L("handoff/README.md", "handoff/README.md")}, then ${L("handoff/STATE.md", "STATE.md")}${c.stateDate ? ` (${c.stateDate})` : ""}, then an open task under [Specs](#specs), then the [skill](#skills) for the job. Name the REQ IDs in the commit; tick the task in the commit that finishes it.`,
+    `- **Current project index**: ${L("docs/START_HERE.md", "START_HERE.md")} links current authority, measurements, app workspaces and audit findings.`,
     `- **Before handing work back**: \`npm run preflight\` (every [check](#checks) below) and \`npm test\` for bigger changes; report the exact lines (${L("agent-kit/skills/run-tests/SKILL.md", "run-tests")}).`,
     `- **Per tool**: Codex ${L("handoff/prompts/codex.md", "first message")}; v0 ${L("handoff/prompts/v0.md", "first message")} and ${L("docs/V0.md", "setup")}; any MCP client loads the skills from ${L("agent-kit/README.md", "the agent kit")}.`, "");
 

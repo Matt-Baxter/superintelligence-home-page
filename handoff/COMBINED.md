@@ -1,5 +1,7 @@
 # Combined build, 2026-11-07
 
+Current navigation and logic findings: [project index](../docs/START_HERE.md) and [logic audit](../docs/LOGIC_AUDIT.md). The validation table below is the original integration snapshot.
+
 Proposed REQ-030: integration on `feature/si-combined`, starting at sync head `71cce78`, squashing fidelity head `6e885de` without importing its history, then applying the badge feature. Both original branch tips remain available. The shared spec, constitution, contract and working agreement are unchanged.
 
 Preserved: research site/feed/control room, source grades, forecasts/Brier, bias-masked panel/advisor, reporting rubric and withdrawal guards; canonical text, abstract-first watcher, fidelity checks, bands, proof vectors, MoE toy, Specs view and 35-app survey. Approval issues and trace evidence are scoped by spec while requirement numbers await both partners.

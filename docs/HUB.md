@@ -11,6 +11,7 @@ One page that points at every skill, spec, check, measure and pitfall in the rep
 - **Who builds with what**: Matt builds with Claude Code; John builds with v0 or Codex ([handoff](../handoff/README.md)). Other agents (the paper watch, helpers) follow the same rules.
 - **Rules for every agent**: [AGENTS.md](../AGENTS.md) (Codex and other tools read this one) and [CLAUDE.md](../CLAUDE.md) (Claude Code). In short: Never push to `main`; Never deploy; Never write agent log entries; No secrets; No Twitter/X; Spec first; Shared documents need both humans; Free tiers only; Real people only as watchlist entries; No co-author trailers; Test data is synthetic.
 - **Picking up work**: [handoff/README.md](../handoff/README.md), then [STATE.md](../handoff/STATE.md) (2026-11-07), then an open task under [Specs](#specs), then the [skill](#skills) for the job. Name the REQ IDs in the commit; tick the task in the commit that finishes it.
+- **Current project index**: [START_HERE.md](START_HERE.md) links current authority, measurements, app workspaces and audit findings.
 - **Before handing work back**: `npm run preflight` (every [check](#checks) below) and `npm test` for bigger changes; report the exact lines ([run-tests](../agent-kit/skills/run-tests/SKILL.md)).
 - **Per tool**: Codex [first message](../handoff/prompts/codex.md); v0 [first message](../handoff/prompts/v0.md) and [setup](V0.md); any MCP client loads the skills from [the agent kit](../agent-kit/README.md).
 
@@ -179,7 +180,7 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | `npm run schema` | Generate and check the cross-runtime schemas (schema/types.json -> schema/gen/*). |
 | `npm run test:spec` | Acceptance suite for Matt's shared spec (specs/001-superintelligence-homepage/spec.md), run against the SPEC version of the site (SITE_PROFILE=spec)… |
 | `npm run lab` | Lab worker: runs the examples and the autoresearch ratchet off the web server (laptop, Mac mini, CI, a sandbox). |
-| `npm run spec:status` | How much of Matt's shared spec is done, measured, not estimated. |
+| `npm run spec:status` | Measure the shared spec from acceptance evidence. |
 | `npm run bench` | Benchmarks with a ratchet: every metric is measured on fixed synthetic sets, compared with bench/baseline.json, and reported as uplift. |
 | `npm run watch` | Daily paper watcher: find new superintelligence, interpretability and self-improvement papers on arXiv, judge each with the Review desk (guarded… |
 | `npm run project:sync` | Keep the Project tracker in step with the plan and the agents (REQ-030, proposed): one issue each for |
@@ -323,6 +324,7 @@ Quoted from the repo's own pitfall, trap, troubleshooting and habits sections (n
 - [docs/DESIGN_REFERENCES.md](DESIGN_REFERENCES.md): Sections: Details inspiration, 2026-11-07.
 - [docs/HANDOFF.md](HANDOFF.md): Written 2026-11-07 for whoever picks this up next (Codex for code, v0 for the bake-off UI).
 - [docs/INTERFACES.md](INTERFACES.md): The data model, API, auth and rules of **John's build** (the code in this repo).
+- [docs/LOGIC_AUDIT.md](LOGIC_AUDIT.md): Scope: shared spec 001, the implemented research layer, and the work-tracking path.
 - [docs/NAMING.md](NAMING.md): One way to name routes, tables, labels, tags and metadata, so people, agents and the codebase map all agree.
 - [docs/OUR_PARTS.md](OUR_PARTS.md): Tick items off by editing this file (self-merge is fine).
 - [docs/PARITY.md](PARITY.md): Where this homepage stands against 35 AI-news, paper and feed-reading apps on 33 features, checked against our own code, with the gaps ranked and…
@@ -330,14 +332,15 @@ Quoted from the repo's own pitfall, trap, troubleshooting and habits sections (n
 - [docs/PRACTICES.md](PRACTICES.md): One page of the practices this build follows, collected from the research layer's own lessons and from published work (research run on 2026-11-07).
 - [docs/RESEARCH_AGENTS_SANDBOXES.md](RESEARCH_AGENTS_SANDBOXES.md): Research from Nov 7, 2026 for John's request: run agents in the background to analyse and organise the knowledge graph (articles, chunks, topics,…
 - [docs/RESEARCH_SITE.md](RESEARCH_SITE.md): Sections: What it is; How it feeds the feed; Hidden until you opt in; Deploying it (people's steps).
-- [docs/SPEC_STATUS.md](SPEC_STATUS.md): Measured on 2026-11-07 by `scripts/spec-status.js`, from the spec acceptance suite (`test/spec-acceptance.js --browser`, 47 of 47 checks passing)…
+- [docs/SPEC_STATUS.md](SPEC_STATUS.md): Measured on 2026-11-07 (America/Chicago) by `scripts/spec-status.js`, from the spec acceptance suite (`test/spec-acceptance.js --browser`, 48 of 48…
 - [docs/SPEC_TRACE.md](SPEC_TRACE.md): How this build meets the shared spec…
+- [docs/START_HERE.md](START_HERE.md): The current checkout continues on `feature/si-combined`.
 - [docs/V0.md](V0.md): John builds his version of the homepage experience in **v0**; Matt builds his in **Claude**.
 - [docs/speckit-prompts.md](speckit-prompts.md): The prompts we gave each Spec Kit command, kept here so we can show how the spec was produced.
 
 **handoff/**
 
-- [handoff/COMBINED.md](../handoff/COMBINED.md): Proposed REQ-030: integration on `feature/si-combined`, starting at sync head `71cce78`, squashing fidelity head `6e885de` without importing its…
+- [handoff/COMBINED.md](../handoff/COMBINED.md): Current navigation and logic findings: [project index](START_HERE.md) and [logic audit](LOGIC_AUDIT.md).
 - [handoff/MANIFEST.md](../handoff/MANIFEST.md): Until the humans merge it, this folder, specs 003 and 004, the hub and the Specs view live on branch `feature/judge-fidelity-rules` (which contains…
 - [handoff/README.md](../handoff/README.md): Written 2026-11-07 (on branch `feature/judge-fidelity-rules`, which contains `feature/judge-fidelity-spec`, until merged), so the work can move…
 - [handoff/SI-HANDOFF-2026-11-07.md](../handoff/SI-HANDOFF-2026-11-07.md): Start here. The work is split across **two lines that are each tested but not yet combined**, and they reuse the same requirement numbers for…

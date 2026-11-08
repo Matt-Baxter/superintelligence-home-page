@@ -30,6 +30,8 @@ node scripts/project-sync.js            # mirror specs' proposals and tasks into
 
 Report the exact pass/fail lines; never claim something works that you didn't run.
 
+**Current project index:** [docs/START_HERE.md](docs/START_HERE.md) links the authoritative spec, measured status, audit findings and app workspaces.
+
 **Picking this up?** Read [handoff/SI-HANDOFF-2026-11-07.md](handoff/SI-HANDOFF-2026-11-07.md), [handoff/README.md](handoff/README.md) and [docs/HUB.md](docs/HUB.md) first. The combined build status is in [handoff/COMBINED.md](handoff/COMBINED.md). Then [docs/HANDOFF.md](docs/HANDOFF.md): the branch state, what's built, how to run it, what's waiting on people, and the daily task as a prompt. [docs/PRACTICES.md](docs/PRACTICES.md) lists the practices to keep and the ones still to do.
 
 Skills are plain Markdown and work in any tool: open the one that fits the task in `agent-kit/skills/<name>/SKILL.md`, and its `references/` only when it says to. MCP clients can load them on demand from `agent-kit/mcp/server.js`; see [agent-kit/README.md](agent-kit/README.md) for every runtime.
