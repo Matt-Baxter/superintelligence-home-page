@@ -6,11 +6,12 @@
 //   - each agent job in the Learn studio queue (paper-to-code and the rest), with its status mirrored,
 //   - each scheduled agent task (modules/project/sync.json "scheduled").
 // Every synced issue carries a "sync-key:" line, so running it again updates issues instead of adding new ones.
-// People's own edits to titles, assignees and priorities are kept; only status follows the source (for agent jobs).
+// People keep titles, assignees, priorities and notes outside the source block; generated context, labels and followed status stay current.
 //   node scripts/project-sync.js          (same DATABASE_URL / DATA_DIR as the server)   --dry   print, change nothing
 const fs = require("node:fs"), path = require("node:path");
 const root = path.join(__dirname, ".."), dry = process.argv.includes("--dry");
 const CFG = require("../modules/project/sync.json");
+const syncSource = require("../modules/project/sync-source");
 
 // Proposed specs: every folder in specs/ except the shared spec (001), which is approved and not mirrored here.
 function specDirs() {
@@ -55,6 +56,14 @@ async function main() {
   for (const t of tasks()) items.push({ key: `task:${t.dir}:${t.id}`, title: `${t.id} (${t.dir.split("-")[0]}): ${t.text}`.slice(0, 200),
     description: `${t.text}\n\nTask ${t.id} in specs/${t.dir}/tasks.md (who: ${t.who}). Tick its checkbox in the commit that finishes it; the next sync moves this issue to Done.`,
     labels: [...t.reqs, `spec:${t.dir.slice(0, 3)}`, "spec-task", t.who], priority: WHO_PRIORITY[t.who], status: t.done ? "done" : "todo", follow: true, milestone: true });
+  const readiness = require("../modules/project/specs").collect();
+  const blocked = new Map(readiness.reqs.flatMap((r) => r.tasks.filter((t) => t.blockedBy).map((t) => [`task:${r.spec}:${t.id}`, t.blockedBy])));
+  for (const spec of readiness.specs) for (const task of spec.unlinkedTasks) if (task.blockedBy) blocked.set(`task:${spec.id}:${task.id}`, task.blockedBy);
+  for (const item of items) {
+    const m = item.key.match(/^task:(\d{3})-[^:]+:(T\d+)$/);
+    const gate = m && blocked.get(`task:${m[1]}:${m[2]}`);
+    if (gate) item.description += `\n\nBlocked by ${gate}: this spec explicitly requires approval before implementation starts.`;
+  }
   const jobs = await db.all("SELECT id, kind, note, status FROM learn_jobs ORDER BY id");
   for (const j of jobs) {
     const first = String(j.note || "").split("\n")[0].replace(/^Paper:\s*/, "").slice(0, 120) || `job #${j.id}`;
@@ -67,14 +76,29 @@ async function main() {
   items.push({ key: "research:reviews-for-a-person", title: "Label the reviews the guards sent to a person", description: `Agree or disagree with each flagged verdict on the Review desk (/m/review). Waiting now: ${W.reviewsForPerson}. These labels are the judges' calibration (SC-104).`, labels: ["REQ-027", "spec:002", "people"], priority: 2, status: W.reviewsForPerson ? "todo" : "done", follow: true, milestone: true });
   for (const s of CFG.scheduled) items.push({ ...s, priority: 3, status: "in_progress", milestone: true });
 
+  const sourceKeys = new Set();
+  for (const item of items) { if (sourceKeys.has(item.key)) throw new Error(`Duplicate source sync key ${item.key}.`); sourceKeys.add(item.key); }
+  const existing = new Map();
+  for (const row of await db.all("SELECT id, number, status, completed_at, description, labels FROM project_issues WHERE description LIKE ?", "%sync-key:%")) {
+    const keys = syncSource.keys(row.description);
+    if (keys.length !== 1) throw new Error(`Ambiguous sync markers on issue ${row.number}; resolve them before syncing.`);
+    for (const key of keys) {
+      if (existing.has(key)) throw new Error(`Duplicate sync key ${key}; resolve the existing issues before syncing.`);
+      existing.set(key, row);
+    }
+  }
   let created = 0, updated = 0, same = 0;
   for (const it of items) {
-    const marker = `sync-key: ${it.key}`;
-    const have = await db.get("SELECT id, number, status FROM project_issues WHERE description LIKE ?", `%${marker}%`);
+    const have = existing.get(it.key);
+    const description = syncSource.descriptionFor(it, have?.description);
+    const labels = JSON.stringify(syncSource.labelsFor(it, have ? JSON.parse(have.labels || "[]") : []));
     if (have) {
-      if (it.follow && it.status && have.status !== it.status) {
-        if (!dry) { await db.run("UPDATE project_issues SET status = ?, updated_at = ?, completed_at = ? WHERE id = ?", it.status, now(), it.status === "done" ? now() : null, have.id);
-          await db.run("INSERT INTO project_activity (issue_id, actor_id, action, detail, at) VALUES (?, NULL, 'status', ?, ?)", have.id, `synced: ${it.status}`, now()); }
+      const status = it.follow && it.status ? it.status : have.status;
+      if (have.status !== status || have.description !== description || have.labels !== labels) {
+        if (!dry) await db.tx(async (t) => {
+          await t.run("UPDATE project_issues SET description = ?, labels = ?, status = ?, updated_at = ?, completed_at = ? WHERE id = ?", description, labels, status, now(), status !== have.status ? (status === "done" ? now() : null) : have.completed_at, have.id);
+          await t.run("INSERT INTO project_activity (issue_id, actor_id, action, detail, at) VALUES (?, NULL, 'sync', ?, ?)", have.id, status !== have.status ? `source refreshed; status: ${status}` : "source context refreshed", now());
+        });
         updated++;
       } else same++;
       continue;
@@ -84,7 +108,7 @@ async function main() {
     await db.tx(async (t) => {
       const n = ((await t.get("SELECT MAX(number) AS n FROM project_issues"))?.n || 0) + 1;
       const id = await t.insert(`INSERT INTO project_issues (number, title, description, status, priority, milestone_id, labels, sort_order, created_at, updated_at, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        n, it.title.slice(0, 200), `${it.description}\n\n${marker}`, it.status || "todo", it.priority || 0, it.milestone && ms ? ms.id : null, JSON.stringify(it.labels.slice(0, 8)), -Date.now(), now(), now(), it.status === "done" ? now() : null);
+        n, it.title.slice(0, 200), description, it.status || "todo", it.priority || 0, it.milestone && ms ? ms.id : null, labels, -Date.now(), now(), now(), it.status === "done" ? now() : null);
       await t.run("INSERT INTO project_activity (issue_id, actor_id, action, detail, at) VALUES (?, NULL, 'created', 'project-sync', ?)", id, now());
     });
   }

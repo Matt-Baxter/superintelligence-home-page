@@ -1,12 +1,16 @@
 {
   "about": "What scripts/project-sync.js mirrors into the Project tracker, besides the proposed requirements and Spec Kit tasks (read from every specs/<nnn>/ except the shared 001) and the agents' queued jobs (learn_jobs). 'people' are the shared spec's checks only a person can do; scripts/spec-status.js reads the same list.",
-  "milestone": { "name": "Research layer (proposed)", "description": "Work described in specs/002-research-layer/spec.md. Needs both partners' approval before it counts." },
+  "milestone": {
+    "name": "Research layer (proposed)",
+    "description": "Work described in specs/002-research-layer/spec.md. Needs both partners' approval before it counts."
+  },
   "people": {
-    "REQ-019": "Live at a public URL, shared with the class 2 weeks before the presentation: a deployment fact (merge, deploy, share the link).",
+    "REQ-019": "Live at a public URL, shared with the class 2 weeks before the presentation: a deployment fact (merge, deploy, share the link). Before delivery, review the four cron slots currently declared in vercel.json against the daily-only/free-tier rule.",
     "SC-001": "A classmate signs up and sees the feed in under 2 minutes: time it with a real classmate on the live site.",
     "SC-008": "Each partner's build has a passing test for every requirement: this build does (every testable REQ above); run the same suite against Matt's build.",
     "SC-004": "9 of every 10 stories in a live sample of 20 judged on-topic by both partners: do it on the live feed.",
-    "REQ-020": "Each partner keeps a human-written agent log in AGENT_LOG.md: the file exists (the automated check), but it has no entries yet. Only Matt and John can write them; agents must not."
+    "REQ-020": "Each partner keeps a human-written agent log in AGENT_LOG.md: the file exists (the automated check), but it has no entries yet. Only Matt and John can write them; agents must not.",
+    "SC-007": "After a real deployment, verify an existing reader still has their votes and saved stories. A local server-restart check passes, but does not verify production database or deployment configuration."
   },
   "scheduled": [
     {

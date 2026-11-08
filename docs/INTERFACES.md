@@ -254,3 +254,12 @@ For a choice with two candidate builds:
 - Existing interface history from both lines is retained above; duplicated historical version labels identify parallel changes, not sequential releases. Proposed requirement numbering remains unchanged pending both partners.
 
 - Control-room proposal rows add `spec` (three-digit spec number); check-in and control room enumerate proposals across all specs. Both retain original REQ IDs.
+
+## Logic and readiness audit (2026-11-07)
+
+- REQ-003: story feed/detail/list/brief queries require `in_scope = 1`; NULL legacy classifications are withheld until assessed. No route or response shape changes.
+- Proposed REQ-030: Specs tasks gain optional `blockedBy` (`spec/task` or null); totals gain `blocked`; unlinked tasks retain their gate. Only an explicit gate in tasks.md blocks work. Spec 004's T000 is pending; no approval is inferred.
+- Project sync matches an entire sync-key line, rejects ambiguous or duplicate identities, refreshes generated context and scope labels, and preserves titles, priorities, assignments and notes. The description's source block is shown separately from editable notes in the issue drawer. Existing table/route shapes are unchanged.
+- Status generation gives failing checks precedence over passes and exits nonzero on failed, uncovered or malformed evidence. A real local process-restart acceptance check covers session/vote/save persistence; it does not assert a production redeployment.
+
+- REQ-010: browser sign-in retains local query and fragment destinations. Return paths are canonicalized against the application origin; account API shapes and permissions are unchanged.

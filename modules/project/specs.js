@@ -37,6 +37,13 @@ function parseTasks(md) {
   });
 }
 
+// A task gate is enforced only when the task file explicitly says work waits for that task.
+function gateTasks(md, tasks, spec) {
+  const id = String(md).match(/Nothing below starts until (T\d{3}) is done/i)?.[1];
+  const gate = tasks.find((t) => t.id === id);
+  return tasks.map((t) => ({ ...t, blockedBy: gate && !gate.done && !t.done && t.who !== "people" ? `${spec}/${gate.id}` : null }));
+}
+
 // docs/SPEC_TRACE.md rows "| REQ-009–012 | What | Where in the code | Checked by |" → {REQ-009: {what, code, check}, …}
 function parseTrace(md, spec) {
   const out = {}; let scope = null;
@@ -82,20 +89,21 @@ function collect({ root } = {}) {
   const specs = [], reqs = [];
   for (const dir of fs.readdirSync(specsDir).filter((d) => /^\d{3}-/.test(d) && fs.statSync(path.join(specsDir, d)).isDirectory()).sort()) {
     const md = rd(`specs/${dir}/spec.md`); if (!md) continue;
-    const s = parseSpec(md), tasks = parseTasks(rd(`specs/${dir}/tasks.md`) || ""), id = dir.slice(0, 3);
+    const s = parseSpec(md), id = dir.slice(0, 3), taskText = rd(`specs/${dir}/tasks.md`) || "";
+    const tasks = gateTasks(taskText, parseTasks(taskText), id);
     const scopedTrace = parseTrace(rd("docs/SPEC_TRACE.md") || "", id);
     for (const r of s.reqs) {
       const ts = tasks.filter((t) => t.reqs.includes(r.id));
       reqs.push({ id: r.id, spec: id, text: r.text, level: r.level, status: s.status,
         trace: scopedTrace[r.id] ? { code: scopedTrace[r.id].code, check: scopedTrace[r.id].check } : null,
-        tasks: ts.map(({ id: tid, who, done, text }) => ({ id: tid, who, done, text })), open: ts.filter((t) => !t.done).length, done: ts.filter((t) => t.done).length,
+        tasks: ts.map(({ id: tid, who, done, text, blockedBy }) => ({ id: tid, who, done, text, blockedBy })), open: ts.filter((t) => !t.done).length, done: ts.filter((t) => t.done).length,
         people: people[r.id] || null, measured: status?.reqs[r.id] || null });
     }
     const mine = reqs.filter((r) => r.spec === id);
     specs.push({ id, dir, title: s.title, status: s.status, statusLine: s.statusLine,
       totals: { reqs: mine.length, must: mine.filter((r) => r.level === "MUST").length, should: mine.filter((r) => r.level === "SHOULD").length,
-        traced: mine.filter((r) => r.trace).length, tasks: tasks.length, open: tasks.filter((t) => !t.done).length, done: tasks.filter((t) => t.done).length },
-      unlinkedTasks: tasks.filter((t) => !t.reqs.length).map(({ id: tid, who, done, text }) => ({ id: tid, who, done, text })) });
+        traced: mine.filter((r) => r.trace).length, tasks: tasks.length, open: tasks.filter((t) => !t.done).length, done: tasks.filter((t) => t.done).length, blocked: tasks.filter((t) => t.blockedBy).length },
+      unlinkedTasks: tasks.filter((t) => !t.reqs.length).map(({ id: tid, who, done, text, blockedBy }) => ({ id: tid, who, done, text, blockedBy })) });
   }
   return { specs, reqs, status: status && { measured: status.measured, summary: status.summary, left: status.left },
     people: Object.entries(people).filter(([k]) => !/^REQ-/.test(k)).map(([id, text]) => ({ id, text })), source: "files" };
@@ -109,4 +117,4 @@ function writeSnapshot() {
   return data;
 }
 
-module.exports = { parseSpec, parseStatus, parseTasks, parseTrace, parseStatusDoc, collect, writeSnapshot, SNAPSHOT };
+module.exports = { parseSpec, parseStatus, parseTasks, gateTasks, parseTrace, parseStatusDoc, collect, writeSnapshot, SNAPSHOT };

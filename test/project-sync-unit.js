@@ -3,7 +3,7 @@
 // duplicates nothing; a finished agent job moves its issue to Done. Throwaway SQLite database, no network.
 const { execFileSync } = require("node:child_process"), fs = require("node:fs"), os = require("node:os"), path = require("node:path");
 const root = path.join(__dirname, ".."), DATA = fs.mkdtempSync(path.join(os.tmpdir(), "si-psync-"));
-const env = { ...process.env, DATA_DIR: DATA, DATABASE_URL: "", POSTGRES_URL: "", SITE_PROFILE: "extended" };
+const env = { ...process.env, DATA_DIR: DATA, DATABASE_URL: process.env.TEST_DATABASE_URL || "", POSTGRES_URL: "", SITE_PROFILE: "extended" };
 let pass = 0, fail = 0; const ok = (c, m) => { c ? pass++ : fail++; console.log(c ? "  ✓" : "  ✗", m); };
 const node = (code) => execFileSync(process.execPath, ["--no-warnings", "-e", code], { cwd: root, env, encoding: "utf8" }).trim();
 const sql = (q) => node(`(async()=>{const db=require("./lib/db"),{createKernel}=require("./kernel/kernel"),k=createKernel();db.extend({sql:k.store.schema.join("\\n"),columns:k.store.columns});await db.ready();const r=await db.all(${JSON.stringify(q)});console.log(JSON.stringify(r));process.exit(0)})()`);
@@ -27,4 +27,12 @@ const t1 = JSON.parse(sql("SELECT status, labels FROM project_issues WHERE title
 ok(t1 && t1.status === "done" && JSON.parse(t1.labels).includes("spec-task"), "a ticked spec task is Done and labelled spec-task");
 const t0 = JSON.parse(sql("SELECT status, priority FROM project_issues WHERE title LIKE 'T000 (003)%'"))[0];
 ok(t0 && t0.status === "todo" && t0.priority === 2, "an open people task is To do, at people priority");
+const original = JSON.parse(sql("SELECT id, description FROM project_issues WHERE title LIKE 'Paper-to-code:%'"))[0];
+node(`(async()=>{const db=require("./lib/db");await db.ready();await db.run("UPDATE project_issues SET title = ?, priority = ?, description = ?, labels = ? WHERE id = ?", "Sample human title (test data)", 1, ${JSON.stringify("Sample human note (test data)\n\nsync-key: job:1")}, '["custom"]', ${original.id});process.exit(0)})()`);
+sync(); const refreshed = JSON.parse(sql(`SELECT title, priority, description, labels FROM project_issues WHERE id = ${original.id}`))[0];
+ok(refreshed.title === 'Sample human title (test data)' && refreshed.priority === 1 && refreshed.description.includes('Sample human note') && refreshed.description.includes('Learn studio job #1 (done)'), 'legacy sync refreshes current context while retaining human title, priority and notes');
+ok(JSON.parse(refreshed.labels).includes('custom') && JSON.parse(refreshed.labels).includes('REQ-026'), 'custom labels survive while generated labels are restored');
+ok(/0 updated/.test(sync()), 'source-block migration is idempotent');
+const gatedIssue = JSON.parse(sql("SELECT description FROM project_issues WHERE description LIKE '%sync-key: task:004-parity:T011%'"))[0];
+ok(gatedIssue.description.includes('Blocked by 004/T000'), 'tracker task context retains the spec approval gate');
 console.log(`\nproject sync unit: ${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

@@ -175,7 +175,7 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   await john.goto(B + '/m/project#/active'); await john.waitForSelector('#body .irow'); await john.screenshot({ path: 'shots/project-list.png' });
 
   console.log('Project specs (REQ-030)');
-  const scoped002 = await j(john, '/api/admin/project/issues', 'POST', { title: 'Sample research approval (test data)', labels: ['REQ-032', 'spec:002'] });
+  const scoped002 = await j(john, '/api/admin/project/issues', 'POST', { title: 'Sample research approval (test data)', description: '<!-- sync-source:start -->\nSample source context (test data)\n<!-- sync-source:end -->\n\nsync-key: sample:002\n\nSample personal notes (test data)', labels: ['REQ-032', 'spec:002'] });
   const scoped003 = await j(john, '/api/admin/project/issues', 'POST', { title: 'Sample fidelity approval (test data)', labels: ['REQ-032', 'spec:003'] });
   const specs = await j(john, '/api/admin/project/specs');
   const r002 = specs.reqs.find((r) => r.id === 'REQ-032' && r.spec === '002'), r003 = specs.reqs.find((r) => r.id === 'REQ-032' && r.spec === '003');
@@ -191,7 +191,28 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   ok(openRows.length === specs.reqs.filter((r) => r.open > 0).length && openRows.length > 0, 'has-open-tasks filter');
   await john.uncheck('#spOpen'); await john.selectOption('#spWho', 'people'); ok((await john.$$('#spList tr[data-req="REQ-019"]')).length === 1, 'who filter: people includes the REQ-019 people check');
   await john.selectOption('#spWho', ''); await john.click('#spList tr[data-req="REQ-020"] [data-open]'); await john.waitForSelector('.drawer'); ok((await john.textContent('.drawer .dh')).includes(`SI-${specs.reqs.find((r) => r.id === 'REQ-020').issues[0]}`), 'a linked issue opens in the drawer'); await john.keyboard.press('Escape');
+  ok((await john.textContent('[aria-label="Work readiness"]')).includes('wait for an explicit approval gate') && (await john.textContent('#spList')).includes('blocked by 004/T000'), 'Specs workspace distinguishes blocked implementation from approval and measured coverage');
+  await john.evaluate(() => window.scrollTo(0, 0));
+  await john.screenshot({ path: 'shots/specs-readiness.png', animations: 'disabled' });
+  await john.click(`.sv-spec[data-spec="002"] [data-open="${scoped002.issue.number}"]`); await john.waitForSelector('.source-context');
+  ok((await john.textContent('.source-context')).includes('Sample source context') && (await john.inputValue('#dDesc')) === 'Sample personal notes (test data)', 'synced issues show source context separately from editable personal notes');
+  await john.screenshot({ path: 'shots/project-source-notes.png', animations: 'disabled' });
+  await john.fill('#dDesc', 'Updated personal notes (test data)');
+  const noteSave = john.waitForResponse((r) => r.url().endsWith(`/api/admin/project/issues/${scoped002.issue.number}`) && r.request().method() === 'PUT');
+  await john.press('#dDesc', 'Tab'); await noteSave;
+  await john.waitForFunction(() => document.querySelector('#dDesc')?.value === 'Updated personal notes (test data)');
+  const savedDescription = (await j(john, `/api/admin/project/issues/${scoped002.issue.number}`)).issue.description;
+  ok(savedDescription.includes('sync-key: sample:002') && savedDescription.includes('Sample source context') && savedDescription.includes('Updated personal notes'), 'editing notes preserves the generated source and sync identity');
+  await john.keyboard.press('Escape');
   await matt.goto(B + '/m/project#/specs'); await matt.waitForSelector('#noaccess:not([hidden])'); ok(await matt.$('#spList') === null, 'Specs view is refused for a non-admin');
+
+  const returnContext = await b.newContext({ viewport: { width: 1200, height: 900 } }); const returnPage = await returnContext.newPage();
+  await returnPage.goto(B + '/m/project#/specs'); await returnPage.waitForSelector('#authBtn');
+  await returnPage.fill('#username', 'john'); await returnPage.fill('#password', 'correct-horse-9'); await returnPage.click('#authBtn');
+  await returnPage.waitForSelector('#spList tr[data-req="REQ-040"]');
+  ok(returnPage.url().endsWith('/m/project#/specs'), 'REQ-010: signing in from a workspace deep link returns to that exact view');
+  ok(await returnPage.evaluate(() => localReturnPath('//outside.example.test/path') === '/' && localReturnPath('/\\outside.example.test/path') === '/' && localReturnPath('/m/project?sample=1#/specs') === '/m/project?sample=1#/specs'), 'REQ-010: return navigation preserves local queries/fragments and rejects another origin');
+  await returnContext.close();
 
   console.log('Research control room (REQ-030, REQ-018)');
   await john.goto(B + '/m/control'); await john.waitForSelector('.research-nav');

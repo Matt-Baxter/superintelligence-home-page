@@ -76,6 +76,10 @@ fs.rmSync(dir, { recursive: true, force: true });
 // The repo's own specs
 const proposals = require("../scripts/checkin").proposals().reqs;
 ok(["002", "003", "004"].every((id) => proposals.some((r) => r.spec === id)), "check-in includes proposed requirements from all proposal specs");
+const gateText = 'Nothing below starts until T000 is done.';
+const gated = S.gateTasks(gateText, [{ id: 'T000', who: 'people', done: false }, { id: 'T010', who: 'agent', done: false }, { id: 'T011', who: 'agent', done: true }], '904');
+ok(gated[0].blockedBy === null && gated[1].blockedBy === '904/T000' && gated[2].blockedBy === null, 'explicit approval gate blocks unstarted implementation while keeping people decisions actionable');
+ok(S.gateTasks('', [{ id: 'T010', who: 'agent', done: false }], '904')[0].blockedBy === null, 'no implied approval gate is invented for other task files');
 const real = S.collect(), ids = real.reqs.map((r) => r.id);
 const want = Array.from({ length: 52 }, (_, i) => `REQ-${String(i + 1).padStart(3, "0")}`);
 ok(want.every((id) => ids.includes(id)) && ids.length === 55, `repo: REQ-001..REQ-052 (${ids.length})`);

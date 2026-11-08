@@ -388,6 +388,9 @@ async function renderSpecs() {
   const opt = (v, t, cur) => `<option value="${esc(v)}" ${v === cur ? "selected" : ""}>${esc(t)}</option>`;
   $("#body").innerHTML = `<div class="sv"><div class="sv-sum">${sum}
     ${SP.people.length ? `<p class="small muted">People checks: ${SP.people.map((p) => `<b>${esc(p.id)}</b> ${esc(p.text)}`).join(" · ")}</p>` : ""}
+    <div class="small" aria-label="Work readiness"><p><b>Next actions</b> · <a href="/m/control">Research inbox</a> · <a href="/m/project#/timeline">Project timeline</a></p>
+    <p>${SP.specs.reduce((n, s) => n + (s.totals.blocked || 0), 0)} implementation tasks wait for an explicit approval gate. Proposed requirements and completed tasks remain distinct from shared-spec acceptance.</p>
+    <p class="muted">Deployment, human-written logs and live-site checks still need people. Measurement describes the recorded test run, not a production guarantee.</p></div>
     <p class="small muted">Tracker issues come from the sync, which runs outside the web server: <code id="syncCmd">${esc(SP.sync.command)}</code> <button class="btn" type="button" id="syncCopy">Copy</button>${SP.source === "snapshot" ? " · read from the build snapshot" : ""}</p></div>
     <div class="sv-f" role="group" aria-label="Filter requirements">
       <select id="spSpec" aria-label="Spec">${opt("", "Every spec", spF.spec)}${SP.specs.map((s) => opt(s.id, `${s.id} ${s.title}`, spF.spec)).join("")}</select>
@@ -405,13 +408,13 @@ function drawSpecs() {
     && (!spF.who || r.tasks.some((t) => t.who === spF.who) || (spF.who === "people" && r.people));
   const shown = SP.reqs.filter(keep);
   $("#viewCount").textContent = `${shown.length} of ${SP.reqs.length} requirements`; $("#spCount").textContent = "";
-  const task = (t) => `<span class="${t.done ? "tl-done" : ""}" title="${esc(t.text)}">${esc(t.id)} <span class="muted">${esc(t.who)}</span></span>`;
+  const task = (t) => `<span class="${t.done ? "tl-done" : ""}" title="${esc(t.text)}">${esc(t.id)} <span class="muted">${esc(t.who)}</span>${t.blockedBy ? ` <b>blocked by ${esc(t.blockedBy)}</b>` : ""}</span>`;
   const iss = (n) => { const i = SP.issues[n]; return `<a href="#/specs/${n}" data-open="${n}" title="${esc(i.title)} (${esc(statusLabel(i.status))})">${esc(i.key)}</a>`; };
   $("#spList").innerHTML = SP.specs.map((s) => {
     const rows = shown.filter((r) => r.spec === s.id); if (!rows.length) return "";
     const T = s.totals;
     return `<section class="sv-spec" data-spec="${esc(s.id)}"><h2>${esc(s.id)} ${esc(s.title)} <span class="stc ${s.status}">${s.status === "approved" ? "Approved" : "Proposed"}</span></h2>
-      <p class="tot">${T.reqs} requirements (${T.must} MUST, ${T.should} SHOULD) · ${T.traced} traced · tasks ${T.open} open, ${T.done} done · specs/${esc(s.dir)}/spec.md</p>
+      <p class="tot">${T.reqs} requirements (${T.must} MUST, ${T.should} SHOULD) · ${T.traced} traced · tasks ${T.open} open, ${T.done} done${T.blocked ? `, ${T.blocked} blocked by approval` : ""} · specs/${esc(s.dir)}/spec.md</p>
       <div class="tablewrap"><table><thead><tr><th>REQ</th><th>Requirement</th><th>Status</th><th>Where and how it's checked</th><th>Tasks</th><th>Issues</th></tr></thead><tbody>
       ${rows.map((r) => `<tr data-req="${r.id}"><td class="id">${r.id}</td><td class="txt"><span class="lvl">${esc(r.level)}</span>${esc(r.text)}${r.people ? `<div class="sub muted">People check: ${esc(r.people)}</div>` : ""}</td>
         <td><span class="stc ${r.status}">${r.status === "approved" ? "Approved" : "Proposed"}</span>${r.measured ? `<div class="sub muted">${esc(r.measured)}</div>` : ""}</td>
@@ -427,15 +430,26 @@ async function loadStarter() {
 }
 
 /* ---------- issue drawer ---------- */
+function descriptionParts(text) {
+  const raw = String(text || ""), begin = "<!-- sync-source:start -->", end = "<!-- sync-source:end -->";
+  const a = raw.indexOf(begin), b = raw.indexOf(end, a + begin.length);
+  if (a < 0 || b < a) return { source: null, notes: raw, prefix: "" };
+  const source = raw.slice(a + begin.length, b).trim();
+  const outside = raw.slice(0, a) + raw.slice(b + end.length);
+  const key = outside.split(/\r?\n/).find((line) => /^sync-key: /.test(line)) || "";
+  const notes = outside.split(/\r?\n/).filter((line) => !/^sync-key: /.test(line)).join("\n").trim();
+  return { source, notes, prefix: `${begin}\n${source}\n${end}\n\n${key}` };
+}
 async function openIssue(n) {
   open = String(n); history.replaceState(null, "", `#/${view}/${n}`);
-  const d = await api(`/api/admin/project/issues/${n}`), i = d.issue;
+  const d = await api(`/api/admin/project/issues/${n}`), i = d.issue, desc = descriptionParts(i.description);
   const opts = (list, cur) => list.map(([v, t]) => `<option value="${esc(v)}" ${String(v) === String(cur ?? "") ? "selected" : ""}>${esc(t)}</option>`).join("");
   $("#overlay").innerHTML = `<div class="scrim" id="scrim"></div><aside class="drawer sheet" role="dialog" aria-label="${i.key}">
     <div class="dh"><span class="key">${i.key}</span><span>created by ${esc(i.creator_name || "someone")} ${ago(i.created_at)}</span><span style="flex:1"></span><button type="button" id="copyLink">Copy link</button><button type="button" id="delIssue">Delete</button><button type="button" id="closeD" aria-label="Close">✕ <span class="kbd">Esc</span></button></div>
     <div class="db"><div class="content">
       <input class="title" id="dTitle" value="${esc(i.title)}" aria-label="Title">
-      <textarea id="dDesc" placeholder="Add a description…" aria-label="Description">${esc(i.description)}</textarea>
+      ${desc.source !== null ? `<section class="small"><h3>Source context</h3><p class="muted">Kept current from the spec or job. Your notes below are preserved.</p><div class="source-context" style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(desc.source)}</div></section>` : ""}
+      <textarea id="dDesc" placeholder="${desc.source !== null ? "Add your notes…" : "Add a description…"}" aria-label="${desc.source !== null ? "Your notes" : "Description"}">${esc(desc.notes)}</textarea>
       <div class="tl"><h3>Activity</h3>${[...d.activity.map((a) => ({ t: a.at, h: `<div class="ev">${esc(a.actor || "Someone")} ${esc(a.action)}${a.detail ? ` <b>${esc(a.detail)}</b>` : ""} · ${ago(a.at)}</div>` })),
         ...d.comments.map((c) => ({ t: c.created_at, h: `<div class="cm"><b>${esc(c.author || "Someone")}</b><span class="when">${ago(c.created_at)}</span>${c.mine ? ` <button class="linkish small" data-delc="${c.id}" type="button">delete</button>` : ""}<p>${esc(c.body)}</p></div>` }))]
         .sort((a, b) => (a.t < b.t ? -1 : a.t > b.t ? 1 : 0)).map((x) => x.h).join("")}
@@ -459,7 +473,7 @@ async function openIssue(n) {
   $("#copyLink").onclick = (e) => copy(location.origin + `/m/project#/all/${i.number}`, e.currentTarget);
   $("#delIssue").onclick = async (e) => { if (e.currentTarget.textContent !== "Confirm delete") { e.currentTarget.textContent = "Confirm delete"; return; } await api(`/api/admin/project/issues/${i.number}`, { method: "DELETE" }); closeIssue(); toast(`${i.key} deleted`); await loadMeta(); render(); };
   $("#dTitle").onchange = () => update(i.number, { title: $("#dTitle").value }, true);
-  $("#dDesc").onchange = () => update(i.number, { description: $("#dDesc").value }, true);
+  $("#dDesc").onchange = () => update(i.number, { description: desc.source !== null ? `${desc.prefix}\n\n${$("#dDesc").value}` : $("#dDesc").value }, true);
   $$(".props [data-p]").forEach((el) => (el.onchange = () => update(i.number, { [el.dataset.p]: el.dataset.p === "priority" ? Number(el.value) : el.value || null }, true)));
   api("/api/admin/project/issues?status=backlog,todo,in_progress,in_review,done").then((r) => {
     $("#addDep")?.insertAdjacentHTML("beforeend", r.issues.filter((x) => x.number !== i.number && !(i.blocked_by || []).includes(x.number)).map((x) => `<option value="${x.number}">${x.key} ${esc(x.title.slice(0, 50))}</option>`).join(""));
