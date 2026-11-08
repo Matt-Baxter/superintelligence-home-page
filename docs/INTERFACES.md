@@ -10,6 +10,8 @@ Log every change to a table, route or shape here, so whoever merges the builds (
 
 ## Change log
 
+- Nov 7, 2026 — Public reading, explicitly requested by John (REQ-002, REQ-007, REQ-013–018): `GET /api/stories` and `GET /api/stories/:id` allow guests. Existing hidden/in-scope admission remains. Guests have `voted:false`, `saved:false`; detail `notes`, `lists` and `inPublicLists` are empty. `saved=1` still requires a session. All writes, private list APIs and administration retain their authorization. `/` shows the actual feed to guests; `/?signin=1` opens sign-in, as do existing `next` and `mode` entry links. Shared spec and agreements unchanged.
+
 - Nov 7, 2026 — Account access usability (REQ-009–012, REQ-018): `/welcome` is a static public overview with labeled synthetic samples. Existing data and admin authorization is unchanged. `GET /api/me` may include optional `demo: {accounts:[{role,username,password}]}` only when the dedicated local fixture runner sets it, fixture feeds are enabled and NODE_ENV is not production. `npm run demo` always creates a fresh temporary SQLite database, binds to loopback, creates synthetic reader/admin users and refuses production mode. Normal servers omit this field; sign-up/sign-in/session contracts are unchanged. `node test/demo-access.js` checks demo roles, logout and production refusal.
 
 
@@ -205,8 +207,8 @@ JSON over HTTPS. Requests send `Content-Type: application/json`.
 | POST /api/signup | `{username, password, displayName}` | `{user:{id, username, name, admin}}` + session cookie |
 | POST /api/login, /api/logout | `{username, password}` | `{user}` / `{ok:true}` |
 | GET /api/me | none | `{user,profile,features}`; optional local-fixture-only `demo` as logged above |
-| GET /api/stories | query: `topic, kind, org, q, days, saved=1, sort=top\|new\|votes\|signal, benchmark, person, min, offset` | `{stories:[{id, title, url, summary, topics, orgs, votes, voted, saved, notes, sources:[{name, kind, url}], nsources, significance, analysis}]}`, 40 per page |
-| GET /api/stories/:id | none | `{story, notes:[…], lists:[…], inPublicLists:[…]}` |
+| GET /api/stories (public; saved=1 requires session) | query: `topic, kind, org, q, days, saved=1, sort=top\|new\|votes\|signal, benchmark, person, min, offset` | `{stories:[{id, title, url, summary, topics, orgs, votes, voted, saved, notes, sources:[{name, kind, url}], nsources, significance, analysis}]}`, 40 per page |
+| GET /api/stories/:id (public) | none | `{story, notes:[…], lists:[…], inPublicLists:[…]}` |
 | POST /api/stories/:id/vote, /save | none | `{voted, votes}` / `{saved}` (toggles) |
 | POST /api/stories/:id/notes | `{text, private}` | `{ok:true}` |
 | POST /api/stories | `{url, title, summary?}` (submit a link) | `{id}` |
@@ -226,7 +228,7 @@ JSON over HTTPS. Requests send `Content-Type: application/json`.
 
 ## Auth
 
-Passwords are hashed with scrypt; sign-in sets an httpOnly session cookie that lasts 30 days. Every route except sign-up, sign-in and `/api/me` needs a session. The first account becomes the admin, who approves sources. Users can change only what they created (notes, lists, their own agent log entries), and the server checks this on every write.
+Passwords are hashed with scrypt; sign-in sets an httpOnly session cookie that lasts 30 days. The actual feed, story detail, ontology and account entry routes allow guests. Saved-only queries, mutations, account collections and administration require their existing session and role checks. The first account becomes the admin, who approves sources. Users can change only what they created (notes, lists, their own agent log entries), and the server checks this on every write.
 
 ## Rules
 

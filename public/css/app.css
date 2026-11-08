@@ -349,3 +349,4 @@ code, .mono, pre { font-family: var(--mono); }
   .public-header { flex-wrap: wrap; padding: 12px 16px; } .public-header nav { gap: 8px 16px; } .public-header .brand { width: 100%; }
   .public-main { gap: 24px; } .public-sections { gap: 4px 16px; } .public-guide div { grid-template-columns: 1fr; gap: 6px; }
 }
+.public-reading { border-bottom: 1px solid var(--line); padding-bottom: 12px; line-height: 1.8; }

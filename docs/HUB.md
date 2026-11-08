@@ -336,7 +336,7 @@ Quoted from the repo's own pitfall, trap, troubleshooting and habits sections (n
 - [docs/SPEC_STATUS.md](SPEC_STATUS.md): Measured on 2026-11-07 (America/Chicago) by `scripts/spec-status.js`, from the spec acceptance suite (`test/spec-acceptance.js --browser`, 48 of 48…
 - [docs/SPEC_TRACE.md](SPEC_TRACE.md): How this build meets the shared spec…
 - [docs/START_HERE.md](START_HERE.md): The current checkout continues on `feature/si-combined`.
-- [docs/TESTING_ACCESS.md](TESTING_ACCESS.md): Run `npm run demo` from the repository and open http://localhost:3200/.
+- [docs/TESTING_ACCESS.md](TESTING_ACCESS.md): Run `npm run demo` from the repository and open http://localhost:3200/?signin=1.
 - [docs/V0.md](V0.md): John builds his version of the homepage experience in **v0**; Matt builds his in **Claude**.
 - [docs/speckit-prompts.md](speckit-prompts.md): The prompts we gave each Spec Kit command, kept here so we can show how the spec was produced.
 

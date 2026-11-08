@@ -15,14 +15,14 @@
       <div class="tablewrap"><table><thead><tr><th>Source</th><th>Kind</th><th>Their headline</th></tr></thead><tbody id="covered"></tbody></table></div>
     </section>
     <div style="display:grid;gap:22px">
-      <form class="panel" id="noteForm">
+      <form class="panel" id="noteForm" hidden>
         <h2>Notes</h2>
         <div id="notes" style="display:grid;gap:10px"></div>
         <textarea id="noteText" placeholder="What's important here? What would you check?" aria-label="New note"></textarea>
         <div class="actions"><label style="display:flex;flex-direction:row;gap:6px;align-items:center;color:var(--fg)"><input type="checkbox" id="shareNote" style="width:auto"> Share with everyone</label><button class="btn primary" type="submit">Add note</button></div>
         <p class="err" id="noteErr" role="alert"></p>
       </form>
-      <section class="panel" id="listsPanel">
+      <section class="panel" id="listsPanel" hidden>
         <h2>Reading lists</h2>
         <div id="myLists" style="display:grid;gap:6px"></div>
         <form class="row" id="newList"><input id="newListTitle" placeholder="New list, e.g. Interpretability reading group" aria-label="New list title"><button class="btn" type="submit">Create and add</button></form>
@@ -58,6 +58,6 @@ async function load() {
 }
 $("#noteForm").onsubmit = async (e) => { e.preventDefault(); try { await api(`/api/stories/${id}/notes`, { body: { text: $("#noteText").value, private: !$("#shareNote").checked } }); $("#noteText").value = ""; load(); } catch (err) { showErr($("#noteErr"), err); } };
 $("#newList").onsubmit = async (e) => { e.preventDefault(); const t = $("#newListTitle").value.trim(); if (!t) return; const r = await api("/api/lists", { body: { title: t } }); await api(`/api/lists/${r.id}/items/${id}`, { method: "PUT", body: { note: "" } }); $("#newListTitle").value = ""; load(); };
-requireUser().then((u) => { const f = u.features || []; $("#noteForm").hidden = !f.includes("notes"); $("#listsPanel").hidden = !f.includes("lists"); return load(); }).catch((e) => { $("#card").innerHTML = `<li class="empty">${esc(e.message)}</li>`; });
+api("/api/me", { allow401: true }).then(({user: u}) => { topbar(u); const f = u?.features || []; $("#noteForm").hidden = !f.includes("notes"); $("#listsPanel").hidden = !f.includes("lists"); return load(); }).catch((e) => { $("#card").innerHTML = `<li class="empty">${esc(e.message)}</li>`; });
 </script>
 </body></html>

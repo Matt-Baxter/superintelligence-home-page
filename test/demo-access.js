@@ -13,7 +13,7 @@ const B = process.env.DEMO_BASE || 'http://127.0.0.1:3250';
     assert.equal((await fetch(B + '/api/stories', { headers: { cookie } })).status, 200);
     assert.equal((await fetch(B + '/api/admin/project/meta', { headers: { cookie } })).status, account.role === 'admin' ? 200 : 403);
     await fetch(B + '/api/logout', { method: 'POST', headers: { cookie } });
-    assert.equal((await fetch(B + '/api/stories', { headers: { cookie } })).status, 401);
+    assert.equal((await fetch(B + '/api/stories?saved=1', { headers: { cookie } })).status, 401);
   }
   const refusal = spawnSync(process.execPath, ['test/serve-demo.js'], { env: { ...process.env, NODE_ENV: 'production' }, encoding: 'utf8' });
   assert.notEqual(refusal.status, 0); assert.match(refusal.stderr, /only for local testing/);

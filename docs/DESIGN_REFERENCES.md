@@ -33,3 +33,5 @@ Final reader validation: `Preflight passed.`; `262 passed, 0 failed`; `page erro
 ## Public orientation and sign-in, 2026-11-07
 
 REQ-009–012 and REQ-018: the sign-in form now explains account requirements, supports password visibility and password managers, preserves retry state, and describes the local return destination. The public `/welcome` page uses a short section navigation, ruled sample stories and plain explanations of source grouping and significance. Samples are explicitly synthetic. Local demo role controls appear only in the disposable demo runner. See [access testing](TESTING_ACCESS.md) for use and validation.
+
+Public reading follow-up: the actual feed now opens at `/` without an account. Guest navigation contains Feed, About and Sign in. Read-story actions expose source explanations; vote/save actions preserve a return link through sign-in. Account editors and admin navigation remain hidden for guests, with server authorization still enforced. `/welcome` remains the orientation page.

@@ -182,7 +182,8 @@ async function smoke() {
     const page = await fetch(B + "/m/learn"); steps.push(["extended-only pages aren't served", page.status === 404]);
     const save = await call(`/api/stories/${id}/save`, { method: "POST" }); steps.push(["save (REQ)", save.status === 200]);
     const al = await call("/api/agent-log"); steps.push(["no in-app agent log (REQ-020)", al.status === 404]);
-    const anon = await fetch(B + "/api/stories"); steps.push(["anonymous blocked", anon.status === 401]);
+    const anon = await fetch(B + "/api/stories"); steps.push(["public feed readable", anon.status === 200]);
+    const privateView = await fetch(B + "/api/stories?saved=1"); steps.push(["saved stories require sign-in", privateView.status === 401]);
     const tw = await call("/api/stories", { body: { url: "https://x.com/a/status/1", title: "A Twitter thread here" } }); steps.push(["Twitter link refused", tw.status === 400]);
     const failed = steps.filter(([, p]) => !p).map(([n]) => n);
     failed.length ? fail("API smoke test", "failed: " + failed.join(", ") + (errOut ? ` | server: ${errOut.slice(0, 200)}` : "")) : ok("API smoke test", `${steps.length} checks`);

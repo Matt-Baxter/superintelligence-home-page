@@ -152,7 +152,7 @@ async function browser() {
     for (const [w, h, tag] of [[1280, 900, "laptop"], [390, 844, "phone"]]) {
       const ctx = await br.newContext({ viewport: { width: w, height: h } }); const p = await ctx.newPage(); const errs = [];
       p.on("pageerror", (e) => errs.push(e.message));
-      await p.goto(B + "/");
+      await p.goto(B + "/?signin=1");
       if (tag === "laptop") {
         await p.click('[data-mode="signup"]'); await p.waitForTimeout(200);
         check(["REQ-012", "US2-1"], "the sign-up form asks only for a username and password", await p.isHidden("#nameWrap"));
@@ -165,7 +165,7 @@ async function browser() {
         const topicLink = await p.$(".topicbar a");
         check(["REQ-017"], "the topic bar is on the page", !!topicLink);
         await p.evaluate(() => fetch("/api/logout", { method: "POST" }));
-        await p.goto(B + "/"); await p.waitForTimeout(500);
+        await p.goto(B + "/?signin=1"); await p.waitForTimeout(500);
         check(["US2-5"], "after signing out the sign-in form is shown again", await p.isVisible("#authBtn"));
         await p.fill("#username", u); await p.fill("#password", pw); await p.click("#authBtn"); await p.waitForSelector("#feed .story");
         // An empty topic shows a message, not a blank page (US4-2): pick a topic with no stories.
@@ -173,7 +173,7 @@ async function browser() {
         if (empty) { await p.click(`.topicbar a[href="/?topic=${empty}"]`); await p.waitForTimeout(800); }
         check(["US4-2", "REQ-017"], "a topic with no stories shows a \"no stories yet\" message", empty ? /no stories yet/i.test(await p.textContent("#feed")) : true, empty ? `topic ${empty}` : "every topic has stories in the sample data");
       }
-      await p.goto(B + "/"); if (tag === "phone") { await p.evaluate(() => 0); }
+      await p.goto(B + "/?signin=1"); if (tag === "phone") { await p.evaluate(() => 0); }
       await p.waitForTimeout(600);
       check(["REQ-018", "SC-001"], `the feed has no sideways scrolling on a ${tag} (${w}px)`, !(await p.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)));
       check(["REQ-018"], `no page errors on a ${tag}`, !errs.length, errs.join("; "));

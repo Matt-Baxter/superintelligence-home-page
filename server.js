@@ -127,6 +127,7 @@ async function storyRows(where, args, uid, { sort = "top", limit = 40, offset = 
   if (!page.length) return [];
   const links = await db.all(`SELECT l.story_id, l.url, l.title, l.rigor, src.name AS source, src.kind FROM story_links l LEFT JOIN sources src ON src.id = l.source_id
     WHERE l.story_id IN (${page.map(() => "?").join(",")}) ORDER BY l.id`, ...page.map((r) => r.id));
+  if (!uid) page.forEach((r) => { r.nnotes = 0; });
   return page.map((r) => shapeStory(r, links.filter((l) => l.story_id === r.id)));
 }
 function shapeStory(r, links) {
@@ -138,7 +139,7 @@ function shapeStory(r, links) {
     nsources: r.nsources, significance: r.significance || 0, analysis: JSON.parse(r.analysis || "{}"),
   };
 }
-app.get("/api/stories", auth, wrap(async (req) => {
+app.get("/api/stories", wrap(async (req) => {
   const w = ["1=1"], a = [];
   const topic = str(req.query.topic, 40), kind = str(req.query.kind, 30), org = str(req.query.org, 40), qtext = str(req.query.q, 100).toLowerCase();
   const days = Math.min(365, Number(req.query.days) || 0);
@@ -157,19 +158,20 @@ app.get("/api/stories", auth, wrap(async (req) => {
     if (t.ns === "benchmark" || t.ns === "person") { w.push("s.id IN (SELECT story_id FROM story_entities WHERE kind = ? AND entity = ?)"); a.push(t.ns, t.id); }
   }
   if (Number(req.query.min)) { w.push("COALESCE(s.significance, 0) >= ?"); a.push(Math.min(100, Number(req.query.min))); }
-  if (req.query.saved === "1") { w.push("s.id IN (SELECT story_id FROM saves WHERE user_id = ?)"); a.push(req.user.id); }
+  if (req.query.saved === "1" && !req.user) throw new HttpError(401, "Sign in to read your saved stories.");
+  if (req.query.saved === "1") { w.push("s.id IN (SELECT story_id FROM saves WHERE user_id = ?)"); a.push((req.user?.id || 0)); }
   const sort = ["top", "new", "votes", "signal"].includes(req.query.sort) ? req.query.sort : "new"; // REQ-002: newest first
   const offset = Math.max(0, Number(req.query.offset) || 0);
-  return { stories: await storyRows(w.join(" AND "), a, req.user.id, { sort, offset, limit: 40 }), sort };
+  return { stories: await storyRows(w.join(" AND "), a, (req.user?.id || 0), { sort, offset, limit: 40 }), sort };
 }));
-app.get("/api/stories/:id", auth, wrap(async (req) => {
-  const id = Number(req.params.id); const rows = await storyRows("s.id = ?", [id], req.user.id); if (!rows.length) notFound("That story");
+app.get("/api/stories/:id", wrap(async (req) => {
+  const id = Number(req.params.id); const rows = await storyRows("s.id = ?", [id], (req.user?.id || 0)); if (!rows.length) notFound("That story");
   return {
     story: rows[0],
-    notes: !profile.has("notes") ? [] : (await db.all(`SELECT n.id, n.text, n.private, n.created_at, u.display_name AS name, n.user_id FROM notes n JOIN users u ON u.id = n.user_id
-      WHERE n.story_id = ? AND (n.private = 0 OR n.user_id = ?) ORDER BY n.id`, id, req.user.id)).map(({ user_id, ...n }) => ({ ...n, mine: user_id === req.user.id, private: bool(n.private) })),
-    lists: !profile.has("lists") ? [] : (await db.all("SELECT l.id, l.title, EXISTS(SELECT 1 FROM list_items i WHERE i.list_id = l.id AND i.story_id = ?) AS has FROM lists l WHERE l.owner_id = ? ORDER BY l.title", id, req.user.id)).map((l) => ({ ...l, has: bool(l.has) })),
-    inPublicLists: !profile.has("lists") ? [] : await db.all("SELECT l.id, l.title, u.display_name AS owner FROM list_items i JOIN lists l ON l.id = i.list_id JOIN users u ON u.id = l.owner_id WHERE i.story_id = ? AND l.public = 1", id),
+    notes: !req.user || !profile.has("notes") ? [] : (await db.all(`SELECT n.id, n.text, n.private, n.created_at, u.display_name AS name, n.user_id FROM notes n JOIN users u ON u.id = n.user_id
+      WHERE n.story_id = ? AND (n.private = 0 OR n.user_id = ?) ORDER BY n.id`, id, (req.user?.id || 0))).map(({ user_id, ...n }) => ({ ...n, mine: user_id === (req.user?.id || 0), private: bool(n.private) })),
+    lists: !req.user || !profile.has("lists") ? [] : (await db.all("SELECT l.id, l.title, EXISTS(SELECT 1 FROM list_items i WHERE i.list_id = l.id AND i.story_id = ?) AS has FROM lists l WHERE l.owner_id = ? ORDER BY l.title", id, (req.user?.id || 0))).map((l) => ({ ...l, has: bool(l.has) })),
+    inPublicLists: !req.user || !profile.has("lists") ? [] : await db.all("SELECT l.id, l.title, u.display_name AS owner FROM list_items i JOIN lists l ON l.id = i.list_id JOIN users u ON u.id = l.owner_id WHERE i.story_id = ? AND l.public = 1", id),
   };
 }));
 const storyExists = async (id) => (await db.get("SELECT id FROM stories WHERE id = ?", id)) || notFound("That story");

@@ -34,21 +34,22 @@ function topbar(user) {
   const here = location.pathname.replace(/\.html$/, "").replace(/\/index$/, "/") || "/";
   const bar = document.createElement("header"); bar.className = "topbar";
   // Module links from "ui.nav": reader-facing ones sit in the bar; admin tools go in one Admin menu.
+  window.SI_USER = user || null;
   const nav = user?.nav || [], isHere = (h) => (h === "/" ? here === "/" : here.startsWith(h));
   const mod = nav.filter((n) => !n.admin), tools = nav.filter((n) => n.admin);
-  const core = NAV.filter(([, , f]) => !f || (user?.features || []).includes(f));
+  const core = (user ? NAV : [["/", "Feed"], ["/welcome", "About"]]).filter(([, , f]) => !f || (user?.features || []).includes(f));
   const links = [core[0], ...mod.filter((n) => (n.order ?? 50) < 20).map((n) => [n.href, n.label]), ...core.slice(1), ...mod.filter((n) => (n.order ?? 50) >= 20).map((n) => [n.href, n.label])];
   const menu = tools.length ? `<details class="navmenu"${tools.some((n) => isHere(n.href)) ? ' data-here=""' : ""}><summary>Admin</summary><div>${tools.map((n) => `<a href="${n.href}"${isHere(n.href) ? ' aria-current="page"' : ""}>${n.label}</a>`).join("")}</div></details>` : "";
   const toolLinks = tools.length ? `<div class="nav-tools"><p class="small muted">Administration</p>${tools.map((n) => `<a href="${esc(n.href)}"${isHere(n.href) ? ' aria-current="page"' : ""}>${esc(n.label)}</a>`).join("")}</div>` : "";
   bar.innerHTML = `<a class="skip-link" href="#mainContent">Skip to content</a><div class="in"><a class="brand" href="/" aria-label="Superintelligence Homepage"><span class="brand-long">Superintelligence Homepage</span><span class="brand-short">SI Homepage</span></a><button class="btn nav-toggle" id="navToggle" type="button" aria-expanded="false" aria-controls="siteNav">Menu</button><nav class="nav" id="siteNav" aria-label="Main navigation">${links.map(([h, t]) => `<a href="${esc(h)}"${isHere(h) ? ' aria-current="page"' : ""}>${esc(t)}</a>`).join("")}${toolLinks}</nav>
-    <div class="who">${menu}${user ? `<span>${esc(user.name)}</span><button class="btn" id="logout" type="button">Sign out</button>` : ""}</div></div>`;
+    <div class="who">${menu}${user ? `<span>${esc(user.name)}</span><button class="btn" id="logout" type="button">Sign out</button>` : `<a class="btn" href="/?signin=1">Sign in</a>`}</div></div>`;
   document.querySelector(".topbar")?.remove(); document.body.prepend(bar);
   const main = document.querySelector("main") || document.querySelector("#app"); if (main) { if (!main.id) main.id = "mainContent"; bar.querySelector(".skip-link").href = `#${main.id}`; main.setAttribute("tabindex", "-1"); }
   const toggle = bar.querySelector("#navToggle"), setOpen = (open) => { bar.toggleAttribute("data-nav-open", open); toggle.setAttribute("aria-expanded", String(open)); };
   toggle.onclick = () => setOpen(toggle.getAttribute("aria-expanded") !== "true");
   bar.addEventListener("keydown", (e) => { if (e.key === "Escape") { if (bar.hasAttribute("data-nav-open")) { setOpen(false); toggle.focus(); } for (const d of bar.querySelectorAll("details[open]")) { d.open = false; d.querySelector("summary").focus(); } } });
   document.addEventListener("pointerdown", (e) => { if (!bar.contains(e.target)) { setOpen(false); for (const d of bar.querySelectorAll("details[open]")) d.open = false; } });
-  const lo = $("#logout"); if (lo) lo.onclick = async () => { lo.disabled = true; try { await api("/api/logout", { method: "POST" }); location.href = "/"; } catch (e) { lo.disabled = false; lo.textContent = "Retry sign out"; lo.title = e.message; } };
+  const lo = $("#logout"); if (lo) lo.onclick = async () => { lo.disabled = true; try { await api("/api/logout", { method: "POST" }); location.href = "/?signin=1"; } catch (e) { lo.disabled = false; lo.textContent = "Retry sign out"; lo.title = e.message; } };
 
 }
 function showErr(el, e) { el.textContent = e?.message || String(e); el.className = "err"; }
@@ -90,6 +91,7 @@ function storyCard(s, opts = {}) {
     <div class="row2"><div class="tags">${bench}${tags}${orgs}</div><div class="acts"><a href="/story?id=${s.id}">${s.notes ? `${s.notes} note${s.notes > 1 ? "s" : ""}` : "Notes"}</a><button type="button" class="save linkish" aria-pressed="${s.saved}">${s.saved ? "Saved ✓" : "Save"}</button></div></div><p class="action-feedback small" role="status" aria-live="polite" hidden></p></div>`;
   const feedback = li.querySelector(".action-feedback");
   async function mutate(button, kind) {
+    if (!window.SI_USER) { location.href = "/?next=" + encodeURIComponent(location.pathname + location.search); return; }
     if (button.disabled) return; button.disabled = true; feedback.hidden = false; feedback.className = "action-feedback small muted"; feedback.textContent = "Saving…";
     try {
       const r = await api(`/api/stories/${s.id}/${kind}`, { method: "POST" });
@@ -100,6 +102,7 @@ function storyCard(s, opts = {}) {
     } catch (e) { feedback.className = "action-feedback err"; feedback.textContent = `${e.message} Your change was not confirmed. Try again.`; }
     finally { button.disabled = false; }
   }
+  if (!window.SI_USER) { li.querySelector(".acts a").textContent = "Read story"; li.querySelector(".vote").title = "Sign in to vote"; li.querySelector(".save").textContent = "Sign in to save"; }
   li.querySelector(".vote").onclick = (e) => mutate(e.currentTarget, "vote");
   li.querySelector(".save").onclick = (e) => mutate(e.currentTarget, "save");
   return li;

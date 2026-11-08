@@ -7,7 +7,7 @@ async function account(b, u, name) {
   const ctx = await b.newContext({ viewport: { width: 1200, height: 900 } }); const p = await ctx.newPage();
   p.on('pageerror', e => errs.push(u + ' @ ' + p.url() + ': ' + e.message + ' ' + (e.stack||'').split('\n').slice(0,3).join(' | ')));
   p.on('console', m => m.type() === 'error' && !/40[0-9]/.test(m.text()) && errs.push(u + ': ' + m.text()));
-  await p.goto(B); await p.click('text=Create account'); await p.fill('#username', u); await p.fill('#displayName', name); await p.fill('#password', 'correct-horse-9');
+  await p.goto(B + "/?signin=1"); await p.click('text=Create account'); await p.fill('#username', u); await p.fill('#displayName', name); await p.fill('#password', 'correct-horse-9');
   await p.click('#authBtn'); await p.waitForSelector('#feed .story'); return p;
 }
 const story = (p, text) => p.locator('#feed .story', { hasText: text });
@@ -17,11 +17,19 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   const john = await account(b, 'john', 'John'), matt = await account(b, 'matt', 'Matt');
   ok((await john.evaluate(async () => (await (await fetch('/api/me')).json()).user.admin)) === true, 'first account is the admin');
   ok((await matt.evaluate(async () => (await (await fetch('/api/me')).json()).user.admin)) === false, 'second account is not');
-  ok((await fetch(B + '/api/stories')).status === 401, 'feed API needs a session');
+  ok((await fetch(B + '/api/stories')).status === 200, 'actual feed API is readable without a session');
 
   console.log('Public orientation and account access (REQ-009–012, REQ-018)');
   const visitorContext = await b.newContext({ viewport: { width: 1280, height: 900 } }), visitor = await visitorContext.newPage();
   visitor.on('pageerror', e => errs.push('visitor: ' + e.message));
+  await visitor.goto(B); await visitor.waitForSelector('#feed .story');
+  ok(await visitor.isVisible('#guestNotice') && !(await visitor.isVisible('#submitBtn')) && !(await visitor.isVisible('#savedOnly')), 'guest feed is readable with clear account boundaries');
+  const guestId = await visitor.getAttribute('#feed .story', 'data-id');
+  await visitor.click('#feed .save'); await visitor.waitForSelector('#auth:not([hidden])');
+  ok(new URL(visitor.url()).searchParams.has('next'), 'guest save offers sign-in and preserves the return destination');
+  await visitor.goto(B + '/story?id=' + guestId); await visitor.waitForSelector('#covered tr');
+  ok(await visitor.isVisible('#analysis') && !(await visitor.isVisible('#noteForm')) && !(await visitor.isVisible('#listsPanel')), 'guest story shows sources and explanations without private editing tools');
+  ok((await fetch(B + '/api/stories?saved=1')).status === 401 && (await fetch(B + `/api/stories/${guestId}/save`, { method: 'POST' })).status === 401 && (await fetch(B + `/api/stories/${guestId}/vote`, { method: 'POST' })).status === 401, 'guest saved queries, save and vote mutations remain protected');
   await visitor.goto(B + '/welcome');
   ok(await visitor.isVisible('#previewTitle') && await visitor.isVisible('a[href="/?mode=signup"]'), 'public overview explains the reader without requiring an account');
   ok((await visitor.textContent('#preview')).includes('synthetic') && (await fetch(B + '/api/admin/project/meta')).status === 401, 'public samples are labeled and private administration remains protected');
@@ -39,7 +47,7 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   ok(!(await (await fetch(B + '/api/me')).json()).demo, 'normal fixture server never advertises demo credentials');
   for (const colorScheme of ['light', 'dark']) for (const width of [390, 1280]) {
     await visitorContext.clearCookies(); await visitor.setViewportSize({ width, height: 900 }); await visitor.emulateMedia({ colorScheme });
-    for (const page of ['/', '/welcome']) { await visitor.goto(B + page); await visitor.waitForSelector(page === '/' ? '#auth:not([hidden])' : '#previewTitle'); ok(!(await visitor.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), `public access fits ${width}px in ${colorScheme}: ${page}`); await visitor.screenshot({ path: `shots/access-${page === '/' ? 'login' : 'public'}-${colorScheme}-${width}.png`, animations: 'disabled' }); }
+    for (const page of ['/?signin=1', '/welcome']) { await visitor.goto(B + page); await visitor.waitForSelector(page.startsWith('/?') ? '#auth:not([hidden])' : '#previewTitle'); ok(!(await visitor.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), `public access fits ${width}px in ${colorScheme}: ${page}`); await visitor.screenshot({ path: `shots/access-${page.startsWith('/?') ? 'login' : 'public'}-${colorScheme}-${width}.png`, animations: 'disabled' }); }
   }
   await visitorContext.close();
 
@@ -74,6 +82,9 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   await john.fill('#noteText', 'Private: check whether the compute curve holds past 10x.'); await john.click('#noteForm button[type=submit]'); await john.waitForTimeout(300);
   await john.fill('#noteText', 'Shared: good pick for Thursday reading group.'); await john.check('#shareNote'); await john.click('#noteForm button[type=submit]'); await john.waitForTimeout(300);
   const sid = new URL(john.url()).searchParams.get('id');
+  const guestDetail = await (await fetch(B + '/api/stories/' + sid)).json();
+  ok(guestDetail.story.notes === 0 && guestDetail.notes.length === 0 && guestDetail.lists.length === 0 && guestDetail.inPublicLists.length === 0 && !guestDetail.story.saved && !guestDetail.story.voted, 'public detail excludes account notes and list memberships');
+
   await matt.goto(B + '/story?id=' + sid); await matt.waitForSelector('#notes');
   const mn = await matt.textContent('#notes'); ok(mn.includes('reading group') && !mn.includes('compute curve'), 'shared notes visible to others, private notes are not');
   const del = await matt.evaluate(async () => { const d = await (await fetch(location.pathname.replace('/story', '/api/stories/') + location.search.split('=')[1])).json(); return d; });
@@ -153,10 +164,12 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   await j(john, `/api/admin/users/${mattId}`, 'PUT', { admin: false });
   await j(john, `/api/admin/users/${mattId}`, 'PUT', { disabled: true }); ok((await j(matt, '/api/me')).user === null, 'disabling a user ends their sessions');
   await j(john, `/api/admin/users/${mattId}`, 'PUT', { disabled: false });
-  await matt.goto(B); await matt.fill('#username', 'matt'); await matt.fill('#password', 'correct-horse-9'); await matt.click('#authBtn'); await matt.waitForSelector('#feed .story'); ok(true, 're-enabled user can sign in again');
+  await matt.goto(B + '/?signin=1'); await matt.fill('#username', 'matt'); await matt.fill('#password', 'correct-horse-9'); await matt.click('#authBtn'); await matt.waitForSelector('#feed .story'); ok(true, 're-enabled user can sign in again');
   const target = (await j(john, '/api/admin/stories?q=export')).stories[0];
   await j(john, `/api/admin/stories/${target.id}`, 'PUT', { hidden: true, reason: 'test' });
   ok(!(await j(matt, '/api/stories?limit=100')).stories.some((s) => s.id === target.id), 'a hidden story leaves everyone’s feed');
+  ok((await fetch(B + '/api/stories/' + target.id)).status === 404 && !(await (await fetch(B + '/api/stories')).json()).stories.some(s => s.id === target.id), 'hidden stories stay excluded from public list and detail');
+
   await john.click('[data-tab="moderation"]'); await john.check('#mHidden'); await john.waitForTimeout(400); ok((await john.textContent('#storyRows')).includes('Hidden: test'), 'moderation tab lists hidden stories with the reason');
   await john.click('#storyRows button[data-act="unhide"]'); await john.waitForTimeout(400); ok((await j(matt, '/api/stories?limit=100')).stories.some((s) => s.id === target.id), 'unhiding brings it back');
   const rt = await j(john, '/api/admin/retag', 'POST', {}); ok(rt.stories > 0, 'Re-tag re-applies the ontology to every story');
@@ -537,7 +550,7 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
 
   console.log('Phone width');
   const ph = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })).newPage();
-  await ph.goto(B); await ph.fill('#username', 'john'); await ph.fill('#password', 'correct-horse-9'); await ph.click('#authBtn'); await ph.waitForSelector('#feed .story');
+  await ph.goto(B + '/?signin=1'); await ph.fill('#username', 'john'); await ph.fill('#password', 'correct-horse-9'); await ph.click('#authBtn'); await ph.waitForSelector('#feed .story');
   for (const path of ['/', '/story?id=' + sid, '/brief', '/lists', '/sources', '/m/admin', '/m/project', '/m/capabilities', '/m/studio', '/m/decide', '/m/view?name=capability-snapshot', '/m/codemap', '/m/project#/timeline', '/m/project#/specs', '/m/control', '/m/learn', '/m/learn#/c/attention', '/m/learn#/how', '/m/knowledge', '/m/lab', '/m/lab#/x/rsi-decision-gym']) { await ph.goto(B + path); await ph.waitForTimeout(600); ok(!(await ph.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'no sideways scroll: ' + path.split('?')[0]); }
   await ph.goto(B); await ph.waitForSelector('#feed .story'); await ph.screenshot({ path: 'shots/phone-feed.png' });
   await john.goto(B); await john.waitForSelector('#feed .story'); await john.screenshot({ path: 'shots/feed.png', fullPage: true });

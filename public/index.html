@@ -27,6 +27,7 @@
 
 <section class="auth panel" id="startupError" role="alert" hidden><h1>The homepage could not load</h1><p id="startupMessage" class="muted"></p><button class="btn" id="retryStartup" type="button">Try again</button></section>
 <main id="feedView" hidden>
+  <p class="public-reading small" id="guestNotice" hidden>Read freely. <a href="/?signin=1">Sign in</a> or <a href="/?mode=signup">create an account</a> to vote and save stories. <a href="/welcome">How it works</a></p>
   <div class="pagehead feed-head">
     <div><h1 id="feedTitle">The path to superintelligence</h1><p class="muted" id="feedSub">AI progress, grouped by story. Every topic and score is explained.</p></div>
     <button class="btn" id="submitBtn" type="button" aria-expanded="false" aria-controls="submitForm">Submit a link</button>
@@ -160,7 +161,8 @@ $("#submitForm").onsubmit = async (e) => { e.preventDefault(); const button = e.
 $("#retryStartup").onclick = () => location.reload();
 (async () => {
   const { user, demo, features: siteFeatures = [] } = await api("/api/me", { allow401: true }); window.SI_DISPLAY_NAME = siteFeatures.includes("display-name");
-  if (!user) { showAccess(demo); return; }
+  if (!user && (params.has("signin") || params.has("next") || params.has("mode"))) { showAccess(demo); return; }
+  if (!user) { $("#guestNotice").hidden = false; $("#submitBtn").hidden = true; $("#savedOnly").closest("label").hidden = true; }
   topbar(user); $("#feedView").hidden = false;
   ONT = await api("/api/ontology");
   Object.entries(KIND).forEach(([k, v]) => $("#kind").insertAdjacentHTML("beforeend", `<option value="${k}">${v}</option>`));

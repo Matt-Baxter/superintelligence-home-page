@@ -6,7 +6,7 @@ How this build meets the shared spec ([specs/001-superintelligence-homepage/spec
 | REQ | What | Where in the code | Checked by |
 | --- | --- | --- | --- |
 | REQ-001 | 8+ superintelligence sources, 5+ kinds, fetched on a schedule | `lib/sources.json` (11 sources, 5 kinds), `lib/harvest.js`, `vercel.json` crons | unit: "REQ-001: 8+ sources across 5+ kinds" |
-| REQ-002 | Feed newest first; title, sources, topics, link | `server.js` default sort `new`; `storyCard` in `public/js/api.js` | e2e: "REQ-002: the feed is newest first by default"; "Reader robustness" covers stale responses, retry and pagination |
+| REQ-002 | Feed newest first; title, sources, topics, link | `server.js` default sort `new`; `storyCard` in `public/js/api.js` | e2e: public guest feed and story-detail checks in "Public orientation and account access"; "REQ-002: the feed is newest first by default"; "Reader robustness" covers stale responses, retry and pagination |
 | REQ-003 | Only superintelligence stories | `scope` in `lib/ontology.json`, `scope()` in `lib/analysis.js`, `stories.in_scope`, `storyRows` filter | e2e: "REQ-003 / SC-003" (both); unit: scope checks; HTTP regression `test/scope-admission.js` (unclassified/off-topic rows excluded) |
 | REQ-004 | Duplicates grouped into one story | `storyKeys` in `lib/feeds.js`, `addItem` in `lib/harvest.js` | e2e: grouping checks in "Feed" |
 | REQ-005 | Topics with the words that matched | `lib/tagger.js`; scope reason on the story page | e2e: "US1-5 / REQ-005", "REQ-005: the story page says why" |
