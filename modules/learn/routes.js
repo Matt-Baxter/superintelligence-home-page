@@ -75,11 +75,15 @@ module.exports = function mountLearn(app, { db, auth, admin, wrap, str, bad, not
     const base = (process.env.PUBLIC_URL || `${req.protocol}://${req.get("host")}`).replace(/\/$/, "");
     const items = rows.map((r) => {
       const title = (r.output.match(/^#\s+(.+)$/m) || [, L.BY_ID[r.concept_id]?.name || "Explainer"])[1];
-      const link = `${base}/m/learn#/post/${r.id}`;
+      const link = `${base}/m/published-explainer?id=${r.id}`;
       return `<item><title>${xml(title)}</title><link>${xml(link)}</link><guid isPermaLink="false">si-learn-${r.id}</guid><pubDate>${new Date(r.published_at).toUTCString()}</pubDate><description>${xml(r.output)}</description></item>`;
     }).join("");
     res.type("application/rss+xml").send(`<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>Superintelligence Homepage: Learn</title><link>${xml(base)}/m/learn</link><description>Concepts behind superintelligence research, in plain words.</description>${items}</channel></rss>`);
     return undefined;
+  }));
+  app.get("/api/learn/published/:id", wrap(async (req) => {
+    const r = await db.get("SELECT id, concept_id, output, published_at FROM learn_jobs WHERE id = ? AND status = 'published' AND kind = 'post'", Number(req.params.id));
+    if (!r) notFound("That post"); return { post: r };
   }));
   app.get("/api/learn/posts/:id", auth, wrap(async (req) => {
     const r = await db.get("SELECT id, concept_id, output, published_at FROM learn_jobs WHERE id = ? AND status = 'published' AND kind = 'post'", Number(req.params.id));

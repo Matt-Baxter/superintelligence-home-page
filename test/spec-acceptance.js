@@ -140,7 +140,7 @@ async function api() {
 
   // ---- Delivery and scope ----
   check(["REQ-020"], "the agent log is AGENT_LOG.md in the repo, not an app page", fs.existsSync(path.join(root, "AGENT_LOG.md")) && (await a.call("/api/agent-log")).status === 404);
-  const extras = await Promise.all(["/api/brief", "/api/lists", "/api/stories/1/notes", "/api/learn/concepts", "/api/knowledge/graph", "/api/learn/glossary", "/api/editorial/posts", "/api/admin/editorial/posts", "/m/glossary", "/m/editorial", "/m/journal"].map((p) => a.call(p, p.includes("notes") ? { body: { text: "x" } } : {})));
+  const extras = await Promise.all(["/api/brief", "/api/lists", "/api/stories/1/notes", "/api/learn/concepts", "/api/knowledge/graph", "/api/learn/glossary", "/api/learn/published/1", "/m/published-explainer", "/api/editorial/posts", "/api/admin/editorial/posts", "/m/glossary", "/m/editorial", "/m/journal"].map((p) => a.call(p, p.includes("notes") ? { body: { text: "x" } } : {})));
   check(["Out of scope"], "out-of-scope extras (brief, lists, notes, Learn, knowledge) are off in the spec version", extras.every((r) => r.status === 404));
 }
 

@@ -11,4 +11,5 @@ const examples=['égradienté','gradientx','xsoftmax','transformersxyz','transfo
 const text='A ∇θ step uses a gradient and softmax, not égradienté.';const matches=M.mentions(text,G.DATA.entries);assert.ok(matches.some(m=>m.id==='gradient')&&matches.some(m=>m.id==='parameters'));assert.ok(matches.every((m,i)=>m.text===text.slice(m.start,m.end)&&(i===0||m.start>=matches[i-1].end)));n++;
 assert.ok(G.tag('gradient '.repeat(500)+' softmax').some(t=>t.qid==='term:softmax'));assert.deepEqual(G.tag('σ').map(t=>t.qid),['term:sigma']);assert.deepEqual(G.tag('Σ').map(t=>t.qid),['term:summation']);n++;
 for(const e of G.DATA.entries){assert.ok(ids.parse('term:'+e.id));assert.ok(e.sources.length&&e.properties.length&&e.caveat);assert.ok(G.edges().some(edge=>edge.src==='term:'+e.id));}n++;
+assert.notEqual(M.searchKey('Σ'),M.searchKey('σ'));assert.equal(M.searchKey('SOFTMAX'),M.searchKey('softmax'));n++;
 console.log(`Term properties: ${n} passed, 0 failed; 600 generated softmax vectors and 600 generated sigmoid vectors.`);

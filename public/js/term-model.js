@@ -9,5 +9,6 @@
   }
   function vector(values){if(!Array.isArray(values)||!values.length||values.length>32||values.some(v=>typeof v!=='number'||!Number.isFinite(v)||Math.abs(v)>1000))throw new Error('Use 1–32 finite numbers between −1000 and 1000.');return values;}
   function calculate(id,values){const xs=vector(values);if(id==='softmax'){const max=Math.max(...xs),weights=xs.map(x=>Math.exp(x-max)),sum=weights.reduce((a,b)=>a+b,0);return weights.map(x=>x/sum);}if(id==='sigmoid')return xs.map(x=>x>=0?1/(1+Math.exp(-x)):Math.exp(x)/(1+Math.exp(x)));throw new Error('Unknown teaching function.');}
-  return {mentions,calculate};
+  const searchKey=value=>Array.from(String(value||'')).map(c=>/[\u0370-\u03ff]/u.test(c)?c:c.toLowerCase()).join('');
+  return {mentions,calculate,searchKey};
 });

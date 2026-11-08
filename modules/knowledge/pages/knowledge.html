@@ -22,7 +22,7 @@
   <div class="kgrid">
     <section class="panel"><h2>Graph</h2>
       <form class="row" id="gform"><input id="qid" placeholder="topic:alignment or concept:attention" aria-label="Qualified id"><button class="btn" type="submit">Show</button></form>
-      <p class="small muted">Shared mentions are associations, not proof. Open a connection’s evidence to inspect its origin and direction.</p><div id="graph"></div><div id="edges"></div></section>
+      <p class="small muted">Shared mentions are associations, not proof. Open a connection’s evidence to inspect its origin and direction.</p><button class="btn" id="graphOverview" type="button">All nodes</button><div id="graph"></div><div id="edges"></div></section>
     <section class="panel"><h2>Find similar passages</h2>
       <form class="row" id="sform"><input id="q" placeholder="e.g. models that improve themselves" aria-label="Search text"><button class="btn" type="submit">Search</button></form>
       <div id="similar"></div>
@@ -61,7 +61,9 @@ function nodeDiagram(center, edges) {
     </svg></div><p class="small muted">Pan the diagram if needed, or use the full node names in the list below.</p>`;
 }
 let graphRequest = 0;
-async function show(q) {
+function graphLocation(q,mode="push") { const url=new URL(location.href); if(q)url.searchParams.set("qid",q);else url.searchParams.delete("qid"); if(url.href!==location.href)history[mode==="replace"?"replaceState":"pushState"](null,"",url.pathname+url.search+url.hash); }
+async function show(q, {historyMode="none"}={}) {
+  q=String(q||"").trim();
   const request = ++graphRequest; $("#qid").value = q;
   try {
     const [g, c] = await Promise.all([api(`/api/knowledge/graph?qid=${encodeURIComponent(q)}`), api(`/api/knowledge/chunks?tag=${encodeURIComponent(q)}`)]);
@@ -71,22 +73,29 @@ async function show(q) {
     $("#graph").innerHTML = g.edges.length ? nodeDiagram(q, g.edges) : '<p class="small muted">No links yet. Build the index first.</p>';
     $("#edges").innerHTML = (/^term:[a-z0-9-]+$/.test(q) ? `<p><a href="/m/glossary#${encodeURIComponent(q.slice(5))}">Definition, properties and sources</a></p>` : "") + g.edges.map((e) => `<div class="edge"><span class="rel">${esc(e.rel === "co-occurs" || e.src === q ? e.rel : "← " + e.rel)}</span><span>${qidBtn(e.other)}<div class="bar"><i style="width:${(100 * e.weight / max).toFixed(0)}%"></i></div></span><span class="small muted">${e.weight}</span></div>${edgeEvidence(e)}`).join("");
     $("#chunks").innerHTML = c.chunks.length ? c.chunks.slice(0, 12).map((x) => `<div class="chunk"><a href="/story?id=${x.story_id}">${esc(x.title)}</a><div class="muted">${esc(x.text)}</div><div class="tags">${x.tags.filter((t) => !t.via).map((t) => qidBtn(t.qid)).join("")}</div></div>`).join("") : "No passages carry this tag.";
+    if(historyMode!=="none")graphLocation(q,historyMode);
+    setPageContext("Knowledge · "+q);
     return true;
   } catch (err) { if (request === graphRequest) showErr($("#stats"), err); return false; }
 }
-const explore = q => show(q).then(loaded => { if (loaded) $("#qid").focus(); });
+const explore = q => show(q,{historyMode:"push"}).then(loaded => { if (loaded) $("#qid").focus(); });
 async function topNodes() {
   const request = ++graphRequest, g = await api("/api/knowledge/graph?limit=24");
   if (request !== graphRequest) return;
+  $("#qid").value="";setPageContext("Knowledge");
   $("#graph").replaceChildren(); $("#chunks").replaceChildren();
   $("#indexNotice").hidden = !g.stale;
   $("#edges").innerHTML = g.nodes.length ? `<p class="small muted">Best-connected nodes:</p><div class="row" style="gap:6px">${g.nodes.map((n) => qidBtn(n.qid)).join("")}</div>` : '<p class="small muted">Nothing indexed yet. Press "Build or refresh".</p>';
+  return true;
 }
 document.addEventListener("click", (e) => { const q = e.target.closest("[data-q]")?.dataset.q; if (q) explore(q); });
 document.addEventListener("keydown", (e) => { const q = e.target.closest("svg [data-q]")?.dataset.q; if (q && ["Enter", " "].includes(e.key)) { e.preventDefault(); explore(q); } });
-$("#gform").onsubmit = (e) => { e.preventDefault(); const q = $("#qid").value.trim(); if (q) show(q).catch((err) => showErr($("#stats"), err)); };
-$("#sform").onsubmit = async (e) => { e.preventDefault(); const r = await api(`/api/knowledge/similar?q=${encodeURIComponent($("#q").value)}`);
-  $("#similar").innerHTML = r.results.length ? r.results.map((x) => `<div class="chunk"><span class="small muted">${x.score}</span> <a href="/story?id=${x.story_id}">${esc(x.title)}</a><div class="muted">${esc(x.text)}</div></div>`).join("") : '<p class="small muted">Nothing similar yet.</p>'; };
+$("#gform").onsubmit = (e) => { e.preventDefault(); const q = $("#qid").value.trim(); if (q) explore(q).catch((err) => showErr($("#stats"), err)); };
+$("#graphOverview").onclick=async()=>{try{if(await topNodes())graphLocation("");}catch(e){showErr($("#stats"),e);}};
+window.addEventListener("popstate",()=>{const q=new URLSearchParams(location.search).get("qid");(q?show(q):topNodes()).catch(e=>showErr($("#stats"),e));});
+let similarRequest=0;
+$("#sform").onsubmit = async (e) => { e.preventDefault(); const request=++similarRequest;try{const r = await api(`/api/knowledge/similar?q=${encodeURIComponent($("#q").value)}`);if(request!==similarRequest)return;
+  $("#similar").innerHTML = r.results.length ? r.results.map((x) => `<div class="chunk"><span class="small muted">${x.score}</span> <a href="/story?id=${x.story_id}">${esc(x.title)}</a><div class="muted">${esc(x.text)}</div></div>`).join("") : '<p class="small muted">Nothing similar yet.</p>'; }catch(err){if(request===similarRequest)showErr($("#similar"),err);} };
 $("#build").onclick = async () => { $("#build").disabled = true; try { const r = await api("/api/admin/knowledge/build", { body: {} }); $("#stats").textContent = `Indexed ${r.stories} stories: ${r.chunks_changed} passages updated, ${r.chunks_kept} unchanged, ${r.edges} links.`; $("#build").classList.add("pulse"); const selected = $("#qid").value.trim(); if (selected) await show(selected); else await topNodes(); } catch (err) { showErr($("#stats"), err); } finally { $("#build").disabled = false; } };
 requireUser().then(() => Promise.all([stats(), params.get("qid") ? show(params.get("qid")) : topNodes()])).catch(err => showErr($("#stats"), err));
 </script>

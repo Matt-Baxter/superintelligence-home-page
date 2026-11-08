@@ -96,3 +96,5 @@ Existing extended REQ-023/027 now share `modules/learn/data/glossary.json` acros
 ## Research foundations and alignment caveats
 
 REQ-001/003/005 and extended REQ-023 research pointers: `docs/research/spec-alignment-and-frontiers.json`, the four new Learn/glossary entries, two unverified candidate catalog searches, and `test/research-foundations-unit.js`. The original shared spec hash is recorded; no requirement was edited or approved. `scripts/spec-status.js` preserves the unresolved relevance-policy caveat across regeneration, tested by `test/spec-status-unit.js`. A local acceptance pass is not evidence that live delivery or human relevance checks are complete.
+
+Reliable research navigation (REQ-018, extended REQ-023/025/027): `test/navigation-e2e.js` exercises graph URL history/reload, stale Learn responses, broken-pointer recovery, distinct Feed/Saved selection and public RSS publication boundaries. `test/terms-e2e.js` preserves Σ/σ identity.

@@ -60,6 +60,7 @@ const TOPIC_ORDER = ["capabilities", "automating-ai-research", "recursive-self-i
 const TOPIC_LABEL = { capabilities: "Capabilities", "automating-ai-research": "Automating AI research", "recursive-self-improvement": "Self-improvement", compute: "Compute & scaling", forecasting: "Forecasting", alignment: "Alignment", safety: "Safety & risk", interpretability: "Interpretability", policy: "Governance" };
 const LEVEL = { 1: "Basics", 2: "Intermediate", 3: "Advanced" };
 
+let learnRequest=0;
 async function graph() { if (!G) G = await api("/api/learn/concepts"); return G; }
 function tab(t) { document.querySelectorAll(".ltabs a").forEach((a) => (a.dataset.tab === t ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"))); }
 
@@ -73,8 +74,8 @@ function layout(g) {
 }
 function wrapText(s, n = 20) { const w = s.split(" "), out = [""]; for (const x of w) { if ((out.at(-1) + " " + x).trim().length > n) out.push(x); else out[out.length - 1] = (out.at(-1) + " " + x).trim(); } return out.slice(0, 2); }
 
-async function showMap(focus) {
-  tab("map"); const g = await graph(), L = layout(g);
+async function showMap(focus,request=++learnRequest) {
+  tab("map"); const g = await graph(); if(request!==learnRequest)return;setPageContext("Concept map"); const L = layout(g);
   const curve = (a, b) => { const ax = a.x + a.w / 2, ay = a.y + a.h / 2, bx = b.x + b.w / 2, by = b.y + b.h / 2, mx = (ax + bx) / 2, my = (ay + by) / 2 - Math.min(60, Math.abs(ax - bx) * 0.18 + 14); return `M${ax},${ay} Q${mx},${my} ${bx},${by}`; };
   $("#view").innerHTML = `<section class="panel enter"><div class="row" style="align-items:center"><p class="small muted" style="flex:1 1 300px">${g.concepts.length} concepts and ${g.edges.length} links. Click a concept to read it; its links light up. Dashed lines join ideas that are opposite worries.</p>
     <input type="search" id="find" placeholder="Find a concept" aria-label="Find a concept" style="flex:0 1 240px"></div>
@@ -93,9 +94,10 @@ async function showMap(focus) {
   light(focus || null);
 }
 
-async function showConcept(id) {
+async function showConcept(id,request=++learnRequest) {
   tab("map");
   const r = await api(`/api/learn/concepts/${encodeURIComponent(id)}`), c = r.concept;
+  if(request!==learnRequest)return;setPageContext(c.name);
   const pre = r.path.filter((p) => p.id !== c.id);
   $("#view").innerHTML = `<div class="cols side">
     <section class="panel concept enter">
@@ -116,7 +118,7 @@ async function showConcept(id) {
       ${r.posts.length ? `<section class="panel"><h2>Explainers</h2>${r.posts.map((p) => `<a href="#/post/${p.id}">Published ${esc(fmtDate(p.published_at))}</a>`).join("<br>")}</section>` : ""}
     </div></div>`;
   $("#quiz").onclick = (e) => { const b = e.target.closest("button[data-o]"); if (!b) return; const i = Number(b.dataset.o); $("#quiz").querySelectorAll("button[data-o]").forEach((x) => { x.classList.remove("right", "wrong", "pulse"); x.disabled = true; }); const right = $("#quiz").querySelector(`[data-o="${c.check.answer}"]`); right.classList.add("right", "pulse"); if (i !== c.check.answer) b.classList.add("wrong"); $("#why").hidden = false; $("#why").textContent = (i === c.check.answer ? "Right. " : "Not quite. ") + c.check.why; };
-  const queue = (kind) => async () => { const j = await api("/api/admin/learn/jobs", { body: { kind, concept_id: c.id } }); $("#queued").textContent = `Queued job #${j.job.id}. The worker picks it up; see Studio jobs.`; };
+  const queue = (kind) => async () => { try { const j = await api("/api/admin/learn/jobs", { body: { kind, concept_id: c.id } }); if(request===learnRequest)$("#queued").textContent = `Queued job #${j.job.id}. The worker picks it up; see Studio jobs.`; } catch(e) { if(request===learnRequest)showErr($("#queued"),e); } };
   if ($("#mkPost")) $("#mkPost").onclick = queue("post");
   if ($("#mkVideo")) $("#mkVideo").onclick = queue("video");
   if ($("#mkLean")) $("#mkLean").onclick = queue("lean-proof");
@@ -132,8 +134,8 @@ function box(label, v) {
   const show = (x) => Array.isArray(x) ? x.map((y) => typeof y === "object" ? Object.entries(y).filter(([, z]) => z != null && z !== "" && !(Array.isArray(z) && !z.length)).map(([k, z]) => `${k}: ${Array.isArray(z) ? z.join(", ") : z}`).join(" · ") : y).join("<br>") : typeof x === "object" ? Object.entries(x).filter(([, z]) => z != null).map(([k, z]) => `<i>${esc(k)}</i>: ${typeof z === "object" ? (Array.isArray(z) ? (z.every((q) => typeof q !== "object") ? esc(z.join(", ")) : show(z)) : esc(JSON.stringify(z))) : esc(String(z))}`).join("<br>") : esc(String(x));
   return `<div class="box"><b>${label}</b>${typeof v === "object" ? show(v) : esc(String(v))}</div>`;
 }
-async function showHow() {
-  tab("how");
+async function showHow(request=++learnRequest) {
+  tab("how");setPageContext("How it works");
   $("#view").innerHTML = `<section class="panel enter"><h2>How a story gets here</h2><p class="small muted">Put a story through the real pipeline, step by step, with the real values. Nothing is saved. The samples are test data.</p>
     <div class="row"><label style="flex:2 1 320px">Title<input id="tTitle" value="${esc(SAMPLES[0].title)}"></label><label>Link<input id="tUrl" value="${esc(SAMPLES[0].url)}"></label>
     <label style="flex:0 1 160px">Source kind<select id="tKind">${["papers", "journal", "lab", "news", "policy", "forum", "submitted"].map((k) => `<option>${k}</option>`).join("")}</select></label></div>
@@ -141,17 +143,22 @@ async function showHow() {
     <div class="row" style="align-items:center"><button class="btn primary" id="tRun" type="button">Run it through</button><span class="samples small"><span class="muted">Try a sample:</span>${SAMPLES.map((s, i) => `<button class="linkish" type="button" data-s="${i}">${["Safety paper", "Policy note", "Off-topic"][i]}</button>`).join("")}</span></div></section>
     <ol class="steps stagger" id="steps"></ol>`;
   $("#tKind").value = SAMPLES[0].kind;
+  let teardownRequest=0;
   const run = async () => {
-    const r = await api("/api/learn/teardown", { body: { title: $("#tTitle").value, url: $("#tUrl").value, summary: $("#tSum").value, kind: $("#tKind").value } });
+    const runId=++teardownRequest;
+    try { const r = await api("/api/learn/teardown", { body: { title: $("#tTitle").value, url: $("#tUrl").value, summary: $("#tSum").value, kind: $("#tKind").value } });
+    if(request!==learnRequest||runId!==teardownRequest)return;
     $("#steps").innerHTML = r.steps.map((s, i) => `<li style="--i:${i}" data-step="${s.id}"><div style="display:grid;gap:8px;min-width:0"><div><h3>${esc(s.name)}</h3><p class="small muted">${esc(s.what)}</p></div>
       <div class="io">${box("In", s.input)}${box("Out", s.id === "score" ? { significance: s.output.significance, type: s.output.type, evidence: s.output.evidence } : s.id === "concepts" ? s.output.concepts.map((c) => ({ concept: c.name, matched: c.matched })) : s.id === "fetch" && s.output.item ? s.output.item : s.output)}</div>
       ${s.id === "score" ? `<table class="why"><tbody>${s.output.why.map((w) => `<tr><td>+${w.points}</td><td>${esc(w.factor)}</td><td class="muted">${esc(w.detail || "")}</td></tr>`).join("")}</tbody></table>` : ""}
       ${s.id === "concepts" && s.output.concepts.length ? `<div class="tags">${s.output.concepts.map((c) => `<a class="tag" href="#/c/${c.id}" title="Matched: ${esc(c.matched.join(", "))}">${esc(c.name)}</a>`).join("")}</div>` : ""}</div></li>`).join("");
     $("#steps").classList.remove("stagger"); void $("#steps").offsetWidth; $("#steps").classList.add("stagger");
+    } catch(e) { if(request===learnRequest&&runId===teardownRequest)showErr($("#steps"),e); }
   };
-  $("#tRun").onclick = run;
-  document.querySelectorAll("[data-s]").forEach((b) => (b.onclick = () => { const s = SAMPLES[b.dataset.s]; $("#tTitle").value = s.title; $("#tUrl").value = s.url; $("#tSum").value = s.summary; $("#tKind").value = s.kind; run(); }));
-  run();
+  const safeRun=run;
+  $("#tRun").onclick = safeRun;
+  document.querySelectorAll("[data-s]").forEach((b) => (b.onclick = () => { const s = SAMPLES[b.dataset.s]; $("#tTitle").value = s.title; $("#tUrl").value = s.url; $("#tSum").value = s.summary; $("#tKind").value = s.kind; safeRun(); }));
+  return run();
 }
 
 function md(s) { // tiny Markdown for drafts: headings, lists, code, links, bold
@@ -166,15 +173,16 @@ function md(s) { // tiny Markdown for drafts: headings, lists, code, links, bold
   }
   return out.join("");
 }
-async function showPost(id) {
-  tab("map"); const { post } = await api(`/api/learn/posts/${Number(id)}`);
+async function showPost(id,request=++learnRequest) {
+  tab("map"); const { post } = await api(`/api/learn/posts/${Number(id)}`); if(request!==learnRequest)return;setPageContext("Published explainer");
   $("#view").innerHTML = `<article class="panel md enter">${md(post.output)}</article>`;
 }
 
-async function showJobs() {
+async function showJobs(request=++learnRequest) {
   tab("jobs");
   if (!ME.admin) { $("#view").innerHTML = '<p class="muted">Admins only.</p>'; return; }
   const [{ jobs, kinds }, g] = await Promise.all([api("/api/admin/learn/jobs"), graph()]);
+  if(request!==learnRequest)return;setPageContext("Studio jobs");
   $("#view").innerHTML = `<div class="cols side">
     <section class="panel"><h2>Studio jobs</h2><p class="small muted">Background work runs off the server, so the free tier never pays for it: <code>npm run learn:worker</code> does drafts, videos and Lean checks; agent jobs wait for a coding agent (the teach-a-concept skill). Nothing is posted anywhere automatically: a person publishes.</p>
       <div id="jobs">${jobs.length ? jobs.map((j) => `<div class="jobrow" data-job="${j.id}"><div style="min-width:0"><b>#${j.id} ${esc((kinds.find((k) => k.id === j.kind) || {}).label || j.kind)}</b>${j.concept ? ` · <a href="#/c/${j.concept_id}">${esc(j.concept)}</a>` : ""}${j.note ? `<div class="small muted">${esc(j.note.slice(0, 160))}</div>` : ""}
@@ -191,24 +199,21 @@ async function showJobs() {
       <label>Concept<select id="jConcept"><option value="">None</option>${g.concepts.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select></label>
       <label>Note (paper link, what to build or check)<textarea id="jNote" placeholder="e.g. arXiv link and which result to reproduce"></textarea></label>
       <button class="btn primary" type="button" id="jAdd">Queue</button><p class="small muted" id="jMsg" role="status"></p></section></div>`;
-  $("#jAdd").onclick = async () => { try { const r = await api("/api/admin/learn/jobs", { body: { kind: $("#jKind").value, concept_id: $("#jConcept").value || null, note: $("#jNote").value } }); toast(`Queued job #${r.job.id}`); showJobs(); } catch (e) { $("#jMsg").textContent = e.message; } };
+  $("#jAdd").onclick = async () => { try { const r = await api("/api/admin/learn/jobs", { body: { kind: $("#jKind").value, concept_id: $("#jConcept").value || null, note: $("#jNote").value } }); toast(`Queued job #${r.job.id}`); if(request===learnRequest)await showJobs(); } catch (e) { if(request===learnRequest)$("#jMsg").textContent = e.message; } };
   $("#jobs").onclick = async (e) => {
     const t = e.target, id = t.dataset.pub || t.dataset.requeue || t.dataset.del; if (!id) return;
-    if (t.dataset.pub) await api(`/api/admin/learn/jobs/${id}`, { method: "PUT", body: { status: "published" } });
+    try { if (t.dataset.pub) await api(`/api/admin/learn/jobs/${id}`, { method: "PUT", body: { status: "published" } });
     if (t.dataset.requeue) await api(`/api/admin/learn/jobs/${id}`, { method: "PUT", body: { status: "queued" } });
     if (t.dataset.del) await api(`/api/admin/learn/jobs/${id}`, { method: "DELETE" });
-    showJobs();
+    if(request===learnRequest)await showJobs(); } catch(err) { if(request===learnRequest)toast(err.message); }
   };
 }
 function toast(m) { const t = document.createElement("div"); t.className = "banner enter"; t.textContent = m; t.setAttribute("role", "status"); $("main").insertBefore(t, $("#view")); setTimeout(() => t.remove(), 2400); }
 
 function route() {
-  const h = location.hash.replace(/^#\/?/, "");
-  if (h.startsWith("c/")) return showConcept(h.slice(2));
-  if (h.startsWith("post/")) return showPost(h.slice(5));
-  if (h === "how") return showHow();
-  if (h === "jobs") return showJobs();
-  return showMap();
+  const request=++learnRequest,h=location.hash.replace(/^#\/?/,"");$("#view").setAttribute("aria-busy","true");
+  const task=h.startsWith("c/")?showConcept(h.slice(2),request):h.startsWith("post/")?showPost(h.slice(5),request):h==="how"?showHow(request):h==="jobs"?showJobs(request):showMap(undefined,request);
+  return Promise.resolve(task).catch(e=>{if(request===learnRequest){$("#view").innerHTML=`<section class="panel"><h2>Page unavailable</h2><p role="alert">${esc(e.message)}</p><a href="#/">Return to the concept map</a></section>`;setPageContext("Page unavailable");}}).finally(()=>{if(request===learnRequest)$("#view").setAttribute("aria-busy","false");});
 }
 requireUser().then((u) => { ME = u; $("#jobsTab").hidden = !u.admin; window.onhashchange = route; route(); });
 </script>

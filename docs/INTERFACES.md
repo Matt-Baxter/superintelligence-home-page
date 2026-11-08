@@ -2,13 +2,15 @@
 
 SEIS 606 Project 2 · Superintelligence Homepage · John Affolter and Matthew Baxter
 
-**Version 1.16 · November 7, 2026.**
+**Version 1.17 · November 7, 2026.**
 
 The data model, API, auth and rules of **John's build** (the code in this repo). Under the [constitution](../.specify/memory/constitution.md), each bake-off build may differ in database, framework and internal structure, so this is not the shared contract. What both builds must meet is the [shared spec](../specs/001-superintelligence-homepage/spec.md) and the bake-off rules in [CONTRACT.md](../CONTRACT.md); [SPEC_TRACE.md](SPEC_TRACE.md) shows how this build meets each requirement.
 
 Log every change to a table, route or shape here, so whoever merges the builds (or reads this API) can follow it. Rows up to 0.8 were drafted when we planned a split; their approval boxes are history, not a requirement.
 
 ## Change log
+
+- **1.17, Nov 7, 2026 — reliable research navigation (REQ-018; extended REQ-023/025/027).** Graph selection updates `qid`, supports Back/Forward and an All nodes reset; Learn rejects stale route responses and reports broken pointers. Glossary search preserves Greek mathematical case. Directory active links distinguish Feed and Saved. Public RSS now links to `/m/published-explainer?id=<id>` and `GET /api/learn/published/:id` returns `{post:{id,concept_id,output,published_at}}` only for published post jobs; all other records return 404. Existing `/api/learn/posts/:id` keeps authentication. The public reader escapes output as text and links to glossary, RSS, feed and the signed-in concept workspace. No table, score, shared-spec or publication-policy changes.
 
 - **1.16, Nov 7, 2026 — spec alignment and research foundations (REQ-001/003/005; extended REQ-023).** Four Learn concepts and matching glossary entries add JEPA, recurrent depth, latent reasoning and world models with primary-paper links and evaluation caveats. Concept detail may carry optional `sources` and `glossary` pointers for those entries. Concept registry version is 3; glossary version is 1.1.0. New mention tags/curated relationships use the existing shape and never override feed relevance or scores. The fixed nine topics, scope policy, shared spec and publication gates are unchanged.
 - Two targeted arXiv searches join the candidate catalog, explicitly marked unverified after 15-second timeouts. They are not enabled on any hosted site. The status generator retains a warning about the unresolved REQ-003 one-topic versus strong-term/two-root interpretation. Spec acceptance now also checks glossary/editorial APIs and static pages remain unavailable in spec mode. No new table or API route.
