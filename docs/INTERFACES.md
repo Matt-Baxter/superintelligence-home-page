@@ -2,13 +2,17 @@
 
 SEIS 606 Project 2 · Superintelligence Homepage · John Affolter and Matthew Baxter
 
-**Version 1.15 · November 7, 2026.**
+**Version 1.16 · November 7, 2026.**
 
 The data model, API, auth and rules of **John's build** (the code in this repo). Under the [constitution](../.specify/memory/constitution.md), each bake-off build may differ in database, framework and internal structure, so this is not the shared contract. What both builds must meet is the [shared spec](../specs/001-superintelligence-homepage/spec.md) and the bake-off rules in [CONTRACT.md](../CONTRACT.md); [SPEC_TRACE.md](SPEC_TRACE.md) shows how this build meets each requirement.
 
 Log every change to a table, route or shape here, so whoever merges the builds (or reads this API) can follow it. Rows up to 0.8 were drafted when we planned a split; their approval boxes are history, not a requirement.
 
 ## Change log
+
+- **1.16, Nov 7, 2026 — spec alignment and research foundations (REQ-001/003/005; extended REQ-023).** Four Learn concepts and matching glossary entries add JEPA, recurrent depth, latent reasoning and world models with primary-paper links and evaluation caveats. Concept detail may carry optional `sources` and `glossary` pointers for those entries. Concept registry version is 3; glossary version is 1.1.0. New mention tags/curated relationships use the existing shape and never override feed relevance or scores. The fixed nine topics, scope policy, shared spec and publication gates are unchanged.
+- Two targeted arXiv searches join the candidate catalog, explicitly marked unverified after 15-second timeouts. They are not enabled on any hosted site. The status generator retains a warning about the unresolved REQ-003 one-topic versus strong-term/two-root interpretation. Spec acceptance now also checks glossary/editorial APIs and static pages remain unavailable in spec mode. No new table or API route.
+
 
 - **1.15, Nov 7, 2026 — sourced term pointers and numerical teaching functions (REQ-005/007/018, existing extended REQ-023/027).** `GET /api/learn/glossary` is a public, static registry `{version,about,entries}` when Learn is enabled. Entries carry stable ID, kind, literal aliases, definition, formula, properties, caveat, related concept, related entries, notation pointers and HTTPS sources. `term:<id>` joins the qualified-ID registry; a Learn tagger emits `glossary-mention` matches and curated `related` and `uses-notation` edges. These are textual mentions, never evidence-quality judgments. Canonical schema version 1.1 adds Namespace `term` and TagMethod `glossary-mention`; generated runtime representations are refreshed. No ranking weights or shared specs change.
 - `/m/glossary#<id>` is guest-readable with name/symbol search, kind filtering, source links, related concepts/graph pointers and bounded softmax/sigmoid examples. `GET /api/me.publicNav` adds Glossary when Learn is enabled. Reading pages optionally load one term registry and annotate at most 60 first mentions per page, skipping links, code, navigation, headings and editing controls. Definitions use author-dependent notation caveats; Greek mathematical case remains significant (Σ is not σ). The same literal matcher and numeric functions run in browser and Node. Numeric inputs are 1–32 finite values in [−1000,1000]; no eval or remote model calls.

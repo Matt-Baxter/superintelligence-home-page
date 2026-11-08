@@ -430,6 +430,30 @@
       "url": "https://hn.algolia.com/api/v1/search_by_date?query=superintelligence&tags=story&hitsPerPage=40",
       "home": "https://news.ycombinator.com",
       "note": "Checked 2026-11-07: valid JSON, 702 matching stories."
+    },
+    {
+      "name": "arXiv: JEPA research watch",
+      "kind": "papers",
+      "format": "arxiv",
+      "url": "https://export.arxiv.org/api/query?search_query=all%3AJEPA+OR+all%3A%22joint-embedding+predictive%22&sortBy=submittedDate&sortOrder=descending&max_results=15",
+      "home": "https://arxiv.org",
+      "verification": {
+        "status": "unverified",
+        "checked_at": "2026-11-08",
+        "error": "Timed out after 15s"
+      }
+    },
+    {
+      "name": "arXiv: Recurrent depth research watch",
+      "kind": "papers",
+      "format": "arxiv",
+      "url": "https://export.arxiv.org/api/query?search_query=all%3A%22recurrent+depth%22+OR+all%3A%22depth-recurrent%22+OR+all%3A%22latent+reasoning%22&sortBy=submittedDate&sortOrder=descending&max_results=15",
+      "home": "https://arxiv.org",
+      "verification": {
+        "status": "unverified",
+        "checked_at": "2026-11-08",
+        "error": "Timed out after 15s"
+      }
     }
   ],
   "findFeed": [

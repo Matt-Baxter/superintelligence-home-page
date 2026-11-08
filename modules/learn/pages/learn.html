@@ -46,7 +46,7 @@
 <main>
   <div class="pagehead">
     <div><h1>Learn</h1><p class="muted">The ideas behind superintelligence research in plain words, how they connect, and how this site turns a feed item into a story.</p></div>
-    <a class="btn" href="/api/learn/feed.xml">RSS of explainers</a>
+    <div class="actions"><a class="btn" href="/m/glossary#jepa">JEPA and recurrent-depth readings</a><a class="btn" href="/api/learn/feed.xml">RSS of explainers</a></div>
   </div>
   <nav class="ltabs" aria-label="Learn sections">
     <a href="#/" data-tab="map">Concept map</a><a href="#/how" data-tab="how">How it works</a><a href="#/jobs" data-tab="jobs" id="jobsTab" hidden>Studio jobs</a>
@@ -111,6 +111,7 @@ async function showConcept(id) {
     </section>
     <div style="display:grid;gap:22px;align-content:start">
       <section class="panel"><h2>How it connects</h2>${c.links.length ? `<ul class="small" style="margin:0;padding-left:18px">${c.links.map((l) => `<li>${l.out ? `${esc(c.name)} ${esc(l.label)} <a href="#/c/${l.other}">${esc(l.otherName)}</a>` : `<a href="#/c/${l.other}">${esc(l.otherName)}</a> ${esc(l.label)} ${esc(c.name)}`}</li>`).join("")}</ul>` : '<p class="small muted">No links yet.</p>'}</section>
+      ${c.sources?.length ? `<section class="panel"><h2>Primary readings</h2><p class="small muted">Check the original methods and evaluation conditions; this explanation is not an independent reproduction.</p><ul>${c.sources.map(s=>`<li><a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.title)}</a></li>`).join("")}</ul>${c.glossary ? `<a href="/m/glossary#${encodeURIComponent(c.glossary)}">Definition and notation pointers</a>`:""}</section>` : ""}
       <section class="panel"><h2>In the news</h2><p class="small muted">Recent feed stories that mention this idea.</p>${r.stories.length ? `<ul class="small" style="margin:0;padding-left:18px">${r.stories.map((s) => `<li><a href="/story?id=${s.id}">${esc(s.title)}</a></li>`).join("")}</ul>` : '<p class="small muted">Nothing in the feed mentions it yet.</p>'}</section>
       ${r.posts.length ? `<section class="panel"><h2>Explainers</h2>${r.posts.map((p) => `<a href="#/post/${p.id}">Published ${esc(fmtDate(p.published_at))}</a>`).join("<br>")}</section>` : ""}
     </div></div>`;

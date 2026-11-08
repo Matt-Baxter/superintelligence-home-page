@@ -2,6 +2,8 @@
 
 Measured on 2026-11-07 (America/Chicago) by `scripts/spec-status.js`, from the spec acceptance suite (`test/spec-acceptance.js --browser`, 48 of 48 checks passing) against the **spec version** of the site with labelled synthetic sources. Regenerate with `npm run spec:status`.
 
+> **Unresolved scope interpretation:** REQ-003 describes one-topic relevance; the current filter requires a strong term or two root topics. Weak borderline matches are also excluded by the spec. Passing fixture checks do not resolve this policy interpretation; John and Matt must confirm it. See [LOGIC_AUDIT.md](LOGIC_AUDIT.md).
+
 ## Summary
 
 | Part of the spec | Automated and passing | Needs people | Open or failing |

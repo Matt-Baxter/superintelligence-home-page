@@ -838,7 +838,204 @@
           "kind": "needs"
         }
       ]
+    },
+    {
+      "id": "jepa",
+      "name": "Joint-embedding predictive architecture",
+      "topic": "capabilities",
+      "level": 2,
+      "terms": [
+        "jepa",
+        "i-jepa",
+        "v-jepa",
+        "lejepa",
+        "joint-embedding predictive architecture",
+        "v-jepa2",
+        "v-jepa2.1"
+      ],
+      "plain": "A JEPA predicts a target representation from a representation of context, rather than rebuilding raw pixels. The representation is a learned collection of numbers, not a guarantee of understanding.",
+      "analogy": "Like guessing what kind of scene a covered region contains instead of repainting every hidden pixel.",
+      "deeper": "JEPA objectives compare predicted and target embeddings. Avoiding representation collapse and choosing informative context/targets are important design issues; image representation learning, action-free video prediction and action-conditioned planning are different evaluations.",
+      "check": {
+        "q": "What is the prediction target in the JEPA idea?",
+        "options": [
+          "Always the exact original pixels",
+          "A learned target representation",
+          "A guaranteed human-readable explanation"
+        ],
+        "answer": 1,
+        "why": "The target is represented in embedding space; useful semantics and transfer still need evaluation."
+      },
+      "relations": [
+        {
+          "kind": "needs",
+          "to": "neural-network"
+        },
+        {
+          "kind": "related",
+          "to": "transformer"
+        }
+      ],
+      "sources": [
+        {
+          "title": "I-JEPA: original paper",
+          "url": "https://arxiv.org/abs/2301.08243"
+        },
+        {
+          "title": "V-JEPA 2",
+          "url": "https://arxiv.org/abs/2506.09985"
+        },
+        {
+          "title": "V-JEPA 2.1",
+          "url": "https://arxiv.org/abs/2603.14482"
+        },
+        {
+          "title": "LeJEPA",
+          "url": "https://arxiv.org/abs/2511.08544"
+        }
+      ],
+      "glossary": "jepa"
+    },
+    {
+      "id": "recurrent-depth",
+      "name": "Recurrent depth",
+      "topic": "compute",
+      "level": 2,
+      "terms": [
+        "recurrent depth",
+        "recurrent-depth",
+        "depth-recurrent",
+        "depth recurrent"
+      ],
+      "plain": "A model can apply a shared processing block repeatedly to refine its hidden state. Extra passes spend inference compute without necessarily writing a longer reasoning trace.",
+      "analogy": "Like revising a sketch through several passes with the same tools rather than adding a new tool for every pass.",
+      "deeper": "Weight-tied depth recurrence refines latent states. It is distinct from recurrence across sequence time and from modifying learned weights. Compare accuracy at matched compute, latency and memory, and evaluate stopping criteria and out-of-distribution behavior.",
+      "check": {
+        "q": "Does more recurrent depth mean the model rewrites its learned weights?",
+        "options": [
+          "Yes, every pass trains new weights",
+          "No; the repeated block can keep the same learned weights",
+          "It proves recursive self-improvement"
+        ],
+        "answer": 1,
+        "why": "Additional latent-state updates need not change the learned parameters or demonstrate self-improvement."
+      },
+      "relations": [
+        {
+          "kind": "needs",
+          "to": "neural-network"
+        },
+        {
+          "kind": "related",
+          "to": "transformer"
+        }
+      ],
+      "sources": [
+        {
+          "title": "Recurrent depth: original paper",
+          "url": "https://arxiv.org/abs/2502.05171"
+        },
+        {
+          "title": "Depth-Recurrent Attention Mixture (Dreamer)",
+          "url": "https://arxiv.org/abs/2601.21582"
+        },
+        {
+          "title": "Recurrent-Depth VLA",
+          "url": "https://arxiv.org/abs/2602.07845"
+        }
+      ],
+      "glossary": "recurrent-depth"
+    },
+    {
+      "id": "latent-reasoning",
+      "name": "Latent reasoning",
+      "topic": "capabilities",
+      "level": 2,
+      "terms": [
+        "latent reasoning",
+        "continuous thought",
+        "continuous latent space"
+      ],
+      "plain": "Some systems keep intermediate computation in hidden vectors instead of spelling every step as text. That can change how compute is used, but does not automatically make the result correct or interpretable.",
+      "analogy": "Like arranging puzzle pieces without narrating every move.",
+      "deeper": "Continuous hidden-state computation differs from a visible chain of thought. Claims need task-specific and compute-matched evaluation; an internal trajectory should not be assumed to be a faithful explanation, nor all latent methods assumed to use recurrent depth.",
+      "check": {
+        "q": "What would best test a latent reasoning improvement?",
+        "options": [
+          "A bigger hidden vector alone",
+          "Matched-compute task evaluation with appropriate baselines",
+          "The absence of written reasoning"
+        ],
+        "answer": 1,
+        "why": "Performance claims need controlled comparisons, not an architectural label."
+      },
+      "relations": [
+        {
+          "kind": "needs",
+          "to": "neural-network"
+        },
+        {
+          "kind": "related",
+          "to": "transformer"
+        }
+      ],
+      "sources": [
+        {
+          "title": "Continuous latent reasoning (Coconut)",
+          "url": "https://arxiv.org/abs/2412.06769"
+        },
+        {
+          "title": "Recurrent depth",
+          "url": "https://arxiv.org/abs/2502.05171"
+        }
+      ],
+      "glossary": "latent-reasoning"
+    },
+    {
+      "id": "world-models",
+      "name": "World models",
+      "topic": "capabilities",
+      "level": 2,
+      "terms": [
+        "world model",
+        "world models",
+        "action-conditioned prediction"
+      ],
+      "plain": "A world model predicts selected aspects of an environment and its changes. It may help planning, but can be wrong when actions or situations differ from training.",
+      "analogy": "A weather forecast can help plan a picnic without being the weather itself.",
+      "deeper": "Separate observational representation learning from action-conditioned dynamics and closed-loop control. Check interventions, rollout error, distribution shift, safety constraints and whether planning results transfer beyond the evaluated environments.",
+      "check": {
+        "q": "Does strong video prediction alone establish reliable action planning?",
+        "options": [
+          "Yes, prediction and planning are identical",
+          "No, action-conditioned and closed-loop tests are still needed",
+          "Yes, if the embedding is large"
+        ],
+        "answer": 1,
+        "why": "Observational prediction does not by itself verify the effects of actions or robust control."
+      },
+      "relations": [
+        {
+          "kind": "needs",
+          "to": "neural-network"
+        },
+        {
+          "kind": "related",
+          "to": "transformer"
+        }
+      ],
+      "sources": [
+        {
+          "title": "V-JEPA 2",
+          "url": "https://arxiv.org/abs/2506.09985"
+        },
+        {
+          "title": "V-JEPA 2.1",
+          "url": "https://arxiv.org/abs/2603.14482"
+        }
+      ],
+      "glossary": "world-models"
     }
   ],
-  "version": 2
+  "version": 3
 }

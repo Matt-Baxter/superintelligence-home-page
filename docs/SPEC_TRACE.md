@@ -92,3 +92,7 @@ The existing extended REQ-031/032 authoring and publication paths now include `m
 ## Term, symbol and function pointers
 
 Existing extended REQ-023/027 now share `modules/learn/data/glossary.json` across definition pages, mention tagging and curated graph pointers. `public/js/term-model.js` holds literal matching and stable bounded teaching functions; `test/terms-property-unit.js` checks generated vectors, symbol identity and span invariants. `test/terms-e2e.js` checks guest navigation, source pointers, safe dynamic decoration, editor/code exclusion and phone layouts. `test/story-page-unit.js` verifies public registry access, term graph lookup and fail-closed Learn story admission on both databases. Shared REQ-005/007/018 remain served without changing scoring rules or hosting full source texts.
+
+## Research foundations and alignment caveats
+
+REQ-001/003/005 and extended REQ-023 research pointers: `docs/research/spec-alignment-and-frontiers.json`, the four new Learn/glossary entries, two unverified candidate catalog searches, and `test/research-foundations-unit.js`. The original shared spec hash is recorded; no requirement was edited or approved. `scripts/spec-status.js` preserves the unresolved relevance-policy caveat across regeneration, tested by `test/spec-status-unit.js`. A local acceptance pass is not evidence that live delivery or human relevance checks are complete.

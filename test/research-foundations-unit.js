@@ -1,0 +1,10 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),crypto=require('node:crypto');const L=require('../modules/learn/learn'),G=require('../modules/learn/glossary'),O=require('../lib/ontology.json'),C=require('../lib/source-catalog.json'),S=require('../lib/sources.json'),audit=require('../docs/research/spec-alignment-and-frontiers.json');let n=0;
+assert.equal(O.topics.filter(t=>!t.parent).length,9);assert.ok(S.sources.length>=8&&new Set(S.sources.map(s=>s.kind)).size>=5);n++;
+assert.equal(crypto.createHash('sha256').update(fs.readFileSync(audit.original_spec.path)).digest('hex'),audit.original_spec.sha256);assert.equal(audit.original_spec.requirement_ids.length,20);assert.equal(audit.scope_policy.status,'unresolved_interpretation');n++;
+for(const id of ['jepa','recurrent-depth','latent-reasoning','world-models']){const c=L.get(id);assert.ok(c&&c.check.options.length===3&&c.check.answer>=0&&c.check.answer<3);assert.ok(G.DATA.entries.some(e=>e.id===id&&e.sources.length>=2));}n++;
+assert.ok(L.conceptsIn('Sample V-JEPA2.1 representation study (test data)').some(c=>c.id==='jepa'));
+const matched=L.conceptsIn('Sample JEPA world model with latent reasoning and recurrent depth (test data)');for(const id of ['jepa','world-models','latent-reasoning','recurrent-depth'])assert.ok(matched.some(c=>c.id===id));n++;
+assert.ok(!L.conceptsIn('Sample recurrent sequence network (test data)').some(c=>c.id==='recurrent-depth'));n++;
+assert.equal(audit.papers.length,8);assert.ok(audit.papers.every(p=>p.review_level==='abstract_and_metadata_only'&&p.url==='https://arxiv.org/abs/'+p.id&&L.get(p.concept)));n++;
+for(const f of audit.candidate_feeds){const source=C.sources.find(s=>s.url===f.url);assert.ok(source&&source.verification.status==='unverified'&&source.format==='arxiv');}n++;
+console.log(`Research foundations: ${n} passed, 0 failed; shared scope policy remains unchanged and its interpretation is unresolved.`);

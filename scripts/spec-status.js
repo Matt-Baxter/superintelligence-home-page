@@ -27,9 +27,11 @@ const pct = (c, n) => Math.round((100 * c) / n);
 
 const zone = timeZone;
 const measuredDay = new Intl.DateTimeFormat("en-CA", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(R.ranAt));
+const scopeNote = /at least one superintelligence topic/.test(spec.replace(/\s+/g, " ")) && require("../lib/ontology.json").scope.min_topics > 1
+  ? "> **Unresolved scope interpretation:** REQ-003 describes one-topic relevance; the current filter requires a strong term or two root topics. Weak borderline matches are also excluded by the spec. Passing fixture checks do not resolve this policy interpretation; John and Matt must confirm it. See [LOGIC_AUDIT.md](LOGIC_AUDIT.md)." : "";
 const L = [`# Spec status`, "",
   `Measured on ${measuredDay} (${zone}) by \`scripts/spec-status.js\`, from the spec acceptance suite (\`test/spec-acceptance.js${R.browser ? " --browser" : ""}\`, ${R.results.filter((r) => r.pass).length} of ${R.results.length} checks passing) against the **spec version** of the site with labelled synthetic sources. Regenerate with \`npm run spec:status\`.`, "",
-  "## Summary", "",
+  ...(scopeNote ? [scopeNote, ""] : []), "## Summary", "",
   "| Part of the spec | Automated and passing | Needs people | Open or failing |", "| --- | --- | --- | --- |",
   `| Functional requirements (${reqs.length}) | ${cR.passing} (${pct(cR.passing, reqs.length)}%) | ${cR.people} | ${cR.open + cR.failing} |`,
   `| Acceptance scenarios (${scen.length}) | ${cU.passing} (${pct(cU.passing, scen.length)}%) | ${cU.people} | ${cU.open + cU.failing} |`,

@@ -31,7 +31,7 @@
     "project:sync": "node scripts/project-sync.js",
     "lab:results": "node scripts/lab-results.js",
     "dossier": "node scripts/dossier.js",
-    "test:research": "node --no-warnings test/research-feed.js",
+    "test:research": "node test/research-e2e.js",
     "checkin": "node scripts/checkin.js",
     "quality": "node scripts/quality.js",
     "advise": "node scripts/advise.js",

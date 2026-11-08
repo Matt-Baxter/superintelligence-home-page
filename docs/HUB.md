@@ -137,7 +137,7 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | Bundle builds | json-render bundle builds |
 | No secrets | No secrets in tracked files |
 | No Twitter/X sources | No Twitter/X sources |
-| No Twitter/X in catalog / Content desk / Editorial publishing / Content management / Term properties / Graph logic / Pipeline quality / Story paging / Pipeline quality / paging / UI dates / Analysis rules | No Twitter/X in the source catalog either; analysis rules behave |
+| No Twitter/X in catalog / Content desk / Editorial publishing / Content management / Research foundations / Term properties / Graph logic / Pipeline quality / Story paging / Pipeline quality / paging / UI dates / Analysis rules | No Twitter/X in the source catalog either; analysis rules behave |
 | Modules | kernel boots, boundaries hold, blocks, views and judges are valid |
 | Codebase map | every API call a page makes has a route |
 | Unslop | UI patterns that read as AI-generated (agent-kit/skills/ui-design) |
@@ -188,7 +188,7 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | `npm run project:sync` | Keep the Project tracker in step with the plan and the agents (REQ-030, proposed): one issue each for |
 | `npm run lab:results` | Precompute every Lab example's default run (baseline, variant, verdict). |
 | `npm run dossier` | Write a topic dossier from the command line (no server needed): out/dossier/&lt;topic>/post.md, social.md, dossier.json and storyboard.json. |
-| `npm run test:research` | "The research site feeds the feed", end to end on synthetic data (test data). |
+| `npm run test:research` | Run after the full synthetic fixture suite creates the two test readers. |
 | `npm run checkin` | Agent check-in: what is waiting on whom, and the next action for each, so agents keep work moving and people see what only they can decide. |
 | `npm run quality` | Quality report on REAL reviews (the database the watcher fills), complementing the synthetic benchmark (bench/): does the judging actually tell… |
 | `npm run advise` | The advisor's review: a bigger model reads the label-free quality checks and the cases where the efficient models disagreed, and proposes synthetic… |
