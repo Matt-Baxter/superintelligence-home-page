@@ -10,6 +10,11 @@
 //   roleplay-rsi             "Recursive Self-Improvement for Long-Horizon Role-Playing Dialogue" (arXiv 2611.07469): an
 //                            updater repairs a character's artifacts after bad replies and, one level up, refines its
 //                            own repair rules from how those repairs turned out, within a bound on edits per round.
+//   causal-vs-correlational  "Understanding AI from the Inside: The State of Mechanistic Interpretability for AI Safety"
+//                            (arXiv 2611.08438): an interpretability claim names the feature that drives an output.
+//                            Crediting features by correlation is fooled by a feature that merely co-occurs with the
+//                            real one; crediting them by ablation (a causal check) is not, but is only as good as the
+//                            feature directions it intervenes on.
 function rng(seed = 1) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 const gauss = (r) => { const u = Math.max(1e-12, r()), v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
 const round = (x, d = 3) => Math.round(x * 10 ** d) / 10 ** d;
@@ -116,6 +121,43 @@ function rolePlayRSI({ meta = 1, edit_bound = 3, judge_noise = 0.2, rounds = 30,
     notes: [`${meta ? "The updater refined its own rules" : "The updater's rules were fixed"}; ${switches} rule switches, ${side} repairs hit the wrong artifact.`, `${Math.round(right * F)} of ${F} repair rules point at the artifact that really fixes that failure.`] };
 }
 
+// A small model writes sparse features into a hidden vector (unit directions, 'dims' wide) and its output reads one of
+// them (the real feature). Another feature co-occurs with it with probability rho. The analyst sees features through a
+// dictionary: clean directions for every feature except the real one, whose direction is blurred by probe_noise. Each
+// trial an analyst names the feature that drives the output, by correlation (method 0) or by ablating each dictionary
+// direction and measuring how far the output moves (method 1, one extra forward pass per feature).
+function causalVsCorrelational({ method = 1, rho = 0.9, probe_noise = 1.5, dims = 48, features = 8, trials = 30, samples = 200, seed = 11 } = {}) {
+  const r = rng(seed), F = features, d = dims;
+  const unit = (v) => { const n = Math.hypot(...v) || 1; return v.map((x) => x / n); };
+  const dot = (a, b) => a.reduce((s, x, i) => s + x * b[i], 0);
+  let right = 0, conf = 0; const pts = [];
+  for (let t = 0; t < trials; t++) {
+    const D = Array.from({ length: F }, () => unit(Array.from({ length: d }, () => gauss(r))));
+    const c = Math.floor(r() * F); let k = Math.floor(r() * (F - 1)); if (k >= c) k++;
+    const Dh = D.map((v, i) => unit(v.map((x) => x + (i === c ? probe_noise : 0.1) * gauss(r) / Math.sqrt(d))));
+    const H = [], Y = [];
+    for (let s = 0; s < samples; s++) {
+      const z = Array.from({ length: F }, () => (r() < 0.25 ? 1 : 0));
+      if (r() < rho) z[k] = z[c];
+      const h = new Array(d).fill(0); for (let i = 0; i < F; i++) if (z[i]) for (let j = 0; j < d; j++) h[j] += D[i][j];
+      for (let j = 0; j < d; j++) h[j] += 0.05 * gauss(r);
+      H.push(h); Y.push(dot(h, D[c]));
+    }
+    const score = Dh.map((u) => {
+      if (method === 0) { const a = H.map((h) => dot(h, u)), ma = mean(a), my = mean(Y); let sxy = 0, sxx = 0, syy = 0;
+        for (let s = 0; s < samples; s++) { sxy += (a[s] - ma) * (Y[s] - my); sxx += (a[s] - ma) ** 2; syy += (Y[s] - my) ** 2; }
+        return Math.abs(sxy) / Math.sqrt(sxx * syy || 1); }
+      return mean(H.map((h) => Math.abs(dot(h, u) * dot(u, D[c])))); // output change when h loses its component along u
+    });
+    const pick = score.indexOf(Math.max(...score));
+    if (pick === c) right++; else if (pick === k) conf++;
+    pts.push([t + 1, round(right / (t + 1))]);
+  }
+  return { metrics: { confound_rate: round(conf / trials), accuracy: round(right / trials), passes: method === 0 ? 1 : F + 1 },
+    series: [{ name: "running share of claims that name the real feature", points: pts }],
+    notes: [`${method === 0 ? "Features were credited by how well their read-out correlates with the output" : "Features were credited by how far ablating them moves the output"}; ${conf} of ${trials} claims named the co-occurring feature instead.`, `${F} features in ${d} dimensions${d < F * 2 ? " (packed tightly, so directions overlap)" : ""}.`] };
+}
+
 const runnersList = [
   { id: "self-improve-selection", about: "An agent edits itself and keeps the best version, judged on visible tests or hidden evaluations (with an edit budget)",
     params: {
@@ -148,6 +190,18 @@ const runnersList = [
     },
     metrics: [{ id: "bad_rate", label: "Bad-reply rate (last 5 rounds)", better: "lower" }, { id: "rules_right", label: "Share of repair rules aimed at the right artifact", better: "higher" }, { id: "side_effects", label: "Repairs that hit the wrong artifact", better: "lower" }],
     run: (p) => rolePlayRSI(p) },
+  { id: "causal-vs-correlational", about: "An analyst names the feature behind a model's output, by correlation or by ablation, when another feature co-occurs with the real one",
+    params: {
+      method: { default: 1, min: 0, max: 1, step: 1, about: "0 = credit features by correlation with the output, 1 = by ablating each one (causal check)" },
+      rho: { default: 0.9, min: 0, max: 1, step: 0.05, about: "How often the decoy feature fires together with the real one" },
+      probe_noise: { default: 1.5, min: 0, max: 3, step: 0.1, about: "How blurred the dictionary's direction for the real feature is" },
+      dims: { default: 48, min: 4, max: 64, step: 4, about: "Width of the hidden vector (fewer dims = more overlap between features)" },
+      features: { default: 8, min: 3, max: 16, step: 1, about: "Features the model uses" },
+      trials: { default: 30, min: 5, max: 100, step: 5, about: "Claims made" },
+      seed: { default: 11, min: 1, max: 999, step: 1, about: "Random seed" },
+    },
+    metrics: [{ id: "confound_rate", label: "Claims that name the co-occurring decoy", better: "lower" }, { id: "accuracy", label: "Claims that name the real feature", better: "higher" }, { id: "passes", label: "Forward passes per claim", better: "lower" }],
+    run: (p) => causalVsCorrelational(p) },
 ];
 // Averaging over seeds, so a verdict doesn't hang on one lucky draw (the Lab's examples pass seeds via "seeds").
 function averaged(fn, p, seeds = 10) {
@@ -157,4 +211,4 @@ function averaged(fn, p, seeds = 10) {
 }
 for (const r of runnersList) { const raw = r.run; r.run = (p) => averaged(raw, p, 10); }
 
-module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI };
+module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI, causalVsCorrelational };

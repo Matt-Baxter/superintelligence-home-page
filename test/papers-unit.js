@@ -23,7 +23,13 @@ ok(JSON.stringify(rq(1, 3)) === JSON.stringify(refine), "role-play self-improvem
 ok(fixed.bad_rate > fixed.start_rate, `with fixed repair rules, wrong-artifact repairs cause drift (${fixed.start_rate} -> ${fixed.bad_rate})`);
 ok(refine.bad_rate < fixed.bad_rate - 0.1 && refine.rules_right > fixed.rules_right, `refining its own rules cuts the bad-reply rate (${fixed.bad_rate} -> ${refine.bad_rate})`);
 ok(loose.rules_right < refine.rules_right, `a looser edit bound makes rules thrash rather than settle (${refine.rules_right} at 3, ${loose.rules_right} at 6)`);
-const ex = ["rsi-hidden-evals", "rrsi-edit-budget", "oversight-recompute", "cosine-sae", "roleplay-bounded-rsi"].map((id) => [id, L.runExample(id)]);
+const cv = P.runners.find((r) => r.id === "causal-vs-correlational"), cq = (o) => cv.run({ method: 1, rho: 0.9, probe_noise: 1.5, dims: 48, features: 8, trials: 30, seed: 11, ...o }).metrics;
+const abl = cq({}), cor = cq({ method: 0 }), indep = cq({ method: 0, rho: 0 });
+ok(JSON.stringify(cq({})) === JSON.stringify(abl), "causal-check toy is deterministic");
+ok(cor.confound_rate > abl.confound_rate + 0.1, `crediting by correlation names the co-occurring decoy far more often than ablation (${abl.confound_rate} -> ${cor.confound_rate})`);
+ok(indep.confound_rate < 0.05 && indep.accuracy > 0.9, `without co-occurrence, correlation is right (${indep.accuracy}), so the decoy is what fools it`);
+ok(abl.accuracy < 0.95 && abl.passes > cor.passes, `ablation costs a forward pass per feature and is only as good as the blurred direction it removes (accuracy ${abl.accuracy})`);
+const ex = ["rsi-hidden-evals", "rrsi-edit-budget", "oversight-recompute", "cosine-sae", "roleplay-bounded-rsi", "interp-causal-check"].map((id) => [id, L.runExample(id)]);
 ok(ex.every(([, r]) => r.example.source && /^https:\/\/arxiv\.org\/abs\/\d{4}\.\d{4,5}$/.test(r.example.source.url)), "every paper example links its arXiv source");
 ok(ex.filter(([, r]) => !r.verdict.supported).map(([id]) => id).join() === "rrsi-edit-budget,roleplay-bounded-rsi", "the edit-budget and looser-bound hypotheses are kept as refuted at toy scale");
 console.log(`\npapers unit: ${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);
