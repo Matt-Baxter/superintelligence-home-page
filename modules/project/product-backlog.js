@@ -21,7 +21,7 @@ function validate(backlog) {
   function visit(id){if(visiting.has(id))throw new Error('Cyclic product idea dependencies.');if(done.has(id))return;visiting.add(id);for(const dep of byId.get(id).depends_on||[]){if(!byId.has(dep)||dep===id)throw new Error(`${id}: invalid dependency.`);visit(dep);}visiting.delete(id);done.add(id);}
   for(const id of ids)visit(id);
   const sliceIds=new Set();
-  for(const slice of backlog.delivery_slices||[]){if(!/^SLICE-\d{3}$/.test(slice.id)||sliceIds.has(slice.id)||!slice.name||!slice.scope||!['planned','in_progress','done'].includes(slice.status)||!phases.has(slice.phase)||!Array.isArray(slice.idea_ids)||slice.idea_ids.some(id=>!ids.has(id)))throw new Error('Invalid delivery slice.');sliceIds.add(slice.id);}
+  for(const slice of backlog.delivery_slices||[]){if(!/^SLICE-\d{3}$/.test(slice.id)||sliceIds.has(slice.id)||!slice.name||!slice.scope||!['planned','in_progress','in_review','done'].includes(slice.status)||!phases.has(slice.phase)||!Array.isArray(slice.idea_ids)||slice.idea_ids.some(id=>!ids.has(id)))throw new Error('Invalid delivery slice.');sliceIds.add(slice.id);}
   return backlog;
 }
 function items(backlog){validate(backlog);return [...backlog.ideas.map(idea=>({

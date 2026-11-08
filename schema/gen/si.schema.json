@@ -16,7 +16,11 @@
         "module",
         "source",
         "story",
-        "term"
+        "term",
+        "doc",
+        "event",
+        "outlet",
+        "lab"
       ]
     },
     "TagMethod": {
@@ -45,7 +49,7 @@
       "properties": {
         "qid": {
           "type": "string",
-          "pattern": "^[a-z]+:[A-Za-z0-9-]+$",
+          "pattern": "^(?:term:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|topic:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|org:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|benchmark:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|person:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|concept:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|req:(?:REQ-\\d{3})|module:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|source:(?:[0-9]+)|story:(?:[0-9]+)|doc:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|event:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|outlet:(?:(?:[a-z0-9_-]+(?:\\.[a-z0-9_-]+)*\\.?|\\[[0-9a-f:.]+\\]))|lab:(?:[a-z0-9]+(?:-[a-z0-9]+)*))$",
           "description": "Qualified id, e.g. topic:alignment"
         },
         "label": {
@@ -177,7 +181,7 @@
           "items": {
             "$ref": "#/$defs/Tag"
           },
-          "description": "Topics, organisations, benchmarks, people, concepts"
+          "description": "Topics, organisations, benchmarks, people, concepts and glossary terms"
         },
         "scope": {
           "anyOf": [

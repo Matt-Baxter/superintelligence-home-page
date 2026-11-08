@@ -2,7 +2,7 @@
 import { z } from "zod";
 
 /** Namespaces of qualified ids (lib/ids.js) */
-export const Namespace = z.enum(["topic","org","benchmark","person","concept","req","module","source","story","term"]);
+export const Namespace = z.enum(["topic","org","benchmark","person","concept","req","module","source","story","term","doc","event","outlet","lab"]);
 
 /** How a tag was made */
 export const TagMethod = z.enum(["ontology-term","entity","concept-term","embedding","rule","human","glossary-mention"]);
@@ -12,7 +12,7 @@ export const ScopeRule = z.enum(["strong","topics","none"]);
 
 /** A label on a story or chunk that explains itself: what it is (qid), the words that matched, and how it was made. */
 export const Tag = z.object({
-  "qid": z.string().regex(new RegExp("^[a-z]+:[A-Za-z0-9-]+$")).describe("Qualified id, e.g. topic:alignment"),
+  "qid": z.string().regex(new RegExp("^(?:term:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|topic:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|org:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|benchmark:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|person:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|concept:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|req:(?:REQ-\\d{3})|module:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|source:(?:[0-9]+)|story:(?:[0-9]+)|doc:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|event:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|outlet:(?:(?:[a-z0-9_-]+(?:\\.[a-z0-9_-]+)*\\.?|\\[[0-9a-f:.]+\\]))|lab:(?:[a-z0-9]+(?:-[a-z0-9]+)*))$")).describe("Qualified id, e.g. topic:alignment"),
   "label": z.string().describe("Readable label"),
   "matched": z.array(z.string()).describe("Words in the text that produced the tag"),
   "via": z.string().nullable().optional().describe("Child topic that implied this parent topic"),
@@ -36,7 +36,7 @@ export const Story = z.object({
   "url": z.string(),
   "summary": z.string().nullable().optional(),
   "published_at": z.string().datetime({ offset: true }).nullable().optional(),
-  "tags": z.array(Tag).describe("Topics, organisations, benchmarks, people, concepts"),
+  "tags": z.array(Tag).describe("Topics, organisations, benchmarks, people, concepts and glossary terms"),
   "scope": ScopeDecision.nullable().optional().describe("Why it is (or isn't) in the feed"),
   "significance": z.number().int().nullable().optional().describe("0-100, explained in lib/analysis.js"),
 }).strict();

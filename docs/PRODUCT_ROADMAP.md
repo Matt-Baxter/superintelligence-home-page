@@ -118,3 +118,9 @@ Commercial success is not established by those engineering checks. The pilot mus
 ## Simplicity constraint
 
 Every delivery keeps one primary action visible, uses short plain-language copy, and moves secondary controls into optional details. Preserve source access and visible uncertainty. Refine existing workflows before adding navigation items or settings. The dossier keeps source links visible while grouping secondary section jumps; the roadmap uses a concise current-task link.
+
+## Backend vocabulary delivery (SLICE-002 — in review)
+
+The implementation joins the existing canonical knowledge schema, namespace grammar and controlled vocabulary in [DATA_DICTIONARY.md](DATA_DICTIONARY.md). It aligns existing document/event/outlet/lab identities, preserves stored IDs and protobuf wire numbers, validates tagger outputs, and checks reference drift in preflight. Graph and chunk lookups preserve complete IDs rather than silently truncating long outlet hostnames. Static membership and database-record existence remain separate checks.
+
+This is a partial foundation for IDEA-093/187, not an organizational ontology workspace. Coverage is41 existing knowledge-layer fields,160 controlled entries and213 declared relationships; it does not claim every database/CMS field is standardized. Local checks are complete; public exposure and deployment remain pending the established approval process. No public UI or navigation was added.

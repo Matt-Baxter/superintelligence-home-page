@@ -15,6 +15,10 @@ pub enum Namespace {
     Source,
     Story,
     Term,
+    Doc,
+    Event,
+    Outlet,
+    Lab,
 }
 
 /// How a tag was made
@@ -89,7 +93,7 @@ pub struct Story {
     pub summary: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub published_at: Option<String>,
-    /// Topics, organisations, benchmarks, people, concepts
+    /// Topics, organisations, benchmarks, people, concepts and glossary terms
     pub tags: Vec<Tag>,
     /// Why it is (or isn't) in the feed
     #[serde(default, skip_serializing_if = "Option::is_none")]

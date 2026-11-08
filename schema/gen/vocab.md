@@ -7,7 +7,7 @@ Canonical types for the Superintelligence Homepage's knowledge layer, the one so
 
 Namespaces of qualified ids (lib/ids.js)
 
-`topic` · `org` · `benchmark` · `person` · `concept` · `req` · `module` · `source` · `story` · `term`
+`topic` · `org` · `benchmark` · `person` · `concept` · `req` · `module` · `source` · `story` · `term` · `doc` · `event` · `outlet` · `lab`
 
 ## TagMethod
 
@@ -57,7 +57,7 @@ One story, grouped across sources. JSON-LD type: `schema:NewsArticle`.
 | <a id="url"></a>`url` | `string` |  (`schema:url`) |
 | <a id="summary"></a>`summary` | `string?` |  (`schema:abstract`) |
 | <a id="published_at"></a>`published_at` | `datetime?` |  (`schema:datePublished`) |
-| <a id="tags"></a>`tags` | `Tag[]` | Topics, organisations, benchmarks, people, concepts (`schema:about`) |
+| <a id="tags"></a>`tags` | `Tag[]` | Topics, organisations, benchmarks, people, concepts and glossary terms (`schema:about`) |
 | <a id="scope"></a>`scope` | `ScopeDecision?` | Why it is (or isn't) in the feed |
 | <a id="significance"></a>`significance` | `int?` | 0-100, explained in lib/analysis.js |
 

@@ -4987,6 +4987,36 @@
       ],
       "acceptance_source": "docs/PRODUCT_ROADMAP.md#first-implementation-slice-question-guided-dossier-and-cited-brief",
       "verification": "SQLite and Postgres: full browser 335 passed, 0 failed; dossier workflow 16 passed, 0 failed; product tracker 9 passed, 0 failed; project sync 23 passed, 0 failed. Local synthetic fixtures only."
+    },
+    {
+      "id": "SLICE-002",
+      "name": "Canonical vocabulary and backend adapter contracts",
+      "idea_ids": [
+        "IDEA-093",
+        "IDEA-187"
+      ],
+      "phase": "P0",
+      "status": "in_review",
+      "scope": "Backend/offline identity and vocabulary integrity only: aligned existing namespaces, validated adapter outputs and generated data dictionary. No public UI, customer ontology workspace, new API or publication.",
+      "requirement_refs": [
+        {
+          "spec": "001",
+          "req": "REQ-005",
+          "status": "approved-shared"
+        },
+        {
+          "spec": "001",
+          "req": "REQ-007",
+          "status": "approved-shared"
+        },
+        {
+          "spec": "002",
+          "req": "REQ-027",
+          "status": "proposed-existing"
+        }
+      ],
+      "acceptance_source": "docs/DATA_DICTIONARY.md",
+      "verification": "Local synthetic SQLite/Postgres full browser each335/0 and dictionary graph HTTP each12/0; identity29/0, adapter42/0, vocabulary25/0; zod/Pydantic/Arrow/protobuf/Rust runtime checks pass. Main-site publication awaits the required approvals."
     }
   ]
 }

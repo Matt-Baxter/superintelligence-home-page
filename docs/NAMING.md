@@ -4,7 +4,7 @@ One way to name routes, tables, labels, tags and metadata, so people, agents and
 
 ## Identifiers and tags
 
-- **Bare ids are kebab-case** (`automating-ai-research`, `swe-bench`) **(checked)**. Requirement ids keep the spec's form: `REQ-003`.
+- **Bare registry ids are kebab-case** (`automating-ai-research`, `swe-bench`) **(checked)**. Requirement ids keep the spec's form: `REQ-003`.
 - **A qualified id is `namespace:id`** (`lib/ids.js`). The namespaces:
 
   | Namespace | Example | What |
@@ -14,9 +14,16 @@ One way to name routes, tables, labels, tags and metadata, so people, agents and
   | `benchmark:` | `benchmark:swe-bench` | benchmark |
   | `person:` | `person:<watchlist id>` | watchlist entry (never claims about them) |
   | `concept:` | `concept:attention` | Learn concept |
+  | `term:` | `term:softmax` | sourced term, symbol or function |
+  | `doc:` | `doc:0123456789ab` | reviewed document |
+  | `event:` | `event:0123456789ab` | dated forecast record |
+  | `outlet:` | `outlet:arxiv.org` | publication hostname or pooled source class |
+  | `lab:` | `lab:sparse-toy` | toy experiment reference |
   | `req:` | `req:REQ-003` | shared-spec requirement |
   | `module:` | `module:learn` | plug-in module |
   | `source:`, `story:` | `story:42` | database rows |
+
+- **Namespace grammar is authoritative in `lib/ids.js`.** Outlet identities retain hostnames (including dots and IPv6 brackets); never slugify stored graph identities. `schema/types.json` uses the same qualified-ID grammar and matching namespace set. Syntax validity does not prove vocabulary membership or database-record existence. The generated [data dictionary](DATA_DICTIONARY.md) is checked against the source registries.
 
 - **Every tag carries its `qid`**, the words that `matched` and, for parent topics, `via` (the child topic that implied it). A tag must be able to explain itself (REQ-005/SC-006).
 - **Filter by tag** with qualified ids: `GET /api/stories?tag=topic:alignment,org:openai` (all must match).

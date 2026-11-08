@@ -18,6 +18,10 @@ class Namespace(str, Enum):
     source = "source"
     story = "story"
     term = "term"
+    doc = "doc"
+    event = "event"
+    outlet = "outlet"
+    lab = "lab"
 
 
 class TagMethod(str, Enum):
@@ -42,7 +46,7 @@ class Tag(BaseModel):
     """A label on a story or chunk that explains itself: what it is (qid), the words that matched, and how it was made."""
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
-    qid: str = Field(..., pattern="^[a-z]+:[A-Za-z0-9-]+$", description="Qualified id, e.g. topic:alignment")
+    qid: str = Field(..., pattern="^(?:term:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|topic:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|org:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|benchmark:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|person:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|concept:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|req:(?:REQ-\\d{3})|module:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|source:(?:[0-9]+)|story:(?:[0-9]+)|doc:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|event:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|outlet:(?:(?:[a-z0-9_-]+(?:\\.[a-z0-9_-]+)*\\.?|\\[[0-9a-f:.]+\\]))|lab:(?:[a-z0-9]+(?:-[a-z0-9]+)*))$", description="Qualified id, e.g. topic:alignment")
     label: str = Field(..., description="Readable label")
     matched: list[str] = Field(..., description="Words in the text that produced the tag")
     via: Optional[str] = Field(default=None, description="Child topic that implied this parent topic")
@@ -70,7 +74,7 @@ class Story(BaseModel):
     url: str = Field(...)
     summary: Optional[str] = Field(default=None)
     published_at: Optional[datetime] = Field(default=None)
-    tags: list[Tag] = Field(..., description="Topics, organisations, benchmarks, people, concepts")
+    tags: list[Tag] = Field(..., description="Topics, organisations, benchmarks, people, concepts and glossary terms")
     scope: Optional[ScopeDecision] = Field(default=None, description="Why it is (or isn't) in the feed")
     significance: Optional[int] = Field(default=None, description="0-100, explained in lib/analysis.js")
 

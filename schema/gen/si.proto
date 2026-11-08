@@ -18,6 +18,10 @@ enum Namespace {
   NAMESPACE_SOURCE = 8;
   NAMESPACE_STORY = 9;
   NAMESPACE_TERM = 10;
+  NAMESPACE_DOC = 11;
+  NAMESPACE_EVENT = 12;
+  NAMESPACE_OUTLET = 13;
+  NAMESPACE_LAB = 14;
 }
 
 // How a tag was made
@@ -66,7 +70,7 @@ message Story {
   string url = 3;
   optional string summary = 4;
   optional string published_at = 5;
-  repeated Tag tags = 6; // Topics, organisations, benchmarks, people, concepts
+  repeated Tag tags = 6; // Topics, organisations, benchmarks, people, concepts and glossary terms
   ScopeDecision scope = 7; // Why it is (or isn't) in the feed
   optional int64 significance = 8; // 0-100, explained in lib/analysis.js
 }

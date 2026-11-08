@@ -11,6 +11,12 @@ let zodP; const zod = () => (zodP ||= import(path.join(GEN, "zod.mjs")));
 
 module.exports = function mountKnowledge(app, { db, auth, admin, wrap, str, bad, notFound }) {
   const embedder = K.embedders.create("hash-256");
+  function inputId(value, name, optional = false) {
+    if (optional && (value == null || value === "")) return "";
+    if (typeof value !== "string" || value.trim().length > 320) bad(`${name} must be a qualified id of at most 320 characters`);
+    const node = ids.parse(value); if (!node) bad(`${name} must be a canonical qualified id`);
+    return node.qid;
+  }
 
   const admitted = "COALESCE(s.in_scope, 0) = 1 AND COALESCE(s.hidden, 0) = 0";
   const staleIndex = async () => !!(await db.get(`SELECT c.story_id FROM knowledge_chunks c JOIN stories s ON s.id = c.story_id WHERE NOT (${admitted}) LIMIT 1`));
@@ -57,9 +63,8 @@ module.exports = function mountKnowledge(app, { db, auth, admin, wrap, str, bad,
   // Graph: one node's neighbourhood, or the best-connected nodes when no qid is given.
   app.get("/api/knowledge/graph", auth, wrap(async (req) => {
     const stale = await staleIndex();
-    const q = str(req.query.qid, 80), requestedLimit = Number(req.query.limit), limit = Number.isFinite(requestedLimit) ? Math.max(1, Math.min(60, Math.trunc(requestedLimit || 25))) : 25;
+    const q = inputId(req.query.qid, "qid", true), requestedLimit = Number(req.query.limit), limit = Number.isFinite(requestedLimit) ? Math.max(1, Math.min(60, Math.trunc(requestedLimit || 25))) : 25;
     if (q) {
-      const node = ids.parse(q); if (!node) bad("qid must look like topic:alignment or concept:attention");
       const rows = (await db.all(`SELECT * FROM knowledge_edges WHERE (src = ? OR dst = ?)${stale ? " AND rel <> 'co-occurs'" : ""} ORDER BY weight DESC LIMIT ?`, q, q, limit)).map(edgeRow);
       return { qid: q, stale, edges: rows.map((e) => ({ ...e, other: e.src === q ? e.dst : e.src })) };
     }
@@ -69,7 +74,7 @@ module.exports = function mountKnowledge(app, { db, auth, admin, wrap, str, bad,
   }));
   // Chunks carrying a tag (qualified id).
   app.get("/api/knowledge/chunks", auth, wrap(async (req) => {
-    const q = str(req.query.tag, 80); if (!ids.parse(q)) bad("tag must be a qualified id, e.g. topic:alignment");
+    const q = inputId(req.query.tag, "tag");
     const rows = await db.all(`SELECT c.story_id, c.ord, c.text, c.tags, s.title FROM knowledge_chunks c JOIN stories s ON s.id = c.story_id WHERE ${admitted} AND c.tags LIKE ? ORDER BY c.story_id DESC LIMIT 50`, `%"qid":"${q.replace(/[%_"]/g, "")}"%`);
     return { tag: q, chunks: rows.map((r) => ({ ...r, tags: JSON.parse(r.tags) })).filter((r) => r.tags.some((t) => t.qid === q)) };
   }));

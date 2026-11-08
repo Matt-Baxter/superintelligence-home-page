@@ -1,10 +1,10 @@
 {
   "about": "Canonical types for the Superintelligence Homepage's knowledge layer, the one source for every runtime. `npm run schema` generates JSON Schema, zod (Node/browser), pydantic (Python), protobuf with a gRPC service, Arrow (columnar, pyarrow), a JSON-LD context, OpenRPC (JSON-RPC) and Rust serde structs into schema/gen/. Field types: string, int, float, bool, datetime (ISO 8601 text), json (any), T[] (list), T? (optional), or another type's name. `ld` maps a field or type to a JSON-LD term (schema.org where one fits). Naming follows docs/NAMING.md: types are PascalCase, fields snake_case, ids qualified (namespace:id).",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "package": "si.v1",
   "ld": { "@vocab": "https://github.com/Matt-Baxter/superintelligence-home-page/blob/main/schema/gen/vocab.md#", "schema": "https://schema.org/", "si": "https://github.com/Matt-Baxter/superintelligence-home-page/blob/main/schema/gen/vocab.md#" },
   "enums": {
-    "Namespace": { "about": "Namespaces of qualified ids (lib/ids.js)", "values": ["topic", "org", "benchmark", "person", "concept", "req", "module", "source", "story", "term"] },
+    "Namespace": {"about": "Namespaces of qualified ids (lib/ids.js)", "values": ["topic", "org", "benchmark", "person", "concept", "req", "module", "source", "story", "term", "doc", "event", "outlet", "lab"]},
     "TagMethod": { "about": "How a tag was made", "values": ["ontology-term", "entity", "concept-term", "embedding", "rule", "human", "glossary-mention"] },
     "ScopeRule": { "about": "Which part of the REQ-003 rule decided", "values": ["strong", "topics", "none"] }
   },
@@ -13,7 +13,7 @@
       "about": "A label on a story or chunk that explains itself: what it is (qid), the words that matched, and how it was made.",
       "ld": "schema:DefinedTerm",
       "fields": {
-        "qid": { "type": "string", "about": "Qualified id, e.g. topic:alignment", "pattern": "^[a-z]+:[A-Za-z0-9-]+$", "ld": "@id" },
+        "qid": {"type": "string", "about": "Qualified id, e.g. topic:alignment", "pattern": "^(?:term:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|topic:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|org:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|benchmark:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|person:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|concept:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|req:(?:REQ-\\d{3})|module:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|source:(?:[0-9]+)|story:(?:[0-9]+)|doc:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|event:(?:[a-z0-9]+(?:-[a-z0-9]+)*)|outlet:(?:(?:[a-z0-9_-]+(?:\\.[a-z0-9_-]+)*\\.?|\\[[0-9a-f:.]+\\]))|lab:(?:[a-z0-9]+(?:-[a-z0-9]+)*))$", "ld": "@id"},
         "label": { "type": "string", "about": "Readable label", "ld": "schema:name" },
         "matched": { "type": "string[]", "about": "Words in the text that produced the tag" },
         "via": { "type": "string?", "about": "Child topic that implied this parent topic" },
@@ -40,7 +40,7 @@
         "url": { "type": "string", "ld": "schema:url" },
         "summary": { "type": "string?", "ld": "schema:abstract" },
         "published_at": { "type": "datetime?", "ld": "schema:datePublished" },
-        "tags": { "type": "Tag[]", "about": "Topics, organisations, benchmarks, people, concepts", "ld": "schema:about" },
+        "tags": { "type": "Tag[]", "about": "Topics, organisations, benchmarks, people, concepts and glossary terms", "ld": "schema:about" },
         "scope": { "type": "ScopeDecision?", "about": "Why it is (or isn't) in the feed" },
         "significance": { "type": "int?", "about": "0-100, explained in lib/analysis.js" }
       }
