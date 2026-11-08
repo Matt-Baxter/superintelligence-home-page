@@ -202,17 +202,29 @@ module.exports = function mountAdmin(app, { db, feeds, tagger, auth, admin, wrap
     const q = str(req.query.q, 100).toLowerCase(); if (q) { w.push("(LOWER(s.title) LIKE ? OR LOWER(s.url) LIKE ?)"); a.push(`%${q}%`, `%${q}%`); }
     if (req.query.hidden === "1") w.push("COALESCE(s.hidden, 0) = 1");
     if (req.query.untagged === "1") w.push("s.topics = '[]'");
-    if (req.query.scope === "out") w.push("COALESCE(s.in_scope, 1) = 0");
+    if (req.query.scope === "out") w.push("COALESCE(s.in_scope, 0) = 0");
+    if (req.query.id) { w.push("s.id = ?"); a.push(Number(req.query.id)); }
+    if (req.query.source) { w.push("EXISTS(SELECT 1 FROM story_links sl WHERE sl.story_id=s.id AND sl.source_id=?)"); a.push(Number(req.query.source)); }
+    if (req.query.state === "visible") w.push("COALESCE(s.hidden,0)=0 AND COALESCE(s.in_scope,0)=1");
+    if (req.query.state === "hidden") w.push("COALESCE(s.hidden,0)=1");
+    if (req.query.state === "excluded") w.push("COALESCE(s.in_scope,0)=0");
+    const limit = num(req.query.limit, 1, 500, 100), offset = num(req.query.offset, 0, 1000000, 0);
+    const total = (await db.get(`SELECT COUNT(*) AS n FROM stories s WHERE ${w.join(" AND ")}`, ...a)).n;
     const rows = await db.all(`SELECT s.id, s.title, s.url, s.first_seen, s.published_at, s.hidden, s.hidden_reason, s.topics, s.in_scope, s.analysis,
       (SELECT COUNT(*) FROM votes v WHERE v.story_id = s.id) AS votes, (SELECT COUNT(*) FROM story_links l WHERE l.story_id = s.id) AS links
-      FROM stories s WHERE ${w.join(" AND ")} ORDER BY s.id DESC LIMIT ?`, ...a, num(req.query.limit, 1, 500, 100));
-    return { stories: rows.map(({ analysis, ...r }) => ({ ...r, hidden: bool(r.hidden), in_scope: r.in_scope == null ? null : bool(r.in_scope), scope_reason: JSON.parse(analysis || "{}").scope?.reason || "", topics: JSON.parse(r.topics || "[]").filter((t) => !t.via).map((t) => t.label) })) };
+      FROM stories s WHERE ${w.join(" AND ")} ORDER BY s.id DESC LIMIT ? OFFSET ?`, ...a, limit, offset);
+    return { total, limit, offset, stories: rows.map(({ analysis, ...r }) => ({ ...r, hidden: bool(r.hidden), in_scope: r.in_scope == null ? null : bool(r.in_scope), scope_reason: JSON.parse(analysis || "{}").scope?.reason || "", topics: JSON.parse(r.topics || "[]").filter((t) => !t.via).map((t) => t.label) })) };
   }));
   app.put("/api/admin/stories/:id", ...A, wrap(async (req) => {
     const s = await db.get("SELECT id, title FROM stories WHERE id = ?", Number(req.params.id)); if (!s) notFound("That story");
-    const hidden = !!req.body.hidden;
-    await db.run("UPDATE stories SET hidden = ?, hidden_reason = ? WHERE id = ?", hidden ? 1 : 0, hidden ? str(req.body.reason, 200) : "", s.id);
-    await audit.log(req.user.id, hidden ? "story.hide" : "story.unhide", `story:${s.id}`, `${s.title.slice(0, 120)}${req.body.reason ? ` (${str(req.body.reason, 200)})` : ""}`);
+    if (typeof req.body.hidden !== "boolean") bad("Choose hide or restore explicitly.");
+    const hidden = req.body.hidden, reason = str(req.body.reason, 200);
+    await db.tx(async t => {
+      const compare = typeof req.body.expected_hidden === "boolean";
+      const changed = await t.run(`UPDATE stories SET hidden = ?, hidden_reason = ? WHERE id = ?${compare ? " AND COALESCE(hidden,0)=?" : ""}`, hidden ? 1 : 0, hidden ? reason : "", s.id, ...(compare ? [req.body.expected_hidden ? 1 : 0] : []));
+      if (!changed.changes) bad("This story changed elsewhere. Reload its record before saving.");
+      await t.run("INSERT INTO admin_audit (admin_id,action,target,detail,at) VALUES (?,?,?,?,?)", req.user.id, hidden ? "story.hide" : "story.unhide", `story:${s.id}`, `${s.title.slice(0,120)}${reason ? ` (${reason})` : ""}`, now());
+    });
     return { ok: true };
   }));
   app.get("/api/admin/notes", ...A, wrap(async () => ({
@@ -225,6 +237,15 @@ module.exports = function mountAdmin(app, { db, feeds, tagger, auth, admin, wrap
     await db.run("DELETE FROM notes WHERE id = ?", n.id);
     await audit.log(req.user.id, "note.delete", `note:${n.id}`, `by ${n.username}: ${n.text.slice(0, 120)}`);
     return { ok: true };
+  }));
+
+  // Content desk: bounded, admin-only provenance preview, including records omitted from the feed.
+  app.get("/api/admin/content/:id", ...A, wrap(async req => {
+    const story = await db.get("SELECT id,title,url,summary,published_at,first_seen,hidden,hidden_reason,in_scope,significance,topics,analysis FROM stories WHERE id=?", Number(req.params.id));
+    if (!story) notFound("That story");
+    const sources = await db.all("SELECT l.id,l.source_id,l.url,l.title,l.published_at,l.seen_at,src.name,src.kind,src.status FROM story_links l LEFT JOIN sources src ON src.id=l.source_id WHERE l.story_id=? ORDER BY l.id LIMIT 100", story.id);
+    const history = await db.all("SELECT a.id,a.action,a.detail,a.at,u.username FROM admin_audit a LEFT JOIN users u ON u.id=a.admin_id WHERE a.target=? ORDER BY a.id DESC LIMIT 30", `story:${story.id}`);
+    return { story: {...story, hidden:bool(story.hidden),in_scope:story.in_scope==null?null:bool(story.in_scope),topics:JSON.parse(story.topics||"[]"),analysis:JSON.parse(story.analysis||"{}")}, sources, history };
   }));
 
   /* ---------------------------------------------------------------- ontology */

@@ -137,7 +137,7 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | Bundle builds | json-render bundle builds |
 | No secrets | No secrets in tracked files |
 | No Twitter/X sources | No Twitter/X sources |
-| No Twitter/X in catalog / Graph logic / Pipeline quality / Story paging / Pipeline quality / paging / UI dates / Analysis rules | No Twitter/X in the source catalog either; analysis rules behave |
+| No Twitter/X in catalog / Content desk / Editorial publishing / Content management / Graph logic / Pipeline quality / Story paging / Pipeline quality / paging / UI dates / Analysis rules | No Twitter/X in the source catalog either; analysis rules behave |
 | Modules | kernel boots, boundaries hold, blocks, views and judges are valid |
 | Codebase map | every API call a page makes has a route |
 | Unslop | UI patterns that read as AI-generated (agent-kit/skills/ui-design) |
@@ -194,6 +194,7 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | `npm run advise` | The advisor's review: a bigger model reads the label-free quality checks and the cases where the efficient models disagreed, and proposes synthetic… |
 | `npm run judge:report` | Judge report (REQ-037, spec 003 T006): how many judged items sit near a verdict cutoff, where one marker more or less could change the verdict or… |
 | `npm run hub` | Hub: one generated page (docs/HUB.md) that indexes the repo's skills, specs, checks, measures, tips and open decisions, built from the files… |
+| `npm run test:cms` | Run after the full synthetic fixture suite has created John/admin and Matt/reader. |
 
 ## Measures
 

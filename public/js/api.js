@@ -15,6 +15,7 @@ async function api(path, opts = {}) {
   let data = {}; try { data = await res.json(); } catch (e) {}
   if (res.status === 401 && !opts.allow401) { location.href = "/?next=" + encodeURIComponent(location.pathname + location.search + location.hash); throw new Error("Please sign in."); }
   if (!res.ok) throw new Error(data.error || `Request failed (${res.status}).`);
+  if (path === "/api/me") window.SI_PUBLIC_NAV = data.publicNav || [];
   return data;
 }
 
@@ -30,6 +31,26 @@ async function requireUser() {
   if (need && !(user.features || []).includes(need)) { const m = document.querySelector("main"); if (m) m.innerHTML = `<div class="panel"><h1>Not in this version</h1><p class="muted">This page is an extra beyond the shared spec. It runs when the site uses the extended profile (SITE_PROFILE=extended).</p><p><a href="/">Back to the feed</a></p></div>`; return new Promise(() => {}); } // stop here: the page stays on the notice
   return user;
 }
+function workspaceNavigation(user, current) {
+  const nav = user?.nav || [], available = [...(user ? NAV.filter(([, , f]) => !f || user.features?.includes(f)).map(([href,label])=>({href,label})) : [{href:"/",label:"Feed"},{href:"/welcome",label:"About"}]), ...nav, ...(!user ? (window.SI_PUBLIC_NAV || []) : [])];
+  const known = {"/story":"Story", "/m/content":"Content desk"};
+  if (nav.some(x=>x.href==='/m/review')) available.push({href:'/m/dossier',label:'Topic dossiers'});
+  const group = entry => entry.admin ? "Administration" : /^\/m\/(review|map|learn|lab|dossier|sources|arena|journal)/.test(entry.href) ? "Research" : "Reading";
+  const selected = available.find(x => new URL(x.href, location.origin).pathname === current && (current !== "/" || new URL(x.href, location.origin).search === location.search));
+  const label = known[current] || selected?.label || document.title.split(" · ")[0];
+  const category = selected ? group(selected) : "Reading";
+  const parent = category === "Administration" ? available.find(x=>x.href==="/m/admin") : category === "Research" ? available.find(x=>x.href==="/m/map") : null;
+  document.querySelector(".workspace-context")?.remove();
+  const main = document.querySelector("main") || document.querySelector("#app"); if (!main) return;
+  const context = document.createElement("div"); context.className="workspace-context";
+  context.innerHTML = `<nav aria-label="Breadcrumb"><ol><li><a href="/">Feed</a></li>${parent && parent.href !== current ? `<li><a href="${esc(parent.href)}">${esc(category)}</a></li>` : ""}${current !== "/" ? `<li><span aria-current="page" id="pageContextLabel">${esc(label)}</span></li>` : `<li><span aria-current="page">${new URLSearchParams(location.search).has("saved") ? "Saved" : "Stories"}</span></li>`}</ol></nav><details class="workspace-directory"><summary>Browse pages</summary><div class="directory-body"><label>Find a page<input type="search" autocomplete="off" placeholder="Search page names" class="directory-search"></label><p class="small muted directory-count" role="status"></p>${["Reading","Research","Administration"].map(category=>{const entries=available.filter(x=>group(x)===category);return entries.length ? `<section><h2>${category}</h2><ul>${entries.map(x=>`<li><a href="${esc(x.href)}"${new URL(x.href,location.origin).pathname===current ? ' aria-current="page"' : ""}>${esc(x.label)}</a></li>`).join("")}</ul></section>`:"";}).join("")}</div></details>`;
+  const compact = current === "/" && main.querySelector(".feed-results");
+  if (compact) { context.querySelector("nav").remove(); context.classList.add("feed-context"); compact.append(context); } else main.prepend(context);
+  const directory = context.querySelector("details"), search = context.querySelector("input");
+  search.oninput=()=>{let count=0;for(const li of context.querySelectorAll(".directory-body li")){li.hidden=!li.textContent.toLowerCase().includes(search.value.trim().toLowerCase());if(!li.hidden)count++;}for(const section of context.querySelectorAll("section"))section.hidden=![...section.querySelectorAll("li")].some(x=>!x.hidden);context.querySelector(".directory-count").textContent=`${count} pages match.`;};
+  directory.addEventListener("keydown", e=>{if(e.key==="Escape"){directory.open=false;directory.querySelector("summary").focus();}});
+}
+function setPageContext(label) { const el = document.querySelector("#pageContextLabel"); if (el) el.textContent = label; }
 function topbar(user) {
   const here = location.pathname.replace(/\.html$/, "").replace(/\/index$/, "/") || "/";
   const bar = document.createElement("header"); bar.className = user ? "topbar" : "topbar guest";
@@ -37,7 +58,7 @@ function topbar(user) {
   window.SI_USER = user || null;
   const nav = user?.nav || [], isHere = (h) => { const destination = new URL(h, location.origin); return destination.pathname === "/" ? here === "/" && ((destination.searchParams.get("saved") === "1") === (new URLSearchParams(location.search).get("saved") === "1")) : here.startsWith(destination.pathname); };
   const mod = nav.filter((n) => !n.admin), tools = nav.filter((n) => n.admin);
-  const core = (user ? NAV : [["/", "Feed"], ["/welcome", "About"]]).filter(([, , f]) => !f || (user?.features || []).includes(f));
+  const core = (user ? NAV : [["/", "Feed"], ...(window.SI_PUBLIC_NAV || []).map(n=>[n.href,n.label]), ["/welcome", "About"]]).filter(([, , f]) => !f || (user?.features || []).includes(f));
   const links = [core[0], ...mod.filter((n) => (n.order ?? 50) < 20).map((n) => [n.href, n.label]), ...core.slice(1), ...mod.filter((n) => (n.order ?? 50) >= 20).map((n) => [n.href, n.label])];
   const menu = tools.length ? `<details class="navmenu"${tools.some((n) => isHere(n.href)) ? ' data-here=""' : ""}><summary>Admin</summary><div>${tools.map((n) => `<a href="${n.href}"${isHere(n.href) ? ' aria-current="page"' : ""}>${n.label}</a>`).join("")}</div></details>` : "";
   const toolLinks = tools.length ? `<div class="nav-tools"><p class="small muted">Administration</p>${tools.map((n) => `<a href="${esc(n.href)}"${isHere(n.href) ? ' aria-current="page"' : ""}>${esc(n.label)}</a>`).join("")}</div>` : "";
@@ -49,6 +70,7 @@ function topbar(user) {
   toggle.onclick = () => setOpen(toggle.getAttribute("aria-expanded") !== "true");
   bar.addEventListener("keydown", (e) => { if (e.key === "Escape") { if (bar.hasAttribute("data-nav-open")) { setOpen(false); toggle.focus(); } for (const d of bar.querySelectorAll("details[open]")) { d.open = false; d.querySelector("summary").focus(); } } });
   document.addEventListener("pointerdown", (e) => { if (!bar.contains(e.target)) { setOpen(false); for (const d of bar.querySelectorAll("details[open]")) d.open = false; } });
+  workspaceNavigation(user, here);
   const lo = $("#logout"); if (lo) lo.onclick = async () => { lo.disabled = true; try { await api("/api/logout", { method: "POST" }); location.href = "/?signin=1"; } catch (e) { lo.disabled = false; lo.textContent = "Retry sign out"; lo.title = e.message; } };
 
 }

@@ -78,3 +78,26 @@ The accepted 25-metric benchmark has no regressions. New targeted regressions de
 - Local demo emulations: `24 passed, 0 failed`; guest, reader and admin; 390/1280 pixels; light/dark; `page errors: none`.
 - Benchmark: `25 metrics, 0 uplift, 0 regressions` against the accepted baseline.
 - Phone graph screenshot: [synthetic Knowledge fixture](../shots/optimization-knowledge-phone.png).
+
+## Connected navigation and content management — 2026-11-07
+
+The Content desk previews imported research records, traces source coverage and harvest history, and reversibly moderates visibility with an atomic audit receipt. It never rewrites publisher titles, summaries or relevance outcomes. Shared breadcrumbs and a searchable directory derive from the active role-filtered navigation; story records link directly to their explanation, topic feed, dossier, graph node and admin record. Qualified graph references resolve the exact saved review rather than dropping readers at an unrelated catalog.
+
+Original publishing lives in its own extended-only Editorial CMS. Admins create drafts, preview plain text, save revisions, restore retained versions, publish a specific snapshot and unpublish it. Draft edits/restores leave the live snapshot unchanged. Expected-revision comparisons reject stale concurrent edits; every successful mutation includes the post, retained revision and admin audit receipt in one transaction. Public APIs return only published snapshots. Guest and reader access to authoring APIs is denied.
+
+Limits: 200 original posts, 20 retained revisions per post, 20,000 body characters, plain text only. No automatic publishing, rich HTML, imported full articles, media uploads, collaborative live editing, scheduled releases, hosted deployment or external CMS integration is claimed. Existing proposed requirements remain proposed; no shared specification or approval gate was changed.
+
+### Validation of connected content workflows
+
+- Full browser suite: SQLite and PostgreSQL each `334 passed, 0 failed`; `page errors: none`.
+- Content desk HTTP/database regression: SQLite and PostgreSQL each `14 passed, 0 failed`, including atomic moderation/audit rollback and stale-visibility rejection.
+- Editorial HTTP/database regression: SQLite and PostgreSQL each `18 passed, 0 failed`, including serialized near-cap creation, concurrent revisions, live/draft separation, unpublish, revision retention, audit rollback and spec-profile exclusion.
+- Dedicated CMS browser journey: SQLite and PostgreSQL each `32 passed, 0 failed`; `CMS page errors: none` (`npm run test:cms` after the full fixture suite): private draft, safe preview, explicit publication, preserved live text during edits, restore, unpublish, exact graph-to-review navigation, protected authoring APIs, and 390/1280-pixel light/dark layouts. Every record used is synthetic.
+
+The independent review found and corrected a pending-save data-loss risk: inputs are now disabled with `aria-busy` while a save or restore is pending. A held-request browser regression verifies that newer keystrokes cannot be silently overwritten. The first browser run also caught short-viewport feed geometry; root navigation now shares the existing results row instead of adding another row above the first story.
+
+The module validation command in the extended profile still reports pre-existing review/research cross-module imports and missing README files. The new editorial module uses kernel extension points without those imports. Default-profile preflight and both full browser suites remain the reported checks; this pass does not claim all extended architectural boundaries were repaired.
+
+Final review also identified and corrected a concurrent-create quota race. Postgres now holds a database-local advisory transaction lock while checking and admitting original posts; the near-cap test accepts exactly one of two simultaneous creates at 199 records and verifies the 200-record limit.
+
+Final checks: `Preflight passed.`; demo role emulations `24 passed, 0 failed`; `page errors: none`. The local demo includes one clearly labeled, unpublished sample draft for trying the editor. [Editor screenshot](../shots/cms-editorial-demo.png).

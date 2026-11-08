@@ -36,7 +36,7 @@ function evidenceLink(value) {
   const text = String(value);
   const story = /^story:([1-9][0-9]*)$/.exec(text);
   if (story) return `<a href="/story?id=${story[1]}">Story ${story[1]}</a>`;
-  if (/^doc:[a-f0-9]+$/.test(text)) return `<a href="/m/review">Find ${esc(text)} in the review catalog</a>`;
+  if (/^doc:[a-f0-9]+$/.test(text)) return `<a href="/m/review?qid=${encodeURIComponent(text)}">Open saved review ${esc(text)}</a>`;
   return `<code>${esc(text)}</code>`;
 }
 function edgeEvidence(e) {
@@ -87,6 +87,6 @@ $("#gform").onsubmit = (e) => { e.preventDefault(); const q = $("#qid").value.tr
 $("#sform").onsubmit = async (e) => { e.preventDefault(); const r = await api(`/api/knowledge/similar?q=${encodeURIComponent($("#q").value)}`);
   $("#similar").innerHTML = r.results.length ? r.results.map((x) => `<div class="chunk"><span class="small muted">${x.score}</span> <a href="/story?id=${x.story_id}">${esc(x.title)}</a><div class="muted">${esc(x.text)}</div></div>`).join("") : '<p class="small muted">Nothing similar yet.</p>'; };
 $("#build").onclick = async () => { $("#build").disabled = true; try { const r = await api("/api/admin/knowledge/build", { body: {} }); $("#stats").textContent = `Indexed ${r.stories} stories: ${r.chunks_changed} passages updated, ${r.chunks_kept} unchanged, ${r.edges} links.`; $("#build").classList.add("pulse"); await topNodes(); } catch (err) { showErr($("#stats"), err); } finally { $("#build").disabled = false; } };
-requireUser().then(() => Promise.all([stats(), topNodes()])).catch(err => showErr($("#stats"), err));
+requireUser().then(() => Promise.all([stats(), params.get("qid") ? show(params.get("qid")) : topNodes()])).catch(err => showErr($("#stats"), err));
 </script>
 </body></html>

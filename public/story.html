@@ -4,7 +4,7 @@
 <body>
 <main>
   <p class="small"><a href="/" id="backToResults">← Back to results</a></p>
-  <ol class="feed" id="card"></ol>
+  <ol class="feed" id="card"></ol><section class="panel" id="storyTrace" aria-label="Trace this story"></section>
   <div class="cols side">
     <section class="panel">
       <h2>Significance and evidence</h2>
@@ -42,6 +42,9 @@ async function load() {
   $("#why").innerHTML = (s.topics.length ? s.topics.map((t) => `<p><a class="tag" href="/?topic=${t.id}">${esc(t.label)}</a> ${t.via ? `<span class="small muted">because it's tagged ${esc(s.topics.find((x) => x.id === t.via)?.label || t.via)}</span>` : `<span class="small muted">matched “${t.matched.map(esc).join("”, “")}”</span>`}</p>`).join("") : `<p class="muted">No topic in the ontology matched this story's title or summary.</p>`)
     + (s.orgs.length ? `<p class="small muted">Organizations: ${s.orgs.map((o) => `${esc(o.label)} (“${o.matched.map(esc).join("”, “")}”)`).join(", ")}</p>` : "");
   const an = s.analysis || {};
+  setPageContext(s.title);
+  const nav = window.SI_USER?.nav || [], has = path => nav.some(n=>n.href===path);
+  $("#storyTrace").innerHTML = `<h2>Follow the evidence</h2><p class="small muted">Story #${s.id} · source coverage, topic matches and the stored score all refer to this record.</p><div class="trace-links"><a href="#covered">Source coverage</a><a href="#analysis">Score explanation</a>${has("/m/content") ? `<a href="/m/content?id=${s.id}">Manage this record</a>`:""}</div>${s.topics.filter(t=>!t.via).map(t=>`<div class="trace-links"><span class="small">${esc(t.label)}</span><a href="/?topic=${encodeURIComponent(t.id)}">Topic feed</a>${has("/m/map") ? `<a href="/m/dossier#${encodeURIComponent(t.id)}">Evidence dossier</a>`:""}${has("/m/knowledge") ? `<a href="/m/knowledge?qid=${encodeURIComponent('topic:'+t.id)}">Graph node</a>`:""}</div>`).join("")}`;
   $("#analysis").innerHTML = `<p><span class="sig ${s.significance >= 60 ? "hi" : s.significance >= 35 ? "mid" : ""}" style="font-size:15px;height:26px;min-width:36px">${s.significance}</span> out of 100 ·
       <b>${esc(an.type?.label || "Update")}</b> · ${esc(an.evidence?.label || "")}</p>
     ${an.scope ? `<p class="small"><b>Why it's on a superintelligence feed:</b> ${esc(an.scope.reason)}</p>` : ""}
@@ -49,7 +52,7 @@ async function load() {
     ${(an.benchmarks || []).length ? `<p class="small">Benchmarks: ${an.benchmarks.map((b) => `<a class="tag bench" href="/?benchmark=${esc(b.id)}">${esc(b.label)}${b.score ? ` <b>${esc(fmtScore(b.score))}</b>` : ""}</a>`).join(" ")}
       <span class="muted">Scores are read from the text next to the benchmark's name; check the source before quoting them.</span></p>` : ""}
     ${(an.people || []).length ? `<p class="small">People: ${an.people.map((p) => `<a class="tag" href="/?person=${esc(p.id)}">${esc(p.label)}</a>`).join(" ")}</p>` : ""}
-    <p class="small muted">The score is rule-based and explainable: stronger evidence, more independent sources, reported benchmark results and frontier claims raise it. <a href="/m/capabilities">Capability tracker</a></p>`;
+    <p class="small muted">The score is rule-based and explainable: stronger evidence, more linked sources, reported benchmark results and frontier claims raise it. <a href="/m/capabilities">Capability tracker</a></p>`;
   $("#analysis").insertAdjacentHTML("beforeend", evidenceBreakdown(s));
   $("#covered").innerHTML = s.sources.map((x) => `<tr><td>${esc(x.name)}</td><td>${esc(KIND[x.kind] || x.kind)}</td><td><a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.title)}</a>${x.rigor && x.rigor.verdict ? `<br><span class="small muted">Research write-up: ${esc(x.rigor.verdict)}, credibility ${esc(x.rigor.credibility || "?")}/100, source grade ${esc(x.rigor.grade || "?")}</span>` : ""}</td></tr>`).join("");
   $("#notes").innerHTML = d.notes.length ? d.notes.map((n) => `<div class="note"><div class="who">${esc(n.name)} · ${ago(n.created_at)} · ${n.private ? "only you" : "shared"}${n.mine ? ` · <button class="linkish" data-del="${n.id}" type="button">Delete</button>` : ""}</div>${esc(n.text)}</div>`).join("") : `<p class="muted small">No notes yet.</p>`;

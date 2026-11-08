@@ -143,7 +143,7 @@ async function metrics() {
 }
 async function route() {
   const m = location.hash.match(/^#\/doc\/(\d+)/); if (!m) return;
-  const d = await api(`/api/review/docs/${m[1]}`); savedId = d.doc.id; show(d.review, d.doc); st(`Saved review #${d.doc.id}.`);
+  const d = await api(`/api/review/docs/${m[1]}`); savedId = d.doc.id; setPageContext(d.doc.title); show(d.review, d.doc); st(`Saved review #${d.doc.id}.`);
 }
 async function run(save) {
   try {
@@ -161,7 +161,10 @@ requireUser().then(async (u) => {
   const { samples } = await api("/api/review/samples");
   $("#samples").innerHTML = samples.map((s) => `<button class="chip" type="button" data-sample="${esc(s.id)}">${esc(s.label)}</button>`).join(" ");
   $$("[data-sample]").forEach((b) => (b.onclick = () => { const s = samples.find((x) => x.id === b.dataset.sample); $("#title").value = s.title; $("#authors").value = s.authors; $("#text").value = s.text; document.querySelector(`[name=kind][value=${s.kind}]`).checked = true; st(`Loaded "${s.label}".`); }));
-  window.onhashchange = route; route(); catalog(); metrics();
+  window.onhashchange = route;
+  const linkedQid = params.get("qid");
+  if (linkedQid) { const {docs} = await api(`/api/review/docs?qid=${encodeURIComponent(linkedQid)}`); if (docs.length) history.replaceState(null,"",`#/doc/${docs[0].id}`); else st("This saved review is no longer available."); }
+  route(); catalog(); metrics();
 });
 </script>
 </body></html>

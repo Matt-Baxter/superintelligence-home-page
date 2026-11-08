@@ -42,7 +42,8 @@ module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, no
   app.get("/api/review/docs", auth, wrap(async (req) => {
     const topic = str(req.query.topic, 60), verdict = str(req.query.verdict, 40);
     let rows;
-    if (topic) rows = await db.all("SELECT d.* FROM review_docs d JOIN knowledge_edges e ON e.src = d.qid AND e.rel = 'about' AND e.dst = ? ORDER BY d.id DESC LIMIT 100", `topic:${topic}`);
+    if (req.query.qid) rows = await db.all("SELECT * FROM review_docs WHERE qid=? LIMIT 1", str(req.query.qid, 100));
+    else if (topic) rows = await db.all("SELECT d.* FROM review_docs d JOIN knowledge_edges e ON e.src = d.qid AND e.rel = 'about' AND e.dst = ? ORDER BY d.id DESC LIMIT 100", `topic:${topic}`);
     else rows = await db.all("SELECT * FROM review_docs ORDER BY id DESC LIMIT 100");
     return { docs: rows.filter((r) => !verdict || r.verdict === verdict).map(brief) };
   }));

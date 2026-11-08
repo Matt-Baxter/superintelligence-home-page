@@ -36,7 +36,8 @@
     "quality": "node scripts/quality.js",
     "advise": "node scripts/advise.js",
     "judge:report": "node scripts/judge-report.js",
-    "hub": "node scripts/hub.js"
+    "hub": "node scripts/hub.js",
+    "test:cms": "node test/cms-e2e.js"
   },
   "keywords": [],
   "author": "",

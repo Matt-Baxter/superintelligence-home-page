@@ -5,6 +5,7 @@ module.exports = {
   description: "Admin layer: sources and harvesting, users, moderation, ontology, audit log and free-tier usage.",
   setup(ctx) {
     ctx.point("http.routes").add((app, deps) => require("./routes")(app, deps));
+    ctx.point("ui.nav").add({ href: "/m/content", label: "Content desk", admin: true, order: 89 });
     ctx.point("ui.nav").add({ href: "/m/admin", label: "Admin", admin: true, order: 90 });
   },
 };

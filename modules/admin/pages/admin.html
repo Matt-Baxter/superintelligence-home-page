@@ -24,7 +24,7 @@
     <div class="actions"><button class="btn" id="harvestDue" type="button">Harvest due sources</button><button class="btn primary" id="harvestAll" type="button">Harvest all now</button></div>
   </div>
   <p class="small muted" id="harvestMsg" role="status"></p>
-  <div class="tabs" role="tablist" id="tabs">
+  <p class="small"><a href="/m/content">Content desk: inspect records and their source trail →</a></p><div class="tabs" role="tablist" id="tabs">
     <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
     <button role="tab" data-tab="sources">Sources</button>
     <button role="tab" data-tab="add">Add sources</button>
@@ -165,7 +165,8 @@ async function loadMeta() { if (!meta.kinds.length) { const d = await api("/api/
 async function loadSources() {
   const d = await api("/api/admin/sources"); meta = { kinds: d.kinds, formats: d.formats }; sources = d.sources;
   const f = $("#srcFilter").value;
-  const list = sources.filter((s) => f === "all" || (f === "failing" ? s.status === "active" && s.failures > 0 : s.status === f));
+  if (params.get("source")) $("#harvestMsg").innerHTML = `Source #${esc(params.get("source"))} selected. <a href="/m/admin#sources">Show all sources</a>`;
+  const list = sources.filter((s) => (!params.get("source") || s.id === Number(params.get("source"))) && (f === "all" || (f === "failing" ? s.status === "active" && s.failures > 0 : s.status === f)));
   $("#srcRows").innerHTML = list.map((s) => `<tr data-id="${s.id}">
     <td class="wrap"><a href="${esc(s.home || s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.name)}</a>${s.from_catalog ? ' <span class="small muted">catalog</span>' : ""}<div class="small muted">${esc(s.url)}</div>${s.note ? `<div class="small">“${esc(s.note)}”${s.suggested_by_name ? ` · ${esc(s.suggested_by_name)}` : ""}</div>` : ""}</td>
     <td><select data-f="kind" aria-label="Kind">${opt(meta.kinds.map((k) => [k, KIND[k] || k]), s.kind)}</select><br><select data-f="format" aria-label="Format">${opt(meta.formats.map((x) => [x.id, x.label]), s.format)}</select></td>
@@ -250,7 +251,7 @@ $("#opmlForm").onsubmit = async (e) => {
 
 /* runs */
 async function loadRuns() {
-  const r = await api(`/api/admin/runs?limit=200${$("#runStatus").value ? `&status=${$("#runStatus").value}` : ""}`);
+  const r = await api(`/api/admin/runs?limit=200${params.get("source") ? `&source=${encodeURIComponent(params.get("source"))}` : ""}${$("#runStatus").value ? `&status=${$("#runStatus").value}` : ""}`);
   $("#runRows").innerHTML = r.runs.map((x) => `<tr><td>${ago(x.started_at)}</td><td>${esc(x.source || "(deleted)")}</td><td>${esc(x.trigger)}</td>
     <td class="wrap">${x.status === "error" ? `<span class="status-dot err"></span>${esc(x.error)}` : x.status === "not_modified" ? `<span class="status-dot"></span>unchanged` : `<span class="status-dot ok"></span>ok`}</td>
     <td>${x.items}</td><td>${x.stored}</td><td>${(x.duration_ms / 1000).toFixed(1)} s</td></tr>`).join("") || `<tr><td colspan="7" class="muted">No runs yet.</td></tr>`;
