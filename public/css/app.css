@@ -350,3 +350,6 @@ code, .mono, pre { font-family: var(--mono); }
   .public-main { gap: 24px; } .public-sections { gap: 4px 16px; } .public-guide div { grid-template-columns: 1fr; gap: 6px; }
 }
 .public-reading { border-bottom: 1px solid var(--line); padding-bottom: 12px; line-height: 1.8; }
+
+.demo-workspace { border: 1px dashed var(--line-strong); border-radius: var(--radius); padding: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.demo-workspace .actions { margin: 0; } .demo-workspace .btn { min-height: 44px; }

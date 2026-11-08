@@ -27,6 +27,7 @@
 
 <section class="auth panel" id="startupError" role="alert" hidden><h1>The homepage could not load</h1><p id="startupMessage" class="muted"></p><button class="btn" id="retryStartup" type="button">Try again</button></section>
 <main id="feedView" hidden>
+  <section class="demo-workspace" id="demoWorkspace" hidden aria-label="Local role testing"></section>
   <p class="public-reading small" id="guestNotice" hidden>Read freely. <a href="/?signin=1">Sign in</a> or <a href="/?mode=signup">create an account</a> to vote and save stories. <a href="/welcome">How it works</a></p>
   <div class="pagehead feed-head">
     <div><h1 id="feedTitle">The path to superintelligence</h1><p class="muted" id="feedSub">AI progress, grouped by story. Every topic and score is explained.</p></div>
@@ -87,8 +88,8 @@ $("#authForm").onsubmit = async (e) => {
 function showAccess(demo) {
   $("#auth").hidden = false; setAuthMode(params.get("mode") === "signup" ? "signup" : "login");
   const next = localReturnPath(params.get("next")); if (next !== "/") { $("#returnHint").hidden = false; $("#returnHint").textContent = `After signing in, you’ll return to ${next.split(/[?#]/)[0]}.`; }
-  if (demo?.accounts?.length) { $("#demoAccess").hidden = false; for (const account of demo.accounts) { const button = document.createElement("button"); button.type = "button"; button.className = "btn"; button.textContent = `Use ${account.role} account`; button.onclick = () => { setAuthMode("login"); $("#username").value = account.username; $("#password").value = account.password; $("#authStatus").textContent = `${account.role} demo credentials filled. Select Sign in to continue.`; $("#authBtn").focus(); }; $("#demoAccounts").append(button); } }
-  $("#username").focus();
+  if (demo?.accounts?.length) { $("#demoAccess").hidden = false; for (const account of demo.accounts) { const button = document.createElement("button"); button.type = "button"; button.className = "btn"; button.textContent = `Use ${account.role} account`; button.onclick = () => { setAuthMode("login"); $("#username").value = account.username; $("#password").value = account.password; $("#authStatus").textContent = `${account.role} demo credentials filled. Select Sign in to continue.`; $("#authBtn").focus(); }; $("#demoAccounts").append(button); if (params.get("demoRole") === account.role) button.click(); } }
+  (demo?.accounts?.some((account) => account.role === params.get("demoRole")) ? $("#authBtn") : $("#username")).focus();
 }
 function state() { return { topic: params.get("topic") || "", org: params.get("org") || "", benchmark: params.get("benchmark") || "", person: params.get("person") || "", kind: $("#kind").value, days: $("#days").value, q: $("#q").value.trim(), saved: $("#savedOnly").checked ? "1" : "" }; }
 function activeFilters(s = state()) { return !!(s.topic || s.org || s.benchmark || s.person || s.kind || s.q || s.saved || s.days !== "7" || sort !== "new"); }
@@ -164,6 +165,10 @@ $("#retryStartup").onclick = () => location.reload();
   if (!user && (params.has("signin") || params.has("next") || params.has("mode"))) { showAccess(demo); return; }
   if (!user) { $("#guestNotice").hidden = false; $("#submitBtn").hidden = true; $("#savedOnly").closest("label").hidden = true; }
   topbar(user); $("#feedView").hidden = false;
+  if (demo?.accounts?.length) {
+    $("#demoWorkspace").hidden = false;
+    $("#demoWorkspace").innerHTML = `<div><strong>Local test workspace</strong><p class="small muted">Synthetic data · ${user ? `${user.admin ? "Admin" : "Reader"} session. Sign out to test another role.` : "Guest view. Choose an account to test signed-in features."}</p></div>${!user ? '<div class="actions"><a class="btn" href="/?signin=1&demoRole=reader">Test reader</a><a class="btn" href="/?signin=1&demoRole=admin">Test admin</a></div>' : ""}`;
+  }
   ONT = await api("/api/ontology");
   Object.entries(KIND).forEach(([k, v]) => $("#kind").insertAdjacentHTML("beforeend", `<option value="${k}">${v}</option>`));
   setControlsFromAddress(); load();

@@ -17,3 +17,11 @@ Public-reading regression coverage verifies guest browsing, story explanations, 
 Public-reading follow-up validation: browser `285 passed, 0 failed`, `page errors: none`; demo access checks passed again. `shots/public-feed-{light,dark}-{390,1280}.png` shows the actual guest feed using synthetic local fixtures. Hidden-story admission and anonymous note/list redaction are checked through HTTP.
 
 Public-reading preflight: `Preflight passed.` (12 API smoke checks; spec acceptance `38 passed, 0 failed`).
+
+## Role and screen emulations
+
+The demo's public feed now has **Test reader** and **Test admin** links. Each opens sign-in with the corresponding local test credentials filled; select Sign in to start that role. The feed labels the current local role. Sign out to return to account entry, or browse `/` without a session for the guest experience. Tabs in the same browser profile share the account session.
+
+After `npm ci`, run `npx playwright install chromium` once to install the test browser. Run `npm run test:demo` against `npm run demo` to emulate guest, reader and admin experiences at 390px and 1280px in light and dark themes. It tests credential filling, actual server permissions, logout, saved-view protection, page errors and horizontal overflow; screenshots are saved in `out/demo-*.png`. The test uses Playwright (the same browser-test dependency as `npm test`). These are browser viewport emulations, not real-device or production integration tests.
+
+Role-emulation validation: `24 passed, 0 failed`; `page errors: none`. The existing normal test runner still has no seeded users, preserving its first-account-admin checks.
