@@ -34,16 +34,16 @@
 </style></head>
 <body>
 <main>
-  <div class="pagehead"><div><h1>Evidence dossier</h1><p class="muted">Everything we have on one topic, weighed and traced: reviewed papers, our own toy experiments, feed coverage and who is being talked about. It becomes a blog draft, short posts and an explainer video, each sentence citing its source. A person publishes; nothing is posted for you.</p></div></div>
+  <div class="pagehead"><div><h1>Evidence dossier</h1><p class="muted">Review a topic’s evidence, follow its sources, and prepare a cited brief.</p></div></div>
   <section class="panel">
-    <div class="pick"><label>Topic<select id="topic"></select></label><a class="btn" id="watch" hidden>Watch the explainer</a><button class="btn" type="button" id="queue" hidden>Queue blog and video</button></div>
+    <div class="pick"><label>Topic<select id="topic"></select></label><a class="btn" id="watch" hidden>Watch the explainer</a><details id="publishingTools" hidden><summary>Publishing tools</summary><button class="btn" type="button" id="queue" hidden>Queue blog and video</button></details></div>
     <p id="status" class="small muted" role="status" aria-live="polite"></p>
   </section>
   <section class="panel" id="question-workspace" aria-labelledby="question-title">
-    <h2 id="question-title">Frame a research question</h2>
-    <p class="small muted" id="question-help">Use this topic's existing evidence to prepare a brief. Your question stays in this browser session; it does not create a monitor, send alerts or run a new analysis.</p>
+    <h2 id="question-title">Prepare a brief</h2>
+    <p class="small muted" id="question-help">Your question stays in this browser session and does not create a monitor. The brief organizes existing evidence.</p>
     <label>Question<textarea id="researchQuestion" maxlength="600" rows="2" placeholder="What evidence would change our view of this topic?" aria-describedby="question-help"></textarea></label>
-    <div class="actions"><button class="btn" type="button" id="copyBrief" disabled>Copy evidence brief</button><button class="btn" type="button" id="clearQuestion">Clear question</button></div>
+    <div class="actions"><button class="btn primary" type="button" id="copyBrief" disabled>Copy brief</button><button class="linkish" type="button" id="clearQuestion">Clear</button></div>
     <p class="small muted" id="briefStatus" role="status"></p>
     <label id="manualBrief" hidden>Copy the complete evidence brief<textarea id="manualBriefText" readonly rows="10" aria-describedby="briefStatus"></textarea></label>
     <nav class="trace-links" aria-label="Evidence workflow" id="evidenceWorkflow"></nav>
@@ -93,7 +93,7 @@ async function load() {
     const r = await api(`/api/review/dossier/${encodeURIComponent(topic)}`), d = r.dossier, c = d.counts;
     if (request !== dossierRequest) return;
     currentDossier = d; $("#queue").disabled = false; $("#watch").href = `/m/explainer?d=${encodeURIComponent(topic)}`; $("#watch").hidden = false; $("#copyBrief").disabled = false; setPageContext(d.label + " evidence dossier");
-    $("#evidenceWorkflow").innerHTML = `<a href="/?topic=${encodeURIComponent(topic)}">Topic feed</a><a href="/m/knowledge?qid=${encodeURIComponent("topic:" + topic)}">Graph relationships</a><a href="?section=evidence-rating#${encodeURIComponent(topic)}" data-section="evidence-rating">Evidence rating</a><a href="?section=evidence-gaps#${encodeURIComponent(topic)}" data-section="evidence-gaps">Evidence gaps</a><a href="?section=evidence-references#${encodeURIComponent(topic)}" data-section="evidence-references">Source records</a><a href="?section=evidence-drafts#${encodeURIComponent(topic)}" data-section="evidence-drafts">Draft outputs</a>`;
+    $("#evidenceWorkflow").innerHTML = `<a href="/?topic=${encodeURIComponent(topic)}">Topic feed</a><a href="/m/knowledge?qid=${encodeURIComponent("topic:" + topic)}">Graph relationships</a><a href="?section=evidence-references#${encodeURIComponent(topic)}" data-section="evidence-references">Source records</a><details><summary>More sections</summary><div class="trace-links"><a href="?section=evidence-rating#${encodeURIComponent(topic)}" data-section="evidence-rating">Evidence rating</a><a href="?section=evidence-gaps#${encodeURIComponent(topic)}" data-section="evidence-gaps">Evidence gaps</a><a href="?section=evidence-drafts#${encodeURIComponent(topic)}" data-section="evidence-drafts">Draft outputs</a></div></details>`;
     $("#out").innerHTML = `
     <section id="evidence-rating"><div class="rating"><span class="small muted">The evidence on ${esc(d.label)}</span><div class="lv"><b>${esc(d.strength)}</b></div><p class="small" style="margin:0">${esc(d.why)}.</p>
       <div class="scale" aria-label="Rating scale">${LEVELS.map((l) => `<span class="${l === d.strength ? "on" : ""}">${l}</span>`).join("")}</div>
@@ -135,7 +135,7 @@ requireUser().then(async (u) => {
   $("#topic").innerHTML = '<option value="">Choose a topic…</option>' + m.topics.map((t) => `<option value="${esc(t.id)}">${esc(t.label)} (${t.docs} docs)</option>${t.children.map((c) => `<option value="${esc(c.id)}">  · ${esc(c.label)}</option>`).join("")}`).join("");
   $("#topic").value = m.topics[0]?.id || "";
   $("#topic").onchange = () => { location.hash = $("#topic").value; };
-  if (u.admin) { $("#queue").hidden = false; $("#queue").onclick = async () => { if(!currentDossier)return;const request=dossierRequest,topic=currentDossier.topic;$("#queue").disabled=true;try { const j = await api("/api/admin/learn/jobs", { body: { kind: "dossier", note: `topic:${topic}` } }); if(request===dossierRequest)$("#status").textContent = `Queued job #${j.id || (j.job && j.job.id) || ""}: the worker writes the blog draft and posts and records the video (npm run learn:worker).`; } catch (e) { if(request===dossierRequest)showErr($("#status"), e); } finally { if(request===dossierRequest)$("#queue").disabled=!currentDossier; } }; }
+  if (u.admin) { $("#publishingTools").hidden = false; $("#queue").hidden = false; $("#queue").onclick = async () => { if(!currentDossier)return;const request=dossierRequest,topic=currentDossier.topic;$("#queue").disabled=true;try { const j = await api("/api/admin/learn/jobs", { body: { kind: "dossier", note: `topic:${topic}` } }); if(request===dossierRequest)$("#status").textContent = `Queued job #${j.id || (j.job && j.job.id) || ""}: the worker writes the blog draft and posts and records the video (npm run learn:worker).`; } catch (e) { if(request===dossierRequest)showErr($("#status"), e); } finally { if(request===dossierRequest)$("#queue").disabled=!currentDossier; } }; }
   $("#researchQuestion").oninput = rememberQuestion;
   $("#clearQuestion").onclick = () => { $("#researchQuestion").value = ""; rememberQuestion(); $("#briefStatus").textContent = "Question cleared for this topic."; };
   $("#copyBrief").onclick = async () => {

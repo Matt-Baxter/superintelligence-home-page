@@ -155,3 +155,9 @@ The first dossier slice adds session-local questions, an evidence/gaps/reference
 Synthetic SQLite and Postgres validation each: full browser `335 passed, 0 failed`, `page errors: none`; project sync `23 passed, 0 failed`; Product ideas browser `9 passed, 0 failed`; dossier workflow `16 passed, 0 failed`. The initial preflight detected a stale generated Hub; `npm run hub` refreshed it. The actual local preview tracker was then synced: `300 items, 300 created, 0 updated, 0 unchanged`; the repeat run was `300 items, 0 created, 0 updated, 300 unchanged`. Browser inspection confirmed the scoped Product ideas view contains200 proposals plus one Done delivery task. Existing local draft content was retained. No hosted deployment, customer-demand validation or shared-spec amendment is claimed.
 
 Final verification: `Preflight passed.` The compact Product ideas layout was rechecked on both engines: `Product backlog browser: 9 passed, 0 failed.`
+
+## Simplicity pass — 2026-11-07
+
+Dossier and roadmap copy is shorter. The dossier has one primary Copy brief action, direct source access, optional secondary section links and collapsed admin publishing tools. The roadmap retains full task names as accessible labels while showing concise links. The roadmap's simplicity constraint applies to future deliveries: refine existing workflows, keep primary actions visible and reveal secondary controls on demand.
+
+Validation: `Preflight passed.` Existing synthetic local-demo checks report `Dossier workflow browser: 17 passed, 0 failed.` and `Product backlog browser: 9 passed, 0 failed.` The dossier adds a keyboard disclosure check; source records remain directly reachable. No routes, tables, scoring or permission changes.

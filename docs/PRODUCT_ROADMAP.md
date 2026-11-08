@@ -114,3 +114,7 @@ Estimates indicate relative implementation effort after inspection, not delivery
 | Decision memo (151, after evidence workflow) | Medium–large | A pilot user can review cited alternatives and assumptions and record their own decision; unsupported statements are flagged | Complete one scoped customer task; audit citations and assumptions; compare task time/errors with their observed baseline |
 
 Commercial success is not established by those engineering checks. The pilot must additionally show recurring use and an explicit paid commitment from an identified buyer; do not substitute page views, generated-word counts or synthetic task timings for that evidence.
+
+## Simplicity constraint
+
+Every delivery keeps one primary action visible, uses short plain-language copy, and moves secondary controls into optional details. Preserve source access and visible uncertainty. Refine existing workflows before adding navigation items or settings. The dossier keeps source links visible while grouping secondary section jumps; the roadmap uses a concise current-task link.
