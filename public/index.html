@@ -17,20 +17,23 @@
   </form>
 </section>
 
+<section class="auth panel" id="startupError" role="alert" hidden><h1>The homepage could not load</h1><p id="startupMessage" class="muted"></p><button class="btn" id="retryStartup" type="button">Try again</button></section>
 <main id="feedView" hidden>
-  <div class="pagehead">
-    <div><h1 id="feedTitle">The path to superintelligence</h1><p class="muted" id="feedSub">Superintelligence stories only: progress toward AGI, alignment, interpretability, safety, timelines, compute and governance. Newest first; each story shows why it's here.</p></div>
-    <button class="btn" id="submitBtn" type="button">Submit a link</button>
+  <div class="pagehead feed-head">
+    <div><h1 id="feedTitle">The path to superintelligence</h1><p class="muted" id="feedSub">AI progress, grouped by story. Every topic and score is explained.</p></div>
+    <button class="btn" id="submitBtn" type="button" aria-expanded="false" aria-controls="submitForm">Submit a link</button>
   </div>
-  <nav class="topicbar" id="topicbar" aria-label="Topics"></nav>
-  <div class="filters">
+  <nav class="topicbar" id="topicbar" aria-label="Topics" tabindex="0"></nav>
+  <div class="filters feed-filters">
     <div class="seg-btns" role="group" aria-label="Sort">
       <button type="button" data-sort="new" aria-pressed="true">Newest</button><button type="button" data-sort="top" aria-pressed="false">Top</button><button type="button" data-sort="votes" aria-pressed="false">Most voted</button><button type="button" data-sort="signal" aria-pressed="false" title="Ranked by the significance score: evidence, coverage, benchmarks, frontier claims">Significance</button>
     </div>
+    <details id="feedFilterDetails" open><summary>Filters <span id="filterSummary" class="muted"></span></summary><div class="filter-options">
     <select id="kind" aria-label="Source kind"><option value="">All kinds of source</option></select>
     <select id="days" aria-label="Time window"><option value="">Any time</option><option value="1">Last day</option><option value="7" selected>Last week</option><option value="30">Last month</option></select>
     <label style="display:flex;flex-direction:row;gap:6px;align-items:center;color:var(--fg)"><input type="checkbox" id="savedOnly" style="width:auto"> Saved</label>
-    <input type="search" id="q" placeholder="Search titles and summaries" aria-label="Search">
+    </div></details>
+    <input type="search" id="q" maxlength="100" placeholder="Search titles and summaries" aria-label="Search">
   </div>
   <form class="panel" id="submitForm" hidden>
     <h2>Submit a link</h2>
@@ -41,12 +44,15 @@
     <div class="actions"><button class="btn primary" type="submit">Submit</button><button class="btn" type="button" id="sCancel">Cancel</button></div>
     <p class="err" id="sErr" role="alert"></p>
   </form>
-  <ol class="feed" id="feed"></ol>
+  <div class="feed-results"><p id="feedStatus" class="small muted" role="status" aria-live="polite">Loading stories…</p><button class="btn" id="clearFilters" type="button" hidden>Clear filters</button></div>
+  <div class="feed-error" id="feedError" role="alert" hidden><span id="feedErrorMessage"></span><button class="btn" id="retryFeed" type="button">Try again</button></div>
+  <ol class="feed" id="feed" aria-label="Stories"></ol>
   <div class="actions"><button class="btn" id="more" type="button" hidden>Load more</button></div>
 </main>
 <script src="/js/api.js"></script>
 <script>
-let mode = "login", sort = params.get("sort") || "new", offset = 0, ONT;
+const SORTS = ["new", "top", "votes", "signal"];
+let mode = "login", sort = SORTS.includes(params.get("sort")) ? params.get("sort") : "new", offset = 0, ONT, feedRequest = 0, feedController, failedAppend = false, renderedView = null;
 $$(".tabs button").forEach((b) => b.onclick = () => {
   mode = b.dataset.mode; $$(".tabs button").forEach((x) => x.setAttribute("aria-selected", x === b));
   $("#nameWrap").hidden = mode !== "signup" || !window.SI_DISPLAY_NAME; $("#authBtn").textContent = mode === "signup" ? "Create account" : "Sign in"; $("#authErr").textContent = "";
@@ -58,38 +64,81 @@ $("#authForm").onsubmit = async (e) => {
   catch (err) { showErr($("#authErr"), err); } finally { $("#authBtn").disabled = false; }
 };
 function state() { return { topic: params.get("topic") || "", org: params.get("org") || "", benchmark: params.get("benchmark") || "", person: params.get("person") || "", kind: $("#kind").value, days: $("#days").value, q: $("#q").value.trim(), saved: $("#savedOnly").checked ? "1" : "" }; }
-async function load(append = false) {
-  if (!append) offset = 0;
-  const s = state(), qs = new URLSearchParams({ ...s, sort, offset });
-  const { stories } = await api("/api/stories?" + qs);
-  const feed = $("#feed"); if (!append) feed.innerHTML = "";
-  feed.classList.add("stagger"); stories.forEach((st, i) => { const li = storyCard(st); li.style.setProperty("--i", i); feed.append(li); });
-  if (!append && !stories.length) feed.innerHTML = s.topic ? `<li class="empty">No stories yet on ${esc((ONT.topics.find((x) => x.id === s.topic) || {}).label || s.topic)}. <a href="/">See every topic</a></li>` : `<li class="empty">No stories yet. ${s.days ? "Try a longer time window, or " : ""}check the <a href="/sources">Sources</a> page: feeds are harvested several times a day once the site is deployed.</li>`;
-  $("#more").hidden = stories.length < 40; offset += stories.length;
+function activeFilters(s = state()) { return !!(s.topic || s.org || s.benchmark || s.person || s.kind || s.q || s.saved || s.days !== "7" || sort !== "new"); }
+function updateAddress(replace = false) {
+  const s = state(), next = new URLSearchParams();
+  for (const [key, value] of Object.entries(s)) if (value || key === "days") next.set(key, value);
+  next.set("sort", sort);
+  const url = `/?${next}`; if (url !== location.pathname + location.search) history[replace ? "replaceState" : "pushState"](null, "", url);
+  $("#clearFilters").hidden = !activeFilters(s);
 }
+function setControlsFromAddress() {
+  const current = new URLSearchParams(location.search); for (const key of [...params.keys()]) params.delete(key); current.forEach((v, k) => params.set(k, v));
+  sort = SORTS.includes(params.get("sort")) ? params.get("sort") : "new";
+  $("#kind").value = params.get("kind") || ""; $("#days").value = params.has("days") ? params.get("days") : (params.get("topic") || params.get("org") || params.get("benchmark") || params.get("person") ? "" : "7");
+  $("#q").value = params.get("q") || ""; $("#savedOnly").checked = params.get("saved") === "1";
+  $$(".seg-btns button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.sort === sort)));
+  header(); $("#clearFilters").hidden = !activeFilters();
+}
+function resultStatus() { const n = $$("#feed .story").length; $("#feedStatus").textContent = `${n} ${n === 1 ? "story" : "stories"} loaded${$("#more").hidden ? "" : " · More available"}.`; }
+function emptyFeed(s) {
+  const label = (ONT.topics.find((t) => t.id === s.topic) || {}).label || s.topic;
+  return `<li class="empty">${s.saved ? "No saved stories match these filters." : s.topic ? `No stories yet on ${esc(label)}.` : "No stories match these filters."} <button class="linkish" type="button" data-reset-filters>Clear filters</button> or check <a href="/sources">Sources</a>.</li>`;
+}
+async function load(append = false) {
+  const currentView = new URLSearchParams({ ...state(), sort }).toString();
+  if (append && currentView !== renderedView) append = false;
+  if (!append) $("#more").hidden = true;
+  const request = ++feedRequest; feedController?.abort(); feedController = new AbortController();
+  const s = state(), start = append ? offset : 0, qs = new URLSearchParams({ ...s, sort, offset: start });
+  $("#feed").setAttribute("aria-busy", "true"); $("#more").disabled = true; $("#feedError").hidden = true; $("#feedStatus").textContent = $$("#feed .story").length ? "Updating stories…" : "Loading stories…";
+  try {
+    const { stories } = await api("/api/stories?" + qs, { signal: feedController.signal });
+    if (request !== feedRequest) return; if (!Array.isArray(stories)) throw new Error("The story list could not be read.");
+    const feed = $("#feed"); if (!append) feed.replaceChildren(); else feed.querySelectorAll(".empty").forEach((el) => el.remove());
+    for (const story of stories) feed.append(storyCard(story, { onChange: (updated, kind) => {
+      if (kind === "save" && state().saved && !updated.saved) { const card = feed.querySelector(`[data-id="${updated.id}"]`); if (card) { card.remove(); offset = Math.max(0, offset - 1); if (!feed.querySelector(".story")) feed.innerHTML = $("#more").hidden ? emptyFeed(state()) : '<li class="empty">No saved stories on this page. Load more to keep reading.</li>'; } }
+      resultStatus();
+    } }));
+    if (!feed.querySelector(".story")) feed.innerHTML = emptyFeed(s);
+    $("#more").hidden = stories.length < 40; offset = start + stories.length; renderedView = currentView; failedAppend = false; resultStatus();
+  } catch (e) {
+    if (request !== feedRequest || e.name === "AbortError") return;
+    failedAppend = append; $("#feedErrorMessage").textContent = `${e.message} ${$("#feed .story") ? "Previous results are still shown." : "Please try again."}`; $("#feedError").hidden = false; $("#feedStatus").textContent = "Stories could not be updated.";
+  } finally { if (request === feedRequest) { $("#feed").setAttribute("aria-busy", "false"); $("#more").disabled = false; } }
+}
+const filterMedia = matchMedia("(max-width: 640px)");
+function fitFilters() { $("#feedFilterDetails").open = !filterMedia.matches; }
+filterMedia.addEventListener("change", fitFilters); fitFilters();
 function header() {
   const s = state(), t = ONT.topics.find((x) => x.id === s.topic), o = ONT.orgs.find((x) => x.id === s.org);
   const bm = (ONT.benchmarks || []).find((x) => x.id === s.benchmark), pp = (ONT.people || []).find((x) => x.id === s.person);
   $("#feedTitle").textContent = bm ? `Benchmark: ${bm.label}` : pp ? `Mentions of ${pp.label}` : t ? t.label : o ? o.label : s.saved ? "Saved for later" : "The path to superintelligence";
+  $("#filterSummary").textContent = [s.kind ? KIND[s.kind] : "All sources", $("#days").selectedOptions[0]?.textContent || "Any time", ...(s.saved ? ["Saved"] : [])].join(" · ");
   $("#topicbar").innerHTML = `<a href="/" ${!s.topic && !s.org ? 'aria-current="true"' : ""}>All</a>` + ONT.topics.filter((x) => !x.parent).map((x) => `<a href="/?topic=${x.id}" ${x.id === s.topic ? 'aria-current="true"' : ""}>${esc(x.label)}</a>`).join("")
     + (t && t.parent ? `<a href="/?topic=${t.id}" aria-current="true">${esc(t.label)}</a>` : "");
 }
-$$(".seg-btns button").forEach((b) => b.onclick = () => { sort = b.dataset.sort; $$(".seg-btns button").forEach((x) => x.setAttribute("aria-pressed", x === b)); load(); });
-let tmr; $("#q").oninput = () => { clearTimeout(tmr); tmr = setTimeout(load, 250); };
-["#kind", "#days", "#savedOnly"].forEach((id) => $(id).onchange = () => { header(); load(); });
-$("#more").onclick = () => load(true);
-$("#submitBtn").onclick = () => { $("#submitForm").hidden = false; $("#sUrl").focus(); };
-$("#sCancel").onclick = () => { $("#submitForm").hidden = true; };
-$("#submitForm").onsubmit = async (e) => { e.preventDefault(); try { const r = await api("/api/stories", { body: { url: $("#sUrl").value, title: $("#sTitle").value, summary: $("#sSum").value } }); location.href = `/story?id=${r.id}`; } catch (err) { showErr($("#sErr"), err); } };
+function refresh(replace = false) { clearTimeout(tmr); header(); updateAddress(replace); load(); }
+$$(".seg-btns button").forEach((b) => b.onclick = () => { sort = b.dataset.sort; $$(".seg-btns button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); refresh(); });
+let tmr; $("#q").oninput = () => { clearTimeout(tmr); $("#more").hidden = true; feedController?.abort(); ++feedRequest; tmr = setTimeout(() => refresh(true), 250); };
+["#kind", "#days", "#savedOnly"].forEach((id) => $(id).onchange = () => refresh());
+$("#more").onclick = () => load(true); $("#retryFeed").onclick = () => load(failedAppend);
+function resetFilters() { for (const key of [...params.keys()]) params.delete(key); sort = "new"; $("#kind").value = ""; $("#days").value = "7"; $("#q").value = ""; $("#savedOnly").checked = false; $$(".seg-btns button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.sort === sort))); refresh(); }
+$("#clearFilters").onclick = resetFilters;
+$("#feed").addEventListener("click", (e) => { if (e.target.closest("[data-reset-filters]")) resetFilters(); });
+window.addEventListener("popstate", () => { clearTimeout(tmr); setControlsFromAddress(); load(); });
+$("#submitBtn").onclick = () => { $("#submitBtn").setAttribute("aria-expanded", "true"); $("#submitForm").hidden = false; $("#sUrl").focus(); };
+function closeSubmission() { $("#submitForm").hidden = true; $("#submitBtn").setAttribute("aria-expanded", "false"); $("#submitBtn").focus(); }
+$("#sCancel").onclick = closeSubmission; $("#submitForm").addEventListener("keydown", (e) => { if (e.key === "Escape") closeSubmission(); });
+$("#submitForm").onsubmit = async (e) => { e.preventDefault(); const button = e.submitter || $("#submitForm button[type=submit]"); button.disabled = true; $("#sErr").textContent = ""; try { const r = await api("/api/stories", { body: { url: $("#sUrl").value, title: $("#sTitle").value, summary: $("#sSum").value } }); if (!Number.isInteger(r.id) || r.id < 1) throw new Error("That link could not be added to the feed."); location.href = `/story?id=${r.id}`; } catch (err) { showErr($("#sErr"), err); } finally { button.disabled = false; } };
+$("#retryStartup").onclick = () => location.reload();
 (async () => {
   const { user, features: siteFeatures = [] } = await api("/api/me", { allow401: true }); window.SI_DISPLAY_NAME = siteFeatures.includes("display-name");
   if (!user) { $("#auth").hidden = false; $("#username").focus(); return; }
   topbar(user); $("#feedView").hidden = false;
   ONT = await api("/api/ontology");
-  Object.entries(KIND).filter(([k]) => k !== "news" && k !== "policy").forEach(([k, v]) => $("#kind").insertAdjacentHTML("beforeend", `<option value="${k}">${v}</option>`));
-  if (params.get("topic") || params.get("org") || params.get("benchmark") || params.get("person")) $("#days").value = "";
-  $$(".seg-btns button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.sort === sort));
-  header(); load();
-})();
+  Object.entries(KIND).forEach(([k, v]) => $("#kind").insertAdjacentHTML("beforeend", `<option value="${k}">${v}</option>`));
+  setControlsFromAddress(); load();
+})().catch((e) => { $("#feedView").hidden = true; $("#auth").hidden = true; $("#startupError").hidden = false; $("#startupMessage").textContent = e.message; });
 </script>
 </body></html>

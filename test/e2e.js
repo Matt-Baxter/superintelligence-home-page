@@ -437,6 +437,80 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   ok((await john.$$('#lanes .lane:nth-child(1) .nd')).length === 20, 'the spec view lists all 20 requirements');
   await john.screenshot({ path: 'shots/codemap.png' });
 
+  console.log('Reader robustness (REQ-002, REQ-014, REQ-017, REQ-018)');
+  const readerContext = await b.newContext({ viewport: { width: 1280, height: 900 } });
+  await readerContext.addCookies(await john.context().cookies());
+  const reader = await readerContext.newPage(); reader.on('pageerror', (e) => errs.push('reader: ' + e.message));
+  await reader.goto(B + '/?q=scaling&kind=papers&days=&sort=signal'); await reader.waitForSelector('#feed[aria-busy="false"]');
+  ok(await reader.inputValue('#q') === 'scaling' && await reader.inputValue('#kind') === 'papers' && await reader.inputValue('#days') === '' && await reader.getAttribute('[data-sort="signal"]', 'aria-pressed') === 'true', 'shared feed URLs restore search, source, time and sort controls');
+  await reader.selectOption('#kind', 'lab'); await reader.waitForFunction(() => document.querySelector('#feed').getAttribute('aria-busy') === 'false' && new URLSearchParams(location.search).get('kind') === 'lab');
+  await reader.goBack(); await reader.waitForFunction(() => document.querySelector('#kind').value === 'papers' && document.querySelector('#feed').getAttribute('aria-busy') === 'false');
+  ok(await reader.inputValue('#q') === 'scaling' && await reader.inputValue('#days') === '', 'Back restores filters and their results together');
+  await reader.click('#clearFilters'); await reader.waitForSelector('#feed .story');
+  ok(await reader.inputValue('#q') === '' && await reader.inputValue('#days') === '7' && !(await reader.isVisible('#clearFilters')), 'clear filters returns to the default reading view');
+  const originalTitles = await reader.$$eval('#feed .title', (els) => els.map((el) => el.textContent));
+  await reader.route('**/api/stories?*', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'Sample feed failure (test data)' }) }));
+  await reader.fill('#q', 'sample-retry'); await reader.waitForSelector('#feedError:not([hidden])');
+  ok(JSON.stringify(await reader.$$eval('#feed .title', (els) => els.map((el) => el.textContent))) === JSON.stringify(originalTitles) && (await reader.textContent('#feedError')).includes('Previous results'), 'a failed feed refresh preserves earlier results and explains the failure');
+  await reader.unroute('**/api/stories?*'); await reader.click('#retryFeed'); await reader.waitForFunction(() => document.querySelector('#feedError').hidden && document.querySelector('#feed').getAttribute('aria-busy') === 'false');
+  ok((await reader.textContent('#feedStatus')).includes('0 stories loaded'), 'retry recovers the latest filter request without reloading the page');
+  await reader.click('#clearFilters'); await reader.waitForSelector('#feed .story');
+  const readerStories = await reader.evaluate(async () => (await (await fetch('/api/stories?days=7')).json()).stories);
+  let slowStarted, releaseSlow, slowDone;
+  const started = new Promise((r) => (slowStarted = r)), release = new Promise((r) => (releaseSlow = r)), done = new Promise((r) => (slowDone = r));
+  await reader.route('**/api/stories?*', async (route) => {
+    const q = new URL(route.request().url()).searchParams.get('q');
+    if (q === 'sample-slow') { slowStarted(); await release; try { await route.fulfill({ json: { stories: [{ ...readerStories[0], title: 'Sample stale result (test data)' }] } }); } catch {} finally { slowDone(); } }
+    else if (q === 'sample-fast') await route.fulfill({ json: { stories: [{ ...readerStories[0], title: 'Sample newest result (test data)' }] } });
+    else await route.continue();
+  });
+  await reader.fill('#q', 'sample-slow'); await started; await reader.fill('#q', 'sample-fast'); await reader.waitForSelector('#feed .title:has-text("Sample newest result")'); releaseSlow(); await done;
+  ok(!(await reader.textContent('#feed')).includes('Sample stale result') && new URL(reader.url()).searchParams.get('q') === 'sample-fast', 'a slower earlier response cannot overwrite a newer search');
+  await reader.unroute('**/api/stories?*'); await reader.click('#clearFilters'); await reader.waitForSelector('#feed .story');
+  const first = readerStories.find((s) => !s.saved); const row = reader.locator(`.story[data-id="${first.id}"]`);
+  const beforeVote = await row.locator('.vote b').textContent();
+  await reader.route(`**/api/stories/${first.id}/vote`, (route) => route.fulfill({ status: 503, json: { error: 'Sample vote failure (test data)' } }));
+  await row.locator('.vote').click(); await row.locator('.action-feedback').filter({ hasText: 'not confirmed' }).waitFor();
+  ok(await row.locator('.vote b').textContent() === beforeVote && await row.locator('.vote').isEnabled(), 'failed votes do not change the count and remain available to retry');
+  await reader.unroute(`**/api/stories/${first.id}/vote`);
+  let saveStarted, saveRelease; const saving = new Promise((r) => (saveStarted = r)), allowSave = new Promise((r) => (saveRelease = r)); let saveRequests = 0;
+  await reader.route(`**/api/stories/${first.id}/save`, async (route) => { saveRequests++; const response = await route.fetch(); saveStarted(); await allowSave; await route.fulfill({ response }); });
+  await row.locator('.save').evaluate((button) => { button.click(); button.click(); }); await saving;
+  ok(!(await row.locator('.save').isEnabled()) && saveRequests === 1, 'a pending save disables duplicate toggles'); saveRelease(); await row.locator('.save[aria-pressed="true"]').waitFor(); await reader.unroute(`**/api/stories/${first.id}/save`);
+  await reader.goto(B + '/?saved=1&days='); await reader.waitForSelector(`.story[data-id="${first.id}"]`); await reader.locator(`.story[data-id="${first.id}"] .save`).click(); await reader.waitForSelector(`.story[data-id="${first.id}"]`, { state: 'detached' });
+  ok(true, 'unsaving removes the card immediately from the saved-only view');
+  ok(await reader.evaluate((sample) => { const card = storyCard({ ...sample, sources: [{ name: 'Sample research (test data)', kind: 'research-org', url: 'https://example.test/research', rigor: { verdict: 'doubtful', credibility: 0, grade: 'E' } }] }); return card.querySelector('.rigor').textContent.includes('· 0') && card.querySelector('.rigor').title.includes('0/100'); }, readerStories[0]), 'a credibility of zero is displayed as zero, rather than missing data');
+  await reader.route('**/api/me', (route) => route.fulfill({ status: 503, json: { error: 'Sample startup failure (test data)' } })); await reader.goto(B); await reader.waitForSelector('#startupError:not([hidden])');
+  ok((await reader.textContent('#startupMessage')).includes('Sample startup failure'), 'startup failure gives a visible recovery action instead of a blank page'); await reader.unroute('**/api/me'); await reader.click('#retryStartup'); await reader.waitForSelector('#feed .story');
+  ok(true, 'retrying startup restores the signed-in feed');
+  for (const colorScheme of ['light', 'dark']) for (const width of [320, 390, 768, 1280]) {
+    await reader.setViewportSize({ width, height: 900 }); await reader.emulateMedia({ colorScheme, reducedMotion: 'reduce' }); await reader.goto(B); await reader.waitForSelector('#feed .story');
+    ok(!(await reader.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), `reader fits ${width}px in ${colorScheme} mode`);
+    if (width <= 900) { await reader.click('#navToggle'); await reader.waitForSelector('.topbar[data-nav-open]'); ok(await reader.isVisible('#siteNav a[href="/m/control"]') && await reader.getAttribute('#navToggle', 'aria-expanded') === 'true', `mobile navigation exposes research tools at ${width}px in ${colorScheme} mode`); await reader.keyboard.press('Escape'); ok(await reader.getAttribute('#navToggle', 'aria-expanded') === 'false' && await reader.evaluate(() => document.activeElement.id === 'navToggle'), 'Escape closes navigation and restores trigger focus'); }
+    if (width <= 640) { ok(!(await reader.isVisible('#kind')) && await reader.isVisible('#feed .story:first-child .title'), 'phone feed keeps secondary filters collapsed and story content available'); await reader.click('#feedFilterDetails summary'); ok(await reader.isVisible('#kind') && await reader.isVisible('#days'), 'phone filters expand with native keyboard-accessible controls'); await reader.click('#feedFilterDetails summary'); }
+    if ([390, 1280].includes(width)) await reader.screenshot({ path: `shots/reader-${colorScheme}-${width}.png`, animations: 'disabled' });
+  }
+  let savedPageRemoved = 0;
+  const fakeSavePattern = /\/api\/stories\/9\d+\/save$/;
+  await reader.route(fakeSavePattern, (route) => { savedPageRemoved++; return route.fulfill({ json: { saved: false } }); });
+  await reader.route('**/api/stories?*', (route) => route.fulfill({ json: { stories: savedPageRemoved < 40 ? Array.from({ length: 40 }, (_, i) => ({ ...readerStories[0], id: 90000 + i, saved: true, title: `Sample saved page ${i} (test data)` })) : [{ ...readerStories[0], id: 99000, saved: true, title: 'Sample next saved page (test data)' }] } }));
+  await reader.setViewportSize({ width: 1280, height: 900 }); await reader.goto(B + '/?saved=1&days='); await reader.waitForFunction(() => document.querySelectorAll('#feed .story').length === 40);
+  await reader.locator('#feed').evaluate((feed) => feed.querySelectorAll('.save').forEach((button) => button.click()));
+  await reader.waitForFunction(() => document.querySelectorAll('#feed .story').length === 0);
+  ok(await reader.isVisible('#more') && (await reader.textContent('#feed .empty')).includes('on this page'), 'removing a whole saved page keeps honest pagination available');
+  await reader.click('#more'); await reader.waitForSelector('#feed .title:has-text("Sample next saved page")');
+  ok((await reader.$$('#feed .empty')).length === 0, 'appending saved results removes an earlier empty-page message');
+  await reader.unroute(fakeSavePattern); await reader.unroute('**/api/stories?*');
+  await reader.route('**/api/stories?*', (route) => {
+    const q = new URL(route.request().url()).searchParams.get('q');
+    return q === 'sample-page-failure' ? route.fulfill({ status: 503, json: { error: 'Sample replacement failure (test data)' } }) : route.fulfill({ json: { stories: Array.from({ length: 40 }, (_, i) => ({ ...readerStories[0], id: 91000 + i, title: `Sample paginated result ${i} (test data)` })) } });
+  });
+  await reader.goto(B + '/?q=sample-page'); await reader.waitForSelector('#more:not([hidden])');
+  await reader.fill('#q', 'sample-page-failure'); await reader.waitForSelector('#feedError:not([hidden])');
+  ok(!(await reader.isVisible('#more')) && (await reader.$$('#feed .story')).length === 40, 'a failed replacement cannot paginate using a previous filter offset');
+  await reader.unroute('**/api/stories?*');
+  await readerContext.close();
+
   console.log('Phone width');
   const ph = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })).newPage();
   await ph.goto(B); await ph.fill('#username', 'john'); await ph.fill('#password', 'correct-horse-9'); await ph.click('#authBtn'); await ph.waitForSelector('#feed .story');

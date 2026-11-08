@@ -10,6 +10,7 @@ async function api(path, opts = {}) {
     headers: opts.body ? { "Content-Type": "application/json" } : {},
     body: opts.body ? JSON.stringify(opts.body) : undefined,
     credentials: "same-origin",
+    signal: opts.signal,
   });
   let data = {}; try { data = await res.json(); } catch (e) {}
   if (res.status === 401 && !opts.allow401) { location.href = "/?next=" + encodeURIComponent(location.pathname + location.search + location.hash); throw new Error("Please sign in."); }
@@ -38,10 +39,17 @@ function topbar(user) {
   const core = NAV.filter(([, , f]) => !f || (user?.features || []).includes(f));
   const links = [core[0], ...mod.filter((n) => (n.order ?? 50) < 20).map((n) => [n.href, n.label]), ...core.slice(1), ...mod.filter((n) => (n.order ?? 50) >= 20).map((n) => [n.href, n.label])];
   const menu = tools.length ? `<details class="navmenu"${tools.some((n) => isHere(n.href)) ? ' data-here=""' : ""}><summary>Admin</summary><div>${tools.map((n) => `<a href="${n.href}"${isHere(n.href) ? ' aria-current="page"' : ""}>${n.label}</a>`).join("")}</div></details>` : "";
-  bar.innerHTML = `<div class="in"><a class="brand" href="/">Superintelligence Homepage</a><nav class="nav">${links.map(([h, t]) => `<a href="${h}"${isHere(h) ? ' aria-current="page"' : ""}>${t}</a>`).join("")}${menu}</nav>
-    <div class="who">${user ? `<span>${esc(user.name)}</span><button class="btn" id="logout" type="button">Sign out</button>` : ""}</div></div>`;
-  document.body.prepend(bar);
-  const lo = $("#logout"); if (lo) lo.onclick = async () => { await api("/api/logout", { method: "POST" }); location.href = "/"; };
+  const toolLinks = tools.length ? `<div class="nav-tools"><p class="small muted">Administration</p>${tools.map((n) => `<a href="${esc(n.href)}"${isHere(n.href) ? ' aria-current="page"' : ""}>${esc(n.label)}</a>`).join("")}</div>` : "";
+  bar.innerHTML = `<a class="skip-link" href="#mainContent">Skip to content</a><div class="in"><a class="brand" href="/" aria-label="Superintelligence Homepage"><span class="brand-long">Superintelligence Homepage</span><span class="brand-short">SI Homepage</span></a><button class="btn nav-toggle" id="navToggle" type="button" aria-expanded="false" aria-controls="siteNav">Menu</button><nav class="nav" id="siteNav" aria-label="Main navigation">${links.map(([h, t]) => `<a href="${esc(h)}"${isHere(h) ? ' aria-current="page"' : ""}>${esc(t)}</a>`).join("")}${toolLinks}</nav>
+    <div class="who">${menu}${user ? `<span>${esc(user.name)}</span><button class="btn" id="logout" type="button">Sign out</button>` : ""}</div></div>`;
+  document.querySelector(".topbar")?.remove(); document.body.prepend(bar);
+  const main = document.querySelector("main") || document.querySelector("#app"); if (main) { if (!main.id) main.id = "mainContent"; bar.querySelector(".skip-link").href = `#${main.id}`; main.setAttribute("tabindex", "-1"); }
+  const toggle = bar.querySelector("#navToggle"), setOpen = (open) => { bar.toggleAttribute("data-nav-open", open); toggle.setAttribute("aria-expanded", String(open)); };
+  toggle.onclick = () => setOpen(toggle.getAttribute("aria-expanded") !== "true");
+  bar.addEventListener("keydown", (e) => { if (e.key === "Escape") { if (bar.hasAttribute("data-nav-open")) { setOpen(false); toggle.focus(); } for (const d of bar.querySelectorAll("details[open]")) { d.open = false; d.querySelector("summary").focus(); } } });
+  document.addEventListener("pointerdown", (e) => { if (!bar.contains(e.target)) { setOpen(false); for (const d of bar.querySelectorAll("details[open]")) d.open = false; } });
+  const lo = $("#logout"); if (lo) lo.onclick = async () => { lo.disabled = true; try { await api("/api/logout", { method: "POST" }); location.href = "/"; } catch (e) { lo.disabled = false; lo.textContent = "Retry sign out"; lo.title = e.message; } };
+
 }
 function showErr(el, e) { el.textContent = e?.message || String(e); el.className = "err"; }
 function flash(el, msg) { el.textContent = msg; el.className = "ok"; setTimeout(() => { if (el.textContent === msg) el.textContent = ""; }, 2500); }
@@ -71,7 +79,7 @@ function storyCard(s, opts = {}) {
   const an = s.analysis || {}, sig = s.significance || 0;
   // A research write-up among the sources carries its judgement (the "rigor-badges" feature): verdict, credibility, grade.
   const rg = (s.sources.find((x) => x.rigor && x.rigor.verdict) || {}).rigor;
-  const rigorBadge = rg ? `<a class="rigor${rg.verdict === "doubtful" ? " low" : ""}" href="${esc((s.sources.find((x) => x.rigor === rg) || {}).url || "#")}" target="_blank" rel="noopener noreferrer" title="Research write-up: ${esc(rg.verdict)}, credibility ${esc(rg.credibility || "?")}/100, source grade ${esc(rg.grade || "?")}${rg.panel && rg.panel !== "none" ? `, model panel ${esc(rg.panel)}` : ""}">${esc(rg.verdict)} · ${esc(rg.credibility || "?")}${rg.grade ? ` · ${esc(rg.grade)}` : ""}</a>` : "";
+  const rigorBadge = rg ? `<a class="rigor${rg.verdict === "doubtful" ? " low" : ""}" href="${esc((s.sources.find((x) => x.rigor === rg) || {}).url || "#")}" target="_blank" rel="noopener noreferrer" title="Research write-up: ${esc(rg.verdict)}, credibility ${esc(rg.credibility ?? "?")}/100, source grade ${esc(rg.grade || "?")}${rg.panel && rg.panel !== "none" ? `, model panel ${esc(rg.panel)}` : ""}">${esc(rg.verdict)} · ${esc(rg.credibility ?? "?")}${rg.grade ? ` · ${esc(rg.grade)}` : ""}</a>` : "";
   const sigBadge = `<span class="sig ${sig >= 60 ? "hi" : sig >= 35 ? "mid" : ""}" title="${esc(sigWhy(an))}">${sig}</span>`;
   const bench = (an.benchmarks || []).slice(0, 3).map((b) => `<a class="tag bench" href="/?benchmark=${esc(b.id)}" title="Benchmark${b.score ? `: reported ${esc(b.score.raw)}` : ""}">${esc(b.label)}${b.score ? ` <b>${esc(fmtScore(b.score))}</b>` : ""}</a>`).join("");
   li.innerHTML = `<button class="vote ${s.voted ? "on" : ""}" type="button" aria-pressed="${s.voted}" aria-label="Upvote"><span aria-hidden="true">▲</span><b>${s.votes}</b></button>
@@ -79,9 +87,21 @@ function storyCard(s, opts = {}) {
     <div class="meta">${sigBadge}${rigorBadge}${an.type ? `<span class="utype">${esc(an.type.label)}</span>` : ""}<span>${esc(s.sources[0]?.name || "")}${s.nsources > 1 ? ` <span class="multi">+ ${s.nsources - 1} more source${s.nsources > 2 ? "s" : ""}</span>` : ""}</span><span>${kinds.map(esc).join(" · ")}</span><span>${ago(s.published_at || s.first_seen)}</span></div>
     ${s.summary && !opts.compact ? `<p class="sum">${esc(s.summary.slice(0, 260))}${s.summary.length > 260 ? "…" : ""}</p>` : ""}
     ${opts.listNote ? `<p class="listnote">“${esc(opts.listNote)}”</p>` : ""}
-    <div class="row2"><div class="tags">${bench}${tags}${orgs}</div><div class="acts"><a href="/story?id=${s.id}">${s.notes ? `${s.notes} note${s.notes > 1 ? "s" : ""}` : "Notes"}</a><button type="button" class="save linkish">${s.saved ? "Saved ✓" : "Save"}</button></div></div></div>`;
-  li.querySelector(".vote").onclick = async (e) => { const b = e.currentTarget; const r = await api(`/api/stories/${s.id}/vote`, { method: "POST" }); b.classList.toggle("on", r.voted); if (r.voted) { b.classList.remove("pulse"); void b.offsetWidth; b.classList.add("pulse"); } b.setAttribute("aria-pressed", r.voted); b.querySelector("b").textContent = r.votes; };
-  li.querySelector(".save").onclick = async (e) => { const b = e.currentTarget; const r = await api(`/api/stories/${s.id}/save`, { method: "POST" }); b.textContent = r.saved ? "Saved ✓" : "Save"; };
+    <div class="row2"><div class="tags">${bench}${tags}${orgs}</div><div class="acts"><a href="/story?id=${s.id}">${s.notes ? `${s.notes} note${s.notes > 1 ? "s" : ""}` : "Notes"}</a><button type="button" class="save linkish" aria-pressed="${s.saved}">${s.saved ? "Saved ✓" : "Save"}</button></div></div><p class="action-feedback small" role="status" aria-live="polite" hidden></p></div>`;
+  const feedback = li.querySelector(".action-feedback");
+  async function mutate(button, kind) {
+    if (button.disabled) return; button.disabled = true; feedback.hidden = false; feedback.className = "action-feedback small muted"; feedback.textContent = "Saving…";
+    try {
+      const r = await api(`/api/stories/${s.id}/${kind}`, { method: "POST" });
+      if (kind === "vote") { s.voted = r.voted; s.votes = r.votes; button.classList.toggle("on", r.voted); button.setAttribute("aria-pressed", String(r.voted)); button.querySelector("b").textContent = r.votes; }
+      else { s.saved = r.saved; button.textContent = r.saved ? "Saved ✓" : "Save"; button.setAttribute("aria-pressed", String(r.saved)); }
+      feedback.textContent = kind === "save" ? (r.saved ? "Saved for later." : "Removed from saved stories.") : (r.voted ? "Vote added." : "Vote removed.");
+      if (opts.onChange) opts.onChange(s, kind);
+    } catch (e) { feedback.className = "action-feedback err"; feedback.textContent = `${e.message} Your change was not confirmed. Try again.`; }
+    finally { button.disabled = false; }
+  }
+  li.querySelector(".vote").onclick = (e) => mutate(e.currentTarget, "vote");
+  li.querySelector(".save").onclick = (e) => mutate(e.currentTarget, "save");
   return li;
 }
 const fmtDate = (s) => s ? new Date(s.replace(" ", "T") + (s.includes("Z") ? "" : "Z")).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
