@@ -783,7 +783,7 @@
       "priority": "P2",
       "effort": "L",
       "gate": "C",
-      "status": "proposed",
+      "status": "partially_implemented",
       "entrypoints": [
         "server.js",
         "lib/db.js",
@@ -794,7 +794,23 @@
       "research_sources": [
         "vitals",
         "filters"
-      ]
+      ],
+      "implementation_evidence": {
+        "query_sorts": [
+          "new",
+          "votes",
+          "signal"
+        ],
+        "retained_fallback": "Top rank still computes over matches",
+        "tests": [
+          "test/story-page-unit.js",
+          "test/pipeline-quality-unit.js"
+        ],
+        "engines": [
+          "sqlite",
+          "pg"
+        ]
+      }
     },
     {
       "id": 33,

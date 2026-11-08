@@ -39,3 +39,42 @@ Scope: shared spec 001, the implemented research layer, and the work-tracking pa
 | Specs parser and approval gates | 25 passed, 0 failed |
 
  Synthetic fixture checks verify local code paths and database behavior; they do not prove live-source quality, production deployment, all provider failures or every possible concurrent execution.
+
+## Shared performance and analysis pass — 2026-11-07
+
+This pass serves REQ-002/003/005 and fixes existing research dossier/source behavior (REQ-031/033 in spec 002). It does not approve proposed specifications or deploy anything.
+
+### Implemented
+
+- Newest, votes and significance order/page in the database; only the requested page is transferred to the application. Stable timestamp/ID tie breaks prevent arbitrary page overlap. Top still uses the original time-decay calculation over all matching rows. Source links are grouped once instead of repeatedly scanning the whole link list for every story. Guest reads skip personal vote/save/note subqueries.
+- Public feed metadata and ontology requests start together; sign-in entry avoids an ontology request. Knowledge graph and passage requests run together, render as one selection and reject stale responses.
+- A validated, indexed topic hierarchy supplies every ancestor to tagging, scope-root lookup and dossier descendants. Missing parents, duplicate IDs and cycles fail fast; existing nine top-level topics and terms are unchanged.
+- Attention values are finite, nonnegative integer counts within the shared database range. Invalid values cannot create negative or non-finite significance factors. Rising counters on an already linked item now rescore the story. This remains a bounded attention signal, never research evidence.
+- Venue names or generic “science” text alone no longer imply the existing peer-review upgrade. Explicit submission/rejection/negation, including contractions, blocks that upgrade. Affirmative acceptance wording remains a heuristic cue, not verified peer-review status. Coverage says linked sources, not independently owned sources.
+- Buzz uses valid UTC calendar dates, rejects missing/invalid/future dates and excludes invalid hype values from the mean. Dossiers keep canonical feed scores, preserve zero, exclude unclassified/hidden stories and count source identities rather than names. Uncatalogued links remain represented without a fabricated reader attribution.
+- Knowledge text reads enforce current story admission. Rebuilds refresh metadata changes on unchanged text, replace derived edges transactionally, retain forecast edges and purge ineligible chunks. Scheduled pruning also rebuilds co-occurrence from remaining admitted passages, preserving other edge kinds. Stale co-occurrence is withheld pending refresh. Participating Postgres story rows are share-locked during finalization so concurrent moderation cannot invalidate the selected inputs mid-replacement.
+- Node diagrams use spaced rows rather than overlapping radial labels, preserve full identifiers in titles/text alternatives, support keyboard exploration and keep chart panning inside its own region on phones.
+
+### Evidence and interpretation
+
+`test/pipeline-quality-unit.js` covers the new hierarchy, scalar, date, evidence, buzz and canonical-score cases. `test/story-page-unit.js` runs real HTTP/database checks on both engines: stable order, bounded row transfer, private state, admission, attention rescore, knowledge reads, stale graph withholding, metadata refresh and forecast-edge preservation. The fixture contains 240 admitted matches plus hidden and unclassified rows. Each new/votes/significance page materializes exactly 40 story rows in the application. This is a verified reduction in row transfer, not a claim of a measured production latency multiplier.
+
+The accepted 25-metric benchmark has no regressions. New targeted regressions demonstrate the additional defects; they are not a new statistically representative paper-quality evaluation. All data in these checks is synthetic.
+
+### Remaining limits
+
+- Top ranking is not yet pushed into portable SQL; large-result-set Top requests still need profiling and a separate design.
+- Unicode token-boundary parity remains a known follow-up across Node/Python/Rust. For example, embedded Unicode-letter acronym cases need coordinated portable-operator/vector changes, not a tagger-only patch.
+- Existing stored story tags/scores require the normal admin re-tag operation after a future rollout; the Knowledge index must then be rebuilt. This pass did not mutate hosted data or run live harvesting. Old malformed publication metadata needs a separately reviewed backfill; new ingestion is normalized.
+- Analysis uses stored titles/summaries and reviewed excerpts under existing rules; it does not independently verify every paper, outlet or community comment. Full-text storage and new source-label vocabulary remain subject to their existing agreements.
+- Lab timings and fixture row counts are not field Core Web Vitals or real-device accessibility certification. Broader bundle budgets, production profiling and the remaining research ideas stay tracked separately.
+
+### Verification of this pass
+
+- Pipeline quality: `37 passed, 0 failed`.
+- Isolated HTTP/database regression: `17 passed, 0 failed` on SQLite and PostgreSQL, including passage-prune graph cleanup.
+- Full SQLite and PostgreSQL browser suites: each `330 passed, 0 failed`; `page errors: none`. The extended profile bundle was rebuilt before the Postgres suite; the default preflight bundle intentionally contains no extended blocks.
+- Preflight: `Preflight passed.`
+- Local demo emulations: `24 passed, 0 failed`; guest, reader and admin; 390/1280 pixels; light/dark; `page errors: none`.
+- Benchmark: `25 metrics, 0 uplift, 0 regressions` against the accepted baseline.
+- Phone graph screenshot: [synthetic Knowledge fixture](../shots/optimization-knowledge-phone.png).

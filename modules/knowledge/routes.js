@@ -12,33 +12,39 @@ let zodP; const zod = () => (zodP ||= import(path.join(GEN, "zod.mjs")));
 module.exports = function mountKnowledge(app, { db, auth, admin, wrap, str, bad, notFound }) {
   const embedder = K.embedders.create("hash-256");
 
+  const admitted = "COALESCE(s.in_scope, 0) = 1 AND COALESCE(s.hidden, 0) = 0";
+  const staleIndex = async () => !!(await db.get(`SELECT c.story_id FROM knowledge_chunks c JOIN stories s ON s.id = c.story_id WHERE NOT (${admitted}) LIMIT 1`));
   // Build or refresh the index: chunk recent in-scope stories, tag and embed changed chunks, rebuild the graph.
   async function build(limit = 200) {
-    const stories = await db.all("SELECT id, title, summary FROM stories WHERE COALESCE(in_scope, 1) = 1 AND COALESCE(hidden, 0) = 0 ORDER BY id DESC LIMIT ?", Math.min(2000, limit));
+    const stories = await db.all("SELECT id, title, summary FROM stories WHERE COALESCE(in_scope, 0) = 1 AND COALESCE(hidden, 0) = 0 ORDER BY id DESC LIMIT ?", Math.min(2000, limit));
     let changed = 0, kept = 0;
     for (const s of stories) {
-      const have = Object.fromEntries((await db.all("SELECT ord, hash FROM knowledge_chunks WHERE story_id = ?", s.id)).map((r) => [r.ord, r.hash]));
+      const have = Object.fromEntries((await db.all("SELECT ord, hash, tags, model FROM knowledge_chunks WHERE story_id = ?", s.id)).map((r) => [r.ord, r]));
       const chunks = K.chunk(s);
       await db.tx(async (t) => {
         for (const c of chunks) {
-          if (have[c.ord] === c.hash) { kept++; continue; }
-          const tags = taggers.tagAll(c.text);
+          const tags = taggers.tagAll(c.text), serializedTags = JSON.stringify(tags), cached = have[c.ord];
+          if (cached?.hash === c.hash && cached.tags === serializedTags && cached.model === embedder.id) { kept++; continue; }
           await t.run("DELETE FROM knowledge_chunks WHERE story_id = ? AND ord = ?", s.id, c.ord);
           await t.run("INSERT INTO knowledge_chunks (story_id, ord, text, hash, tags, model, vector, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            s.id, c.ord, c.text, c.hash, JSON.stringify(tags), embedder.id, JSON.stringify(embedder.embed(c.text)), iso());
+            s.id, c.ord, c.text, c.hash, serializedTags, embedder.id, JSON.stringify(embedder.embed(c.text)), iso());
           changed++;
         }
         await t.run("DELETE FROM knowledge_chunks WHERE story_id = ? AND ord >= ?", s.id, chunks.length);
       });
     }
-    const all = (await db.all("SELECT story_id, ord, tags FROM knowledge_chunks")).map((r) => ({ ...r, tags: JSON.parse(r.tags) }));
-    const edges = [...K.coOccurrence(all), ...taggers.curatedEdges()];
+    let edgeCount = 0;
     await db.tx(async (t) => {
-      await t.run("DELETE FROM knowledge_edges WHERE src NOT LIKE 'doc:%'"); // reviewed docs (modules/review) keep their edges
+      // Lock participating Postgres story rows during finalization, so concurrent moderation
+      // cannot remove cache rows while their old contributions are written into a fresh graph.
+      const all = (await t.all(`SELECT c.story_id, c.ord, c.tags FROM knowledge_chunks c JOIN stories s ON s.id = c.story_id WHERE ${admitted}${db.engine === "pg" ? " FOR SHARE OF s" : ""}`)).map(r => ({ ...r, tags: JSON.parse(r.tags) }));
+      const edges = [...K.coOccurrence(all), ...taggers.curatedEdges()]; edgeCount = edges.length;
+      await t.run("DELETE FROM knowledge_chunks WHERE story_id NOT IN (SELECT id FROM stories WHERE COALESCE(in_scope, 0) = 1 AND COALESCE(hidden, 0) = 0)");
+      await t.run("DELETE FROM knowledge_edges WHERE src NOT LIKE 'doc:%' AND src NOT LIKE 'event:%'");
       for (const e of edges) await t.run("INSERT INTO knowledge_edges (src, rel, dst, weight, evidence, updated_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (src, rel, dst) DO UPDATE SET weight = excluded.weight, evidence = excluded.evidence",
         e.src, e.rel, e.dst, e.weight, JSON.stringify(e.evidence), iso());
     });
-    return { stories: stories.length, chunks_changed: changed, chunks_kept: kept, edges: edges.length, taggers: taggers.registry.ids(), embedder: embedder.id };
+    return { stories: stories.length, chunks_changed: changed, chunks_kept: kept, edges: edgeCount, taggers: taggers.registry.ids(), embedder: embedder.id };
   }
   app.post("/api/admin/knowledge/build", auth, admin, wrap(async (req) => build(Number(req.body?.limit) || 200)));
   app.get("/api/admin/knowledge/stats", auth, admin, wrap(async () => ({
@@ -50,33 +56,36 @@ module.exports = function mountKnowledge(app, { db, auth, admin, wrap, str, bad,
   const edgeRow = (r) => ({ src: r.src, rel: r.rel, dst: r.dst, weight: Number(r.weight), evidence: JSON.parse(r.evidence || "[]") });
   // Graph: one node's neighbourhood, or the best-connected nodes when no qid is given.
   app.get("/api/knowledge/graph", auth, wrap(async (req) => {
+    const stale = await staleIndex();
     const q = str(req.query.qid, 80), limit = Math.min(60, Number(req.query.limit) || 25);
     if (q) {
       const node = ids.parse(q); if (!node) bad("qid must look like topic:alignment or concept:attention");
-      const rows = (await db.all("SELECT * FROM knowledge_edges WHERE src = ? OR dst = ? ORDER BY weight DESC LIMIT ?", q, q, limit)).map(edgeRow);
-      return { qid: q, edges: rows.map((e) => ({ ...e, other: e.src === q ? e.dst : e.src })) };
+      const rows = (await db.all(`SELECT * FROM knowledge_edges WHERE (src = ? OR dst = ?)${stale ? " AND rel <> 'co-occurs'" : ""} ORDER BY weight DESC LIMIT ?`, q, q, limit)).map(edgeRow);
+      return { qid: q, stale, edges: rows.map((e) => ({ ...e, other: e.src === q ? e.dst : e.src })) };
     }
+    if (stale) return { nodes: [], stale: true };
     const deg = await db.all("SELECT qid, SUM(w) AS weight, COUNT(*) AS degree FROM (SELECT src AS qid, weight AS w FROM knowledge_edges WHERE rel = 'co-occurs' UNION ALL SELECT dst AS qid, weight AS w FROM knowledge_edges WHERE rel = 'co-occurs') x GROUP BY qid ORDER BY weight DESC LIMIT ?", limit);
-    return { nodes: deg.map((d) => ({ qid: d.qid, weight: Number(d.weight), degree: Number(d.degree) })) };
+    return { stale: false, nodes: deg.map((d) => ({ qid: d.qid, weight: Number(d.weight), degree: Number(d.degree) })) };
   }));
   // Chunks carrying a tag (qualified id).
   app.get("/api/knowledge/chunks", auth, wrap(async (req) => {
     const q = str(req.query.tag, 80); if (!ids.parse(q)) bad("tag must be a qualified id, e.g. topic:alignment");
-    const rows = await db.all("SELECT c.story_id, c.ord, c.text, c.tags, s.title FROM knowledge_chunks c JOIN stories s ON s.id = c.story_id WHERE c.tags LIKE ? ORDER BY c.story_id DESC LIMIT 50", `%"qid":"${q.replace(/[%_"]/g, "")}"%`);
+    const rows = await db.all(`SELECT c.story_id, c.ord, c.text, c.tags, s.title FROM knowledge_chunks c JOIN stories s ON s.id = c.story_id WHERE ${admitted} AND c.tags LIKE ? ORDER BY c.story_id DESC LIMIT 50`, `%"qid":"${q.replace(/[%_"]/g, "")}"%`);
     return { tag: q, chunks: rows.map((r) => ({ ...r, tags: JSON.parse(r.tags) })).filter((r) => r.tags.some((t) => t.qid === q)) };
   }));
   // Nearest chunks to a query (cosine over the stored vectors; bounded scan for the free tier).
   app.get("/api/knowledge/similar", auth, wrap(async (req) => {
     const q = str(req.query.q, 300); if (!q) bad("Give a query.");
     const v = embedder.embed(q);
-    const rows = await db.all("SELECT c.story_id, c.ord, c.text, c.vector, s.title FROM knowledge_chunks c JOIN stories s ON s.id = c.story_id WHERE c.model = ? ORDER BY c.story_id DESC LIMIT 2000", embedder.id);
+    const rows = await db.all(`SELECT c.story_id, c.ord, c.text, c.vector, s.title FROM knowledge_chunks c JOIN stories s ON s.id = c.story_id WHERE ${admitted} AND c.model = ? ORDER BY c.story_id DESC LIMIT 2000`, embedder.id);
     return { model: embedder.id, results: rows.map((r) => ({ story_id: r.story_id, ord: r.ord, title: r.title, text: r.text, score: Math.round(K.cosine(v, JSON.parse(r.vector)) * 1000) / 1000 })).filter((r) => r.score > 0).sort((a, b) => b.score - a.score).slice(0, 10) };
   }));
   // Linked data: the generated JSON-LD context, and the graph as JSON-LD.
   app.get("/api/knowledge/context.jsonld", wrap(async (req, res) => { res.type("application/ld+json").send(fs.readFileSync(path.join(GEN, "context.jsonld"), "utf8")); return undefined; }));
   app.get("/api/knowledge/export.jsonld", auth, wrap(async (req, res) => {
-    const chunks = (await db.all("SELECT story_id, ord, text, hash, tags FROM knowledge_chunks ORDER BY story_id DESC, ord LIMIT 500")).map((r) => ({ ...r, tags: JSON.parse(r.tags) }));
-    const edges = (await db.all("SELECT * FROM knowledge_edges ORDER BY weight DESC LIMIT 2000")).map(edgeRow);
+    const chunks = (await db.all(`SELECT c.story_id, c.ord, c.text, c.hash, c.tags FROM knowledge_chunks c JOIN stories s ON s.id = c.story_id WHERE ${admitted} ORDER BY c.story_id DESC, c.ord LIMIT 500`)).map((r) => ({ ...r, tags: JSON.parse(r.tags) }));
+    const stale = await staleIndex();
+    const edges = (await db.all(`SELECT * FROM knowledge_edges${stale ? " WHERE rel <> 'co-occurs'" : ""} ORDER BY weight DESC LIMIT 2000`)).map(edgeRow);
     res.type("application/ld+json").send(JSON.stringify(K.toJsonLd({ chunks, edges, base: `${req.protocol}://${req.get("host")}` })));
     return undefined;
   }));

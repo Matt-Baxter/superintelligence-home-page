@@ -2,13 +2,17 @@
 
 SEIS 606 Project 2 · Superintelligence Homepage · John Affolter and Matthew Baxter
 
-**Version 0.8 · November 6, 2026.**
+**Version 1.12 · November 7, 2026.**
 
 The data model, API, auth and rules of **John's build** (the code in this repo). Under the [constitution](../.specify/memory/constitution.md), each bake-off build may differ in database, framework and internal structure, so this is not the shared contract. What both builds must meet is the [shared spec](../specs/001-superintelligence-homepage/spec.md) and the bake-off rules in [CONTRACT.md](../CONTRACT.md); [SPEC_TRACE.md](SPEC_TRACE.md) shows how this build meets each requirement.
 
 Log every change to a table, route or shape here, so whoever merges the builds (or reads this API) can follow it. Rows up to 0.8 were drafted when we planned a split; their approval boxes are history, not a requirement.
 
 ## Change log
+
+- **1.12, Nov 7, 2026 — shared query and analysis alignment (REQ-002, REQ-003, REQ-005; existing research REQ-031/033).** No new tables or columns. Newest/votes/significance sorts now order and paginate in SQL with a descending-ID tie break. Guest queries omit personal-state subqueries. Top retains the existing computed rank. Story payload shapes remain unchanged; missing source names now say “Uncatalogued source” rather than inventing a reader attribution. Ingestion bounds external attention to finite nonnegative 32-bit integer counts and normalizes valid publication timestamps to UTC, retaining date-only precision and using null for invalid dates. Rising attention on an existing link triggers a rescore.
+- Analysis now adds all topic ancestors, treats coverage as linked-source count rather than proven independence, and requires affirmative venue context without common negations for the existing preprint evidence upgrade. These are deterministic cues, not independent verification of peer review. Dossiers use stored feed significance, the same fail-closed story admission, and source identities rather than display names. Buzz counts valid dated records within the requested UTC calendar-day window; invalid/future/missing dates are excluded, and hype averages finite scores bounded to 0–100.
+- Knowledge chunk/search/JSON-LD reads exclude hidden, unclassified and off-topic stories. Graph responses add **`stale: boolean`**: co-occurrence edges are withheld when indexed chunks no longer meet admission. Build refreshes changed tag metadata even when text hashes match, purges ineligible chunks and finalizes graph replacement transactionally, retaining reviewed-document and forecast-event edges. Postgres takes share locks on participating story rows during finalization. Pruning transactionally recomputes co-occurrence from remaining admitted chunks and preserves other edge types. Graph UI presents the stale state; existing route authorization is unchanged.
 
 - Nov 7, 2026 — Public reading, explicitly requested by John (REQ-002, REQ-007, REQ-013–018): `GET /api/stories` and `GET /api/stories/:id` allow guests. Existing hidden/in-scope admission remains. Guests have `voted:false`, `saved:false`; detail `notes`, `lists` and `inPublicLists` are empty. `saved=1` still requires a session. All writes, private list APIs and administration retain their authorization. `/` shows the actual feed to guests; `/?signin=1` opens sign-in, as do existing `next` and `mode` entry links. Shared spec and agreements unchanged.
 

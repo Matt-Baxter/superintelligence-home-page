@@ -7,6 +7,7 @@
 //   buzz(): how loudly a topic is being talked about (commentary, news, forums), kept apart from how strong its evidence
 //            is. Buzz never lifts the evidence rating; the gap between the two is the hype signal.
 const { ontology } = require("../../lib/tagger");
+const values = require("../../lib/story-values");
 
 // Outlet kinds, from most to least checkable. The same kinds as lib/source-catalog.json, plus "commentary" for open
 // publishing platforms (Medium, Substack, dev.to) and "vendor" for a company blog selling its product.
@@ -122,19 +123,22 @@ const BUZZ_KINDS = new Set(["news", "newsletter", "people", "forum", "community"
 const LOUD = 20, SOME = 5; // items about the topic in the window
 const LEVELS = ["none yet", "thin", "early", "some support"];
 function buzz({ stories = [], articles = [], strength = "none yet", days = 30, at = new Date().toISOString().slice(0, 10) }) {
-  const since = new Date(Date.parse(`${at}T00:00:00Z`) - days * 864e5).toISOString().slice(0, 10);
-  const recent = (d) => !d || String(d).slice(0, 10) >= since;
+  const end = values.timestamp(at), windowDays = Math.max(1, Math.min(365, Math.trunc(Number(days) || 30)));
+  if (!Number.isFinite(end)) throw new Error("Buzz needs a valid as-of date.");
+  const since = end - (windowDays - 1) * 864e5, until = end + 864e5;
+  const recent = d => { const t = values.timestamp(d); return Number.isFinite(t) && t >= since && t < until; };
   const s = stories.filter((x) => recent(x.at) && (x.kinds || []).some((k) => BUZZ_KINDS.has(k)));
   const a = articles.filter((x) => recent(x.at));
   const n = s.length + a.length, level = n >= LOUD ? "loud" : n >= SOME ? "some" : "quiet";
-  const hype = a.length ? Math.round(a.reduce((t, x) => t + (x.hype || 0), 0) / a.length) : null;
+  const rated = a.map(x => values.hype(x.hype)).filter(x => x !== null);
+  const hype = rated.length ? Math.round(rated.reduce((t, x) => t + x, 0) / rated.length) : null;
   const ev = LEVELS.indexOf(strength);
   const gap = level === "loud" && ev <= 1 ? "talked about far more than it has been shown"
     : level !== "quiet" && ev <= 1 ? "talked about more than it has been shown"
     : level === "quiet" && ev >= 2 ? "shown more than it is talked about"
     : "talk and evidence roughly in step";
-  return { days, items: n, stories: s.length, articles: a.length, level, hype, gap,
-    rule: `buzz counts news, newsletter, blog, forum and community items on the topic in the last ${days} days (quiet under ${SOME}, loud at ${LOUD} or more); it never changes the evidence rating` };
+  return { days: windowDays, items: n, stories: s.length, articles: a.length, level, hype, gap,
+    rule: `buzz counts valid dated news, newsletter, blog, forum and community items on the topic in the last ${windowDays} days, excluding missing, invalid and future dates (quiet under ${SOME}, loud at ${LOUD} or more); it never changes the evidence rating` };
 }
 
 // ---------- outlet track records ----------

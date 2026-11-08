@@ -106,35 +106,40 @@ app.get("/api/ontology", wrap(() => ({ topics: tagger.topicList(), orgs: tagger.
 /* ------------------------------------------------------------------ stories */
 const KINDS = ["papers", "journal", "lab", "research-org", "forum", "newsletter", "people", "academic", "community", "news", "policy", "submitted"];
 const FORMAT_IDS = Object.keys(feeds.FORMATS);
-const parseTime = (t) => Date.parse(t && !t.includes("T") ? t.replace(" ", "T") + "Z" : t);
+const { attention, timestamp: parseTime } = require("./lib/story-values");
 async function storyRows(where, args, uid, { sort = "top", limit = 40, offset = 0 } = {}) {
+  const orders = { new: "COALESCE(s.published_at, s.first_seen, '') DESC, s.id DESC", votes: "votes DESC, COALESCE(s.published_at, s.first_seen, '') DESC, s.id DESC", signal: "COALESCE(s.significance, 0) DESC, COALESCE(s.published_at, s.first_seen, '') DESC, s.id DESC" };
+  const pageOffset = Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.trunc(Number(offset) || 0))), pageLimit = Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.trunc(Number(limit) || 0)));
+  const order = orders[sort];
+  const personalFields = uid ? `EXISTS(SELECT 1 FROM votes v WHERE v.story_id = s.id AND v.user_id = ?) AS voted,
+      EXISTS(SELECT 1 FROM saves v WHERE v.story_id = s.id AND v.user_id = ?) AS saved,
+      (SELECT COUNT(*) FROM notes n WHERE n.story_id = s.id AND (n.private = 0 OR n.user_id = ?)) AS nnotes` : "0 AS voted, 0 AS saved, 0 AS nnotes";
   const rows = await db.all(`SELECT s.*, (SELECT COUNT(*) FROM votes v WHERE v.story_id = s.id) AS votes,
       (SELECT COUNT(DISTINCT COALESCE(l.source_id, -l.id)) FROM story_links l WHERE l.story_id = s.id) AS nsources,
-      EXISTS(SELECT 1 FROM votes v WHERE v.story_id = s.id AND v.user_id = ?) AS voted,
-      EXISTS(SELECT 1 FROM saves v WHERE v.story_id = s.id AND v.user_id = ?) AS saved,
-      (SELECT COUNT(*) FROM notes n WHERE n.story_id = s.id AND (n.private = 0 OR n.user_id = ?)) AS nnotes,
+      ${personalFields},
       COALESCE(s.published_at, s.first_seen) AS t
-    FROM stories s WHERE COALESCE(s.hidden, 0) = 0 AND COALESCE(s.in_scope, 0) = 1 AND (${where})`, uid, uid, uid, ...args);
+    FROM stories s WHERE COALESCE(s.hidden, 0) = 0 AND COALESCE(s.in_scope, 0) = 1 AND (${where})${order ? ` ORDER BY ${order} LIMIT ? OFFSET ?` : ""}`, ...(uid ? [uid, uid, uid] : []), ...args, ...(order ? [pageLimit, pageOffset] : []));
   const t0 = Date.now();
   rows.forEach((r) => {
-    const hours = Math.max(0, (t0 - parseTime(r.t)) / 36e5);
-    // Votes count most; being covered by several independent sources is a strong signal; older stories sink.
-    r.rank = (1 + r.votes * 3 + (r.nsources - 1) * 2 + Math.log10(1 + (r.ext_score || 0)) + (r.significance || 0) / 25) / Math.pow(hours + 2, 1.15);
+    const time = parseTime(r.t), hours = Number.isFinite(time) ? Math.max(0, (t0 - time) / 36e5) : Infinity;
+    // Votes count most; being covered by several linked sources is a strong signal; older stories sink.
+    r.rank = (1 + r.votes * 3 + (r.nsources - 1) * 2 + Math.log10(1 + attention(r.ext_score)) + (r.significance || 0) / 25) / Math.pow(hours + 2, 1.15);
   });
-  rows.sort(sort === "new" ? (a, b) => (a.t < b.t ? 1 : -1) : sort === "votes" ? (a, b) => b.votes - a.votes || (a.t < b.t ? 1 : -1)
-    : sort === "signal" ? (a, b) => (b.significance || 0) - (a.significance || 0) || (a.t < b.t ? 1 : -1) : (a, b) => b.rank - a.rank);
-  const page = rows.slice(offset, offset + limit);
+  if (!order) rows.sort((a, b) => b.rank - a.rank || String(b.t || "").localeCompare(String(a.t || "")) || b.id - a.id);
+  const page = order ? rows : rows.slice(pageOffset, pageOffset + pageLimit);
   if (!page.length) return [];
   const links = await db.all(`SELECT l.story_id, l.url, l.title, l.rigor, src.name AS source, src.kind FROM story_links l LEFT JOIN sources src ON src.id = l.source_id
     WHERE l.story_id IN (${page.map(() => "?").join(",")}) ORDER BY l.id`, ...page.map((r) => r.id));
   if (!uid) page.forEach((r) => { r.nnotes = 0; });
-  return page.map((r) => shapeStory(r, links.filter((l) => l.story_id === r.id)));
+  const byStory = new Map();
+  for (const link of links) { if (!byStory.has(link.story_id)) byStory.set(link.story_id, []); byStory.get(link.story_id).push(link); }
+  return page.map((r) => shapeStory(r, byStory.get(r.id) || []));
 }
 function shapeStory(r, links) {
   return {
     id: r.id, title: r.title, url: r.url, summary: r.summary, authors: r.authors, published_at: r.published_at, first_seen: r.first_seen,
     topics: JSON.parse(r.topics || "[]"), orgs: JSON.parse(r.orgs || "[]"), votes: r.votes, voted: bool(r.voted), saved: bool(r.saved), notes: r.nnotes,
-    sources: links.map((l) => ({ name: l.source || "Submitted by a reader", kind: l.kind || "submitted", url: l.url, title: l.title,
+    sources: links.map((l) => ({ name: l.source || "Uncatalogued source", kind: l.kind || "submitted", url: l.url, title: l.title,
       ...(profile.has("rigor-badges") && l.rigor ? { rigor: (() => { try { return JSON.parse(l.rigor); } catch { return undefined; } })() } : {}) })),
     nsources: r.nsources, significance: r.significance || 0, analysis: JSON.parse(r.analysis || "{}"),
   };

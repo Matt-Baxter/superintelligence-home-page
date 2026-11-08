@@ -11,12 +11,12 @@
 const analysis = require("../../lib/analysis");
 const SRC = require("./sources");
 const B = require("./bands");
-const { ontology } = require("../../lib/tagger");
+const { ontology, topicIndex } = require("../../lib/tagger");
 const round = (x, d = 2) => Math.round(x * 10 ** d) / 10 ** d;
 const mean = (a) => (a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0);
 const pl = (n, w, many = `${w}s`) => `${n} ${n === 1 ? w : many}`;
 const topicLabel = (id) => (ontology.topics.find((t) => t.id === id) || {}).label || id;
-const descendants = (id) => ontology.topics.filter((t) => t.parent === id).flatMap((c) => [c.id, ...descendants(c.id)]);
+const descendants = topicIndex.descendants;
 
 // ---------- gather (database) ----------
 async function gather(db, topic) {
@@ -25,14 +25,17 @@ async function gather(db, topic) {
   const docs = (await db.all(`SELECT DISTINCT d.id, d.qid, d.kind, d.title, d.authors, d.url, d.score, d.credibility, d.verdict, d.needs_person, d.label, d.result, d.created_at
     FROM review_docs d JOIN knowledge_edges e ON e.src = d.qid AND e.rel = 'about' WHERE e.dst IN (${mark}) ORDER BY d.id DESC LIMIT 200`, ...qids)).map((d) => ({ ...d, result: JSON.parse(d.result || "{}") }));
   const docEdges = docs.length ? await db.all(`SELECT src, rel, dst FROM knowledge_edges WHERE src IN (${docs.map(() => "?").join(", ")})`, ...docs.map((d) => d.qid)) : [];
-  const storyRows = await db.all(`SELECT DISTINCT s.id, s.title, s.url, s.summary, s.topics, COALESCE(s.published_at, s.first_seen) AS at FROM stories s JOIN story_topics t ON t.story_id = s.id
-    WHERE t.topic IN (${ids.map(() => "?").join(", ")}) AND COALESCE(s.in_scope, 1) = 1 AND COALESCE(s.hidden, 0) = 0 ORDER BY s.id DESC LIMIT 300`, ...ids);
-  const links = storyRows.length ? await db.all(`SELECT l.story_id, src.name, src.kind FROM story_links l JOIN sources src ON src.id = l.source_id WHERE l.story_id IN (${storyRows.map(() => "?").join(", ")})`, ...storyRows.map((s) => s.id)) : [];
+  const storyRows = await db.all(`SELECT DISTINCT s.id, s.title, s.url, s.summary, s.topics, s.authors, s.ext_score, s.significance, COALESCE(s.published_at, s.first_seen) AS at FROM stories s JOIN story_topics t ON t.story_id = s.id
+    WHERE t.topic IN (${ids.map(() => "?").join(", ")}) AND COALESCE(s.in_scope, 0) = 1 AND COALESCE(s.hidden, 0) = 0 ORDER BY s.id DESC LIMIT 300`, ...ids);
+  const links = storyRows.length ? await db.all(`SELECT l.story_id, COALESCE(l.source_id, -l.id) AS source_id, COALESCE(src.name, 'Uncatalogued source') AS name, COALESCE(src.kind, 'submitted') AS kind FROM story_links l LEFT JOIN sources src ON src.id = l.source_id WHERE l.story_id IN (${storyRows.map(() => "?").join(", ")})`, ...storyRows.map((s) => s.id)) : [];
   const ents = storyRows.length ? await db.all(`SELECT story_id, kind, entity FROM story_entities WHERE kind IN ('person', 'org') AND story_id IN (${storyRows.map(() => "?").join(", ")})`, ...storyRows.map((s) => s.id)) : [];
   const events = await db.all(`SELECT DISTINCT ev.id, ev.qid, ev.doc_qid, ev.outlet, ev.outlet_label, ev.sentence, ev.due, ev.status FROM review_events ev JOIN knowledge_edges e ON e.src = ev.qid AND e.rel = 'about'
     WHERE e.dst IN (${mark}) ORDER BY ev.due ASC LIMIT 100`, ...qids).catch(() => []);
-  return { topic, ids, docs, docEdges, events, stories: storyRows.map((s) => { const L = links.filter((l) => l.story_id === s.id);
-    return { ...s, sources: [...new Set(L.map((l) => l.name))], kinds: [...new Set(L.map((l) => l.kind))], entities: ents.filter((e) => e.story_id === s.id) }; }) };
+  const linksByStory = new Map(), entitiesByStory = new Map();
+  for (const l of links) { if (!linksByStory.has(l.story_id)) linksByStory.set(l.story_id, []); linksByStory.get(l.story_id).push(l); }
+  for (const e of ents) { if (!entitiesByStory.has(e.story_id)) entitiesByStory.set(e.story_id, []); entitiesByStory.get(e.story_id).push(e); }
+  return { topic, ids, docs, docEdges, events, stories: storyRows.map((s) => { const L = linksByStory.get(s.id) || [];
+    return { ...s, sources: [...new Set(L.map((l) => l.name))], sourceIds: [...new Set(L.map((l) => l.source_id))], kinds: [...new Set(L.map((l) => l.kind))], entities: entitiesByStory.get(s.id) || [] }; }) };
 }
 
 // ---------- analyse (pure) ----------
@@ -72,10 +75,10 @@ function analyse({ topic, ids, docs, docEdges, stories, events = [] }, { example
       tests: !x.source || !urls.has(x.source.url) ? null : credibleUrls.has(x.source.url) ? "credible" : "not credible", n: ref({ type: "lab check", title: x.title, url: `/m/lab#/x/${x.id}`, trace: `lab:${x.id}`, note: x.verdict.supported ? "supported at toy scale" : "not supported at toy scale" }) }));
 
   // Feed coverage: stories on the topic, their sources, and the most significant ones.
-  const S = stories.map((s) => { const a = analysis.analyze({ title: s.title, summary: s.summary || "" }); return { id: s.id, title: s.title, url: s.url, sources: s.sources, significance: a.significance }; })
+  const S = stories.map((s) => { const significance = Number.isFinite(s.significance) ? s.significance : analysis.analyze(s, { kinds: s.kinds, nsources: s.sourceIds?.length || s.sources?.length || 1 }).significance; return { id: s.id, title: s.title, url: s.url, sources: s.sources || [], significance }; })
     .sort((a, b) => b.significance - a.significance);
-  const top = S.slice(0, 4).map((s) => ({ ...s, n: ref({ type: "story", title: s.title, url: s.url, trace: `story:${s.id}`, note: `significance ${s.significance}; ${s.sources.join(", ") || "one source"}` }) }));
-  const sourceCount = new Set(S.flatMap((s) => s.sources)).size;
+  const top = S.slice(0, 4).map((s) => ({ ...s, n: ref({ type: "story", title: s.title, url: s.url, trace: `story:${s.id}`, note: `significance ${s.significance}; ${s.sources.join(", ") || "source not recorded"}` }) }));
+  const sourceCount = new Set(stories.flatMap((s) => s.sourceIds || s.sources || [])).size;
 
   // People and organisations: mention counts only.
   const count = (kind) => { const c = {}; for (const e of docEdges) if (e.rel === "mentions" && e.dst.startsWith(`${kind}:`)) c[e.dst.slice(kind.length + 1)] = (c[e.dst.slice(kind.length + 1)] || 0) + 1;

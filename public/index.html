@@ -207,7 +207,8 @@ $("#sCancel").onclick = closeSubmission; $("#submitForm").addEventListener("keyd
 $("#submitForm").onsubmit = async (e) => { e.preventDefault(); const button = e.submitter || $("#submitForm button[type=submit]"); button.disabled = true; $("#sErr").textContent = ""; try { const r = await api("/api/stories", { body: { url: $("#sUrl").value, title: $("#sTitle").value, summary: $("#sSum").value } }); if (!Number.isInteger(r.id) || r.id < 1) throw new Error("That link could not be added to the feed."); location.href = `/story?id=${r.id}`; } catch (err) { showErr($("#sErr"), err); } finally { button.disabled = false; } };
 $("#retryStartup").onclick = () => location.reload();
 (async () => {
-  const { user, demo, features: siteFeatures = [] } = await api("/api/me", { allow401: true }); window.SI_DISPLAY_NAME = siteFeatures.includes("display-name");
+  const authEntry = params.has("signin") || params.has("next") || params.has("mode");
+  const [{ user, demo, features: siteFeatures = [] }, earlyOntology] = await Promise.all([api("/api/me", { allow401: true }), authEntry ? Promise.resolve(null) : api("/api/ontology")]); window.SI_DISPLAY_NAME = siteFeatures.includes("display-name");
   if (!user && (params.has("signin") || params.has("next") || params.has("mode"))) { showAccess(demo); return; }
   if (!user) { $("#guestNotice").hidden = false; $("#submitBtn").hidden = true; $("#savedOnly").closest("label").hidden = true; }
   topbar(user); $("#feedView").hidden = false;
@@ -215,7 +216,7 @@ $("#retryStartup").onclick = () => location.reload();
     $("#demoWorkspace").hidden = false;
     $("#demoWorkspace").innerHTML = `<div><strong>Local test workspace</strong><p class="small muted">Synthetic data · ${user ? `${user.admin ? "Admin" : "Reader"} session. Sign out to test another role.` : "Guest view. Choose an account to test signed-in features."}</p></div>${!user ? '<div class="actions"><a class="btn" href="/?signin=1&demoRole=reader">Test reader</a><a class="btn" href="/?signin=1&demoRole=admin">Test admin</a></div>' : ""}`;
   }
-  ONT = await api("/api/ontology");
+  ONT = earlyOntology || await api("/api/ontology");
   Object.entries(KIND).forEach(([k, v]) => $("#kind").insertAdjacentHTML("beforeend", `<option value="${k}">${v}</option>`));
   setControlsFromAddress(); load();
 })().catch((e) => { $("#feedView").hidden = true; $("#auth").hidden = true; $("#startupError").hidden = false; $("#startupMessage").textContent = e.message; });
