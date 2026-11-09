@@ -5,6 +5,23 @@ package si.v1;
 
 import "google/protobuf/struct.proto";
 
+// Syntactically recognized publication link; never a claim of verified existence or evidence quality
+enum PublicationKind {
+  PUBLICATION_KIND_UNSPECIFIED = 0;
+  PUBLICATION_KIND_ARXIV = 1;
+  PUBLICATION_KIND_DOI = 2;
+  PUBLICATION_KIND_URL = 3;
+  PUBLICATION_KIND_UNRESOLVED = 4;
+}
+
+// Static vocabulary resolution retains uncertainty rather than choosing an arbitrary alias match
+enum ResolutionStatus {
+  RESOLUTION_STATUS_UNSPECIFIED = 0;
+  RESOLUTION_STATUS_RESOLVED = 1;
+  RESOLUTION_STATUS_AMBIGUOUS = 2;
+  RESOLUTION_STATUS_UNRESOLVED = 3;
+}
+
 // Namespaces of qualified ids (lib/ids.js)
 enum Namespace {
   NAMESPACE_UNSPECIFIED = 0;
@@ -42,6 +59,22 @@ enum ScopeRule {
   SCOPE_RULE_STRONG = 1;
   SCOPE_RULE_TOPICS = 2;
   SCOPE_RULE_NONE = 3;
+}
+
+// Backend publication-link identity. key is an external grouping key, not an internal Tag.qid. basis records syntactic rules, not scientific support.
+message PublicationIdentity {
+  PublicationKind kind = 1;
+  optional string key = 2; // arxiv:, doi: or exact URL grouping key; null when unresolved
+  optional string canonical_url = 3; // Original-source link from the recognized identity; not a fetched or verified resource
+  repeated string basis = 4; // Deterministic resolution rules that fired
+}
+
+// Backend-only exact reference/alias candidates from static registries. Ambiguity is not identity equivalence or a merge instruction.
+message VocabularyResolution {
+  string reference = 1; // Original supplied reference
+  ResolutionStatus status = 2;
+  repeated string candidates = 3; // Known internal qualified IDs; empty when unresolved
+  string basis = 4; // qualified-id or literal-alias; no fuzzy identity inference
 }
 
 // A label on a story or chunk that explains itself: what it is (qid), the words that matched, and how it was made.

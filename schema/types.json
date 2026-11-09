@@ -1,14 +1,34 @@
 {
   "about": "Canonical types for the Superintelligence Homepage's knowledge layer, the one source for every runtime. `npm run schema` generates JSON Schema, zod (Node/browser), pydantic (Python), protobuf with a gRPC service, Arrow (columnar, pyarrow), a JSON-LD context, OpenRPC (JSON-RPC) and Rust serde structs into schema/gen/. Field types: string, int, float, bool, datetime (ISO 8601 text), json (any), T[] (list), T? (optional), or another type's name. `ld` maps a field or type to a JSON-LD term (schema.org where one fits). Naming follows docs/NAMING.md: types are PascalCase, fields snake_case, ids qualified (namespace:id).",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "package": "si.v1",
   "ld": { "@vocab": "https://github.com/Matt-Baxter/superintelligence-home-page/blob/main/schema/gen/vocab.md#", "schema": "https://schema.org/", "si": "https://github.com/Matt-Baxter/superintelligence-home-page/blob/main/schema/gen/vocab.md#" },
   "enums": {
+    "PublicationKind": { "about": "Syntactically recognized publication link; never a claim of verified existence or evidence quality", "values": ["arxiv", "doi", "url", "unresolved"] },
+    "ResolutionStatus": { "about": "Static vocabulary resolution retains uncertainty rather than choosing an arbitrary alias match", "values": ["resolved", "ambiguous", "unresolved"] },
     "Namespace": {"about": "Namespaces of qualified ids (lib/ids.js)", "values": ["topic", "org", "benchmark", "person", "concept", "req", "module", "source", "story", "term", "doc", "event", "outlet", "lab"]},
     "TagMethod": { "about": "How a tag was made", "values": ["ontology-term", "entity", "concept-term", "embedding", "rule", "human", "glossary-mention"] },
     "ScopeRule": { "about": "Which part of the REQ-003 rule decided", "values": ["strong", "topics", "none"] }
   },
   "types": {
+    "PublicationIdentity": {
+      "about": "Backend publication-link identity. key is an external grouping key, not an internal Tag.qid. basis records syntactic rules, not scientific support.",
+      "fields": {
+        "kind": { "type": "PublicationKind" },
+        "key": { "type": "string?", "about": "arxiv:, doi: or exact URL grouping key; null when unresolved" },
+        "canonical_url": { "type": "string?", "about": "Original-source link from the recognized identity; not a fetched or verified resource" },
+        "basis": { "type": "string[]", "about": "Deterministic resolution rules that fired" }
+      }
+    },
+    "VocabularyResolution": {
+      "about": "Backend-only exact reference/alias candidates from static registries. Ambiguity is not identity equivalence or a merge instruction.",
+      "fields": {
+        "reference": { "type": "string", "about": "Original supplied reference" },
+        "status": { "type": "ResolutionStatus" },
+        "candidates": { "type": "string[]", "about": "Known internal qualified IDs; empty when unresolved" },
+        "basis": { "type": "string", "about": "qualified-id or literal-alias; no fuzzy identity inference" }
+      }
+    },
     "Tag": {
       "about": "A label on a story or chunk that explains itself: what it is (qid), the words that matched, and how it was made.",
       "ld": "schema:DefinedTerm",

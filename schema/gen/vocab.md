@@ -3,6 +3,18 @@
 
 Canonical types for the Superintelligence Homepage's knowledge layer, the one source for every runtime. `npm run schema` generates JSON Schema, zod (Node/browser), pydantic (Python), protobuf with a gRPC service, Arrow (columnar, pyarrow), a JSON-LD context, OpenRPC (JSON-RPC) and Rust serde structs into schema/gen/. Field types: string, int, float, bool, datetime (ISO 8601 text), json (any), T[] (list), T? (optional), or another type's name. `ld` maps a field or type to a JSON-LD term (schema.org where one fits). Naming follows docs/NAMING.md: types are PascalCase, fields snake_case, ids qualified (namespace:id).
 
+## PublicationKind
+
+Syntactically recognized publication link; never a claim of verified existence or evidence quality
+
+`arxiv` · `doi` · `url` · `unresolved`
+
+## ResolutionStatus
+
+Static vocabulary resolution retains uncertainty rather than choosing an arbitrary alias match
+
+`resolved` · `ambiguous` · `unresolved`
+
 ## Namespace
 
 Namespaces of qualified ids (lib/ids.js)
@@ -20,6 +32,28 @@ How a tag was made
 Which part of the REQ-003 rule decided
 
 `strong` · `topics` · `none`
+
+## PublicationIdentity
+
+Backend publication-link identity. key is an external grouping key, not an internal Tag.qid. basis records syntactic rules, not scientific support.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| <a id="kind"></a>`kind` | `PublicationKind` |  |
+| <a id="key"></a>`key` | `string?` | arxiv:, doi: or exact URL grouping key; null when unresolved |
+| <a id="canonical_url"></a>`canonical_url` | `string?` | Original-source link from the recognized identity; not a fetched or verified resource |
+| <a id="basis"></a>`basis` | `string[]` | Deterministic resolution rules that fired |
+
+## VocabularyResolution
+
+Backend-only exact reference/alias candidates from static registries. Ambiguity is not identity equivalence or a merge instruction.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| <a id="reference"></a>`reference` | `string` | Original supplied reference |
+| <a id="status"></a>`status` | `ResolutionStatus` |  |
+| <a id="candidates"></a>`candidates` | `string[]` | Known internal qualified IDs; empty when unresolved |
+| <a id="basis"></a>`basis` | `string` | qualified-id or literal-alias; no fuzzy identity inference |
 
 ## Tag
 

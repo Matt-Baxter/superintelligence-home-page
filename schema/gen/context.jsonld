@@ -4,6 +4,19 @@
     "@vocab": "https://github.com/Matt-Baxter/superintelligence-home-page/blob/main/schema/gen/vocab.md#",
     "schema": "https://schema.org/",
     "si": "https://github.com/Matt-Baxter/superintelligence-home-page/blob/main/schema/gen/vocab.md#",
+    "kind": "si:kind",
+    "key": "si:key",
+    "canonical_url": "si:canonical_url",
+    "basis": {
+      "@id": "si:basis",
+      "@container": "@set"
+    },
+    "reference": "si:reference",
+    "status": "si:status",
+    "candidates": {
+      "@id": "si:candidates",
+      "@container": "@set"
+    },
     "Tag": "schema:DefinedTerm",
     "qid": "@id",
     "label": "schema:name",

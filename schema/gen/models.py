@@ -6,6 +6,21 @@ from typing import Any, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 
+class PublicationKind(str, Enum):
+    """Syntactically recognized publication link; never a claim of verified existence or evidence quality"""
+    arxiv = "arxiv"
+    doi = "doi"
+    url = "url"
+    unresolved = "unresolved"
+
+
+class ResolutionStatus(str, Enum):
+    """Static vocabulary resolution retains uncertainty rather than choosing an arbitrary alias match"""
+    resolved = "resolved"
+    ambiguous = "ambiguous"
+    unresolved = "unresolved"
+
+
 class Namespace(str, Enum):
     """Namespaces of qualified ids (lib/ids.js)"""
     topic = "topic"
@@ -40,6 +55,26 @@ class ScopeRule(str, Enum):
     strong = "strong"
     topics = "topics"
     none = "none"
+
+
+class PublicationIdentity(BaseModel):
+    """Backend publication-link identity. key is an external grouping key, not an internal Tag.qid. basis records syntactic rules, not scientific support."""
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+
+    kind: PublicationKind = Field(...)
+    key: Optional[str] = Field(default=None, description="arxiv:, doi: or exact URL grouping key; null when unresolved")
+    canonical_url: Optional[str] = Field(default=None, description="Original-source link from the recognized identity; not a fetched or verified resource")
+    basis: list[str] = Field(..., description="Deterministic resolution rules that fired")
+
+
+class VocabularyResolution(BaseModel):
+    """Backend-only exact reference/alias candidates from static registries. Ambiguity is not identity equivalence or a merge instruction."""
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+
+    reference: str = Field(..., description="Original supplied reference")
+    status: ResolutionStatus = Field(...)
+    candidates: list[str] = Field(..., description="Known internal qualified IDs; empty when unresolved")
+    basis: str = Field(..., description="qualified-id or literal-alias; no fuzzy identity inference")
 
 
 class Tag(BaseModel):

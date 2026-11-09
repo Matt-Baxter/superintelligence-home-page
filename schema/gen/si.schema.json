@@ -4,6 +4,23 @@
   "title": "si.v1",
   "description": "Generated from schema/types.json; do not edit.",
   "$defs": {
+    "PublicationKind": {
+      "description": "Syntactically recognized publication link; never a claim of verified existence or evidence quality",
+      "enum": [
+        "arxiv",
+        "doi",
+        "url",
+        "unresolved"
+      ]
+    },
+    "ResolutionStatus": {
+      "description": "Static vocabulary resolution retains uncertainty rather than choosing an arbitrary alias match",
+      "enum": [
+        "resolved",
+        "ambiguous",
+        "unresolved"
+      ]
+    },
     "Namespace": {
       "description": "Namespaces of qualified ids (lib/ids.js)",
       "enum": [
@@ -42,6 +59,80 @@
         "topics",
         "none"
       ]
+    },
+    "PublicationIdentity": {
+      "type": "object",
+      "description": "Backend publication-link identity. key is an external grouping key, not an internal Tag.qid. basis records syntactic rules, not scientific support.",
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/PublicationKind"
+        },
+        "key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "arxiv:, doi: or exact URL grouping key; null when unresolved"
+        },
+        "canonical_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Original-source link from the recognized identity; not a fetched or verified resource"
+        },
+        "basis": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Deterministic resolution rules that fired"
+        }
+      },
+      "required": [
+        "kind",
+        "basis"
+      ],
+      "additionalProperties": false
+    },
+    "VocabularyResolution": {
+      "type": "object",
+      "description": "Backend-only exact reference/alias candidates from static registries. Ambiguity is not identity equivalence or a merge instruction.",
+      "properties": {
+        "reference": {
+          "type": "string",
+          "description": "Original supplied reference"
+        },
+        "status": {
+          "$ref": "#/$defs/ResolutionStatus"
+        },
+        "candidates": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Known internal qualified IDs; empty when unresolved"
+        },
+        "basis": {
+          "type": "string",
+          "description": "qualified-id or literal-alias; no fuzzy identity inference"
+        }
+      },
+      "required": [
+        "reference",
+        "status",
+        "candidates",
+        "basis"
+      ],
+      "additionalProperties": false
     },
     "Tag": {
       "type": "object",

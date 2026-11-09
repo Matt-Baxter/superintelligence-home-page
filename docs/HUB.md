@@ -137,7 +137,7 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | Bundle builds | json-render bundle builds |
 | No secrets | No secrets in tracked files |
 | No Twitter/X sources | No Twitter/X sources |
-| No Twitter/X in catalog / Content desk / Editorial publishing / Content management / Research foundations / Vocabulary contracts / Product planning / Term properties / Graph logic / Pipeline quality / Story paging / Pipeline quality / paging / UI dates / Analysis rules | No Twitter/X in the source catalog either; analysis rules behave |
+| No Twitter/X in catalog / Content desk / Editorial publishing / Content management / Research foundations / Vocabulary contracts / Entity resolution / Entity grouping / Entity resolution/grouping / Product planning / Term properties / Graph logic / Pipeline quality / Story paging / Pipeline quality / paging / UI dates / Analysis rules | No Twitter/X in the source catalog either; analysis rules behave |
 | Modules | kernel boots, boundaries hold, blocks, views and judges are valid |
 | Codebase map | every API call a page makes has a route |
 | Unslop | UI patterns that read as AI-generated (agent-kit/skills/ui-design) |
@@ -181,6 +181,7 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | `npm run expr:check` | Runs test/expr-vectors.json in every si-expr runtime that's available: Node (always), Python, Rust and WebAssembly. |
 | `npm run schema` | Generate and check the cross-runtime schemas (schema/types.json -> schema/gen/*). |
 | `npm run dictionary` | Backend-only reference audit. |
+| `npm run resolve` | Offline review tool: no fetching, graph writes, person attribution or publication. |
 | `npm run test:spec` | Acceptance suite for Matt's shared spec (specs/001-superintelligence-homepage/spec.md), run against the SPEC version of the site (SITE_PROFILE=spec)… |
 | `npm run lab` | Lab worker: runs the examples and the autoresearch ratchet off the web server (laptop, Mac mini, CI, a sandbox). |
 | `npm run spec:status` | Measure the shared spec from acceptance evidence. |

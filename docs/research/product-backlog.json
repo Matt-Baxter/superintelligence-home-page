@@ -5017,6 +5017,36 @@
       ],
       "acceptance_source": "docs/DATA_DICTIONARY.md",
       "verification": "Local synthetic SQLite/Postgres full browser each335/0 and dictionary graph HTTP each12/0; identity29/0, adapter42/0, vocabulary25/0; zod/Pydantic/Arrow/protobuf/Rust runtime checks pass. Main-site publication awaits the required approvals."
+    },
+    {
+      "id": "SLICE-003",
+      "name": "Publication identity, alias ambiguity and source-coverage integrity",
+      "idea_ids": [
+        "IDEA-022",
+        "IDEA-093"
+      ],
+      "phase": "P0",
+      "status": "in_review",
+      "scope": "Backend-only recognized publication IDs, canonical source pointers, static alias candidate resolution and conservative grouping admission. No author-name identity inference, public UI, automated historic merges/splits or publication.",
+      "requirement_refs": [
+        {
+          "spec": "001",
+          "req": "REQ-004",
+          "status": "approved-shared"
+        },
+        {
+          "spec": "001",
+          "req": "REQ-005",
+          "status": "approved-shared"
+        },
+        {
+          "spec": "001",
+          "req": "REQ-007",
+          "status": "approved-shared"
+        }
+      ],
+      "acceptance_source": "docs/LOGIC_AUDIT.md",
+      "verification": "Local SQLite/Postgres: full browser336/0 each, grouping23/0 each including concurrency/manual provenance, HTTP10/0 each; identifier/alias unit29/0; analysis unit15 passed; generated schemas load in five runtimes. No publication or historic record rewrite; pending review."
     }
   ]
 }

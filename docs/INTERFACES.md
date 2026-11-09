@@ -2,13 +2,15 @@
 
 SEIS 606 Project 2 · Superintelligence Homepage · John Affolter and Matthew Baxter
 
-**Version 1.20 · November 7, 2026.**
+**Version 1.21 · November 7, 2026.**
 
 The data model, API, auth and rules of **John's build** (the code in this repo). Under the [constitution](../.specify/memory/constitution.md), each bake-off build may differ in database, framework and internal structure, so this is not the shared contract. What both builds must meet is the [shared spec](../specs/001-superintelligence-homepage/spec.md) and the bake-off rules in [CONTRACT.md](../CONTRACT.md); [SPEC_TRACE.md](SPEC_TRACE.md) shows how this build meets each requirement.
 
 Log every change to a table, route or shape here, so whoever merges the builds (or reads this API) can follow it. Rows up to 0.8 were drafted when we planned a split; their approval boxes are history, not a requirement.
 
 ## Change log
+
+- **1.21, Nov 8, 2026 — backend publication/entity resolution (REQ-004/005/007).** Schema1.3.0 adds internal PublicationIdentity and VocabularyResolution contracts. External arXiv/DOI grouping keys are not Tag.qid namespaces. Trusted host/full-path parsing prevents substring/truncated-ID matches; DOI resolver identities fold case while generic URL keys retain path/query case, content parameters, scheme, ports, fragments and retained query encoding. Strong identifiers precede weak title keys; incoming conflicting strong IDs do not acquire a title candidate. Exact original story_links URLs preserve legacy replays; existing mappings are not rewritten or split. `idx_links_url` supports that lookup. PostgreSQL grouping admission uses transaction advisory lock(606,4), deliberately serializing ingest transactions; SQLite already serializes writers. Analysis weights remain unchanged; coverage derives from corrected source associations, with all reader-submitted URL variants pooled into one provenance class per story. Existing cached analyses are not retroactively rewritten. Static vocabulary resolution reports resolved/ambiguous/unresolved and retains candidate IDs rather than merging aliases. Offline resolve/dictionary tools expose reviewable provenance and graph pointers, with no new HTTP route, public UI or publication action. Generic title-only grouping remains heuristic, and arXiv/DOI equivalence is not inferred without an existing explicit bridge.
 
 - **1.20, Nov 8, 2026 — tracker metadata cleanup (002/REQ-030).** Delivery task labels follow declared requirements; phase, scope and requirement labels are source-owned on delivery tasks while freeform custom labels and human progress remain preserved. Source context includes full spec-qualified requirement pointers. Validation checks requirement references against actual spec files before opening the database and rejects missing acceptance context, malformed/empty references, empty/duplicate linked ideas, and missing review/completion evidence before importing. No route or table changes; tracker state still does not approve publication.
 
