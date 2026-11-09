@@ -53,6 +53,17 @@ const B = process.env.BASE, lean = process.env.LEAN;
     const rejected=(await (await admin.get('/api/admin/learn/jobs/'+badId)).json()).job;
     check(rejected.status==='failed' && rejected.error.includes('Unapproved axiom') && rejected.output==='', 'Lean-accepted custom assumptions persist as failed jobs, never completed proofs');
     check(!fs.existsSync(path.join(out,String(badId),'proof-audit.json')) && rejected.status!=='published', 'rejected proof has no acceptance receipt or automatic publication');
+    const manual = await admin.put('/api/admin/learn/jobs/'+badId,{data:{status:'done',output:'Sample unverified claim (test data)'}});
+    check(manual.status()===400, 'admin API rejects manual proof completion');
+    const edit = await admin.put('/api/admin/learn/jobs/'+done.id,{data:{output:'Sample replacement (test data)'}});
+    check(edit.status()===400, 'admin API rejects overwriting an audited result');
+    assert.throws(() => execFileSync(process.execPath,['scripts/learn-worker.js','complete',String(badId),proof],{cwd:path.join(__dirname,'..'),env:{...process.env,POSTGRES_URL:'',SITE_PROFILE:'extended'},stdio:'pipe'}), /requires the audited worker/);
+    check((await (await admin.get('/api/admin/learn/jobs/'+badId)).json()).job.status==='failed', 'manual CLI completion leaves the rejected job failed');
+    const queued=(await (await admin.put('/api/admin/learn/jobs/'+done.id,{data:{status:'queued',output:'Sample stale output (test data)'}})).json()).job;
+    check(queued.status==='queued' && queued.output==='' && queued.files.length===0, 'requeue detaches the previous proof result and receipt');
+    execFileSync(process.execPath,['--require',preload,'scripts/learn-worker.js'],{cwd:path.join(__dirname,'..'),env:{...process.env,POSTGRES_URL:'',SITE_PROFILE:'extended',LEARN_OUT:out,LEAN:lean},encoding:'utf8',timeout:300000});
+    const retried=(await (await admin.get('/api/admin/learn/jobs/'+done.id)).json()).job;
+    check(retried.status==='failed' && !fs.existsSync(path.join(out,String(done.id),'proof-audit.json')), 'failed retry removes the previous acceptance receipt');
     console.log(`Lean worker E2E: ${n} passed, 0 failed.`);
   } finally {
     await Promise.all([admin.dispose(),reader.dispose(),guest.dispose()]);

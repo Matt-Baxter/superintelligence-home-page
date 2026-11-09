@@ -62,8 +62,12 @@ module.exports = function mountLearn(app, { db, auth, admin, wrap, str, bad, not
     const status = str(req.body?.status, 20) || j.status;
     if (!STATUSES.includes(status)) bad("Unknown status.");
     if (status === "published" && (j.kind !== "post" || !["done", "published"].includes(j.status))) bad("Only a finished blog draft can be published.");
-    const output = req.body?.output !== undefined ? str(req.body.output, 60000) : j.output;
-    await db.run("UPDATE learn_jobs SET status = ?, output = ?, error = ?, updated_at = ?, published_at = ? WHERE id = ?",
+    const proof = j.kind === "lean-proof";
+    if (proof && status === "done") bad("Lean proof completion requires the audited worker.");
+    const previousOutput = proof ? "" : j.output;
+    const output = proof && status === "queued" ? ""
+      : req.body?.output !== undefined ? str(req.body.output, 60000) : previousOutput;
+    await db.run("UPDATE learn_jobs SET status = ?, output = ?, error = ?, updated_at = ?, published_at = ?, files = CASE WHEN kind = 'lean-proof' THEN '[]' ELSE files END WHERE id = ?",
       status, output, status === "queued" ? "" : j.error, iso(), status === "published" ? (j.published_at || iso()) : null, j.id);
     return { job: parseJob(await db.get("SELECT * FROM learn_jobs WHERE id = ?", j.id)) };
   }));

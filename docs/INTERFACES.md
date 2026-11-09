@@ -2,13 +2,15 @@
 
 SEIS 606 Project 2 · Superintelligence Homepage · John Affolter and Matthew Baxter
 
-**Version 1.22 · November 9, 2026.**
+**Version 2.0 · November 9, 2026.**
 
 The data model, API, auth and rules of **John's build** (the code in this repo). Under the [constitution](../.specify/memory/constitution.md), each bake-off build may differ in database, framework and internal structure, so this is not the shared contract. What both builds must meet is the [shared spec](../specs/001-superintelligence-homepage/spec.md) and the bake-off rules in [CONTRACT.md](../CONTRACT.md); [SPEC_TRACE.md](SPEC_TRACE.md) shows how this build meets each requirement.
 
 Log every change to a table, route or shape here, so whoever merges the builds (or reads this API) can follow it. Rows up to 0.8 were drafted when we planned a split; their approval boxes are history, not a requirement.
 
 ## Change log
+
+- **2.0, November 9, 2026 (002/REQ-024, 003/REQ-038).** The admin job update API returns 400 when a manual write would leave a Lean job done. The worker CLI rejects manual success for Lean jobs and accepts failure reports. Manual status changes detach prior proof artifacts from the job. Requeue clears proof output. The worker removes the previous acceptance receipt when it starts another attempt. Historical job records retain their stored status.
 
 - **1.22, Nov9,2026 — controlled Lean worker admission (002/REQ-024,003/REQ-038).** A worker may mark a curated Lean proof done only after Lean4 compiles it as a proof of a proposition and the requested theorem axiom footprints contain only propext, Classical.choice and Quot.sound. Existing job status/files/output shapes remain unchanged. Successful jobs additionally list proof-audit.lean and proof-audit.json; the latter records toolVersion, sourceSha256, theorem names, actual footprints and allowedAxioms. A hash binds source bytes, not independent authenticity. Custom/unfinished assumptions, missing/duplicate reports or compilation failures fail admission. Controlled-source checking is not a sandbox for uploaded Lean code; human/admin manual completion remains a separate trust boundary. No public route, scoring-rule, table or automatic publishing change.
 

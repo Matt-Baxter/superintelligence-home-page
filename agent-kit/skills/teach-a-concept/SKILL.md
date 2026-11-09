@@ -21,7 +21,7 @@ The Learn module (`modules/learn`) holds the concepts behind superintelligence r
    - **post** gives `post.md` and `social.md`.
    - **video** gives `storyboard.json`, `narration.txt`, `explainer.py` (Manim), plus `explainer.mp4` recorded from `/m/explainer`.
    - **lean-proof** is checked with Lean.
-4. **Agent jobs** (`explain`, `paper-to-code`, `reverse-engineer`, and Lean proofs that need Mathlib) end as `needs-agent` with a `brief.md`. Do the work, then record it: `node scripts/learn-worker.js complete <id> <result.md>`, or add `--failed` with the reason.
+4. **Agent jobs** (`explain`, `paper-to-code`, `reverse-engineer`, and Lean proofs that need Mathlib) end as `needs-agent` with a `brief.md`. For non-proof jobs, record the result with `node scripts/learn-worker.js complete <id> <result.md>`. For Lean jobs, review the statement and dependencies before updating the curated worker inputs. The audited worker marks completed proofs done. Use `complete <id> <result.md> --failed` to record a failure.
    - Paper to code: small runnable code on synthetic data, plus a README of what is and isn't reproduced.
    - Reverse-engineering: mark every guess as a guess.
 5. **Publishing is a person's job.**

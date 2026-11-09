@@ -257,3 +257,9 @@ The initial admission test revealed that a numeric definition also has no axioms
 Unchanged formal correspondence: `Lean proof audit: 61 theorems checked, 3 Learn toys checked, 0 unapproved axioms.`; `Lean differential: 384 comparisons passed, 0 failed.` Full browser SQLite/Postgres each `336 passed, 0 failed`, `page errors: none`. Extended queue/worker E2E each `Lean worker E2E: 11 passed, 0 failed.` The latter checks source-bound receipts and injects a synthetic false theorem into an isolated worker child only; the compiler accepts its custom axiom, but admission persists a failed job with no success output/receipt/publication. Independent inspection confirmed the injection does not change the server or repository registry; the old compile-only path would fail these assertions.
 
 `Preflight passed.` No scoring formula, public UI, route, table, training, deployment or shared requirement changed. T053 records the completed worker slice; T050/T051 and two unfinished Learn statements remain open. All databases/accounts were disposable synthetic fixtures; the preserved preview was untouched.
+
+## 2026-11-09 — proof completion and retry
+
+The admin API and CLI previously allowed manual Lean success after the worker's assumption gate was added. Both now reserve done for the audited worker. Requeue clears proof output and detaches artifact references. Starting another attempt removes the prior acceptance receipt so a failed retry cannot leave it at the active receipt path. Historical done statuses still require provenance review.
+
+Browser checks before the retry cleanup returned 336 passed, 0 failed with no page errors on SQLite and Postgres. The final focused suite returned `Lean worker E2E: 16 passed, 0 failed.` on each database, including manual completion, result overwrite and failed retry checks.

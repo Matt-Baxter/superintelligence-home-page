@@ -101,11 +101,12 @@ async function runJob(job, opts) {
   }
 
   if (job.kind === "lean-proof") {
+    fs.rmSync(path.join(dir, "proof-audit.json"), { force: true });
     const lf = c && L.leanFile(c.id); if (!lf) throw new Error("That concept has no formal statement.");
     put(lf.file, lf.source);
     const lean = process.env.LEAN || (has("lean") ? "lean" : null);
     const sorry = /\bsorry\b/.test(lf.source);
-    if (lf.needs || sorry) return { status: "needs-agent", output: `Proof still to do${lf.needs ? ` (needs ${lf.needs})` : ""}. An agent fills in the proof in a Lean project with Mathlib, checks it with \`lake build\`, then records it with: node scripts/learn-worker.js complete ${job.id} <file.lean>`, files };
+    if (lf.needs || sorry) return { status: "needs-agent", output: `Proof still to do${lf.needs ? ` (needs ${lf.needs})` : ""}. Review the proof and its dependencies before adding it to the curated worker inputs.`, files };
     if (!lean) return { status: "needs-agent", output: "Lean isn't installed here. Install Lean 4 (elan) or set LEAN, then run the worker again.", files };
     // These are controlled Learn sources, not arbitrary uploaded Lean programs.
     const theorems = [...lf.source.matchAll(/^theorem ([A-Za-z_]\w*)\b/gm)].map(m => m[1]);
@@ -144,9 +145,11 @@ async function main() {
   if (cmd === "complete") {
     const [id, file] = args; if (!id || !file) throw new Error("Usage: complete <id> <file> [--failed]");
     const job = await db.get("SELECT * FROM learn_jobs WHERE id = ?", Number(id)); if (!job) throw new Error(`No job #${id}`);
-    const text = fs.readFileSync(file, "utf8").slice(0, 60000);
     const failed = args.includes("--failed");
-    await save(job, { status: failed ? "failed" : "done", output: failed ? job.output : text, error: failed ? text.slice(0, 2000) : "", files: JSON.stringify([...JSON.parse(job.files || "[]"), file]) });
+    const proof = job.kind === "lean-proof";
+    if (proof && !failed) throw new Error("Lean proof completion requires the audited worker.");
+    const text = fs.readFileSync(file, "utf8").slice(0, 60000);
+    await save(job, { status: failed ? "failed" : "done", output: failed ? (proof ? "" : job.output) : text, error: failed ? text.slice(0, 2000) : "", files: JSON.stringify(proof ? [file] : [...JSON.parse(job.files || "[]"), file]) });
     console.log(`Job #${id} recorded as ${failed ? "failed" : "done"}.`);
     return;
   }
