@@ -49,4 +49,11 @@ assert.deepEqual(ad.tag("Sample startup keeps a lean team (test data)"), [], "no
 // Alignment: every term that tags a story Formal verification also links the Statement fidelity explainer.
 const onto = require("../lib/ontology.json").topics.find((x) => x.id === "formal-verification").terms, conc = require("../modules/learn/data/concepts.json").concepts.find((x) => x.id === "statement-fidelity").terms;
 assert.deepEqual(onto.filter((x) => !conc.includes(x)), [], "concept terms cover the topic's terms");
-console.log("verification unit checks: 23 passed");
+// Deeper toys (docs/RESEARCH_FORMAL_VERIFICATION.md).
+assert.ok(P.comparatorThreshold(0.9) > P.comparatorThreshold(0.6) && P.comparatorThreshold(0.6) > P.comparatorThreshold(0.3), "harder claims need a stronger comparator");
+assert.ok(w({ power: 0.5 }).weakened_share > 0.9 && w({ power: 0.8 }).weakened_share < 0.1, "below the threshold (0.64 at difficulty 0.6) a comparator does almost nothing; above it, weakening stops");
+const rd = P.runners.find((r) => r.id === "recursive-drift"), keep = (a) => rd.run({ anchor_every: a, power: 0.9, difficulty: 0.6, generations: 12, steps: 200, batch: 32, seed: 23 }).metrics.claim_retained;
+assert.ok(keep(1) > 0.98 && keep(1) - keep(0) > 0.02, "above the threshold an outside anchor holds; self-reference leaks across generations");
+const lf = P.runners.find((r) => r.id === "library-fidelity"), lib = (st) => lf.run({ strategy: st, budget: 0.1, mistranslate: 0.05, def_share: 0.25, nodes: 400, seed: 29 }).metrics;
+assert.ok(lib(2).contaminated < lib(0).contaminated / 2, "foundations-first removes far more contamination than checking the last results");
+console.log("verification unit checks: 27 passed");

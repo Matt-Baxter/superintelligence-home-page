@@ -36,6 +36,9 @@ Learn concept `statement-fidelity`.
   rewarding "it compiles" teaches weaker statements, and an exact comparator stops it. Our hypothesis, that a comparator
   which spots weakenings only in proportion to their size lets subtle ones through, is supported at toy scale.
 
+**Deeper analysis** (comparator threshold, recursive self-improvement drift, library review order, the interpretability
+mapping): `docs/RESEARCH_FORMAL_VERIFICATION.md`, with Lab runners `recursive-drift` and `library-fidelity`.
+
 **Known limit:** the held-out split was seen while the loop's candidate edits were written (2026-11-09), so it is no
 longer blind. A fresh held-out set written by someone who hasn't read `rules.json` is the next step.
 

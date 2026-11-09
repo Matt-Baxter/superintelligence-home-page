@@ -80,12 +80,21 @@ const SUITES = {
     const rp = P.runners.find((r) => r.id === "roleplay-rsi"), rq = (m) => rp.run({ meta: m, edit_bound: 3, judge_noise: 0.2, rounds: 30, turns: 200, seed: 7 }).metrics.bad_rate;
     const ml = P.runners.find((r) => r.id === "monitor-leak-rl"), me = (l) => ml.run({ leak: l, accuracy: 0.95, easy_share: 0, steps: 300, batch: 32, seed: 13 }).metrics.evaded;
     const ag = P.runners.find((r) => r.id === "autoformalize-gate"), af = (g) => ag.run({ gate: g, power: 1, subtle_blind: 0, difficulty: 0.6, steps: 300, batch: 32, seed: 17 }).metrics.weakened_share;
+    // The closed-form comparator threshold against the simulation: smallest power (0.05 grid) with weakened share < 0.5.
+    const thErr = Math.max(...[0.4, 0.6, 0.8].map((d) => { const pred = P.comparatorThreshold(d); let sim = 1.05;
+      for (let k = Math.max(0, Math.floor(pred * 20) - 2); k <= 20; k++) if (ag.run({ gate: 1, power: k / 20, subtle_blind: 0, difficulty: d, steps: 600, batch: 32, seed: 17 }).metrics.weakened_share < 0.5) { sim = k / 20; break; }
+      return Math.abs(sim - pred); }));
+    const lf = P.runners.find((r) => r.id === "library-fidelity"), lib = (st) => lf.run({ strategy: st, budget: 0.1, mistranslate: 0.05, def_share: 0.25, nodes: 400, seed: 29 }).metrics.contaminated;
+    const rd = P.runners.find((r) => r.id === "recursive-drift"), keep = (a) => rd.run({ anchor_every: a, power: 0.9, difficulty: 0.6, generations: 12, steps: 200, batch: 32, seed: 23 }).metrics.claim_retained;
     return {
       "papers.hidden_eval_hack_drop": { value: Math.round(drop * 1000) / 1000, better: "higher", tol: 0.02, about: "drop in the quirk share when a self-improving agent is judged on hidden evaluations (arXiv 2609.26457 toy)" },
       "papers.recompute_evasion": { value: ev, better: "lower", tol: 0, about: "undetected exploits with independent recomputation (arXiv 2609.28614 toy)" },
       "papers.cosine_sae_gain": { value: c(1) - c(0), better: "higher", tol: 1, about: "extra true features a cosine-scored SAE recovers when input sizes vary (arXiv 2606.15054 toy)" },
       "papers.roleplay_meta_bad_drop": { value: Math.round((rq(0) - rq(1)) * 1000) / 1000, better: "higher", tol: 0.02, about: "drop in the bad-reply rate when a role-play updater refines its own repair rules (arXiv 2611.07469 toy)" },
       "papers.monitor_leak_evasion_rise": { value: Math.round((me(1) - me(0)) * 1000) / 1000, better: "higher", tol: 0.02, about: "rise in the share of hacks a monitor misses when its verdict is fed into the RL reward instead of only watching (arXiv 2611.09828 toy)" },
+      "papers.comparator_threshold_error": { value: Math.round(thErr * 1000) / 1000, better: "lower", tol: 0.05, about: "largest gap between the closed-form comparator threshold, 1 - P(claim compiles) / P(easiest weakening compiles), and the simulated one at difficulties 0.4, 0.6, 0.8 (grid 0.05)" },
+      "papers.self_reference_leak": { value: Math.round((keep(1) - keep(0)) * 1000) / 1000, better: "higher", tol: 0.01, about: "claim strength lost over 12 generations of self-improvement when each generation checks against its own output instead of the original claim, comparator above threshold (recursive-drift toy)" },
+      "papers.foundations_first_gain": { value: Math.round((lib(0) - lib(2)) * 1000) / 1000, better: "higher", tol: 0.01, about: "less of a formal library resting on a wrong statement when a 10% review budget checks foundations first instead of the last results (library-fidelity toy)" },
       "papers.comparator_weakening_drop": { value: Math.round((af(0) - af(1)) * 1000) / 1000, better: "higher", tol: 0.02, about: "drop in the share of accepted proofs that prove a weaker statement when a comparator checks the statement, versus rewarding compiling alone (autoformalize-gate toy; arXiv 2610.08144)" },
     };
   },

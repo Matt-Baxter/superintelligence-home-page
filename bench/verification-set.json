@@ -248,6 +248,48 @@
       "rung": "none",
       "gap": false,
       "text": "Sample agency formalizes its review process for AI procurement (test data)"
+    },
+    {
+      "split": "heldout",
+      "rung": "none",
+      "gap": false,
+      "added": "2026-11-09: interpretability traps, written before testing",
+      "text": "Sample lab says an independent team verified its deception feature with activation patching (test data)"
+    },
+    {
+      "split": "heldout",
+      "rung": "none",
+      "gap": false,
+      "added": "2026-11-09: interpretability traps, written before testing",
+      "text": "Sample interpretability paper: the sparse autoencoder feature for honesty was checked by ablation (test data)"
+    },
+    {
+      "split": "heldout",
+      "rung": "none",
+      "gap": false,
+      "added": "2026-11-09: interpretability traps, written before testing",
+      "text": "Outside researchers reproduced the sample circuit for modular addition in a small transformer (test data)"
+    },
+    {
+      "split": "heldout",
+      "rung": "none",
+      "gap": false,
+      "added": "2026-11-09: interpretability traps, written before testing",
+      "text": "Sample report: the probe's statement about truthfulness is weaker than the headline claims (test data)"
+    },
+    {
+      "split": "heldout",
+      "rung": "none",
+      "gap": false,
+      "added": "2026-11-09: interpretability traps, written before testing",
+      "text": "Sample team formally describes a feature-steering method for alignment (test data)"
+    },
+    {
+      "split": "heldout",
+      "rung": "claimed",
+      "gap": false,
+      "added": "2026-11-09: interpretability traps, written before testing",
+      "text": "Sample group proves in Lean that a toy sparse autoencoder's reconstruction error is bounded (test data)"
     }
   ]
 }

@@ -747,6 +747,152 @@
           "weight": 10
         }
       ]
+    },
+    {
+      "id": "recursive-drift-below-threshold",
+      "title": "Self-improvement below the comparator threshold: does checking against your own output compound the weakening?",
+      "concept": "concept:recursive-self-improvement",
+      "topics": [
+        "topic:recursive-self-improvement",
+        "topic:formal-verification"
+      ],
+      "source": {
+        "title": "Formalizing Fermat's Last Theorem (a comparator checked the final statement against Mathlib's)",
+        "url": "https://www.anthropic.com/research/formalizing-fermats-last-theorem",
+        "via": "the Fermat, Navier-Stokes and Stacks Project formalizations, Nov 9, 2026"
+      },
+      "idea": "A self-improving system proves what it takes to be the claim and passes its result on as the next generation's claim. If each generation checks against its own previous output instead of a fixed outside statement, a weakened result could become the new standard and the weakening could compound across generations.",
+      "reproduce": {
+        "runner": "recursive-drift",
+        "params": {
+          "anchor_every": 1,
+          "power": 0.5,
+          "difficulty": 0.6,
+          "generations": 6,
+          "steps": 200,
+          "batch": 32,
+          "seed": 23
+        },
+        "expect": "With a comparator below the threshold (power 0.5, threshold about 0.64), every generation checked against the original claim still proves only about a third of it: anchoring alone doesn't stop weakening when the check is too weak."
+      },
+      "hypothesis": {
+        "statement": "Ours, written before the run: checking each generation against its own previous output (anchor_every 0) compounds the weakening, so the final statement keeps at least 0.3 less of the claim than with an outside anchor. (Recorded as written; the toy did not support it: both fall to about a third in the first generation and stay there, because once a statement is easy to prove there is no pressure to weaken it further.)",
+        "params": {
+          "anchor_every": 0
+        },
+        "predict": {
+          "metric": "claim_retained",
+          "direction": "down",
+          "delta": 0.3
+        }
+      },
+      "criteria": [
+        {
+          "metric": "claim_retained",
+          "weight": 60
+        },
+        {
+          "metric": "min_retained",
+          "weight": 40
+        }
+      ]
+    },
+    {
+      "id": "recursive-drift-above-threshold",
+      "title": "Self-improvement above the comparator threshold: small per-generation leaks under self-reference",
+      "concept": "concept:recursive-self-improvement",
+      "topics": [
+        "topic:recursive-self-improvement",
+        "topic:formal-verification"
+      ],
+      "source": {
+        "title": "Formalizing Fermat's Last Theorem (a comparator checked the final statement against Mathlib's)",
+        "url": "https://www.anthropic.com/research/formalizing-fermats-last-theorem",
+        "via": "the Fermat, Navier-Stokes and Stacks Project formalizations, Nov 9, 2026"
+      },
+      "idea": "Above the threshold each check looks excellent: a generation loses well under 1% of the claim. But if every generation checks against its predecessor's output, the small losses are accepted as the new standard and add up. An outside reference that never moves stops the accumulation.",
+      "reproduce": {
+        "runner": "recursive-drift",
+        "params": {
+          "anchor_every": 1,
+          "power": 0.9,
+          "difficulty": 0.6,
+          "generations": 12,
+          "steps": 200,
+          "batch": 32,
+          "seed": 23
+        },
+        "expect": "Checked against the original claim every generation (power 0.9), the proved statement stays at about 99% of the claim for all 12 generations."
+      },
+      "hypothesis": {
+        "statement": "Ours, registered after the 6-generation run showed a leak (0.993 to 0.969) and before this 12-generation run: with self-reference (anchor_every 0) the final statement keeps at least 0.05 less of the claim than with the outside anchor, because each generation's small loss becomes the next one's standard.",
+        "params": {
+          "anchor_every": 0
+        },
+        "predict": {
+          "metric": "claim_retained",
+          "direction": "down",
+          "delta": 0.05
+        }
+      },
+      "criteria": [
+        {
+          "metric": "claim_retained",
+          "weight": 60
+        },
+        {
+          "metric": "min_retained",
+          "weight": 40
+        }
+      ]
+    },
+    {
+      "id": "library-foundations-first",
+      "title": "Checking a formal library: final results or foundations first?",
+      "concept": "concept:statement-fidelity",
+      "topics": [
+        "topic:formal-verification",
+        "topic:math"
+      ],
+      "source": {
+        "title": "The Stacks Project, formalized in Lean (each declaration linked to its Stacks tag)",
+        "url": "https://stacks.axiommath.ai",
+        "via": "the Fermat, Navier-Stokes and Stacks Project formalizations, Nov 9, 2026"
+      },
+      "idea": "For one theorem, checking the final statement against a reference is enough: everything under it is proved from the axioms. A library is different: every declaration is something people will cite, and a mistranslated definition contaminates everything built on it. With a limited budget of declarations a person can compare with the source text, which should they check?",
+      "reproduce": {
+        "runner": "library-fidelity",
+        "params": {
+          "strategy": 0,
+          "budget": 0.1,
+          "mistranslate": 0.05,
+          "def_share": 0.25,
+          "nodes": 400,
+          "seed": 29
+        },
+        "expect": "Unchecked, about 14% of the library rests on a wrong statement. Checking the last 10% of results (what a single-theorem project's final check amounts to in a library) leaves 14%. Checking foundations first (definitions with the most dependents) leaves about 5%, while catching about the same share of the wrong translations."
+      },
+      "hypothesis": {
+        "statement": "Ours, written before the run: at a 10% budget, foundations first leaves at least 0.2 less of the library contaminated than checking the last results first. (Recorded as written. The bar was set in absolute terms before seeing that only about 0.14 of the library is contaminated to begin with, so it could not be met; in relative terms foundations first removes about two thirds of the contamination and the last-results check about 3%.)",
+        "params": {
+          "strategy": 2
+        },
+        "predict": {
+          "metric": "contaminated",
+          "direction": "down",
+          "delta": 0.2
+        }
+      },
+      "criteria": [
+        {
+          "metric": "contaminated",
+          "weight": 80
+        },
+        {
+          "metric": "caught",
+          "weight": 20
+        }
+      ]
     }
   ]
 }
