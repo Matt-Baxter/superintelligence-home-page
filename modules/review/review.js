@@ -48,7 +48,7 @@ const MARKERS = [
 const CLAIM = /\b(we (?:show|find|found|demonstrate|prove)|demonstrat\w+|achiev\w+|outperform\w*|surpass\w*|state[- ]of[- ]the[- ]art|sota|first (?:ai|model|system|time)|breakthrough|solv(?:es|ed)|superhuman|human[- ]level|will (?:soon|replace|surpass)|(?:superintelligen\w*|agi|recursive(?:ly)? self[- ]improv\w*) (?:is|are|has|have|will|was)\b|(?:reach|achiev|buil|creat)\w* (?:agi|superintelligen\w*))\b/i;
 // A title or sentence that only names a topic ("Recursive self-improvement of research agents") is a subject, not a claim:
 // topic words count as a claim only with an asserting verb ("AGI is here", "achieved superintelligence").
-const HYPE = /\b(revolutionary|unprecedented|breakthrough|game[- ]chang\w+|incredible|massive|insane|mind[- ]blowing|world[- ]changing|definitely|guaranteed|inevitabl\w+|imminent|everything chang(?:es|ing)|no one is talking about|holy grail|doomsday|explosive|closing fast|palpable|utterly transformative|no longer sci-fi|existential threats?|kill us all|most consequential)\b/gi;
+const HYPE = /\b(revolutionary|unprecedented|breakthrough|game[- ]chang\w+|incredible|massive|insane|mind[- ]blowing|world[- ]changing|definitely|guaranteed|inevitabl\w+|imminent|everything chang(?:es|ing)|no one is talking about|holy grail|doomsday|explosive|closing fast|palpable|utterly transformative|no longer sci-fi|existential threats?|kill us all|most consequential|no longer (?:theoretical|hypothetical|speculation|science fiction)|decoupl\w+ from (?:linear )?human)\b/gi;
 // Text written to the judge rather than the reader: a reward hack against model judges, flagged and capped here too.
 const INJECTION = /\b(ignore (?:all |the )?(?:previous|prior|above) instructions|you are (?:an? )?(?:ai|judge|grader)|(?:rate|score|grade) this (?:paper |article |post )?(?:as |a )?\d+|give (?:this|it) (?:a )?(?:perfect|high|top) score|system prompt)\b/i;
 
@@ -86,10 +86,10 @@ function rigor(sents) {
   const missing = MARKERS.filter((m) => !found.has(m.id)).map((m) => m.label);
   return { score: why.reduce((a, w) => a + w.points, 0), why, missing };
 }
-function claims(sents) {
+function claims(sents, article = false) {
   const out = [];
   sents.forEach((s, i) => {
-    if (!CLAIM.test(s)) return;
+    if (!CLAIM.test(article ? unquote(s) : s)) return;
     // Backed = the claim's own sentence carries the evidence. Evidence in a neighbouring sentence only counts as
     // "partly backed", because a claim appended next to someone else's numbers would otherwise borrow them.
     const own = markersIn(s), near = [...new Set([s, sents[i - 1], sents[i + 1]].filter(Boolean).flatMap(markersIn))];
@@ -120,6 +120,16 @@ const REPORTING = [
 const ASSERT = /\b(is (?:already )?here|already|will (?!not)\w+|now \w+s\b|most of|every|each generation|compounds?|inevitabl\w+|soon)\b/i;
 const HEDGE = /\b(whether|may|might|could|uncertain|unclear|open question|plausible|if )\b/i;
 const CITE = REPORTING[0].re;
+// Reported speech: in an article, a sentence that quotes someone's reaction ('called it "a breakthrough"') reports what
+// was said; the quoted words are not the article's own claim or hype. Only the quoted span is set aside: anything the
+// article says in its own voice still counts.
+const QUOTED = /["\u201c][^"\u201d]{2,200}["\u201d]|(?:^|[\s(])['\u2018][^'\u2019]{2,200}['\u2019](?=[\s.,;:!?)]|$)/g;
+const ATTRIB = /\b(call(?:s|ed)? (?:it|this|the)|said|says|told|according to|describ\w+ (?:it|this) as|quoted|reactions?|praised|warned)\b/i;
+const reported = (s) => QUOTED.test(s) && ATTRIB.test(s.replace(QUOTED, " ")) && ((QUOTED.lastIndex = 0), true);
+const unquote = (s) => { QUOTED.lastIndex = 0; if (!reported(s)) return s; QUOTED.lastIndex = 0; return s.replace(QUOTED, " \u2026 "); };
+// Figures with no study behind them: in an article that cites no study at all, a sentence giving numbers is an
+// unbacked claim, and its numbers don't count as "the study's numbers".
+const FIGURE = /\b\d+(?:\.\d+)?\s?(?:%|percent\b|x\b|\u00d7)|\b\d+ of (?:every )?\d+\b|\$\d/i;
 const WITHDRAWN = /\b(this (?:paper|article|preprint|submission|work) (?:has been|was|is being) (?:withdrawn|retracted)|withdrawn by the authors?|has been retracted|retraction notice|retracted (?:by|due to|after))\b/i;
 function hype(text, cl, survey = false, asserts = 0) {
   const hits = [...new Set((String(text).match(HYPE) || []).map((h) => h.toLowerCase()))];
@@ -151,17 +161,21 @@ function review(input) {
   });
   const naive = step("judge-naive", "Significance, as an unguarded judge would score it", () => analysis.analyze({ title, summary: text, authors: `${authors}\n${text}` }, { kinds: [source] }));
   const rg = step("judge-rigor", "Rigor: what the evidence would need", () => rigor(sents));
-  const cl = step("claims", "Find claims and what backs each one", () => claims([title, ...sents].filter(Boolean)));
+  const isArticle = k.kind === "article";
+  const cl = step("claims", "Find claims and what backs each one", () => claims([title, ...sents].filter(Boolean), isArticle));
   // The significance judge reads only backed claims: a claim without evidence adds no topics and no points.
-  const unbackedSet = new Set(cl.filter((c) => c.level !== "backed").map((c) => c.sentence));
+  // In an article, sentences that assert or give figures with nothing behind them are unbacked too (see asserts below).
+  const cites = CITE.test(cleaned.text) || (!!input.url && /arxiv\.org\/abs\/|doi\.org\//.test(String(input.url)));
+  const assertList = isArticle ? sents.filter((x) => !CLAIM.test(unquote(x)) && ((ASSERT.test(x) && !HEDGE.test(x) && !CITE.test(x) && !markersIn(x).length) || (!cites && FIGURE.test(x)))) : [];
+  const unbackedSet = new Set([...cl.filter((c) => c.level !== "backed").map((c) => c.sentence), ...assertList.map((x) => x.slice(0, 200))]);
   const sigText = sents.filter((s) => !unbackedSet.has(s.slice(0, 200))).join(" ");
   const sig = step("judge-significance", "Significance on the cleaned text, without unbacked claims", () => analysis.analyze({ title, summary: sigText, authors }, { kinds: [source] }));
   const isSurvey = k.kind === "paper" && SURVEY.test(`${title} ${sents[0] || ""}`);
-  const isArticle = k.kind === "article";
-  const asserts = isArticle ? sents.filter((x) => ASSERT.test(x) && !HEDGE.test(x) && !CITE.test(x) && !markersIn(x).length && !CLAIM.test(x)).length : 0;
-  const hp = step("judge-hype", "Hype: unbacked claims and hype words", () => hype(`${title} ${text}`, cl, isSurvey, asserts));
+  const asserts = assertList.length;
+  const hypeText = isArticle ? [title, ...sents].map(unquote).join(" ") : `${title} ${text}`;
+  const hp = step("judge-hype", "Hype: unbacked claims and hype words", () => hype(hypeText, cl, isSurvey, asserts));
   let rubric = isSurvey ? "survey" : "paper";
-  if (isArticle) { const rp = REPORTING.filter((c) => c.re.test(cleaned.text)), rv = rp.reduce((a, c) => a + c.points, 0);
+  if (isArticle) { const rp = REPORTING.filter((c, i) => c.re.test(cleaned.text) && (i !== 1 || cites)), rv = rp.reduce((a, c) => a + c.points, 0);
     if (rv > rg.score) { rubric = "reporting"; rg.score = rv; rg.why = rp.map((c) => ({ factor: c.label, points: c.points, detail: (sents.find((x) => c.re.test(x)) || "").slice(0, 140) })); rg.missing = REPORTING.filter((c) => !rp.includes(c)).map((c) => c.label); } }
   if (isSurvey) { const cov = COVERAGE.filter((c) => c.re.test(cleaned.text)); const sv = cov.reduce((a, c) => a + c.points, 0);
     if (sv > rg.score) { rg.score = sv; rg.why = cov.map((c) => ({ factor: c.label, points: c.points, detail: "survey coverage" })); rg.missing = COVERAGE.filter((c) => !cov.includes(c)).map((c) => c.label); } }
@@ -323,7 +337,7 @@ const VERDICTS = [
 const CRITERIA = {
   rigor: { about: "What the evidence needs. Each check counts only when a sentence shows it; the points add up to 100.", checks: MARKERS.map(({ id, label, points }) => ({ id, label, points })) },
   survey: { about: "A survey is judged on coverage instead, and only when its title or first sentence says it is one.", checks: COVERAGE.map(({ label, points }) => ({ label, points })) },
-  reporting: { about: "An article is judged on how well it reports instead, when that scores higher: does it cite the study it describes, give the study's numbers or size, say what was not shown, and keep forecasts apart from findings. In an article, a sentence that asserts progress or the future with no number, sample, citation or hedge counts as an unbacked claim.", checks: REPORTING.map(({ label, points }) => ({ label, points })) },
+  reporting: { about: "An article is judged on how well it reports instead, when that scores higher: does it cite the study it describes, give the study's numbers or size, say what was not shown, and keep forecasts apart from findings. In an article, a sentence that asserts progress or the future with no number, sample, citation or hedge counts as an unbacked claim. An article that cites no study gets no points for numbers, and each sentence giving figures counts as an unbacked claim. Words quoted from someone's reaction ('called it \"a breakthrough\"') are reported speech: they are not counted as the article's claims or hype words.", checks: REPORTING.map(({ label, points }) => ({ label, points })) },
   claims: { about: "A claim is backed when its own sentence carries a number, a sample size or an uncertainty; partly backed when a neighbouring sentence does; otherwise unbacked." },
   hype: { about: "Lower is better: up to 60 for the share of unbacked claims, plus 10 per hype word up to 40 (a survey's summaries of other work aren't counted as its claims)." },
   credibility: { about: "Half rigor plus half (100 minus hype)." },

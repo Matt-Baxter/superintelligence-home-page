@@ -112,6 +112,22 @@
    "title": "Sample: Agents that improve their own training code (test data)",
    "authors": "Sample Author F (test data)",
    "text": "This paper has been withdrawn by the authors due to an error in the evaluation. We evaluated 3 agent variants on 500 held-out tasks. Compared with the baseline, the self-edited agent solved 44.0% of tasks versus 35.0% (95% confidence interval 6.1 to 11.9, across 5 seeds). Limitations: the tasks are short. Code is available at github.com/sample-org/sample-repo."
+  },
+  {
+   "id": "b-unsourced-digest",
+   "credible": false,
+   "kind": "article",
+   "title": "Sample: Weekly AI digest, week 1 (test data)",
+   "authors": "Sample newsletter (test data)",
+   "text": "This week the physical world pushed back while the algorithmic loop sped up. An evaluation group put one lab's research pace at about 2x (range 1.3x to 3.0x), with roughly 80% of it credited to AI work. A city vote blocked 38 of 39 planned data centres. A sample bank advisory projects up to 45% of planned capacity faces delays. Self-improvement is no longer theoretical speculation; progress is decoupling from linear human effort."
+  },
+  {
+   "id": "b-careful-news-quoted-reaction",
+   "credible": true,
+   "kind": "article",
+   "title": "Sample: Researchers report a training method that discourages models from cheating (test data)",
+   "authors": "Sample newsroom (test data)",
+   "text": "A sample research group described a method, in a write-up posted this week, that uses signals from inside a model during training to reward correct methods rather than only correct answers. In a test where models could peek at an answer file, a penalty based on an internal probe cut peeking to near zero. The method has so far been tested only on models far smaller than frontier systems, and penalising one internal pattern may push the behaviour elsewhere in the network, the researchers say. Others said it needs independent replication. Quoted reactions call it 'could be a breakthrough' and 'one of the biggest advances in alignment technology' if it scales. The article links the group's write-up."
   }
  ]
 }
