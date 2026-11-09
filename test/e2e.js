@@ -1,5 +1,6 @@
 // Two-user browser test against test/serve-fixtures.js (synthetic data). Run: node test/e2e.js
 const { chromium } = require('playwright');
+require('./sample-clock'); // same clock as the sample server, so times it returns compare correctly
 const B = process.env.BASE || 'http://localhost:3200';
 const FIXTURE_WEEK = '2026-11-02'; // Monday of the week the synthetic fixture feeds are dated in (test/fixtures)
 let pass = 0, fail = 0; const errs = [];
