@@ -1,6 +1,6 @@
 {
   "about": "Accepted benchmark numbers (scripts/bench.js). Update only for an uplift or an explained trade-off.",
-  "updated": "2026-11-07",
+  "updated": "2026-11-09",
   "metrics": {
     "review.credibility_auc": {
       "value": 1,
@@ -61,7 +61,7 @@
       "about": "points the same attack gains on the unguarded judge (the attack is real)"
     },
     "review.ms_per_doc": {
-      "value": 10.8,
+      "value": 9.3,
       "better": "info",
       "about": "time to review one item"
     },
@@ -130,6 +130,12 @@
       "better": "higher",
       "tol": 0.02,
       "about": "drop in the bad-reply rate when a role-play updater refines its own repair rules (arXiv 2611.07469 toy)"
+    },
+    "papers.monitor_leak_evasion_rise": {
+      "value": 0.35,
+      "better": "higher",
+      "tol": 0.02,
+      "about": "rise in the share of hacks a monitor misses when its verdict is fed into the RL reward instead of only watching (arXiv 2611.09828 toy)"
     },
     "analysis.scope_accuracy": {
       "value": 1,
