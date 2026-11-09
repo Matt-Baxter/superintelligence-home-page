@@ -72,13 +72,14 @@ Each step proposes parameters, runs them (milliseconds, deterministic), and keep
 
 ```bash
 pip install mlx-lm
-mkdir -p data && cp out/lab/train-sft.jsonl data/train.jsonl && cp out/lab/train-sft.jsonl data/valid.jsonl
+# First prepare independently reviewed, disjoint data/train.jsonl and data/valid.jsonl.
+# Never copy the same export into both splits.
 mlx_lm.lora --model google/gemma-3-12b-it --train --data data --iters 200 --batch-size 1 --num-layers 8
 ```
 
-Then serve the adapter (`mlx_lm.server --model google/gemma-3-12b-it --adapter-path adapters`) and point `--provider lmstudio` (or `LMSTUDIO_BASE=http://localhost:8080/v1`) at it. That closes the loop: the model that proposes changes is trained on which of its proposals survived the ratchet.
+Then serve the adapter (`mlx_lm.server --model google/gemma-3-12b-it --adapter-path adapters`) and point `--provider lmstudio` (or `LMSTUDIO_BASE=http://localhost:8080/v1`) at it. This is an experimental path, not evidence of improved research quality. Exports are review-only candidates. Split by source paper/publication family and experiment before tuning, retain failures, and keep a frozen test set out of prompts and training. Require rights review, human-approved examples, a recorded base-model revision and held-out comparison before any training or adapter promotion. See [research intake](../../handoff/routines/research-intake.md).
 
-Not run here: this cloud session has no GPU and no Apple silicon, so the fine-tuning commands are written from MLX's documented interface and untested in this repo. Everything else above was run.
+The fine-tuning and adapter-serving commands remain untested in this repo. Availability of Apple silicon does not establish that the selected model, dependencies or training memory requirements are satisfied. Check the selected runtime documentation and record a bounded experiment before claiming a trained model or improvement.
 
 ## Interpretability toys (`interp.js`)
 

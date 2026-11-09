@@ -124,7 +124,8 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   }
   await john.goto(B + '/?saved=1&days='); await john.waitForSelector('#siteNav a[aria-current="page"]');
   ok(await john.getAttribute('#siteNav a[href="/?saved=1&days="]','aria-current') === 'page' && await john.inputValue('#days') === '', 'signed-in Saved destination opens all-time saves and marks itself current');
-  await john.goto(B); await john.waitForSelector('#feed .story');
+  // Fixed sample dates must not age out of grouping/count assertions.
+  await john.goto(B + '/?days='); await john.waitForSelector('#feed .story');
   await qualityContext.close();
 
   console.log('Feed, grouping and tags');
@@ -134,7 +135,7 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   await john.click('.topicbar a:has-text("Alignment")'); await john.waitForLoadState('networkidle');
   const safety = await john.$$eval('#feed .title', x => x.map(t => t.textContent)); ok(safety.length >= 1 && safety.some(t => /Sparse/.test(t)) && safety.every(t => !/Export controls/.test(t)), 'topic filter: Alignment shows only alignment stories');
   await john.goto(B + '/?topic=policy'); await john.waitForSelector('#feed .story'); ok((await john.$$('#feed .story')).length === 1, 'policy filter');
-  await john.goto(B); await john.waitForSelector('#feed .story'); await john.selectOption('#kind', 'lab'); await john.waitForTimeout(400);
+  await john.goto(B + '/?days='); await john.waitForSelector('#feed .story'); await john.selectOption('#kind', 'lab'); await john.waitForTimeout(400);
   ok((await john.$$('#feed .story')).length === 3, 'source-kind filter (lab: 3 stories incl. the grouped one)');
   await john.selectOption('#kind', ''); await john.fill('#q', 'export'); await john.waitForTimeout(500); ok((await john.$$('#feed .story')).length === 1, 'search');
   await john.fill('#q', ''); await john.waitForTimeout(400);

@@ -59,7 +59,7 @@ function readEntry(e) {
   return { text: abstract, read: "abstract", note: !summary ? "scored from the abstract" : withheld ? `scored from the abstract; summary withheld: ${withheld}` : "scored from the abstract; summary checked against it",
     extra: { input }, shown: f && f.pass ? summary : null, withheld, fidelity: f };
 }
-const arxivId = (u) => (String(u).match(/(\d{4}\.\d{4,5})/) || [])[1] || null;
+const { arxivId } = require("../lib/publication-identity");
 
 async function main() {
   const from = val("--from"), dry = has("--dry"), max = Number(val("--max")) || CFG.maxNewPerRun;

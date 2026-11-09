@@ -16,6 +16,17 @@ ok(json.papers.every((p) => p.qid.startsWith("doc:") && p.verdict && Number.isFi
 const tmp = path.join(OUT, "in.json"); fs.writeFileSync(tmp, JSON.stringify([{ title: "Sample thread (test data)", url: "https://x.com/sample/status/1", summary: "Synthetic.", authors: [] }]));
 ok(/0 found/.test(run("--from", tmp, "--dry")), "Twitter/X links are dropped");
 
+// REQ-004/007: watcher deduplication uses complete trusted publication identity.
+fs.writeFileSync(tmp, JSON.stringify([
+  {title: "Sample identity one (test data)", url: "https://arxiv.org/abs/2611.90011v1", summary: "Sample."},
+  {title: "Sample identity version (test data)", url: "https://arxiv.org/pdf/2611.90011v2.pdf", summary: "Sample."},
+  {title: "Sample lookalike (test data)", url: "https://example.test/2611.90011", summary: "Sample."},
+  {title: "Sample longer identifier (test data)", url: "https://arxiv.org/abs/2611.900110", summary: "Sample."}
+]));
+ok(/3 found/.test(run("--from", tmp, "--dry")), "versions deduplicate without collapsing lookalikes or truncated identifiers");
+const identityDigest = JSON.parse(fs.readFileSync(path.join(OUT, fs.readdirSync(OUT).find(f => /^\d{4}-\d\d-\d\d\.json$/.test(f))), "utf8"));
+ok(identityDigest.papers.filter(p => p.arxiv === "2611.90011").length === 1 && identityDigest.papers.filter(p => p.arxiv === null).length === 2, "digest never labels unrelated or malformed URLs as authoritative arXiv IDs");
+
 // Abstract + paraphrase (REQ-033, T021): the abstract is scored; the paraphrase is shown only if fidelity() passes.
 const R = require("../modules/review/review");
 const ABS = "Sample abstract (test data). We introduce Sample-Net, a 40-million-parameter model trained on 12 synthetic tasks. On a Sample reasoning benchmark, Sample-Net improves accuracy by 4 percentage points over a baseline, averaged over 3 seeds. These results suggest that the method may improve sample efficiency. Limitations: we evaluate only on synthetic data, and we do not test on held-out Sample tasks or on any model larger than the one described here.";

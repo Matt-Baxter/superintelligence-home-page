@@ -358,6 +358,7 @@ Quoted from the repo's own pitfall, trap, troubleshooting and habits sections (n
 - [handoff/prompts/codex.md](../handoff/prompts/codex.md): Sections: If you're building John's bake-off version with Codex.
 - [handoff/prompts/v0.md](../handoff/prompts/v0.md): Set up the import first ([`docs/V0.md`](V0.md)): **Base Branch** `bakeoff/v0-john`, never `main`.
 - [handoff/routines/paper-watch.md](../handoff/routines/paper-watch.md): What the Claude scheduled task does each morning, written so any agent (Claude, Codex or another) can run it; it stays on the Claude task for now.
+- [handoff/routines/research-intake.md](../handoff/routines/research-intake.md): REQ-001/003/004/005/007; existing extended 002/REQ-024/026/027/030/034.
 
 **Agent kit, measures, proofs**
 

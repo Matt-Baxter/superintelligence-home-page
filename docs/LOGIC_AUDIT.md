@@ -221,3 +221,15 @@ Final checks: `Preflight passed.` Private tracker import created one In review t
 ## 2026-11-09 — resolver readability
 
 REQ-004/007 cleanup makes URL admission, DOI recognition and resolution branches explicit and isolates the tracking-parameter predicate. Matching policy, return shapes and public behavior are unchanged. `Entity resolution unit: 29 passed, 0 failed.`; `Entity grouping sqlite: 23 passed, 0 failed.`; `Preflight passed.`; isolated sample SQLite browser: `336 passed, 0 failed`, `page errors: none`. A differential check against the preceding commit covered200 URL cases with0 differences; independent review covered800 export comparisons with0 failures and found no blocker. No SQL/schema change, so Postgres was not rerun for this cleanup. Public publication remains gated; preserved preview data was untouched.
+
+## 2026-11-09 — private research intake and learning plan
+
+REQ-001/003/004/005/007/018 and existing extended002/REQ-024/026/027/030/034: `handoff/routines/research-intake.md` bounds source collection, privacy, deterministic/local inference, evidence pointers, rights review and disjoint training-candidate evaluation. A local daily08:00 America/Chicago task was created and viewed successfully; execution depends on the local scheduler/computer and has not yet been observed as a scheduled run. No model was installed or trained, no site source was enabled and no content was published. Local Ollama endpoint11434 did not respond. Existing adapters remain optional.
+
+The live probe fetched40 records from the existing arXiv safety feed; the configured Epoch feed returned HTTP404. Analysis did not complete because the ad-hoc probe checked nonexistent `tagger.relevant`; this failure is recorded honestly in the private dated receipt, with no repeat fetch and no candidates/training data produced. The routine directs future runs to the existing analysis scope function and quarantines broken URLs for repair. Receipts and metadata are gitignored, not public site data.
+
+Watcher deduplication now uses canonical arXiv identity instead of substring matching. `watch unit: 17 passed, 0 failed`; `Entity resolution unit: 29 passed, 0 failed.` Independent review found no blocker. Lab guidance removes the identical train/validation split recipe and requires reviewed, grouped disjoint holdouts; this is a plan, not a validated training implementation. Actual training requires a scoped specification and the repository's partner approvals.
+
+Initial browser check: `334 passed, 2 failed`, `page errors: none`. The two count assertions used a rolling7-day filter against fixed November2 fixtures, which aged out during the run date. Those fixture-count checks now explicitly request all-time results, preserving sample dates and application defaults.
+
+Fresh isolated SQLite browser rerun: `336 passed, 0 failed`, `page errors: none`. Independent review confirmed the date-independent assertions; no product behavior changed. Preflight passed before the test-only correction; the pre-push hook checks the final committed state. No SQL/schema change, so Postgres was not rerun.
