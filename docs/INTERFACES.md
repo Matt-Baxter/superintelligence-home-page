@@ -29,6 +29,7 @@ Every interface change gets a row here. Breaking changes bump the major version 
 - **REQ-020:** the in-app agent log is removed. `GET/POST/PUT/DELETE /api/agent-log*` and `/api/agent-log-view` are gone; `/agent-log` redirects to `AGENT_LOG.md`; there's a one-time admin export at `GET /api/admin/agent-log.md`. The `agent_log` tables are kept untouched.
 - **Nine top-level topics:** `ai-rnd` became `automating-ai-research`, and `recursive-self-improvement` was added (ontology v4).
 - **Two versions:** `SITE_PROFILE=spec` (the default) or `extended`. In `spec`, `/api/lists*`, `/api/stories/:id/notes`, `/api/notes/:id`, `/api/brief`, `/api/sources/suggest` and the extended modules' routes and pages answer 404. `/api/me` adds `user.profile` and `user.features`.
+- **Weekly brief:** `GET /api/brief` without `week` shows last week when the current week has no stories yet (early on a Monday); the response's `week` says which week it shows.
 - **Admin routes moved under `/api/admin/`:**
   - `GET /api/modules` became `GET /api/admin/modules`;
   - `/api/codemap*` became `/api/admin/codemap*`;
