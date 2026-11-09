@@ -59,6 +59,24 @@ const B = process.env.BASE, lean = process.env.LEAN;
     check(edit.status()===400, 'admin API rejects overwriting an audited result');
     assert.throws(() => execFileSync(process.execPath,['scripts/learn-worker.js','complete',String(badId),proof],{cwd:path.join(__dirname,'..'),env:{...process.env,POSTGRES_URL:'',SITE_PROFILE:'extended'},stdio:'pipe'}), /requires the audited worker/);
     check((await (await admin.get('/api/admin/learn/jobs/'+badId)).json()).job.status==='failed', 'manual CLI completion leaves the rejected job failed');
+    const recheck = () => execFileSync(process.execPath,['scripts/learn-worker.js','recheck',String(done.id)],{
+      cwd:path.join(__dirname,'..'),
+      env:{...process.env,POSTGRES_URL:'',SITE_PROFILE:'extended',LEARN_OUT:out,LEAN:lean},
+      encoding:'utf8',timeout:300000
+    });
+    recheck();
+    const checked=(await (await admin.get('/api/admin/learn/jobs/'+done.id)).json()).job;
+    const checkedReceipt=checked.files.find(file=>file.endsWith('/proof-audit.json'));
+    const currentFile=ref=>path.join(out,ref.slice('out/learn/'.length));
+    check(checked.status==='done' && checkedReceipt?.includes('/recheck-')
+      && JSON.parse(fs.readFileSync(currentFile(checkedReceipt),'utf8')).sourceSha256===receipt.sourceSha256
+      && fs.existsSync(path.join(out,String(done.id),'proof-audit.json')), 'recheck saves fresh evidence and retains the original receipt');
+    const checkedSource=currentFile(checked.files.find(file=>file.endsWith('/orthogonality.lean')));
+    fs.appendFileSync(checkedSource,'\n-- Sample mismatched historical source (test data)\n');
+    recheck();
+    const mismatch=(await (await admin.get('/api/admin/learn/jobs/'+done.id)).json()).job;
+    check(mismatch.status==='needs-agent' && mismatch.files.length===0 && fs.existsSync(currentFile(checkedReceipt)),
+      'mismatched saved source requires review and preserves historical artifacts');
     const queued=(await (await admin.put('/api/admin/learn/jobs/'+done.id,{data:{status:'queued',output:'Sample stale output (test data)'}})).json()).job;
     check(queued.status==='queued' && queued.output==='' && queued.files.length===0, 'requeue detaches the previous proof result and receipt');
     execFileSync(process.execPath,['--require',preload,'scripts/learn-worker.js'],{cwd:path.join(__dirname,'..'),env:{...process.env,POSTGRES_URL:'',SITE_PROFILE:'extended',LEARN_OUT:out,LEAN:lean},encoding:'utf8',timeout:300000});

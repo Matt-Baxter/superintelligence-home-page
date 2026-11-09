@@ -122,3 +122,5 @@ Formal/runtime verification (existing003/REQ-038;002/REQ-024/026;sharedREQ-004/0
 Deeper proof admission (existing003/REQ-038 and002/REQ-024): `lib/lean-proof.js` is the shared controlled-source admission facade for model audits and worker completion. `test/lean-proof-unit.js` exercises real Lean acceptance/rejection, proposition elaboration and assumption policies. `test/lean-worker-e2e.js` checks receipt source/tool/axiom pointers through the persisted job path. New T053 records the bounded worker gate; no shared spec, arithmetic rule or publishing policy changes.
 
 Proof job completion (002/REQ-024 and 003/REQ-038) requires the audited worker. The admin API and CLI reject manual success. The queue test covers result overwrite, manual completion and requeue of audited proof records.
+
+Historical proof recheck (002/REQ-024 and 003/REQ-038) compares referenced source with the curated statement, runs the audited worker and updates the job against its previous snapshot. Queue tests cover new receipts and mismatched-source review on both database engines.

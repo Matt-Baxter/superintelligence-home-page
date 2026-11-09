@@ -46,3 +46,7 @@ For Postgres use the matching disposable local `DATABASE_URL` ending in `_test` 
 - Public exposure, shared specification changes and publication still follow partner/admin approvals.
 
 Measured runtime results are recorded in [LOGIC_AUDIT.md](LOGIC_AUDIT.md); the narrower formal model and detailed assumptions are in [proofs/README.md](../proofs/README.md).
+
+### Recheck historical jobs
+
+Point the worker at the intended database and artifact directory, then run `npm run learn:worker -- recheck <id>` with Lean available. Select a done Lean job. Matching source receives fresh audit evidence. A missing or changed source requires review before retry. Historical artifacts remain available in their original directories. The worker compiles the curated statement after the byte comparison. The local preserved preview inventory contained zero Learn jobs on November 9, 2026. The recheck flow passed 18 focused checks on each disposable SQLite and Postgres database.

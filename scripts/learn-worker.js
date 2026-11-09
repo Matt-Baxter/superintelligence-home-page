@@ -3,6 +3,7 @@
 // Runs once and exits (no polling). Run it by hand, from a daily scheduled job, or let an agent run it.
 //
 //   node scripts/learn-worker.js                 do every queued job once
+//   node scripts/learn-worker.js recheck <id>     audit one historical done Lean job
 //   node scripts/learn-worker.js list            show the queue
 //   node scripts/learn-worker.js complete <id> <file> [--failed]   record an agent's result (Markdown/text file)
 //
@@ -53,8 +54,11 @@ async function record(pagePath, dir, job, files) {
 }
 
 async function runJob(job, opts) {
-  const dir = path.join(OUT, String(job.id)); fs.mkdirSync(dir, { recursive: true });
-  const files = [], put = (name, text) => { fs.writeFileSync(path.join(dir, name), text); files.push(`out/learn/${job.id}/${name}`); };
+  const jobDir = path.join(OUT, String(job.id));
+  fs.mkdirSync(jobDir, { recursive: true });
+  const dir = opts.recheck ? fs.mkdtempSync(path.join(jobDir, "recheck-")) : jobDir;
+  const artifactPrefix = `out/learn/${path.relative(OUT, dir).split(path.sep).join("/")}`;
+  const files = [], put = (name, text) => { fs.writeFileSync(path.join(dir, name), text); files.push(`${artifactPrefix}/${name}`); };
   const c = job.concept_id && L.BY_ID[job.concept_id];
 
   if (job.kind === "post") {
@@ -113,7 +117,7 @@ async function runJob(job, opts) {
     const auditName = "proof-audit.lean";
     try {
       const result = require("../lib/lean-proof").checkSource({lean, source:lf.source, theorems, auditFile:path.join(dir, auditName)});
-      files.push(`out/learn/${job.id}/${auditName}`);
+      files.push(`${artifactPrefix}/${auditName}`);
       put("proof-audit.json", JSON.stringify({toolVersion:result.toolVersion, sourceSha256:result.sourceSha256, theorems:result.theorems, footprints:result.footprints, allowedAxioms:result.allowedAxioms}, null, 2));
       return { status: "done", output: `Checked with ${path.basename(lean)}: the proof is accepted. ${theorems.length} theorem(s) audited; only standard axioms allowed.`, files };
     }
@@ -140,6 +144,38 @@ async function main() {
     const rows = await db.all("SELECT id, kind, concept_id, status, updated_at FROM learn_jobs ORDER BY id DESC LIMIT 50");
     for (const r of rows) console.log(`#${r.id}\t${r.status}\t${r.kind}\t${r.concept_id || ""}`);
     if (!rows.length) console.log("No jobs.");
+    return;
+  }
+  if (cmd === "recheck") {
+    if (args.length !== 1 || !/^[1-9][0-9]*$/.test(args[0])) throw new Error("Usage: recheck <done Lean job id>");
+    const job = await db.get("SELECT * FROM learn_jobs WHERE id = ?", Number(args[0]));
+    if (!job || job.kind !== "lean-proof" || job.status !== "done") throw new Error("Choose a done Lean proof job.");
+    const proof = L.leanFile(job.concept_id);
+    const prefix = `out/learn/${job.id}/`;
+    const refs = JSON.parse(job.files || "[]");
+    const sourceMatches = proof && refs.some(ref => {
+      if (typeof ref !== "string" || !ref.startsWith(prefix)) return false;
+      const parts = ref.slice(prefix.length).split("/");
+      if (parts.pop() !== proof.file || parts.length > 1 || parts.some(p => !/^recheck-[A-Za-z0-9]+$/.test(p))) return false;
+      const file = path.join(OUT, String(job.id), ...parts, proof.file);
+      const stat = fs.lstatSync(file, { throwIfNoEntry: false });
+      return stat?.isFile() && stat.size === Buffer.byteLength(proof.source)
+        && fs.readFileSync(file).equals(Buffer.from(proof.source));
+    });
+    let result;
+    if (sourceMatches) {
+      if (!has(process.env.LEAN || "lean")) throw new Error("Lean is unavailable. The historical record was left for review.");
+      result = await runJob(job, { recheck: true });
+    } else {
+      result = { status: "needs-agent", output: "Historical proof source is missing or differs from the curated statement. Review the original before retrying.", files: [] };
+    }
+    const updated = await db.run(
+      "UPDATE learn_jobs SET status = ?, output = ?, files = ?, error = ?, updated_at = ? WHERE id = ? AND kind = 'lean-proof' AND status = 'done' AND updated_at = ? AND files = ? AND output = ?",
+      result.status, result.output || "", JSON.stringify(result.files), result.error || "", iso(),
+      job.id, job.updated_at, job.files, job.output
+    );
+    if (updated.changes !== 1) throw new Error("Job changed during recheck. Review the current record before retrying.");
+    console.log(`Proof recheck #${job.id}: ${result.status}.`);
     return;
   }
   if (cmd === "complete") {

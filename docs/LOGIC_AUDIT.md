@@ -263,3 +263,9 @@ Unchanged formal correspondence: `Lean proof audit: 61 theorems checked, 3 Learn
 The admin API and CLI previously allowed manual Lean success after the worker's assumption gate was added. Both now reserve done for the audited worker. Requeue clears proof output and detaches artifact references. Starting another attempt removes the prior acceptance receipt so a failed retry cannot leave it at the active receipt path. Historical done statuses still require provenance review.
 
 Browser checks before the retry cleanup returned 336 passed, 0 failed with no page errors on SQLite and Postgres. The final focused suite returned `Lean worker E2E: 16 passed, 0 failed.` on each database, including manual completion, result overwrite and failed retry checks.
+
+## 2026-11-09 — historical recheck and local training examples
+
+A read-only query of the preserved local preview found zero Learn jobs. The new single-job recheck command verifies source correspondence, writes fresh receipts into a separate attempt directory, and checks the row snapshot before replacing active references. The focused worker flow returned `Lean worker E2E: 18 passed, 0 failed.` on SQLite and Postgres. Tests cover successful recheck and a changed source that requires review.
+
+The MacBook Pro ran 15 synthetic Lab examples and 20 weak-to-strong tuning trials. The selected setting scored 96.3% on the selection seed versus 96.0% for the baseline. Across five seeds excluded from the search, the tuned mean was 92.86% versus 92.98% for the baseline. The baseline stays in use. Private run evidence is in out/lab.
