@@ -873,7 +873,7 @@
         "expect": "Unchecked, about 14% of the library rests on a wrong statement. Checking the last 10% of results (what a single-theorem project's final check amounts to in a library) leaves 14%. Checking foundations first (definitions with the most dependents) leaves about 5%, while catching about the same share of the wrong translations."
       },
       "hypothesis": {
-        "statement": "Ours, written before the run: at a 10% budget, foundations first leaves at least 0.2 less of the library contaminated than checking the last results first. (Recorded as written. The bar was set in absolute terms before seeing that only about 0.14 of the library is contaminated to begin with, so it could not be met; in relative terms foundations first removes about two thirds of the contamination and the last-results check about 3%.)",
+        "statement": "Ours, written before the run: at a 10% budget, foundations first leaves at least 0.2 less of the library contaminated than checking the last results first. (Recorded as written. The bar was set in absolute terms before seeing that only about 0.14 of the library is contaminated to begin with, so it could not be met; in this library foundations first removes about two thirds of the contamination and the last-results check about 3%; across 60 random libraries the average is about a third, 26% to 43%.)",
         "params": {
           "strategy": 2
         },

@@ -33,7 +33,9 @@
     "checkin": "node scripts/checkin.js",
     "quality": "node scripts/quality.js",
     "advise": "node scripts/advise.js",
-    "verification:ratchet": "node scripts/verification-ratchet.js"
+    "verification:ratchet": "node scripts/verification-ratchet.js",
+    "research:loop": "node scripts/research-loop.js",
+    "research:merge": "node scripts/research-loop.js --merge"
   },
   "keywords": [],
   "author": "",

@@ -26,7 +26,8 @@ rejects weakenings with probability at least
 
 Checked against simulation at 8 difficulties; agreement within one grid step (largest gap 0.054, grid 0.05; the
 simulation needs slightly more power every time, since near the threshold training can't separate two nearly equal
-payoffs). When the claim compiles 8% of the time, p* is 0.91. **Below p*, a comparator does almost nothing**: at power
+payoffs). Over 60 seeds the bias is systematic and grows with difficulty: the formula is low by 0.021 at difficulty
+0.3 and 0.041 at 0.9, every interval excluding zero, so read p* as a floor. When the claim compiles 8% of the time, p* is 0.91. **Below p*, a comparator does almost nothing**: at power
 0.5 (threshold 0.64), 98% of accepted proofs are still weakened. For hard results this argues for exact statement
 checks (the library's own statement, a second kernel) over a statistical judge.
 
@@ -43,7 +44,8 @@ each generation proves what it takes to be the claim and hands its result on.
 - Above the threshold (power 0.9), checking each generation against the original claim holds at 99.4% for 12
   generations. Checking against the previous generation's output leaks about 0.4% a generation (to 94.5%): each check
   looks excellent, and the losses still add up. *Our pre-registered bar was a 0.05 drop; the drop was 0.049, so: not
-  supported as registered.* The mechanism is there; we over-predicted its size.
+  supported as registered.* Over 60 seeds the leak is 0.0491 (95% interval 0.0488 to 0.0495): certainly real, certainly
+  under the bar. The mechanism is there; we over-predicted its size.
 - So "checking moves into outside hands" has a precise toy meaning: a fixed external reference stops slow drift that
   no single check would flag.
 
@@ -54,10 +56,14 @@ declaration is something people cite, and a mistranslated definition contaminate
 statement. With a 10% review budget:
 - checking the last results first (a single-theorem habit) leaves 14.0%;
 - checking at random leaves 13.7%;
-- checking foundations first (definitions with the most dependents) leaves 4.8%, two thirds removed,
-- while last-results-first and foundations-first catch about the same share of the errors (about 10%). **Where you check matters more than how many errors
-  you catch.** Linking every declaration to its source text (as Stacks tags do) is what makes foundations-first review
+- checking foundations first (definitions with the most dependents) leaves 4.8%,
+- while last-results-first and foundations-first catch about the same share of the errors (about 10%). **Where you check
+  matters more than how many errors you catch.** Linking every declaration to its source text (as Stacks tags do) is what makes foundations-first review
   possible. *Our hypothesis was a 0.2 absolute drop; the library only starts at 0.144, so: not supported as registered.*
+- **Correction from 60 seeds (research loop, Nov 9):** that library (seed 29) was a favourable draw. Across 60 random
+  libraries, foundations first removes 35% of the contamination on average (95% interval 26% to 43%), not two thirds.
+  Its result is very stable (4.95% contaminated, sd 0.012), while checking the last results first swings with how
+  contaminated the foundations happen to be (sd 0.116).
 
 **6. Mechanistic interpretability: the same ladder, a different object.** The rungs map onto interpretability claims:
 
@@ -91,6 +97,14 @@ shows the gate refusing an edit that helps train and breaks held-out. Held-out r
   read `rules.json` (Matt) is the next step, and fits the two-reviewer rule for judgements.
 - **Synthetic sentences.** The signal hasn't been measured on real feed stories yet; the first deploy's stories should
   be labelled and added.
+
+## Re-running on our machines
+
+`node scripts/research-loop.js` runs one cycle (unit checks, bench, ratchet dry run, the Lean toys if Lean is
+installed, and every experiment above over many seeds). Machines split seeds with `--shard i/n`, write to a shared
+folder (`LOOP_DIR`), and `--merge` pools them into intervals and re-tests each pre-registered hypothesis against its
+original bar. `--every 60` repeats hourly; `scripts/launchd/` has a macOS launch agent for the Mac mini. Results stay
+in `LOOP_DIR`; nothing is committed or pushed.
 
 ## Next
 
