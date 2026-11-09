@@ -39,4 +39,12 @@ ok(sb.scenes.every((s) => ["title", "say", "bars", "graph"].includes(s.kind) && 
   const d3 = D.analyse({ topic: "recursive-self-improvement", ids: ["recursive-self-improvement"], docs: [doc(9, 70), doc(10, 65)], docEdges: [9, 10].map((i) => ({ src: `doc:sample${i}`, rel: "explains", dst: "concept:sample" })), stories: [] }, { examples: [], concepts: [] });
   ok(d3.contested.length === 0, "papers judged alike are not contested");
 }
+{
+  // Social drafts name a paper as "most credible" only when it is a paper, never a news piece or post (2026-11-09).
+  const art = { ...doc(11, 90), kind: "article", title: "Sample news piece (test data)", url: "https://news.example.test/a" };
+  const dA = D.analyse({ topic: "interpretability", ids: ["interpretability"], docs: [art], docEdges: [], stories: [] });
+  ok(!D.posts(dA).some((p) => /Most credible paper/.test(p.text)) && dA.counts.surveys === 0 && dA.counts.articles === 1, "an article is counted as an article, not a survey, and never called the most credible paper");
+  const dP = D.analyse({ topic: "interpretability", ids: ["interpretability"], docs: [art, doc(12, 60)], docEdges: [], stories: [] });
+  ok(D.posts(dP).every((p) => !/Most credible paper/.test(p.text) || /Sample paper 12/.test(p.text)), "with a paper reviewed, the paper is the one named");
+}
 console.log(`\ndossier unit: ${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

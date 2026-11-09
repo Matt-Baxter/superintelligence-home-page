@@ -66,5 +66,6 @@ const art = (i, cred) => ({ id: i, qid: `doc:s${i}`, kind: "article", title: `Sa
 const quiet = D.analyse({ topic: "superintelligence", ids: ["superintelligence"], docs: [art(1, 80), art(2, 75)], docEdges: [], stories: many(40, "news").map((s, i) => ({ ...s, id: i, title: "s", url: "u", sources: ["n"], entities: [] })) }, { at });
 ok(quiet.strength === "thin" && quiet.buzz.level === "loud", "credible articles and loud buzz never lift the evidence rating: only papers and our own checks do");
 
+ok(["https://time.com/article/x", "https://www.quantamagazine.org/x", "https://www.theregister.com/x"].every((u) => S.outletKind(u) === "news"), "more newsrooms are recognised as news, not open-platform commentary");
 console.log(`\nsources unit: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

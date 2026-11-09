@@ -35,7 +35,7 @@ const HOSTS = [
   [/(^|\.)(lesswrong|alignmentforum|greaterwrong)\.(com|org)$/, "forum"],
   [/(^|\.)(news\.ycombinator\.com|reddit\.com|github\.com)$/, "community"],
   [/(^|\.)medium\.com$|\.substack\.com$|(^|\.)dev\.to$|(^|\.)hashnode\.dev$|\.pages\.dev$|\.blogspot\.com$|(^|\.)wordpress\.com$|(^|\.)towardsdatascience\.com$|(^|\.)generativeai\.pub$|(^|\.)towardsai\.net$/, "commentary"],
-  [/(^|\.)(technologyreview\.com|theverge\.com|arstechnica\.com|wired\.com|nytimes\.com|reuters\.com|bloomberg\.com|ft\.com|theguardian\.com|bbc\.co\.uk|nbcnews\.com|axios\.com|builtin\.com|venturebeat\.com|techcrunch\.com|zdnet\.com|officechai\.com|startuphub\.ai)$/, "news"],
+  [/(^|\.)(technologyreview\.com|theverge\.com|arstechnica\.com|wired\.com|nytimes\.com|reuters\.com|bloomberg\.com|ft\.com|theguardian\.com|bbc\.co\.uk|nbcnews\.com|axios\.com|builtin\.com|venturebeat\.com|techcrunch\.com|zdnet\.com|officechai\.com|startuphub\.ai|time\.com|fortune\.com|cnbc\.com|washingtonpost\.com|apnews\.com|economist\.com|businessinsider\.com|semafor\.com|theinformation\.com|newscientist\.com|scientificamerican\.com|quantamagazine\.org|cnn\.com|wsj\.com|forbes\.com|engadget\.com|theregister\.com)$/, "news"],
   [/(^|\.)(metr\.org|epoch\.ai|redwoodresearch\.org|safe\.ai|governance\.ai|rand\.org|cset\.georgetown\.edu)$/, "research-org"],
   [/(^|\.)(openai\.com|anthropic\.com|deepmind\.google|ai\.meta\.com|research\.google|microsoft\.com|nvidia\.com|huggingface\.co)$/, "lab"],
   [/\.edu$|\.ac\.uk$|(^|\.)thegradient\.pub$/, "academic"],

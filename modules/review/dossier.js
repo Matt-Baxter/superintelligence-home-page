@@ -104,7 +104,7 @@ function analyse({ topic, ids, docs, docEdges, stories, events = [] }, { example
   const forecasts = events.map((e) => ({ id: e.id, qid: e.qid, sentence: e.sentence, due: e.due, status: e.status, outlet: e.outlet_label, overdue: e.status === "pending" && e.due < at,
     n: (P.find((p) => p.qid === e.doc_qid) || {}).n })).slice(0, 12);
   return { topic, label: topicLabel(topic), ids, strength, why, at, buzz: talk, grades, forecasts,
-    counts: { papers: P.length, primary: primary.length, surveys: P.length - primary.length, credible: credible.length, comments: comments.length, stories: S.length, sources: sourceCount, checks: checks.length, supported, linked },
+    counts: { papers: P.length, primary: primary.length, surveys: P.filter((p) => p.survey).length, articles: P.filter((p) => p.kind !== "paper").length, credible: credible.length, comments: comments.length, stories: S.length, sources: sourceCount, checks: checks.length, supported, linked },
     meanCredibility: Math.round(mean(P.map((p) => p.credibility))), papers: P, checks, top, corroboration: corroboration.slice(0, 8), contested, people, orgs,
     comments: { count: comments.length, verdicts: comments.reduce((a, c) => ((a[c.verdict] = (a[c.verdict] || 0) + 1), a), {}) }, weak, refs };
 }
@@ -115,7 +115,7 @@ function blog(d, site = "") {
   const c = d.counts, L = [];
   L.push(`# ${d.label}: what the evidence says (${d.at})`, "");
   L.push(`**In one line:** the evidence on ${d.label}: **${d.strength}**, ${d.why}.`, "");
-  L.push(`We reviewed ${pl(c.papers, "paper or article", "papers and articles")} from their abstracts (${pl(c.surveys, "survey")}), ${pl(c.stories, "feed story", "feed stories")} from ${pl(c.sources, "source")}, ${pl(c.comments, "reader comment")}, and ran ${pl(c.checks, "toy experiment")} of our own. Every judgement below links to its source; numbers in brackets are references.`, "");
+  L.push(`We reviewed ${pl(c.papers, "paper or article", "papers and articles")} from their abstracts or text (${pl(c.surveys, "survey")}, ${pl(c.articles ?? 0, "article")}), ${pl(c.stories, "feed story", "feed stories")} from ${pl(c.sources, "source")}, ${pl(c.comments, "reader comment")}, and ran ${pl(c.checks, "toy experiment")} of our own. Every judgement below links to its source; numbers in brackets are references.`, "");
   if (d.papers.length) {
     L.push("## What the papers say", "");
     for (const p of d.papers.filter((x) => x.kind === "paper").slice(0, 6)) L.push(`- **${p.title}** ${cite(p.n)}: ${p.verdict}, credibility ${p.credibility}/100${p.survey ? " (a survey)" : ""}; ${p.claims ? `headline claims backed in their own sentence: ${p.backed} of ${p.claims}` : "no headline claims detected"}.${p.strongest ? ` Its best-supported claim: "${p.strongest.slice(0, 160)}${p.strongest.length > 160 ? "…" : ""}"` : ""}`);
@@ -155,7 +155,7 @@ function blog(d, site = "") {
 }
 const fit = (parts, max) => { let out = ""; for (const p of parts.filter(Boolean)) { const next = out ? `${out} ${p}` : p; if (next.length <= max) out = next; } return out || parts[0].slice(0, max - 1) + "…"; };
 function posts(d, link = "") {
-  const urls = new Set(d.papers.map((p) => p.url)), best = d.papers.find((p) => !p.survey) || d.papers[0];
+  const urls = new Set(d.papers.map((p) => p.url)), best = d.papers.find((p) => p.kind === "paper" && !p.survey) || d.papers.find((p) => p.kind === "paper") || null; // never a news piece or post
   const check = d.checks.find((c) => c.supported && c.source && urls.has(c.source.url)) || d.checks.find((c) => c.supported) || d.checks[0];
   const base = `${d.label}: the evidence is ${d.strength === "some support" ? "showing some support" : d.strength} (${d.why}).`;
   const one = best ? ` Most credible paper by our reading of its abstract: "${best.title}" (${best.credibility}/100).` : "";
@@ -163,7 +163,7 @@ function posts(d, link = "") {
   return [
     { channel: "LinkedIn", text: `${base}${one}${two}\n\nEvery claim is sourced and traced: ${pl(d.refs.length, "reference")}.${link ? `\n\n${link}` : ""}` },
     // Short posts keep whole sentences: drop the extra sentence rather than cut one off mid-quote.
-    { channel: "Bluesky / Threads / Mastodon", text: fit([base, one.trim()], 280 - (link ? link.length + 1 : 0)) + (link ? ` ${link}` : "") },
+    { channel: "Bluesky / Threads / Mastodon", text: fit([base, one.trim(), two.trim()], 280 - (link ? link.length + 1 : 0)) + (link ? ` ${link}` : "") },
     { channel: "Substack note", text: `${base}${two}${link ? ` ${link}` : ""}` },
   ];
 }
