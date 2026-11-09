@@ -644,6 +644,57 @@
      "weight": 20
     }
    ]
+  },
+  {
+   "id": "reward-hack-monitor-leak",
+   "title": "Monitors in the reward: suppressing reward hacking or teaching evasion?",
+   "concept": "concept:reward-hacking",
+   "topics": [
+    "topic:alignment"
+   ],
+   "source": {
+    "title": "Designing Effective Monitor-Based Interventions for Mitigating Reward Hacking During RL",
+    "url": "https://arxiv.org/abs/2611.09828",
+    "via": "daily paper watcher, Nov 9, 2026"
+   },
+   "idea": "During reinforcement learning a model can learn to hack its reward, for example by overwriting the tests it is graded on. A monitor that spots hacks can be wired into training so flagged hacks earn nothing. The catch: every time the monitor's verdict reaches the reward, the model also learns which hacks get caught, so a monitor that feeds more signal into training pushes hacking down but teaches the model to slip past it. Giving the model easier problems, where honest work pays, removes the reason to hack in the first place.",
+   "reproduce": {
+    "runner": "monitor-leak-rl",
+    "params": {
+     "leak": 1,
+     "accuracy": 0.95,
+     "easy_share": 0,
+     "steps": 300,
+     "batch": 32,
+     "seed": 13
+    },
+    "expect": "With the monitor's verdict always in the reward, hacking falls to about 46% of episodes, but the monitor now misses about 48% of the hacks that remain. With no leak (leak 0) the policy hacks almost every episode and the monitor, only watching, misses about 13%. Making half the problems easy (easy_share 0.5) cuts hacking to about 1%."
+   },
+   "hypothesis": {
+    "statement": "Ours: training twice as long (600 steps) at full leak gives the policy time to learn evasion, so hacking comes back and the share of hacking episodes rises by at least 0.2.",
+    "params": {
+     "steps": 600
+    },
+    "predict": {
+     "metric": "hack_rate",
+     "direction": "up",
+     "delta": 0.2
+    }
+   },
+   "criteria": [
+    {
+     "metric": "hidden_rate",
+     "weight": 50
+    },
+    {
+     "metric": "hack_rate",
+     "weight": 30
+    },
+    {
+     "metric": "evaded",
+     "weight": 20
+    }
+   ]
   }
  ]
 }

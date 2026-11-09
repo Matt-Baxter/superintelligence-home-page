@@ -23,7 +23,13 @@ ok(JSON.stringify(rq(1, 3)) === JSON.stringify(refine), "role-play self-improvem
 ok(fixed.bad_rate > fixed.start_rate, `with fixed repair rules, wrong-artifact repairs cause drift (${fixed.start_rate} -> ${fixed.bad_rate})`);
 ok(refine.bad_rate < fixed.bad_rate - 0.1 && refine.rules_right > fixed.rules_right, `refining its own rules cuts the bad-reply rate (${fixed.bad_rate} -> ${refine.bad_rate})`);
 ok(loose.rules_right < refine.rules_right, `a looser edit bound makes rules thrash rather than settle (${refine.rules_right} at 3, ${loose.rules_right} at 6)`);
-const ex = ["rsi-hidden-evals", "rrsi-edit-budget", "oversight-recompute", "cosine-sae", "roleplay-bounded-rsi"].map((id) => [id, L.runExample(id)]);
+const ml = P.runners.find((r) => r.id === "monitor-leak-rl"), mq = (o) => ml.run({ leak: 1, accuracy: 0.95, easy_share: 0, steps: 300, batch: 32, seed: 13, ...o }).metrics;
+const full = mq({}), none = mq({ leak: 0 }), easy = mq({ easy_share: 0.5 });
+ok(JSON.stringify(mq({})) === JSON.stringify(full), "monitor-leak toy is deterministic");
+ok(full.hack_rate < none.hack_rate - 0.3, `feeding the monitor's verdict into the reward suppresses hacking (${none.hack_rate} -> ${full.hack_rate})`);
+ok(full.evaded > none.evaded + 0.2, `...but teaches the policy to evade the monitor (missed hacks ${none.evaded} -> ${full.evaded})`);
+ok(easy.hack_rate < full.hack_rate - 0.3, `easier training problems make honest solving pay and cut hacking (${full.hack_rate} -> ${easy.hack_rate})`);
+const ex = ["rsi-hidden-evals", "rrsi-edit-budget", "oversight-recompute", "cosine-sae", "roleplay-bounded-rsi", "reward-hack-monitor-leak"].map((id) => [id, L.runExample(id)]);
 ok(ex.every(([, r]) => r.example.source && /^https:\/\/arxiv\.org\/abs\/\d{4}\.\d{4,5}$/.test(r.example.source.url)), "every paper example links its arXiv source");
 ok(ex.filter(([, r]) => !r.verdict.supported).map(([id]) => id).join() === "rrsi-edit-budget,roleplay-bounded-rsi", "the edit-budget and looser-bound hypotheses are kept as refuted at toy scale");
 console.log(`\npapers unit: ${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

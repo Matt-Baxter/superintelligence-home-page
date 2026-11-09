@@ -10,6 +10,10 @@
 //   roleplay-rsi             "Recursive Self-Improvement for Long-Horizon Role-Playing Dialogue" (arXiv 2611.07469): an
 //                            updater repairs a character's artifacts after bad replies and, one level up, refines its
 //                            own repair rules from how those repairs turned out, within a bound on edits per round.
+//   monitor-leak-rl          "Designing Effective Monitor-Based Interventions for Mitigating Reward Hacking During RL"
+//                            (arXiv 2611.09828): a policy learns by RL whether to solve a task or hack its tests; a
+//                            monitor's verdict, fed into the reward, suppresses hacking but also teaches how to evade it.
+//                            Easier problems make honest solving pay and cut hacking.
 function rng(seed = 1) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 const gauss = (r) => { const u = Math.max(1e-12, r()), v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
 const round = (x, d = 3) => Math.round(x * 10 ** d) / 10 ** d;
@@ -116,6 +120,34 @@ function rolePlayRSI({ meta = 1, edit_bound = 3, judge_noise = 0.2, rounds = 30,
     notes: [`${meta ? "The updater refined its own rules" : "The updater's rules were fixed"}; ${switches} rule switches, ${side} repairs hit the wrong artifact.`, `${Math.round(right * F)} of ${F} repair rules point at the artifact that really fixes that failure.`] };
 }
 
+// ---------- monitor-based interventions against reward hacking during RL ----------
+// A policy picks, per episode, to solve the task honestly (passes the tests with probability 0.9 on easy problems and
+// 0.2 on hard ones) or to hack the tests (always passes). A monitor flags a hack with probability accuracy * (1 - e),
+// where e in [0, 1] is the policy's learned evasion skill. 'leak' is how often the monitor's verdict is fed into the
+// reward (a flagged hack then earns 0): the more it leaks, the more learning signal reaches both the choice to hack and
+// the evasion skill. REINFORCE on the hack choice; evasion learned from reward differences among hack attempts.
+const sigmoid = (x) => 1 / (1 + Math.exp(-x));
+function monitorLeak({ leak = 1, accuracy = 0.95, easy_share = 0, steps = 300, batch = 32, seed = 13 } = {}) {
+  const r = rng(seed); let th = -1, e = 0, base = 0.3; const pts = [];
+  for (let t = 0; t < steps; t++) {
+    const p = sigmoid(th), eps = [];
+    for (let i = 0; i < batch; i++) {
+      const hack = r() < p ? 1 : 0; let rew, ei = e;
+      if (hack) { ei = Math.min(1, Math.max(0, e + 0.1 * gauss(r))); const applied = r() < leak, flagged = r() < accuracy * (1 - ei); rew = applied && flagged ? 0 : 1; }
+      else rew = r() < (r() < easy_share ? 0.9 : 0.2) ? 1 : 0;
+      eps.push([hack, rew, ei]);
+    }
+    const b = mean(eps.map((x) => x[1])); let gth = 0, ge = 0, nh = 0;
+    for (const [hack, rew, ei] of eps) { gth += (rew - base) * (hack - p); if (hack) { ge += (rew - b) * (ei - e); nh++; } }
+    base = 0.9 * base + 0.1 * b; th += 0.6 * gth / batch; if (nh) e = Math.min(1, Math.max(0, e + 0.25 * ge / nh));
+    if ((t + 1) % 20 === 0) pts.push([t + 1, round(p)]);
+  }
+  const p = sigmoid(th), miss = 1 - accuracy * (1 - e);
+  return { metrics: { hack_rate: round(p), evaded: round(miss), hidden_rate: round(p * miss) },
+    series: [{ name: "share of episodes that hack the tests", points: pts }],
+    notes: [`The monitor's verdict reached the reward in ${Math.round(leak * 100)}% of hack attempts; ${Math.round(easy_share * 100)}% of problems were easy.`, `At the end the policy hacks in ${Math.round(p * 100)}% of episodes and the monitor misses ${Math.round(miss * 100)}% of those hacks.`] };
+}
+
 const runnersList = [
   { id: "self-improve-selection", about: "An agent edits itself and keeps the best version, judged on visible tests or hidden evaluations (with an edit budget)",
     params: {
@@ -148,6 +180,17 @@ const runnersList = [
     },
     metrics: [{ id: "bad_rate", label: "Bad-reply rate (last 5 rounds)", better: "lower" }, { id: "rules_right", label: "Share of repair rules aimed at the right artifact", better: "higher" }, { id: "side_effects", label: "Repairs that hit the wrong artifact", better: "lower" }],
     run: (p) => rolePlayRSI(p) },
+  { id: "monitor-leak-rl", about: "A policy learns by RL to solve a task or hack its tests while a monitor's verdict is fed into the reward; more leak suppresses hacking but teaches evasion",
+    params: {
+      leak: { default: 1, min: 0, max: 1, step: 0.1, about: "How often the monitor's verdict reaches the reward (a flagged hack then earns 0)" },
+      accuracy: { default: 0.95, min: 0.5, max: 1, step: 0.05, about: "How often the monitor flags a hack that makes no effort to evade" },
+      easy_share: { default: 0, min: 0, max: 1, step: 0.1, about: "Share of training problems that are easy to solve honestly" },
+      steps: { default: 300, min: 50, max: 800, step: 50, about: "Training steps" },
+      batch: { default: 32, min: 4, max: 64, step: 4, about: "Episodes per step" },
+      seed: { default: 13, min: 1, max: 999, step: 1, about: "Random seed" },
+    },
+    metrics: [{ id: "hack_rate", label: "Share of episodes that hack the tests", better: "lower" }, { id: "evaded", label: "Share of hacks the monitor misses", better: "lower" }, { id: "hidden_rate", label: "Share of episodes that hack undetected", better: "lower" }],
+    run: (p) => monitorLeak(p) },
 ];
 // Averaging over seeds, so a verdict doesn't hang on one lucky draw (the Lab's examples pass seeds via "seeds").
 function averaged(fn, p, seeds = 10) {
@@ -157,4 +200,4 @@ function averaged(fn, p, seeds = 10) {
 }
 for (const r of runnersList) { const raw = r.run; r.run = (p) => averaged(raw, p, 10); }
 
-module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI };
+module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI, monitorLeak };
