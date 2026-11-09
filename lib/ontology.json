@@ -335,7 +335,23 @@
         "lean formalis*",
         "mathlib",
         "isabelle/hol",
-        "coq proof*"
+        "coq proof*",
+        "lean 4",
+        "lean4",
+        "lean prover",
+        "lean statement*",
+        "lean theorem*",
+        "lean development*",
+        "proof in lean",
+        "proofs in lean",
+        "theorem in lean",
+        "written in lean",
+        "formalized in lean",
+        "formalised in lean",
+        "into lean",
+        "coq",
+        "isabelle",
+        "formal statement*"
       ]
     },
     {

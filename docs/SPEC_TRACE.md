@@ -51,7 +51,7 @@ The site has two versions (`modules/profiles.json`, `SITE_PROFILE`):
 - **`extended`** adds work that serves no REQ (constitution principle III):
   - notes, reading lists, the weekly brief and suggested sources (core, switched by feature);
   - the capability tracker, the project tracker and timeline, the codebase map, the Learn layer, the knowledge layer and the Lab (modules; requirements proposed in docs/PLAN_NEXT.md).
-  - the verification module: a "Machine-checked" significance signal for formal-proof claims (claimed, statement checked against a reference, checked outside the authors; fidelity gaps flagged), a Formal verification topic under Math, the Axiom Math organisation and the Learn concept "Statement fidelity" (also in the research version).
+  - the verification module: a "Machine-checked" significance signal for formal-proof claims (claimed, statement checked against a reference, checked outside the authors; fidelity gaps flagged), a Formal verification topic under Math, the Axiom Math organisation and the Learn concept "Statement fidelity", a labelled benchmark with a research loop that tunes the signal's rules (train split) behind a held-out gate, and the Lab example "Autoformalization: does \"it compiles\" teach weaker theorems?" (also in the research version).
 
   The browser test (`npm test`) runs the extended version so every feature stays tested.
 

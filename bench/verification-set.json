@@ -1,0 +1,253 @@
+{
+  "about": "Labelled synthetic sentences for the Machine-checked signal (modules/verification). Each item: the text, the rung it should get (none, claimed, statement-checked, outside-checked), whether it reports a fidelity gap, and its split. scripts/verification-ratchet.js tunes modules/verification/rules.json on 'train' only; 'heldout' is never used for choosing, only for accepting. Written before any tuning. Add an item whenever a mis-judgement turns up; never edit an item to make a score look better. All test data: no real papers, people or quotes.",
+  "version": 1,
+  "items": [
+    {
+      "split": "train",
+      "rung": "none",
+      "gap": false,
+      "text": "Sample lab says its new model is much better at maths (test data)"
+    },
+    {
+      "split": "train",
+      "rung": "none",
+      "gap": false,
+      "text": "Sample startup runs a lean team and ships weekly (test data)"
+    },
+    {
+      "split": "train",
+      "rung": "none",
+      "gap": false,
+      "text": "Sample partnership was formalized in a signed agreement on Monday (test data)"
+    },
+    {
+      "split": "train",
+      "rung": "none",
+      "gap": false,
+      "text": "Sample company verified its accounts and formally announced a new chief scientist (test data)"
+    },
+    {
+      "split": "train",
+      "rung": "none",
+      "gap": false,
+      "text": "Sample model scores 61% on a maths olympiad benchmark (test data)"
+    },
+    {
+      "split": "train",
+      "rung": "none",
+      "gap": false,
+      "text": "Sample essay: the case for more rigorous evaluation of AI claims (test data)"
+    },
+    {
+      "split": "train",
+      "rung": "claimed",
+      "gap": false,
+      "text": "Sample team releases a Lean 4 proof of a sample inequality (test data)"
+    },
+    {
+      "split": "train",
+      "rung": "claimed",
+      "gap": false,
+      "text": "Sample agents formalize a classic theorem in a proof assistant over two weeks (test data)"
+    },
+    {
+      "split": "train",
+      "rung": "claimed",
+      "gap": false,
+      "text": "Sample library adds 2,000 machine-checked lemmas to Mathlib (test data)"
+    },
+    {
+      "split": "train",
+      "rung": "claimed",
+      "gap": false,
+      "text": "Sample startup says its autoformalization system translated a textbook into Lean (test data)"
+    },
+    {
+      "split": "train",
+      "rung": "claimed",
+      "gap": false,
+      "text": "Sample group publishes a Coq development of a sample compiler correctness proof (test data)"
+    },
+    {
+      "split": "train",
+      "rung": "statement-checked",
+      "gap": false,
+      "text": "Sample Lean proof uses only the standard axioms and a comparator confirmed the final statement (test data)"
+    },
+    {
+      "split": "train",
+      "rung": "statement-checked",
+      "gap": false,
+      "text": "Sample formalization of a sample conjecture was rechecked by a second independent kernel (test data)"
+    },
+    {
+      "split": "train",
+      "rung": "statement-checked",
+      "gap": false,
+      "text": "Sample machine-checked proof: its statement matches Mathlib's own statement, with zero sorries (test data)"
+    },
+    {
+      "split": "train",
+      "rung": "statement-checked",
+      "gap": true,
+      "text": "Sample note: the Lean proof states a weaker result than the paper claims (test data)"
+    },
+    {
+      "split": "train",
+      "rung": "outside-checked",
+      "gap": false,
+      "text": "An independent team rebuilt the Lean formalization of Sample Theorem and it checks (test data)"
+    },
+    {
+      "split": "train",
+      "rung": "outside-checked",
+      "gap": true,
+      "text": "Outside researchers audited the Lean code and found it does not correspond to the prose proof (test data)"
+    },
+    {
+      "split": "train",
+      "rung": "outside-checked",
+      "gap": false,
+      "text": "Sample proof assistant development passed an external audit by a third-party verification group (test data)"
+    },
+    {
+      "split": "train",
+      "rung": "outside-checked",
+      "gap": true,
+      "text": "Independent mathematicians report mistranslations in the sample autoformalized proof (test data)"
+    },
+    {
+      "split": "train",
+      "rung": "claimed",
+      "gap": false,
+      "text": "Sample report: 16 million lines of Lean code cover a whole algebraic geometry reference (test data)"
+    },
+    {
+      "split": "train",
+      "rung": "claimed",
+      "gap": false,
+      "added": "2026-11-09: a miss found while testing (a 'Lean statement' headline scored none)",
+      "text": "Sample blog: the Lean statement of the sample conjecture is now public (test data)"
+    },
+    {
+      "split": "heldout",
+      "rung": "none",
+      "gap": false,
+      "text": "Sample firm adopts lean manufacturing for its chip line (test data)"
+    },
+    {
+      "split": "heldout",
+      "rung": "none",
+      "gap": false,
+      "text": "Sample treaty on AI safety is formalized by two governments (test data)"
+    },
+    {
+      "split": "heldout",
+      "rung": "none",
+      "gap": false,
+      "text": "Sample company's results were verified by auditors before the funding round (test data)"
+    },
+    {
+      "split": "heldout",
+      "rung": "none",
+      "gap": false,
+      "text": "Sample model claims a proof of a famous open problem, with no code released (test data)"
+    },
+    {
+      "split": "heldout",
+      "rung": "none",
+      "gap": false,
+      "text": "Sample essay: what it means for a theorem to be true (test data)"
+    },
+    {
+      "split": "heldout",
+      "rung": "claimed",
+      "gap": false,
+      "text": "Sample agents wrote the proof in Lean and it compiles (test data)"
+    },
+    {
+      "split": "heldout",
+      "rung": "claimed",
+      "gap": false,
+      "text": "Sample lab formalized a sample number theory result in Isabelle/HOL (test data)"
+    },
+    {
+      "split": "heldout",
+      "rung": "claimed",
+      "gap": false,
+      "text": "Sample proof is computer-verified, the team says (test data)"
+    },
+    {
+      "split": "heldout",
+      "rung": "claimed",
+      "gap": false,
+      "text": "Sample startup formally verified a sample lemma about prime numbers (test data)"
+    },
+    {
+      "split": "heldout",
+      "rung": "claimed",
+      "gap": false,
+      "text": "Sample swarm of agents translated 7,000 pages of mathematics into the Lean prover (test data)"
+    },
+    {
+      "split": "heldout",
+      "rung": "statement-checked",
+      "gap": false,
+      "text": "Sample computer-checked proof: a comparator matched it against the library's statement (test data)"
+    },
+    {
+      "split": "heldout",
+      "rung": "statement-checked",
+      "gap": false,
+      "text": "Sample Lean development builds with no sorry and lean4checker passes (test data)"
+    },
+    {
+      "split": "heldout",
+      "rung": "statement-checked",
+      "gap": true,
+      "text": "Sample preprint: the autoformalized statement is weaker than the theorem in the abstract (test data)"
+    },
+    {
+      "split": "heldout",
+      "rung": "statement-checked",
+      "gap": true,
+      "text": "Sample analysis finds a mismatch between the Lean theorem and the published claim (test data)"
+    },
+    {
+      "split": "heldout",
+      "rung": "outside-checked",
+      "gap": false,
+      "text": "Outside experts independently reproduced the sample Coq proof (test data)"
+    },
+    {
+      "split": "heldout",
+      "rung": "outside-checked",
+      "gap": true,
+      "text": "Sample: an independent review of the Lean proof shows it is not semantically faithful to the paper (test data)"
+    },
+    {
+      "split": "heldout",
+      "rung": "outside-checked",
+      "gap": false,
+      "text": "Sample machine-checked proof was externally verified by a second group (test data)"
+    },
+    {
+      "split": "heldout",
+      "rung": "outside-checked",
+      "gap": true,
+      "text": "Independent researchers say the sample Lean statement is weaker than claimed (test data)"
+    },
+    {
+      "split": "heldout",
+      "rung": "claimed",
+      "gap": false,
+      "text": "Sample team: the formalization of the sample proof took 11 days of agent time (test data)"
+    },
+    {
+      "split": "heldout",
+      "rung": "none",
+      "gap": false,
+      "text": "Sample agency formalizes its review process for AI procurement (test data)"
+    }
+  ]
+}

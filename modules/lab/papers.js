@@ -14,6 +14,10 @@
 //                            (arXiv 2611.09828): a policy learns by RL whether to solve a task or hack its tests; a
 //                            monitor's verdict, fed into the reward, suppresses hacking but also teaches how to evade it.
 //                            Easier problems make honest solving pay and cut hacking.
+//   autoformalize-gate       "Formalizing Fermat's Last Theorem" (Anthropic, Sep 2026) with "Navier-Stokes lost in
+//                            translation" (arXiv 2610.08144): an autoformalizer learns by RL which statement to prove,
+//                            the claimed one or a weaker one that compiles more easily. Rewarding "it compiles" teaches
+//                            weakening; a comparator that checks the statement against a reference stops it.
 function rng(seed = 1) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 const gauss = (r) => { const u = Math.max(1e-12, r()), v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
 const round = (x, d = 3) => Math.round(x * 10 ** d) / 10 ** d;
@@ -148,6 +152,40 @@ function monitorLeak({ leak = 1, accuracy = 0.95, easy_share = 0, steps = 300, b
     notes: [`The monitor's verdict reached the reward in ${Math.round(leak * 100)}% of hack attempts; ${Math.round(easy_share * 100)}% of problems were easy.`, `At the end the policy hacks in ${Math.round(p * 100)}% of episodes and the monitor misses ${Math.round(miss * 100)}% of those hacks.`] };
 }
 
+// autoformalize-gate: five statement strengths, 1.0 is the claimed theorem and lower is weaker. Weaker statements
+// compile more often. Reward is 1 when the proof compiles and, with the gate on, the comparator doesn't reject it.
+// subtle_blind makes the comparator spot a weakening in proportion to how big it is, as a check that compares
+// surface features would.
+const STRENGTHS = [1, 0.8, 0.6, 0.4, 0.2];
+function autoformalize({ gate = 1, power = 1, subtle_blind = 0, difficulty = 0.6, steps = 300, batch = 32, seed = 17 } = {}) {
+  const r = rng(seed), th = STRENGTHS.map(() => 0), pts = [];
+  const pc = (s) => sigmoid(6 * (1.5 - s - difficulty));
+  const det = (s) => (s >= 1 ? 0 : gate * power * (subtle_blind ? (1 - s) / 0.8 : 1));
+  const probs = () => { const m = Math.max(...th), e = th.map((x) => Math.exp(x - m)), z = e.reduce((a, b) => a + b, 0); return e.map((x) => x / z); };
+  const summary = (p) => {
+    const acc = STRENGTHS.map((s, k) => p[k] * pc(s) * (1 - det(s))), accepted = acc.reduce((a, b) => a + b, 0);
+    return { compile_rate: round(STRENGTHS.reduce((a, s, k) => a + p[k] * pc(s), 0)), accepted: round(accepted),
+      weakened_share: round(accepted ? (accepted - acc[0]) / accepted : 0), faithful_rate: round(acc[0]),
+      mean_gap: round(STRENGTHS.reduce((a, s, k) => a + p[k] * (1 - s), 0)) };
+  };
+  let base = 0.5;
+  for (let t = 0; t < steps; t++) {
+    const p = probs(), g = th.map(() => 0); let sum = 0;
+    for (let i = 0; i < batch; i++) {
+      let u = r(), a = 0; while (a < p.length - 1 && u > p[a]) { u -= p[a]; a++; }
+      const s = STRENGTHS[a], rew = r() < pc(s) && !(r() < det(s)) ? 1 : 0; sum += rew;
+      for (let k = 0; k < th.length; k++) g[k] += (rew - base) * ((k === a ? 1 : 0) - p[k]);
+    }
+    base = 0.9 * base + 0.1 * (sum / batch);
+    for (let k = 0; k < th.length; k++) th[k] += 0.5 * g[k] / batch;
+    if ((t + 1) % 20 === 0) pts.push([t + 1, summary(probs()).weakened_share]);
+  }
+  const m = summary(probs());
+  return { metrics: m, series: [{ name: "share of accepted proofs that prove a weaker statement", points: pts }],
+    notes: [gate ? `A comparator checked each statement (power ${power}${subtle_blind ? ", spotting a weakening in proportion to its size" : ""}).` : "Only compiling was rewarded; nothing compared the statement with the claim.",
+      `At the end ${Math.round(m.compile_rate * 100)}% of attempts compile, and ${Math.round(m.weakened_share * 100)}% of accepted proofs prove something weaker than the claim.`] };
+}
+
 const runnersList = [
   { id: "self-improve-selection", about: "An agent edits itself and keeps the best version, judged on visible tests or hidden evaluations (with an edit budget)",
     params: {
@@ -191,6 +229,18 @@ const runnersList = [
     },
     metrics: [{ id: "hack_rate", label: "Share of episodes that hack the tests", better: "lower" }, { id: "evaded", label: "Share of hacks the monitor misses", better: "lower" }, { id: "hidden_rate", label: "Share of episodes that hack undetected", better: "lower" }],
     run: (p) => monitorLeak(p) },
+  { id: "autoformalize-gate", about: "An autoformalizer learns by RL whether to prove the claimed statement or a weaker one that compiles more easily; a comparator gate checks the statement against a reference",
+    params: {
+      gate: { default: 1, min: 0, max: 1, step: 1, about: "0 = reward any proof that compiles, 1 = a comparator must also accept the statement" },
+      power: { default: 1, min: 0, max: 1, step: 0.1, about: "How often the comparator rejects a weakened statement" },
+      subtle_blind: { default: 0, min: 0, max: 1, step: 1, about: "1 = the comparator spots a weakening in proportion to its size, so small ones slip through" },
+      difficulty: { default: 0.6, min: 0, max: 1, step: 0.05, about: "How hard the claimed statement is to prove" },
+      steps: { default: 300, min: 50, max: 800, step: 50, about: "Training steps" },
+      batch: { default: 32, min: 4, max: 64, step: 4, about: "Attempts per step" },
+      seed: { default: 17, min: 1, max: 999, step: 1, about: "Random seed" },
+    },
+    metrics: [{ id: "weakened_share", label: "Share of accepted proofs that prove a weaker statement", better: "lower" }, { id: "faithful_rate", label: "Share of attempts that prove the claimed statement", better: "higher" }, { id: "compile_rate", label: "Share of attempts that compile (what a compile-only dashboard shows)", better: "info" }, { id: "accepted", label: "Share of attempts accepted", better: "info" }, { id: "mean_gap", label: "Average weakening chosen (0 = the claim)", better: "lower" }],
+    run: (p) => autoformalize(p) },
 ];
 // Averaging over seeds, so a verdict doesn't hang on one lucky draw (the Lab's examples pass seeds via "seeds").
 function averaged(fn, p, seeds = 10) {
@@ -200,4 +250,4 @@ function averaged(fn, p, seeds = 10) {
 }
 for (const r of runnersList) { const raw = r.run; r.run = (p) => averaged(raw, p, 10); }
 
-module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI, monitorLeak };
+module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI, monitorLeak, autoformalize };

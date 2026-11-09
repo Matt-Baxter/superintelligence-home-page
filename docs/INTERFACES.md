@@ -118,8 +118,11 @@ Every interface change gets a row here. Breaking changes bump the major version 
 - **Forecast probabilities:** `review_events` gains `probability REAL` (module column); forecasts carry `probability` (0 to 1) when their sentence states one. Track records gain `brier` (from 3 scored forecasts) and `scored`; `/research/outlets` shows a Brier column; the control room shows the stated probability.
 - **Contested concepts:** dossiers gain `contested[]` (a concept two or more reviewed papers explain, judged 30 or more apart or doubtful beside credible) and a "Where papers disagree" blog section. | logged by John |
 | 2.3 | Nov 9, 2026 | Verification module (beyond the spec; extended and research versions). No routes, pages or tables.
+- **Tag adapter:** `machine-checked` (extension point `knowledge.taggers`) tags `topic:formal-verification` with method `rule` from the same rules, for the Review desk and the knowledge graph.
 - **Story analysis:** `why[]` may carry a "Machine-checked" line (3 claimed, 5 statement checked against a reference, 7 checked outside the authors; max 7); a fidelity gap is named in its `detail`. No new fields.
 - **Ontology:** topic `formal-verification` (parent `math`) and organisation `axiom-math`. Learn concept `statement-fidelity` (topic `safety`; gains an optional `sources[{title, url}]` field; other concepts unchanged).
+- **Tooling:** `npm run verification:ratchet` (research loop over `modules/verification/rules.json`, tuned on the train split of `bench/verification-set.json`, gated by held-out). Bench metrics `verification.heldout_rung_accuracy`, `verification.heldout_gap_accuracy`, `verification.false_formal`, `verification.topic_agreement`, `verification.invariance`, `papers.comparator_weakening_drop`. Lab runner `autoformalize-gate` and example `autoformalize-statement-gate`.
+- **Test servers:** `test/sample-clock.js` starts the sample servers' clock at `SAMPLE_NOW` (default 2026-11-06T12:00Z; `real` turns it off). The browser block bundle now registers every module's blocks whatever the build's site profile.
 
 **Done means:** a classmate can sign up on the live site, see a grouped, tagged feed from at least 8 sources, and vote on and save stories that are still there the next time they sign in.
 

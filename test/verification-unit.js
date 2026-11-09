@@ -29,4 +29,24 @@ assert.ok(a.significance > analysis.analyze({ title: "Sample Lab says it proved 
 // The ontology tags formal-verification stories under Math.
 const { tag } = require("../lib/tagger");
 assert.ok(tag("Sample autoformalization with a proof assistant (test data)", "").topics.some((t) => t.id === "formal-verification"));
-console.log("verification unit checks: 16 passed");
+// Research loop (scripts/verification-ratchet.js): converges on the committed rules, and its held-out gate refuses a
+// change that helps train but hurts held-out.
+const { run } = require("../scripts/verification-ratchet");
+const rules = require("../modules/verification/rules.json"), items = require("../bench/verification-set.json").items;
+assert.equal(run(rules, items).changed, false, "the committed rules are a fixed point of the loop (re-run the ratchet after editing the set)");
+const trap = [{ split: "train", rung: "claimed", gap: false, text: "Sample: lean wins again for proof writers (test data)" }, { split: "heldout", rung: "none", gap: false, text: "Sample startup keeps a lean team (test data)" }];
+const t = run(rules, trap);
+assert.ok(t.changed && t.log.some((l) => /formal: \/lean\/$/.test(l.kept || "")), "train alone rewards a bare 'lean' pattern");
+assert.equal(t.accepted, false, "the held-out gate refuses it, because 'a lean team' would become a proof claim");
+// The Lab toy behind the hypothesis: rewarding "it compiles" teaches weaker statements; an exact comparator stops it.
+const P = require("../modules/lab/papers"), ag = P.runners.find((r) => r.id === "autoformalize-gate"), w = (p) => ag.run({ steps: 300, batch: 32, seed: 17, difficulty: 0.6, power: 1, subtle_blind: 0, gate: 1, ...p }).metrics;
+assert.ok(w({ gate: 0 }).weakened_share > 0.9 && w({}).weakened_share < 0.05, "compile-only reward weakens statements; a comparator gate stops it");
+assert.ok(w({ gate: 0 }).compile_rate > w({}).compile_rate, "the compile rate looks better without the gate, though the work is worse");
+// The tag adapter uses the same rules as the score.
+const kk = createKernel(), ad = kk.store.taggers.find((x) => x.id === "machine-checked");
+assert.deepEqual(ad.tag("Sample Lean development builds with no sorry (test data)").map((x) => x.qid), ["topic:formal-verification"]);
+assert.deepEqual(ad.tag("Sample startup keeps a lean team (test data)"), [], "no tag without a proof claim");
+// Alignment: every term that tags a story Formal verification also links the Statement fidelity explainer.
+const onto = require("../lib/ontology.json").topics.find((x) => x.id === "formal-verification").terms, conc = require("../modules/learn/data/concepts.json").concepts.find((x) => x.id === "statement-fidelity").terms;
+assert.deepEqual(onto.filter((x) => !conc.includes(x)), [], "concept terms cover the topic's terms");
+console.log("verification unit checks: 23 passed");

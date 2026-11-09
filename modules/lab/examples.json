@@ -1,700 +1,752 @@
 {
- "about": "Lab examples: each takes a published superintelligence idea, restates it in our own words (no copied text, no claims attributed to people), reproduces it as a deterministic toy experiment, then adds a hypothesis of ours as a variant with a stated prediction. Results are toy-scale: they test whether the idea's logic holds in a small model, not whether the original paper is right. Test data is synthetic. Edit freely; ids are kebab-case (docs/NAMING.md).",
- "version": "1.0.0",
- "examples": [
-  {
-   "id": "rsi-compounding",
-   "title": "Does self-improvement compound into an explosion?",
-   "concept": "concept:recursive-self-improvement",
-   "topics": [
-    "topic:recursive-self-improvement",
-    "topic:forecasting"
-   ],
-   "idea": "If each generation of an AI system is better at building the next one, improvements feed on themselves, and capability could grow faster than exponentially: an \"intelligence explosion\".",
-   "reproduce": {
-    "runner": "compounding",
-    "params": {
-     "rate": 0.1,
-     "alpha": 1,
-     "bottleneck": 0,
-     "generations": 60
+  "about": "Lab examples: each takes a published superintelligence idea, restates it in our own words (no copied text, no claims attributed to people), reproduces it as a deterministic toy experiment, then adds a hypothesis of ours as a variant with a stated prediction. Results are toy-scale: they test whether the idea's logic holds in a small model, not whether the original paper is right. Test data is synthetic. Edit freely; ids are kebab-case (docs/NAMING.md).",
+  "version": "1.0.0",
+  "examples": [
+    {
+      "id": "rsi-compounding",
+      "title": "Does self-improvement compound into an explosion?",
+      "concept": "concept:recursive-self-improvement",
+      "topics": [
+        "topic:recursive-self-improvement",
+        "topic:forecasting"
+      ],
+      "idea": "If each generation of an AI system is better at building the next one, improvements feed on themselves, and capability could grow faster than exponentially: an \"intelligence explosion\".",
+      "reproduce": {
+        "runner": "compounding",
+        "params": {
+          "rate": 0.1,
+          "alpha": 1,
+          "bottleneck": 0,
+          "generations": 60
+        },
+        "expect": "With full compounding (returns = 1) capability grows exponentially and reaches 10x quickly."
+      },
+      "hypothesis": {
+        "statement": "Ours: real AI research has diminishing returns to capability and a share of work (compute, experiments, data) that capability can't speed up. With returns of 0.6 and a 50% bottleneck, growth stays well short of exponential: reaching 10x takes more than twice as long.",
+        "params": {
+          "alpha": 0.6,
+          "bottleneck": 0.5
+        },
+        "predict": {
+          "metric": "steps_to_10x",
+          "direction": "up",
+          "factor": 2
+        }
+      },
+      "criteria": [
+        {
+          "metric": "steps_to_10x",
+          "weight": 50
+        },
+        {
+          "metric": "final",
+          "weight": 30
+        },
+        {
+          "metric": "speedup_last",
+          "weight": 20
+        }
+      ]
     },
-    "expect": "With full compounding (returns = 1) capability grows exponentially and reaches 10x quickly."
-   },
-   "hypothesis": {
-    "statement": "Ours: real AI research has diminishing returns to capability and a share of work (compute, experiments, data) that capability can't speed up. With returns of 0.6 and a 50% bottleneck, growth stays well short of exponential: reaching 10x takes more than twice as long.",
-    "params": {
-     "alpha": 0.6,
-     "bottleneck": 0.5
+    {
+      "id": "rsi-decision-gym",
+      "title": "Can a decision-maker improve itself by writing its own tests?",
+      "concept": "concept:recursive-self-improvement",
+      "topics": [
+        "topic:recursive-self-improvement",
+        "topic:automating-ai-research"
+      ],
+      "idea": "A system that generates its own practice problems, checks its answers against feedback, and retrains on its mistakes can bootstrap better behaviour without new human labels. Repeating the loop is a small, safe form of recursive self-improvement.",
+      "reproduce": {
+        "runner": "decision-gym",
+        "params": {
+          "rounds": 0,
+          "self_tests": 40,
+          "start": 30,
+          "rare": 0.35,
+          "keep_only_better": 1,
+          "seed": 5
+        },
+        "expect": "Trained once on 30 requests, the policy handles familiar wording but misses requests phrased in new ways."
+      },
+      "hypothesis": {
+        "statement": "Ours: eight rounds of writing 40 of its own test requests, learning from the failures and keeping a round only if held-out accuracy doesn't drop (a ratchet), raise held-out accuracy by at least 20 points while every safety property still holds.",
+        "params": {
+          "rounds": 8
+        },
+        "predict": {
+          "metric": "heldout_accuracy",
+          "direction": "up",
+          "delta": 0.2
+        }
+      },
+      "criteria": [
+        {
+          "metric": "heldout_accuracy",
+          "weight": 50
+        },
+        {
+          "metric": "properties_hold",
+          "weight": 30
+        },
+        {
+          "metric": "tree_nodes",
+          "weight": 20
+        }
+      ]
     },
-    "predict": {
-     "metric": "steps_to_10x",
-     "direction": "up",
-     "factor": 2
+    {
+      "id": "rsi-ratchet-off",
+      "title": "What happens to self-improvement without a ratchet?",
+      "concept": "concept:recursive-self-improvement",
+      "topics": [
+        "topic:recursive-self-improvement",
+        "topic:safety"
+      ],
+      "idea": "Automated research loops keep a change only when a fixed measurement says it helped. That check is meant to make unattended self-improvement move in one direction instead of drifting.",
+      "reproduce": {
+        "runner": "decision-gym",
+        "params": {
+          "rounds": 12,
+          "self_tests": 40,
+          "start": 30,
+          "rare": 0.35,
+          "keep_only_better": 1,
+          "feedback_noise": 0.3,
+          "seed": 1,
+          "seeds": 10
+        },
+        "expect": "With an imperfect self-check (30% of its own corrections carry the wrong label), the ratchet keeps only rounds that don't lower held-out accuracy. Averaged over 10 seeds, because one seed can point either way."
+      },
+      "hypothesis": {
+        "statement": "Ours: with that noisy self-check, switching the ratchet off (keeping every round, mislabelled corrections included) ends with lower held-out accuracy than the ratchet.",
+        "params": {
+          "keep_only_better": 0
+        },
+        "predict": {
+          "metric": "heldout_accuracy",
+          "direction": "down"
+        }
+      },
+      "criteria": [
+        {
+          "metric": "heldout_accuracy",
+          "weight": 70
+        },
+        {
+          "metric": "properties_hold",
+          "weight": 30
+        }
+      ]
+    },
+    {
+      "id": "goodhart-oversight",
+      "title": "Optimising a proxy: Goodhart's law, and auditing as a fix",
+      "concept": "concept:reward-hacking",
+      "topics": [
+        "topic:alignment",
+        "topic:safety"
+      ],
+      "idea": "When a system is optimised hard against a measurable proxy for what we want, it eventually finds ways to raise the proxy that don't serve, or actively hurt, the real goal.",
+      "reproduce": {
+        "runner": "goodhart",
+        "params": {
+          "exploit": 0.6,
+          "audit": 0,
+          "steps": 400,
+          "seed": 7
+        },
+        "expect": "The proxy keeps rising while the true goal falls: a large proxy-minus-true gap."
+      },
+      "hypothesis": {
+        "statement": "Ours: auditing just 20% of the optimiser's steps against the true goal (rejecting audited steps that hurt it) keeps the true goal from collapsing, cutting the gap by more than half.",
+        "params": {
+          "audit": 0.2
+        },
+        "predict": {
+          "metric": "gap",
+          "direction": "down",
+          "factor": 2
+        }
+      },
+      "criteria": [
+        {
+          "metric": "true_final",
+          "weight": 60
+        },
+        {
+          "metric": "gap",
+          "weight": 40
+        }
+      ]
+    },
+    {
+      "id": "weak-to-strong",
+      "title": "Can a weak supervisor train a stronger student?",
+      "concept": "concept:scalable-oversight",
+      "topics": [
+        "topic:alignment",
+        "topic:safety"
+      ],
+      "idea": "As systems surpass their overseers, supervision gets weaker than the student. A capable student trained on a weaker supervisor's imperfect labels can still end up more accurate than that supervisor, because it learns the underlying pattern rather than the mistakes.",
+      "reproduce": {
+        "runner": "weak-to-strong",
+        "params": {
+          "noise": 0.25,
+          "k": 15,
+          "filter": 0,
+          "n": 400,
+          "seed": 3
+        },
+        "expect": "The student, trained only on noisy supervisor labels, beats the supervisor's own accuracy."
+      },
+      "hypothesis": {
+        "statement": "Ours: dropping the 20% of labels the supervisor is least confident about (near the decision boundary, where it errs most) raises the student's accuracy further.",
+        "params": {
+          "filter": 0.2
+        },
+        "predict": {
+          "metric": "student_acc",
+          "direction": "up"
+        }
+      },
+      "criteria": [
+        {
+          "metric": "student_acc",
+          "weight": 70
+        },
+        {
+          "metric": "gain",
+          "weight": 30
+        }
+      ]
+    },
+    {
+      "id": "scaling-data-limited",
+      "title": "Scaling laws, and what happens when data runs out",
+      "concept": "concept:scaling-laws",
+      "topics": [
+        "topic:compute",
+        "topic:forecasting"
+      ],
+      "idea": "Test loss falls smoothly, roughly as a power law, as models get bigger, which is why progress can be forecast from compute and model size.",
+      "reproduce": {
+        "runner": "scaling",
+        "params": {
+          "data": 2000,
+          "sizes": 10,
+          "seed": 11
+        },
+        "expect": "With plenty of data, loss falls steadily as a power law across all sizes tried."
+      },
+      "hypothesis": {
+        "statement": "Ours: with only 50 training examples, bigger models stop helping early: the curve flattens at a smaller size and the best loss is worse. Forecasts from size alone break when data is the bottleneck.",
+        "params": {
+          "data": 50
+        },
+        "predict": {
+          "metric": "best_loss",
+          "direction": "up"
+        }
+      },
+      "criteria": [
+        {
+          "metric": "best_loss",
+          "weight": 60
+        },
+        {
+          "metric": "exponent",
+          "weight": 40
+        }
+      ]
+    },
+    {
+      "id": "toy-superposition",
+      "title": "Superposition: more features than dimensions",
+      "concept": "concept:superposition",
+      "topics": [
+        "topic:interpretability"
+      ],
+      "idea": "A network can store more features than it has dimensions when the features are rarely active at the same time. It packs them into shared directions and pays a little interference. As features get sparser, the storage changes suddenly, through sharp phase changes, into regular shapes such as antipodal pairs and pentagons. This is why single neurons in real models often mean several things at once.",
+      "reproduce": {
+        "runner": "superposition",
+        "params": {
+          "sparsity": 0,
+          "features": 5,
+          "decay": 0.9,
+          "steps": 2500,
+          "seed": 1
+        },
+        "expect": "With dense features (sparsity 0), a 2-dimensional model keeps only its 2 most important features, each in its own dimension (dimensionality about 1)."
+      },
+      "hypothesis": {
+        "statement": "Ours: making the same features sparse (zero 90% of the time) lets the 2-dimensional model store all 5, arranged as a pentagon (each feature's dimensionality near 2/5). Features stored rise by at least 3.",
+        "params": {
+          "sparsity": 0.9
+        },
+        "predict": {
+          "metric": "represented",
+          "direction": "up",
+          "delta": 3
+        }
+      },
+      "criteria": [
+        {
+          "metric": "represented",
+          "weight": 50
+        },
+        {
+          "metric": "loss",
+          "weight": 30
+        },
+        {
+          "metric": "mean_dim",
+          "weight": 20
+        }
+      ]
+    },
+    {
+      "id": "sae-dead-latents",
+      "title": "Sparse autoencoders: does resampling dead latents recover more features?",
+      "concept": "concept:interpretability",
+      "topics": [
+        "topic:interpretability"
+      ],
+      "idea": "A sparse autoencoder (SAE) learns a dictionary of directions so that each input is rebuilt from a few active ones. Trained on a layer that stores features in superposition, it can pull the hidden features back out. Some latents stop firing ('dead latents') and waste capacity; resampling them toward inputs the SAE rebuilds badly is a standard fix.",
+      "reproduce": {
+        "runner": "sparse-autoencoder",
+        "params": {
+          "latents": 24,
+          "l1": 0.1,
+          "resample": 0,
+          "steps": 1200,
+          "seed": 2
+        },
+        "expect": "A 24-latent SAE on a toy that stores 12 features in 4 dimensions recovers most of the true feature directions (cosine above 0.9) and leaves a few latents dead."
+      },
+      "hypothesis": {
+        "statement": "Ours: resampling dead latents every 200 steps recovers at least one more true feature at this small scale.",
+        "params": {
+          "resample": 1
+        },
+        "predict": {
+          "metric": "recovered",
+          "direction": "up",
+          "delta": 1
+        }
+      },
+      "criteria": [
+        {
+          "metric": "recovered",
+          "weight": 50
+        },
+        {
+          "metric": "fve",
+          "weight": 25
+        },
+        {
+          "metric": "dead",
+          "weight": 25
+        }
+      ]
+    },
+    {
+      "id": "steering-error-term",
+      "title": "Feature steering: add the SAE's error back",
+      "concept": "concept:interpretability",
+      "topics": [
+        "topic:interpretability"
+      ],
+      "idea": "To steer a model with an interpretable feature, clamp that feature's SAE latent high and decode. But an SAE rebuilds its input imperfectly, so editing through it also changes things you didn't touch. Adding the SAE's reconstruction error back after decoding makes the unedited path exact, so every change comes from the edit.",
+      "reproduce": {
+        "runner": "steering",
+        "params": {
+          "clamp": 4,
+          "keep_error": 0,
+          "seed": 2
+        },
+        "expect": "Without the error term, outputs drift even when nothing is edited, because the SAE's reconstruction is imperfect."
+      },
+      "hypothesis": {
+        "statement": "Ours: adding the error term back removes the drift on unedited inputs (output error with no edit falls by at least 0.005) without weakening the steering effect.",
+        "params": {
+          "keep_error": 1
+        },
+        "predict": {
+          "metric": "unedited_error",
+          "direction": "down",
+          "delta": 0.005
+        }
+      },
+      "criteria": [
+        {
+          "metric": "unedited_error",
+          "weight": 50
+        },
+        {
+          "metric": "selectivity",
+          "weight": 30
+        },
+        {
+          "metric": "target_gain",
+          "weight": 20
+        }
+      ]
+    },
+    {
+      "id": "rsi-hidden-evals",
+      "title": "Self-improving agents: keep edits that win on hidden evaluations, not visible tests",
+      "concept": "concept:recursive-self-improvement",
+      "topics": [
+        "topic:recursive-self-improvement",
+        "topic:automating-ai-research"
+      ],
+      "source": {
+        "title": "Recursive self-improvement of AI research agents",
+        "url": "https://arxiv.org/abs/2609.26457",
+        "via": "daily paper watcher, Nov 7, 2026"
+      },
+      "idea": "An AI research agent proposes changes to its own code, benchmarks each version and keeps the best. If it keeps whatever raises the tests it can see, it also keeps changes that fool those tests: reward hacking that looks like progress. Judging versions on hidden evaluations it never sees removes that payoff, and the paper reports less reward hacking as a side effect.",
+      "reproduce": {
+        "runner": "self-improve-selection",
+        "params": {
+          "select_on": 0,
+          "edit_budget": 1,
+          "decay": 0,
+          "rounds": 40,
+          "proposals": 6,
+          "seed": 3
+        },
+        "expect": "Kept on visible tests, about a third of the agent's visible score comes from test quirks rather than skill."
+      },
+      "hypothesis": {
+        "statement": "Ours: selecting edits on hidden evaluations instead cuts the share of the score that comes from test quirks by at least 0.1, without lowering the held-out benchmark score.",
+        "params": {
+          "select_on": 1
+        },
+        "predict": {
+          "metric": "hack_share",
+          "direction": "down",
+          "delta": 0.1
+        }
+      },
+      "criteria": [
+        {
+          "metric": "hack_share",
+          "weight": 50
+        },
+        {
+          "metric": "heldout",
+          "weight": 40
+        },
+        {
+          "metric": "kept",
+          "weight": 10
+        }
+      ]
+    },
+    {
+      "id": "rrsi-edit-budget",
+      "title": "Self-improvement with a shrinking edit budget",
+      "concept": "concept:recursive-self-improvement",
+      "topics": [
+        "topic:recursive-self-improvement"
+      ],
+      "source": {
+        "title": "RRSI: Regularized Recursive Self-Improvement of Agent Harnesses",
+        "url": "https://arxiv.org/abs/2609.24972",
+        "via": "daily paper watcher, Nov 7, 2026"
+      },
+      "idea": "When each self-edit bundles many changes, a change that only games the benchmark can ride along with a real improvement and be kept. Limiting how many changes one proposal may bundle, and shrinking that limit over time, is meant to keep the gains that transfer and drop the ones that overfit.",
+      "reproduce": {
+        "runner": "self-improve-selection",
+        "params": {
+          "select_on": 1,
+          "edit_budget": 12,
+          "decay": 0,
+          "rounds": 40,
+          "proposals": 6,
+          "seed": 3
+        },
+        "expect": "Even judged on hidden evaluations, large bundled edits let test quirks ride along: about a quarter of the visible score comes from quirks."
+      },
+      "hypothesis": {
+        "statement": "Ours: shrinking the edit budget from 12 to 1 over the run lowers the share of the score from test quirks by at least 0.05.",
+        "params": {
+          "decay": 1
+        },
+        "predict": {
+          "metric": "hack_share",
+          "direction": "down",
+          "delta": 0.05
+        }
+      },
+      "criteria": [
+        {
+          "metric": "hack_share",
+          "weight": 50
+        },
+        {
+          "metric": "heldout",
+          "weight": 50
+        }
+      ]
+    },
+    {
+      "id": "oversight-recompute",
+      "title": "Reward hacking by research agents: recompute the results yourself",
+      "concept": "concept:reward-hacking",
+      "topics": [
+        "topic:alignment",
+        "topic:automating-ai-research"
+      ],
+      "source": {
+        "title": "Reward Hacking Challenges Oversight of Autonomous Research Agents",
+        "url": "https://arxiv.org/abs/2609.28614",
+        "via": "daily paper watcher, Nov 7, 2026"
+      },
+      "idea": "A research agent that picks its own methods and reports its own scores can choose an exploit that inflates the score. A reviewer who sees only code and scores catches blunt exploits and misses subtle ones. The paper's proposed defence is to keep the metric outside the agent's control: recompute results independently on data built to expose likely exploits.",
+      "reproduce": {
+        "runner": "research-oversight",
+        "params": {
+          "feedback": 0,
+          "recompute": 0,
+          "rounds": 30,
+          "seed": 5
+        },
+        "expect": "With a reviewer alone, the agent keeps reaching for exploits and most of them slip through. (In our toy, detailed feedback barely changes this: 0.67 against 0.68, so the paper's finding that feedback teaches evasion is not reproduced here.)"
+      },
+      "hypothesis": {
+        "statement": "Ours: recomputing every result independently brings undetected exploits to zero and pushes the agent back to honest methods.",
+        "params": {
+          "recompute": 1
+        },
+        "predict": {
+          "metric": "evasion",
+          "direction": "down",
+          "delta": 0.5
+        }
+      },
+      "criteria": [
+        {
+          "metric": "evasion",
+          "weight": 50
+        },
+        {
+          "metric": "true_quality",
+          "weight": 30
+        },
+        {
+          "metric": "exploit_rate",
+          "weight": 20
+        }
+      ]
+    },
+    {
+      "id": "cosine-sae",
+      "title": "Cosine-scored sparse autoencoders when input sizes vary",
+      "concept": "concept:interpretability",
+      "topics": [
+        "topic:interpretability"
+      ],
+      "source": {
+        "title": "Size Doesn't Matter: Cosine-Scored Sparse Autoencoders",
+        "url": "https://arxiv.org/abs/2606.15054",
+        "via": "daily paper watcher, Nov 7, 2026"
+      },
+      "idea": "A standard sparse autoencoder decides whether a feature fires from an inner product, so the input's overall size matters as much as its direction. Models that normalise their activations ignore that size. Scoring features by cosine (direction only) and scaling by the size afterwards should spend fewer latents on detecting size and recover more real features.",
+      "reproduce": {
+        "runner": "sparse-autoencoder",
+        "params": {
+          "latents": 24,
+          "l1": 0.1,
+          "resample": 0,
+          "steps": 1200,
+          "seed": 2,
+          "cosine": 0,
+          "norm_spread": 0.8
+        },
+        "expect": "When input sizes vary, a standard SAE recovers only a few of the toy's 12 true feature directions."
+      },
+      "hypothesis": {
+        "statement": "Ours: cosine scoring recovers at least 4 more of the 12 true features on the same inputs.",
+        "params": {
+          "cosine": 1
+        },
+        "predict": {
+          "metric": "recovered",
+          "direction": "up",
+          "delta": 4
+        }
+      },
+      "criteria": [
+        {
+          "metric": "recovered",
+          "weight": 60
+        },
+        {
+          "metric": "fve",
+          "weight": 20
+        },
+        {
+          "metric": "dead",
+          "weight": 20
+        }
+      ]
+    },
+    {
+      "id": "roleplay-bounded-rsi",
+      "title": "Role-play self-improvement: an updater that fixes its own repair rules",
+      "concept": "concept:recursive-self-improvement",
+      "topics": [
+        "topic:recursive-self-improvement"
+      ],
+      "source": {
+        "title": "Recursive Self-Improvement for Long-Horizon Role-Playing Dialogue",
+        "url": "https://arxiv.org/abs/2611.07469",
+        "via": "daily paper watcher, Nov 7, 2026"
+      },
+      "idea": "A role-play character drifts over a long conversation, so an updater repairs the things that shape its replies: its memory, its persona instructions and the policy for building each turn's prompt. The recursive part is one level up: the updater looks at whether its repairs actually helped and rewrites its own repair rules. Edits are bounded so the loop stays small and checkable.",
+      "reproduce": {
+        "runner": "roleplay-rsi",
+        "params": {
+          "meta": 1,
+          "edit_bound": 3,
+          "judge_noise": 0.2,
+          "rounds": 30,
+          "turns": 200,
+          "seed": 7
+        },
+        "expect": "With the updater refining its own rules, the bad-reply rate falls from about 0.19 in the first rounds to about 0.02, and most repair rules end up aimed at the right artifact. (With fixed rules, meta 0, repairs aimed at the wrong artifact cause drift and the rate rises to about 0.25: repairing alone isn't enough.)"
+      },
+      "hypothesis": {
+        "statement": "Ours: loosening the bound from 3 to 6 repairs per round lets the updater test its rules more often, so the share of rules aimed at the right artifact rises by at least 0.05.",
+        "params": {
+          "edit_bound": 6
+        },
+        "predict": {
+          "metric": "rules_right",
+          "direction": "up",
+          "delta": 0.05
+        }
+      },
+      "criteria": [
+        {
+          "metric": "bad_rate",
+          "weight": 50
+        },
+        {
+          "metric": "rules_right",
+          "weight": 30
+        },
+        {
+          "metric": "side_effects",
+          "weight": 20
+        }
+      ]
+    },
+    {
+      "id": "reward-hack-monitor-leak",
+      "title": "Monitors in the reward: suppressing reward hacking or teaching evasion?",
+      "concept": "concept:reward-hacking",
+      "topics": [
+        "topic:alignment"
+      ],
+      "source": {
+        "title": "Designing Effective Monitor-Based Interventions for Mitigating Reward Hacking During RL",
+        "url": "https://arxiv.org/abs/2611.09828",
+        "via": "daily paper watcher, Nov 9, 2026"
+      },
+      "idea": "During reinforcement learning a model can learn to hack its reward, for example by overwriting the tests it is graded on. A monitor that spots hacks can be wired into training so flagged hacks earn nothing. The catch: every time the monitor's verdict reaches the reward, the model also learns which hacks get caught, so a monitor that feeds more signal into training pushes hacking down but teaches the model to slip past it. Giving the model easier problems, where honest work pays, removes the reason to hack in the first place.",
+      "reproduce": {
+        "runner": "monitor-leak-rl",
+        "params": {
+          "leak": 1,
+          "accuracy": 0.95,
+          "easy_share": 0,
+          "steps": 300,
+          "batch": 32,
+          "seed": 13
+        },
+        "expect": "With the monitor's verdict always in the reward, hacking falls to about 46% of episodes, but the monitor now misses about 48% of the hacks that remain. With no leak (leak 0) the policy hacks almost every episode and the monitor, only watching, misses about 13%. Making half the problems easy (easy_share 0.5) cuts hacking to about 1%."
+      },
+      "hypothesis": {
+        "statement": "Ours: training twice as long (600 steps) at full leak gives the policy time to learn evasion, so hacking comes back and the share of hacking episodes rises by at least 0.2.",
+        "params": {
+          "steps": 600
+        },
+        "predict": {
+          "metric": "hack_rate",
+          "direction": "up",
+          "delta": 0.2
+        }
+      },
+      "criteria": [
+        {
+          "metric": "hidden_rate",
+          "weight": 50
+        },
+        {
+          "metric": "hack_rate",
+          "weight": 30
+        },
+        {
+          "metric": "evaded",
+          "weight": 20
+        }
+      ]
+    },
+    {
+      "id": "autoformalize-statement-gate",
+      "title": "Autoformalization: does \"it compiles\" teach weaker theorems?",
+      "concept": "concept:statement-fidelity",
+      "topics": [
+        "topic:formal-verification"
+      ],
+      "source": {
+        "title": "Navier-Stokes lost in translation: why Lean verification of AI autoformalisation does not guarantee correct natural language proofs",
+        "url": "https://arxiv.org/abs/2610.08144",
+        "via": "the Fermat, Navier-Stokes and Stacks Project formalizations, Nov 9, 2026"
+      },
+      "idea": "A proof checker confirms that a proof proves its formal statement, not that the statement is the one claimed. An autoformalizer rewarded only for proofs that compile can learn to prove an easier, weaker statement. Checking the final statement against a trusted reference (a comparator) takes that shortcut away, at the cost of fewer proofs that compile.",
+      "reproduce": {
+        "runner": "autoformalize-gate",
+        "params": {
+          "gate": 1,
+          "power": 1,
+          "subtle_blind": 0,
+          "difficulty": 0.6,
+          "steps": 300,
+          "batch": 32,
+          "seed": 17
+        },
+        "expect": "With an exact comparator, about 36% of attempts compile and none of the accepted proofs prove a weaker statement. With no gate (gate 0), about 97% compile but almost every accepted proof is of a weaker statement: the compile rate looks better while the work is worse. A comparator that catches only half the weakenings (power 0.5) still leaves about 98% of accepted proofs weakened, because when the claim is hard even a half-caught shortcut pays better."
+      },
+      "hypothesis": {
+        "statement": "Ours: a comparator that spots a weakening only in proportion to its size (subtle_blind 1) pushes the policy to small weakenings that slip through, so the share of weakened accepted proofs rises by at least 0.2 even though a comparator is in place.",
+        "params": {
+          "subtle_blind": 1
+        },
+        "predict": {
+          "metric": "weakened_share",
+          "direction": "up",
+          "delta": 0.2
+        }
+      },
+      "criteria": [
+        {
+          "metric": "weakened_share",
+          "weight": 50
+        },
+        {
+          "metric": "faithful_rate",
+          "weight": 40
+        },
+        {
+          "metric": "mean_gap",
+          "weight": 10
+        }
+      ]
     }
-   },
-   "criteria": [
-    {
-     "metric": "steps_to_10x",
-     "weight": 50
-    },
-    {
-     "metric": "final",
-     "weight": 30
-    },
-    {
-     "metric": "speedup_last",
-     "weight": 20
-    }
-   ]
-  },
-  {
-   "id": "rsi-decision-gym",
-   "title": "Can a decision-maker improve itself by writing its own tests?",
-   "concept": "concept:recursive-self-improvement",
-   "topics": [
-    "topic:recursive-self-improvement",
-    "topic:automating-ai-research"
-   ],
-   "idea": "A system that generates its own practice problems, checks its answers against feedback, and retrains on its mistakes can bootstrap better behaviour without new human labels. Repeating the loop is a small, safe form of recursive self-improvement.",
-   "reproduce": {
-    "runner": "decision-gym",
-    "params": {
-     "rounds": 0,
-     "self_tests": 40,
-     "start": 30,
-     "rare": 0.35,
-     "keep_only_better": 1,
-     "seed": 5
-    },
-    "expect": "Trained once on 30 requests, the policy handles familiar wording but misses requests phrased in new ways."
-   },
-   "hypothesis": {
-    "statement": "Ours: eight rounds of writing 40 of its own test requests, learning from the failures and keeping a round only if held-out accuracy doesn't drop (a ratchet), raise held-out accuracy by at least 20 points while every safety property still holds.",
-    "params": {
-     "rounds": 8
-    },
-    "predict": {
-     "metric": "heldout_accuracy",
-     "direction": "up",
-     "delta": 0.2
-    }
-   },
-   "criteria": [
-    {
-     "metric": "heldout_accuracy",
-     "weight": 50
-    },
-    {
-     "metric": "properties_hold",
-     "weight": 30
-    },
-    {
-     "metric": "tree_nodes",
-     "weight": 20
-    }
-   ]
-  },
-  {
-   "id": "rsi-ratchet-off",
-   "title": "What happens to self-improvement without a ratchet?",
-   "concept": "concept:recursive-self-improvement",
-   "topics": [
-    "topic:recursive-self-improvement",
-    "topic:safety"
-   ],
-   "idea": "Automated research loops keep a change only when a fixed measurement says it helped. That check is meant to make unattended self-improvement move in one direction instead of drifting.",
-   "reproduce": {
-    "runner": "decision-gym",
-    "params": {
-     "rounds": 12,
-     "self_tests": 40,
-     "start": 30,
-     "rare": 0.35,
-     "keep_only_better": 1,
-     "feedback_noise": 0.3,
-     "seed": 1,
-     "seeds": 10
-    },
-    "expect": "With an imperfect self-check (30% of its own corrections carry the wrong label), the ratchet keeps only rounds that don't lower held-out accuracy. Averaged over 10 seeds, because one seed can point either way."
-   },
-   "hypothesis": {
-    "statement": "Ours: with that noisy self-check, switching the ratchet off (keeping every round, mislabelled corrections included) ends with lower held-out accuracy than the ratchet.",
-    "params": {
-     "keep_only_better": 0
-    },
-    "predict": {
-     "metric": "heldout_accuracy",
-     "direction": "down"
-    }
-   },
-   "criteria": [
-    {
-     "metric": "heldout_accuracy",
-     "weight": 70
-    },
-    {
-     "metric": "properties_hold",
-     "weight": 30
-    }
-   ]
-  },
-  {
-   "id": "goodhart-oversight",
-   "title": "Optimising a proxy: Goodhart's law, and auditing as a fix",
-   "concept": "concept:reward-hacking",
-   "topics": [
-    "topic:alignment",
-    "topic:safety"
-   ],
-   "idea": "When a system is optimised hard against a measurable proxy for what we want, it eventually finds ways to raise the proxy that don't serve, or actively hurt, the real goal.",
-   "reproduce": {
-    "runner": "goodhart",
-    "params": {
-     "exploit": 0.6,
-     "audit": 0,
-     "steps": 400,
-     "seed": 7
-    },
-    "expect": "The proxy keeps rising while the true goal falls: a large proxy-minus-true gap."
-   },
-   "hypothesis": {
-    "statement": "Ours: auditing just 20% of the optimiser's steps against the true goal (rejecting audited steps that hurt it) keeps the true goal from collapsing, cutting the gap by more than half.",
-    "params": {
-     "audit": 0.2
-    },
-    "predict": {
-     "metric": "gap",
-     "direction": "down",
-     "factor": 2
-    }
-   },
-   "criteria": [
-    {
-     "metric": "true_final",
-     "weight": 60
-    },
-    {
-     "metric": "gap",
-     "weight": 40
-    }
-   ]
-  },
-  {
-   "id": "weak-to-strong",
-   "title": "Can a weak supervisor train a stronger student?",
-   "concept": "concept:scalable-oversight",
-   "topics": [
-    "topic:alignment",
-    "topic:safety"
-   ],
-   "idea": "As systems surpass their overseers, supervision gets weaker than the student. A capable student trained on a weaker supervisor's imperfect labels can still end up more accurate than that supervisor, because it learns the underlying pattern rather than the mistakes.",
-   "reproduce": {
-    "runner": "weak-to-strong",
-    "params": {
-     "noise": 0.25,
-     "k": 15,
-     "filter": 0,
-     "n": 400,
-     "seed": 3
-    },
-    "expect": "The student, trained only on noisy supervisor labels, beats the supervisor's own accuracy."
-   },
-   "hypothesis": {
-    "statement": "Ours: dropping the 20% of labels the supervisor is least confident about (near the decision boundary, where it errs most) raises the student's accuracy further.",
-    "params": {
-     "filter": 0.2
-    },
-    "predict": {
-     "metric": "student_acc",
-     "direction": "up"
-    }
-   },
-   "criteria": [
-    {
-     "metric": "student_acc",
-     "weight": 70
-    },
-    {
-     "metric": "gain",
-     "weight": 30
-    }
-   ]
-  },
-  {
-   "id": "scaling-data-limited",
-   "title": "Scaling laws, and what happens when data runs out",
-   "concept": "concept:scaling-laws",
-   "topics": [
-    "topic:compute",
-    "topic:forecasting"
-   ],
-   "idea": "Test loss falls smoothly, roughly as a power law, as models get bigger, which is why progress can be forecast from compute and model size.",
-   "reproduce": {
-    "runner": "scaling",
-    "params": {
-     "data": 2000,
-     "sizes": 10,
-     "seed": 11
-    },
-    "expect": "With plenty of data, loss falls steadily as a power law across all sizes tried."
-   },
-   "hypothesis": {
-    "statement": "Ours: with only 50 training examples, bigger models stop helping early: the curve flattens at a smaller size and the best loss is worse. Forecasts from size alone break when data is the bottleneck.",
-    "params": {
-     "data": 50
-    },
-    "predict": {
-     "metric": "best_loss",
-     "direction": "up"
-    }
-   },
-   "criteria": [
-    {
-     "metric": "best_loss",
-     "weight": 60
-    },
-    {
-     "metric": "exponent",
-     "weight": 40
-    }
-   ]
-  },
-  {
-   "id": "toy-superposition",
-   "title": "Superposition: more features than dimensions",
-   "concept": "concept:superposition",
-   "topics": [
-    "topic:interpretability"
-   ],
-   "idea": "A network can store more features than it has dimensions when the features are rarely active at the same time. It packs them into shared directions and pays a little interference. As features get sparser, the storage changes suddenly, through sharp phase changes, into regular shapes such as antipodal pairs and pentagons. This is why single neurons in real models often mean several things at once.",
-   "reproduce": {
-    "runner": "superposition",
-    "params": {
-     "sparsity": 0,
-     "features": 5,
-     "decay": 0.9,
-     "steps": 2500,
-     "seed": 1
-    },
-    "expect": "With dense features (sparsity 0), a 2-dimensional model keeps only its 2 most important features, each in its own dimension (dimensionality about 1)."
-   },
-   "hypothesis": {
-    "statement": "Ours: making the same features sparse (zero 90% of the time) lets the 2-dimensional model store all 5, arranged as a pentagon (each feature's dimensionality near 2/5). Features stored rise by at least 3.",
-    "params": {
-     "sparsity": 0.9
-    },
-    "predict": {
-     "metric": "represented",
-     "direction": "up",
-     "delta": 3
-    }
-   },
-   "criteria": [
-    {
-     "metric": "represented",
-     "weight": 50
-    },
-    {
-     "metric": "loss",
-     "weight": 30
-    },
-    {
-     "metric": "mean_dim",
-     "weight": 20
-    }
-   ]
-  },
-  {
-   "id": "sae-dead-latents",
-   "title": "Sparse autoencoders: does resampling dead latents recover more features?",
-   "concept": "concept:interpretability",
-   "topics": [
-    "topic:interpretability"
-   ],
-   "idea": "A sparse autoencoder (SAE) learns a dictionary of directions so that each input is rebuilt from a few active ones. Trained on a layer that stores features in superposition, it can pull the hidden features back out. Some latents stop firing ('dead latents') and waste capacity; resampling them toward inputs the SAE rebuilds badly is a standard fix.",
-   "reproduce": {
-    "runner": "sparse-autoencoder",
-    "params": {
-     "latents": 24,
-     "l1": 0.1,
-     "resample": 0,
-     "steps": 1200,
-     "seed": 2
-    },
-    "expect": "A 24-latent SAE on a toy that stores 12 features in 4 dimensions recovers most of the true feature directions (cosine above 0.9) and leaves a few latents dead."
-   },
-   "hypothesis": {
-    "statement": "Ours: resampling dead latents every 200 steps recovers at least one more true feature at this small scale.",
-    "params": {
-     "resample": 1
-    },
-    "predict": {
-     "metric": "recovered",
-     "direction": "up",
-     "delta": 1
-    }
-   },
-   "criteria": [
-    {
-     "metric": "recovered",
-     "weight": 50
-    },
-    {
-     "metric": "fve",
-     "weight": 25
-    },
-    {
-     "metric": "dead",
-     "weight": 25
-    }
-   ]
-  },
-  {
-   "id": "steering-error-term",
-   "title": "Feature steering: add the SAE's error back",
-   "concept": "concept:interpretability",
-   "topics": [
-    "topic:interpretability"
-   ],
-   "idea": "To steer a model with an interpretable feature, clamp that feature's SAE latent high and decode. But an SAE rebuilds its input imperfectly, so editing through it also changes things you didn't touch. Adding the SAE's reconstruction error back after decoding makes the unedited path exact, so every change comes from the edit.",
-   "reproduce": {
-    "runner": "steering",
-    "params": {
-     "clamp": 4,
-     "keep_error": 0,
-     "seed": 2
-    },
-    "expect": "Without the error term, outputs drift even when nothing is edited, because the SAE's reconstruction is imperfect."
-   },
-   "hypothesis": {
-    "statement": "Ours: adding the error term back removes the drift on unedited inputs (output error with no edit falls by at least 0.005) without weakening the steering effect.",
-    "params": {
-     "keep_error": 1
-    },
-    "predict": {
-     "metric": "unedited_error",
-     "direction": "down",
-     "delta": 0.005
-    }
-   },
-   "criteria": [
-    {
-     "metric": "unedited_error",
-     "weight": 50
-    },
-    {
-     "metric": "selectivity",
-     "weight": 30
-    },
-    {
-     "metric": "target_gain",
-     "weight": 20
-    }
-   ]
-  },
-  {
-   "id": "rsi-hidden-evals",
-   "title": "Self-improving agents: keep edits that win on hidden evaluations, not visible tests",
-   "concept": "concept:recursive-self-improvement",
-   "topics": [
-    "topic:recursive-self-improvement",
-    "topic:automating-ai-research"
-   ],
-   "source": {
-    "title": "Recursive self-improvement of AI research agents",
-    "url": "https://arxiv.org/abs/2609.26457",
-    "via": "daily paper watcher, Nov 7, 2026"
-   },
-   "idea": "An AI research agent proposes changes to its own code, benchmarks each version and keeps the best. If it keeps whatever raises the tests it can see, it also keeps changes that fool those tests: reward hacking that looks like progress. Judging versions on hidden evaluations it never sees removes that payoff, and the paper reports less reward hacking as a side effect.",
-   "reproduce": {
-    "runner": "self-improve-selection",
-    "params": {
-     "select_on": 0,
-     "edit_budget": 1,
-     "decay": 0,
-     "rounds": 40,
-     "proposals": 6,
-     "seed": 3
-    },
-    "expect": "Kept on visible tests, about a third of the agent's visible score comes from test quirks rather than skill."
-   },
-   "hypothesis": {
-    "statement": "Ours: selecting edits on hidden evaluations instead cuts the share of the score that comes from test quirks by at least 0.1, without lowering the held-out benchmark score.",
-    "params": {
-     "select_on": 1
-    },
-    "predict": {
-     "metric": "hack_share",
-     "direction": "down",
-     "delta": 0.1
-    }
-   },
-   "criteria": [
-    {
-     "metric": "hack_share",
-     "weight": 50
-    },
-    {
-     "metric": "heldout",
-     "weight": 40
-    },
-    {
-     "metric": "kept",
-     "weight": 10
-    }
-   ]
-  },
-  {
-   "id": "rrsi-edit-budget",
-   "title": "Self-improvement with a shrinking edit budget",
-   "concept": "concept:recursive-self-improvement",
-   "topics": [
-    "topic:recursive-self-improvement"
-   ],
-   "source": {
-    "title": "RRSI: Regularized Recursive Self-Improvement of Agent Harnesses",
-    "url": "https://arxiv.org/abs/2609.24972",
-    "via": "daily paper watcher, Nov 7, 2026"
-   },
-   "idea": "When each self-edit bundles many changes, a change that only games the benchmark can ride along with a real improvement and be kept. Limiting how many changes one proposal may bundle, and shrinking that limit over time, is meant to keep the gains that transfer and drop the ones that overfit.",
-   "reproduce": {
-    "runner": "self-improve-selection",
-    "params": {
-     "select_on": 1,
-     "edit_budget": 12,
-     "decay": 0,
-     "rounds": 40,
-     "proposals": 6,
-     "seed": 3
-    },
-    "expect": "Even judged on hidden evaluations, large bundled edits let test quirks ride along: about a quarter of the visible score comes from quirks."
-   },
-   "hypothesis": {
-    "statement": "Ours: shrinking the edit budget from 12 to 1 over the run lowers the share of the score from test quirks by at least 0.05.",
-    "params": {
-     "decay": 1
-    },
-    "predict": {
-     "metric": "hack_share",
-     "direction": "down",
-     "delta": 0.05
-    }
-   },
-   "criteria": [
-    {
-     "metric": "hack_share",
-     "weight": 50
-    },
-    {
-     "metric": "heldout",
-     "weight": 50
-    }
-   ]
-  },
-  {
-   "id": "oversight-recompute",
-   "title": "Reward hacking by research agents: recompute the results yourself",
-   "concept": "concept:reward-hacking",
-   "topics": [
-    "topic:alignment",
-    "topic:automating-ai-research"
-   ],
-   "source": {
-    "title": "Reward Hacking Challenges Oversight of Autonomous Research Agents",
-    "url": "https://arxiv.org/abs/2609.28614",
-    "via": "daily paper watcher, Nov 7, 2026"
-   },
-   "idea": "A research agent that picks its own methods and reports its own scores can choose an exploit that inflates the score. A reviewer who sees only code and scores catches blunt exploits and misses subtle ones. The paper's proposed defence is to keep the metric outside the agent's control: recompute results independently on data built to expose likely exploits.",
-   "reproduce": {
-    "runner": "research-oversight",
-    "params": {
-     "feedback": 0,
-     "recompute": 0,
-     "rounds": 30,
-     "seed": 5
-    },
-    "expect": "With a reviewer alone, the agent keeps reaching for exploits and most of them slip through. (In our toy, detailed feedback barely changes this: 0.67 against 0.68, so the paper's finding that feedback teaches evasion is not reproduced here.)"
-   },
-   "hypothesis": {
-    "statement": "Ours: recomputing every result independently brings undetected exploits to zero and pushes the agent back to honest methods.",
-    "params": {
-     "recompute": 1
-    },
-    "predict": {
-     "metric": "evasion",
-     "direction": "down",
-     "delta": 0.5
-    }
-   },
-   "criteria": [
-    {
-     "metric": "evasion",
-     "weight": 50
-    },
-    {
-     "metric": "true_quality",
-     "weight": 30
-    },
-    {
-     "metric": "exploit_rate",
-     "weight": 20
-    }
-   ]
-  },
-  {
-   "id": "cosine-sae",
-   "title": "Cosine-scored sparse autoencoders when input sizes vary",
-   "concept": "concept:interpretability",
-   "topics": [
-    "topic:interpretability"
-   ],
-   "source": {
-    "title": "Size Doesn't Matter: Cosine-Scored Sparse Autoencoders",
-    "url": "https://arxiv.org/abs/2606.15054",
-    "via": "daily paper watcher, Nov 7, 2026"
-   },
-   "idea": "A standard sparse autoencoder decides whether a feature fires from an inner product, so the input's overall size matters as much as its direction. Models that normalise their activations ignore that size. Scoring features by cosine (direction only) and scaling by the size afterwards should spend fewer latents on detecting size and recover more real features.",
-   "reproduce": {
-    "runner": "sparse-autoencoder",
-    "params": {
-     "latents": 24,
-     "l1": 0.1,
-     "resample": 0,
-     "steps": 1200,
-     "seed": 2,
-     "cosine": 0,
-     "norm_spread": 0.8
-    },
-    "expect": "When input sizes vary, a standard SAE recovers only a few of the toy's 12 true feature directions."
-   },
-   "hypothesis": {
-    "statement": "Ours: cosine scoring recovers at least 4 more of the 12 true features on the same inputs.",
-    "params": {
-     "cosine": 1
-    },
-    "predict": {
-     "metric": "recovered",
-     "direction": "up",
-     "delta": 4
-    }
-   },
-   "criteria": [
-    {
-     "metric": "recovered",
-     "weight": 60
-    },
-    {
-     "metric": "fve",
-     "weight": 20
-    },
-    {
-     "metric": "dead",
-     "weight": 20
-    }
-   ]
-  },
-  {
-   "id": "roleplay-bounded-rsi",
-   "title": "Role-play self-improvement: an updater that fixes its own repair rules",
-   "concept": "concept:recursive-self-improvement",
-   "topics": [
-    "topic:recursive-self-improvement"
-   ],
-   "source": {
-    "title": "Recursive Self-Improvement for Long-Horizon Role-Playing Dialogue",
-    "url": "https://arxiv.org/abs/2611.07469",
-    "via": "daily paper watcher, Nov 7, 2026"
-   },
-   "idea": "A role-play character drifts over a long conversation, so an updater repairs the things that shape its replies: its memory, its persona instructions and the policy for building each turn's prompt. The recursive part is one level up: the updater looks at whether its repairs actually helped and rewrites its own repair rules. Edits are bounded so the loop stays small and checkable.",
-   "reproduce": {
-    "runner": "roleplay-rsi",
-    "params": {
-     "meta": 1,
-     "edit_bound": 3,
-     "judge_noise": 0.2,
-     "rounds": 30,
-     "turns": 200,
-     "seed": 7
-    },
-    "expect": "With the updater refining its own rules, the bad-reply rate falls from about 0.19 in the first rounds to about 0.02, and most repair rules end up aimed at the right artifact. (With fixed rules, meta 0, repairs aimed at the wrong artifact cause drift and the rate rises to about 0.25: repairing alone isn't enough.)"
-   },
-   "hypothesis": {
-    "statement": "Ours: loosening the bound from 3 to 6 repairs per round lets the updater test its rules more often, so the share of rules aimed at the right artifact rises by at least 0.05.",
-    "params": {
-     "edit_bound": 6
-    },
-    "predict": {
-     "metric": "rules_right",
-     "direction": "up",
-     "delta": 0.05
-    }
-   },
-   "criteria": [
-    {
-     "metric": "bad_rate",
-     "weight": 50
-    },
-    {
-     "metric": "rules_right",
-     "weight": 30
-    },
-    {
-     "metric": "side_effects",
-     "weight": 20
-    }
-   ]
-  },
-  {
-   "id": "reward-hack-monitor-leak",
-   "title": "Monitors in the reward: suppressing reward hacking or teaching evasion?",
-   "concept": "concept:reward-hacking",
-   "topics": [
-    "topic:alignment"
-   ],
-   "source": {
-    "title": "Designing Effective Monitor-Based Interventions for Mitigating Reward Hacking During RL",
-    "url": "https://arxiv.org/abs/2611.09828",
-    "via": "daily paper watcher, Nov 9, 2026"
-   },
-   "idea": "During reinforcement learning a model can learn to hack its reward, for example by overwriting the tests it is graded on. A monitor that spots hacks can be wired into training so flagged hacks earn nothing. The catch: every time the monitor's verdict reaches the reward, the model also learns which hacks get caught, so a monitor that feeds more signal into training pushes hacking down but teaches the model to slip past it. Giving the model easier problems, where honest work pays, removes the reason to hack in the first place.",
-   "reproduce": {
-    "runner": "monitor-leak-rl",
-    "params": {
-     "leak": 1,
-     "accuracy": 0.95,
-     "easy_share": 0,
-     "steps": 300,
-     "batch": 32,
-     "seed": 13
-    },
-    "expect": "With the monitor's verdict always in the reward, hacking falls to about 46% of episodes, but the monitor now misses about 48% of the hacks that remain. With no leak (leak 0) the policy hacks almost every episode and the monitor, only watching, misses about 13%. Making half the problems easy (easy_share 0.5) cuts hacking to about 1%."
-   },
-   "hypothesis": {
-    "statement": "Ours: training twice as long (600 steps) at full leak gives the policy time to learn evasion, so hacking comes back and the share of hacking episodes rises by at least 0.2.",
-    "params": {
-     "steps": 600
-    },
-    "predict": {
-     "metric": "hack_rate",
-     "direction": "up",
-     "delta": 0.2
-    }
-   },
-   "criteria": [
-    {
-     "metric": "hidden_rate",
-     "weight": 50
-    },
-    {
-     "metric": "hack_rate",
-     "weight": 30
-    },
-    {
-     "metric": "evaded",
-     "weight": 20
-    }
-   ]
-  }
- ]
+  ]
 }

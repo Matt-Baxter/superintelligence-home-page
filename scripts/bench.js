@@ -79,12 +79,31 @@ const SUITES = {
     const c = (cos) => sae.run({ latents: 24, l1: 0.1, resample: 0, steps: 1200, seed: 2, cosine: cos, norm_spread: 0.8 }).metrics.recovered;
     const rp = P.runners.find((r) => r.id === "roleplay-rsi"), rq = (m) => rp.run({ meta: m, edit_bound: 3, judge_noise: 0.2, rounds: 30, turns: 200, seed: 7 }).metrics.bad_rate;
     const ml = P.runners.find((r) => r.id === "monitor-leak-rl"), me = (l) => ml.run({ leak: l, accuracy: 0.95, easy_share: 0, steps: 300, batch: 32, seed: 13 }).metrics.evaded;
+    const ag = P.runners.find((r) => r.id === "autoformalize-gate"), af = (g) => ag.run({ gate: g, power: 1, subtle_blind: 0, difficulty: 0.6, steps: 300, batch: 32, seed: 17 }).metrics.weakened_share;
     return {
       "papers.hidden_eval_hack_drop": { value: Math.round(drop * 1000) / 1000, better: "higher", tol: 0.02, about: "drop in the quirk share when a self-improving agent is judged on hidden evaluations (arXiv 2609.26457 toy)" },
       "papers.recompute_evasion": { value: ev, better: "lower", tol: 0, about: "undetected exploits with independent recomputation (arXiv 2609.28614 toy)" },
       "papers.cosine_sae_gain": { value: c(1) - c(0), better: "higher", tol: 1, about: "extra true features a cosine-scored SAE recovers when input sizes vary (arXiv 2606.15054 toy)" },
       "papers.roleplay_meta_bad_drop": { value: Math.round((rq(0) - rq(1)) * 1000) / 1000, better: "higher", tol: 0.02, about: "drop in the bad-reply rate when a role-play updater refines its own repair rules (arXiv 2611.07469 toy)" },
       "papers.monitor_leak_evasion_rise": { value: Math.round((me(1) - me(0)) * 1000) / 1000, better: "higher", tol: 0.02, about: "rise in the share of hacks a monitor misses when its verdict is fed into the RL reward instead of only watching (arXiv 2611.09828 toy)" },
+      "papers.comparator_weakening_drop": { value: Math.round((af(0) - af(1)) * 1000) / 1000, better: "higher", tol: 0.02, about: "drop in the share of accepted proofs that prove a weaker statement when a comparator checks the statement, versus rewarding compiling alone (autoformalize-gate toy; arXiv 2610.08144)" },
+    };
+  },
+  verification: () => {
+    // The Machine-checked signal (modules/verification) on its labelled set. Held-out is reported, never tuned on
+    // (scripts/verification-ratchet.js tunes on train only).
+    const { score } = require("../modules/verification/evaluate"), rules = require("../modules/verification/rules.json");
+    const items = JSON.parse(fs.readFileSync(path.join(DIR, "verification-set.json"), "utf8")).items;
+    const h = score(rules, items.filter((x) => x.split === "heldout")).metrics, all = score(rules, items).metrics, n = items.length;
+    // Alignment: the core feed tags topics from ontology terms, the signal from rules.json; they should agree.
+    const { tag } = require("../lib/tagger"), { check } = require("../modules/verification/verification");
+    const agree = Math.round((items.filter((x) => tag(x.text, "").topics.some((t) => t.id === "formal-verification") === (check(x.text).rung.id !== "none")).length / n) * 1000) / 1000;
+    return {
+      "verification.heldout_rung_accuracy": { value: h.rung_accuracy, better: "higher", tol: 0, about: `rung (none, claimed, statement checked, checked outside) on the held-out split (${items.filter((x) => x.split === "heldout").length} items)` },
+      "verification.heldout_gap_accuracy": { value: h.gap_accuracy, better: "higher", tol: 0, about: "fidelity gap flagged or not, held-out split" },
+      "verification.false_formal": { value: all.false_formal, better: "lower", tol: 0, about: `share of sentences with no proof claim that get credit for one ("a lean team", "the deal was formalized"), all ${n} items` },
+      "verification.topic_agreement": { value: agree, better: "higher", tol: 0, about: `share of labelled items where the feed's Formal verification topic (lib/ontology.json terms) agrees with the Machine-checked rules (${n} items)` },
+      "verification.invariance": { value: all.invariance, better: "higher", tol: 0.01, about: "share of harmless rewordings (case, spacing, synonyms) that keep the judgement, all items" },
     };
   },
   analysis: () => {

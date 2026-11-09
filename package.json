@@ -32,7 +32,8 @@
     "test:research": "node --no-warnings test/research-feed.js",
     "checkin": "node scripts/checkin.js",
     "quality": "node scripts/quality.js",
-    "advise": "node scripts/advise.js"
+    "advise": "node scripts/advise.js",
+    "verification:ratchet": "node scripts/verification-ratchet.js"
   },
   "keywords": [],
   "author": "",
