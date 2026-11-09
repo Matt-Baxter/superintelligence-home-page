@@ -22,7 +22,7 @@ Any agent (Codex, v0, Claude or another) picks up work here. `scripts/project-sy
 - [x] T002 [agent] [P] [REQ-034] Add catalogue cases for segmentation (e.g., et al., decimals, Fig.), ranges ("3–5%"), approximations ("~4%", "about 4%"), double negation, hedges ("may", "suggests"), merged sentences and title-only claims (bench/judge-edge-cases.json) (done: 27 cases; after an audit the catalogue is 69 cases, 22 pass, 47 known gaps)
 - [x] T003 [agent] [P] [REQ-033] Paraphrase-fidelity catalogue: synthetic source/paraphrase pairs that change a number, drop a hedge, add a claim, invert a claim, add an entity, or are faithful rewordings, each labelled with the expected check result (bench/fidelity-cases.json) (done: 5 sources, 51 paraphrases; today's judge can't tell 24 of 26 unfaithful ones from their source; `node test/fidelity-cases.js --baseline`)
 - [x] T004 [agent] [P] [REQ-038] Property tests over generated synthetic inputs for the plan's properties 2–7, run against today's code; record which hold (test/judge-properties.js) (done: 8 hold, 3 fail on today's code: survey sentence order, a repeated survey sentence placed first, and the one-flip credibility bound when the flip also unbacks a claim)
-- [x] T005 [agent] [P] [REQ-038] Lean 4 model of plan steps 3–7 (hype, credibility, guarded score, bands, rating) with theorem statements; proofs may be `sorry` at first and are filled in as they are checked (proofs/Judge.lean, proofs/lakefile.lean) (written, not yet checked by Lean: 40+ theorems, no `sorry`; proofs/README.md lists them; T007 checks them)
+- [x] T005 [agent] [P] [REQ-038] Lean 4 model of plan steps 3–7 (hype, credibility, guarded score, bands, rating) with theorem statements; proofs may be `sorry` at first and are filled in as they are checked (proofs/Judge.lean, proofs/lakefile.lean) (checked2026-11-09 with pinned Lean4.15.0:58 theorems, no unapproved axioms; see proofs/README.md and T051)
 - [x] T006 [agent] [P] [REQ-037] Report how many reviewed papers in the catalog sit within 5 points of a cutoff (35, 60, 70), from a dry run on the fixtures (scripts/judge-report.js) (done: `npm run judge:report`; 2 of 3 papers watched on 2026-11-07 sit within 5 of 60)
 
 - [ ] T007 [people] [REQ-038] Install Lean 4 (elan, from https://lean-lang.org) on a machine you control, run `cd proofs && lake build`, and record which theorems check; agents may not run installers unattended
@@ -58,7 +58,8 @@ Any agent (Codex, v0, Claude or another) picks up work here. `scripts/project-sy
 ## Phase 6: proofs (REQ-038)
 
 - [ ] T050 [agent] [REQ-038] Move the scoring arithmetic into si-expr rules (lib/rules/review.json) behind the same outputs, with bench showing no change
-- [ ] T051 [agent] [REQ-038] Lean evaluator for those rules; prove the T005 theorems with no `sorry`; differential test of Lean against JavaScript on generated cases (proofs/, test/judge-differential.js)
+- [ ] T051 [agent] [REQ-038] Lean evaluator for those rules; prove the T005 theorems with no `sorry`; differential test of Lean against JavaScript on generated cases (proofs/, test/judge-differential.js; checked2026-11-09:58 judge theorems plus3 Learn toys,384 actual Lean/JS comparisons,25088 JS vector checks; arithmetic-only correspondence, not full-system proof)
+- [x] T052 [agent] [REQ-038] Check the existing arithmetic model and Learn toy proofs with pinned Lean, audit transitive axioms, and execute actual Lean against production-derived vectors (2026-11-09:58 judge theorems plus3 toys,384 comparisons,25088 JS checks; test/judge-differential.js). T051 remains open until correspondence with the T050 si-expr rule representation is delivered.
 
 ## Phase 7: reviews and comments (REQ-039, REQ-040)
 

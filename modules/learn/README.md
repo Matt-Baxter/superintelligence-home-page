@@ -2,7 +2,7 @@
 
 The ideas behind superintelligence research in plain words, mapped as a graph and linked to feed stories. It also has the "how it works" teardown of the pipeline, a public explainer player, and an admin studio queue for heavy background work.
 
-- **Data:** `data/concepts.json`, with 24 concepts, each having plain words, an analogy, a deeper paragraph, a quiz, relations, terms and, for some, a toy Lean 4 statement. Three Lean statements are proved and check with Lean 4.15 (no Mathlib).
+- **Data:** `data/concepts.json`, with 28 concepts, each having plain words, an analogy, a deeper paragraph, a quiz, relations, terms and, for some, a toy Lean 4 statement. Three toy Lean statements check with pinned Lean4.15.0 (no Mathlib); `npm run test:proofs` rechecks their source and axiom footprint. Two other statements remain incomplete.
 - **Table:** `learn_jobs`, pruned after 60 days unless published.
 - **Routes:**
   - signed in: `GET /api/learn/concepts`, `GET /api/learn/concepts/:id`, `GET /api/learn/story/:id`, `POST /api/learn/teardown`, `GET /api/learn/posts/:id`;

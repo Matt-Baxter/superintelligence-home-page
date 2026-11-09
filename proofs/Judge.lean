@@ -2,11 +2,10 @@
   Judge.lean: a core Lean 4 model (no Mathlib) of the review judge's arithmetic,
   plan steps 3-7 of specs/003-judge-fidelity/plan.md (and the rigor sum of step 2).
 
-  REQ-038, task T005. Every proof here was WRITTEN BY HAND AND HAS NOT YET BEEN CHECKED
-  BY LEAN. A person installs elan and runs `lake build` in proofs/ (see README.md).
-  Nothing in this file uses `sorry`. Reviewed by hand against review.js and dossier.js on
-  2026-11-07 (still unchecked by Lean): proofs that leaned on fragile tactic behaviour were
-  rewritten, and README.md gives each theorem a risk of needing fixes on the first build.
+  REQ-038, tasks T005/T051. Checked with pinned Lean 4.15.0 on 2026-11-09.
+  All 58 theorem declarations compile. The axiom audit permits only Lean's standard
+  propext, Classical.choice and Quot.sound, and rejects sorryAx/custom assumptions.
+  Run `npm run test:proofs` from the repository root to repeat the audit and correspondence checks.
 
   What is modelled is the arithmetic only: which marker families a text shows, how many
   claims are unbacked, how many distinct hype words appear and whether an injection was

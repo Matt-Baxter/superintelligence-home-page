@@ -21,7 +21,7 @@ One page that points at every skill, spec, check, measure and pitfall in the rep
 | --- | --- | --- | --- | --- |
 | [001-superintelligence-homepage](../specs/001-superintelligence-homepage/spec.md): Superintelligence Homepage | Draft (shared bake-off spec; both partners build against it) | REQ-001..REQ-020 (20) | [spec](../specs/001-superintelligence-homepage/spec.md) · [checklist: requirements](../specs/001-superintelligence-homepage/checklists/requirements.md) | no tasks.md |
 | [002-research-layer](../specs/002-research-layer/spec.md): Research layer (extended version) | Proposed, not approved. | REQ-021..REQ-034 (14) | [spec](../specs/002-research-layer/spec.md) | no tasks.md |
-| [003-judge-fidelity](../specs/003-judge-fidelity/spec.md): Judge fidelity and stability (extended version) | Proposed, not approved. | REQ-032..REQ-040 (9) | [spec](../specs/003-judge-fidelity/spec.md) · [plan](../specs/003-judge-fidelity/plan.md) · [tasks](../specs/003-judge-fidelity/tasks.md) · [research](../specs/003-judge-fidelity/research.md) | 6 / 22 (agent 2/7, rules 2/15, people 2/0) |
+| [003-judge-fidelity](../specs/003-judge-fidelity/spec.md): Judge fidelity and stability (extended version) | Proposed, not approved. | REQ-032..REQ-040 (9) | [spec](../specs/003-judge-fidelity/spec.md) · [plan](../specs/003-judge-fidelity/plan.md) · [tasks](../specs/003-judge-fidelity/tasks.md) · [research](../specs/003-judge-fidelity/research.md) | 6 / 23 (agent 2/8, rules 2/15, people 2/0) |
 | [004-parity](../specs/004-parity/spec.md): Feature parity with AI-news and research apps (extended version) | Proposed, not approved. | REQ-041..REQ-052 (12) | [spec](../specs/004-parity/spec.md) · [plan](../specs/004-parity/plan.md) · [tasks](../specs/004-parity/tasks.md) | 25 / 1 (agent 18/1, rules 3/0, people 4/0) |
 
 Tags: `[agent]` any agent, unattended; `[rules]` changes scoring, only when a person asks; `[people]` the humans. Requirement traceability: [SPEC_TRACE.md](SPEC_TRACE.md); measured status: [SPEC_STATUS.md](SPEC_STATUS.md); this build's tables and routes: [INTERFACES.md](INTERFACES.md).
@@ -198,6 +198,8 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | `npm run hub` | Hub: one generated page (docs/HUB.md) that indexes the repo's skills, specs, checks, measures, tips and open decisions, built from the files… |
 | `npm run test:cms` | Run after the full synthetic fixture suite has created John/admin and Matt/reader. |
 | `npm run test:terms` | Synthetic DOM probes verify safe reading pointers and bounded teaching functions. |
+| `npm run test:proofs` | REQ-038/T051: execute real Lean, audit theorem axioms, compare with production-derived JS vectors. |
+| `npm run test:proof-worker` | REQ-024/038: disposable HTTP -> persisted queue -> actual Lean worker -> HTTP result. |
 
 ## Measures
 
@@ -345,6 +347,7 @@ Quoted from the repo's own pitfall, trap, troubleshooting and habits sections (n
 - [docs/START_HERE.md](START_HERE.md): The current checkout continues on `feature/si-combined`.
 - [docs/TESTING_ACCESS.md](TESTING_ACCESS.md): Run `npm run demo` from the repository and open http://localhost:3200/?signin=1.
 - [docs/V0.md](V0.md): John builds his version of the homepage experience in **v0**; Matt builds his in **Claude**.
+- [docs/VERIFICATION.md](VERIFICATION.md): 2026-11-09, feature branch only.
 - [docs/speckit-prompts.md](speckit-prompts.md): The prompts we gave each Spec Kit command, kept here so we can show how the spec was produced.
 
 **handoff/**
@@ -367,7 +370,7 @@ Quoted from the repo's own pitfall, trap, troubleshooting and habits sections (n
 - [bench/README.md](../bench/README.md): `npm run bench` measures the judges on fixed, synthetic, labelled sets and compares every metric with `baseline.json`.
 - [proofs/README.md](../proofs/README.md): REQ-038, task T005 (specs/003-judge-fidelity/tasks.md); T051 fills in the evaluator and the differential test.
 
-**Also**: [docs/snapshots/](snapshots) (3 build snapshots), [proofs/](../proofs) (`Judge.lean`, `lakefile.lean`, `lean-toolchain`, `vectors.json`), [workflows](../.github/workflows) (`interop.yml`, `paper-watch.yml`, `preflight.yml`), the codebase map (`npm run codemap -- <question>`) and the [MCP server](../agent-kit/mcp/server.js).
+**Also**: [docs/snapshots/](snapshots) (3 build snapshots), [proofs/](../proofs) (`.lake`, `Judge.lean`, `lake-manifest.json`, `lakefile.lean`, `lean-toolchain`, `vectors.json`), [workflows](../.github/workflows) (`interop.yml`, `paper-watch.yml`, `preflight.yml`), the codebase map (`npm run codemap -- <question>`) and the [MCP server](../agent-kit/mcp/server.js).
 
 ## Open decisions for the humans
 

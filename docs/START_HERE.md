@@ -9,6 +9,7 @@ The current checkout continues on `feature/si-combined`. Use this index to find 
 | Where code and checks live | [requirement trace](SPEC_TRACE.md) | Each spec has its own scope while IDs collide |
 | What to do in the app | `/m/control`, `/m/project#/specs`, `/m/project#/timeline` | Research queues, requirements and work dependencies |
 | What waits for approval | [spec 003 tasks](../specs/003-judge-fidelity/tasks.md), [spec 004 tasks](../specs/004-parity/tasks.md) | Spec 004 implementation stays blocked by T000 |
+| Formal versus runtime evidence | [verification map](VERIFICATION.md) | Checked theorem scope, executable correspondence and local end-to-end results |
 | End-to-end logic audit | [audit record](LOGIC_AUDIT.md) | Findings, fixes, evidence and explicit limits |
 | All skills and checks | [generated hub](HUB.md) | Generated index; edit its inputs |
 | Product backlog and delivery gates | [roadmap](PRODUCT_ROADMAP.md), `/m/project#/product` | 200 proposals; delivery status is not publication approval |

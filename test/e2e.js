@@ -153,7 +153,7 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   await john.check('#savedOnly'); await john.waitForTimeout(400); ok((await john.$$('#feed .story')).length === 0, 'saves are per user'); await john.uncheck('#savedOnly');
 
   console.log('Story page, notes, lists');
-  await john.goto(B + '/'); await john.waitForSelector('#feed .story'); await story(john, 'Scaling Laws').locator('.acts a').click(); await john.waitForSelector('#covered tr');
+  await john.goto(B + '/?days='); await john.waitForSelector('#feed .story'); await story(john, 'Scaling Laws').locator('.acts a').click(); await john.waitForSelector('#covered tr');
   ok((await john.$$('#covered tr')).length === 3, 'story page lists all 3 sources with their own headlines');
   ok((await john.textContent('#why')).includes('matched'), 'story page explains every tag');
   await john.fill('#noteText', 'Private: check whether the compute curve holds past 10x.'); await john.click('#noteForm button[type=submit]'); await john.waitForTimeout(300);

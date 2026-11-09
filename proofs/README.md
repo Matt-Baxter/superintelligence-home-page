@@ -3,21 +3,24 @@
 REQ-038, task T005 (specs/003-judge-fidelity/tasks.md); T051 fills in the evaluator and the differential test.
 Plain core Lean 4, no Mathlib and no other dependencies.
 
-**Status: every proof in `Judge.lean` was written by hand and has NOT yet been checked by Lean.** No Lean toolchain
-was installed while writing it. The file has no `sorry`. Until someone runs `lake build`, treat each theorem as
-"stated, proof written, not checked".
+**Status (2026-11-09): all58 judge theorems checked with pinned Lean4.15.0.**
+The theorem audit reports only standard `propext`, `Classical.choice` and `Quot.sound`; no `sorryAx` or custom axioms.
+Three Learn toy proofs are checked separately by the same audit. Two Learn statements remain incomplete (Mathlib/attention definitions), and are not counted as proofs.
 
 ## How to check
 
-1. Install elan, the Lean version manager, as described at https://lean-lang.org (Install).
-2. `cd proofs && lake build`. Lake reads `lean-toolchain` and fetches that Lean version first.
-3. A clean build with no errors and no `sorry` warnings means every theorem below is proved.
+Use an installed Lean/elan toolchain approved for this machine, then run:
 
-`lean-toolchain` pins `leanprover/lean4:v4.15.0`. **That version is a placeholder**: it's a stable release that
-exists, but no one has built with it yet. Change it to the current stable release when you check the proofs, and
-record which one worked. Build output goes to `proofs/.lake/`, which is in `.gitignore`.
+```bash
+cd proofs && lake build
+cd .. && npm run test:proofs
+```
 
-The JavaScript side: `node test/judge-lean-vectors.js` (see below).
+The checker also accepts `LAKE=/absolute/path/to/lake`. `lean-toolchain` pins `leanprover/lean4:v4.15.0`; the checker verifies that version. No Mathlib or third-party proof package is needed. Lake caches go to gitignored `proofs/.lake/`. The dependency-free Lake manifest is committed for reproducibility.
+
+`test/judge-differential.js` first validates the current production-derived vectors, builds Judge, compiles all claimed-proved Learn toys, and checks every theorem's transitive axiom footprint. It then executes the actual Lean evaluator on the vector inputs and compares rigor, hype, credibility, cap, score, bands and dossier ratings with the JavaScript expectations. Missing Lean, a compiler error, an unapproved axiom or a mismatched result fails the command; none is silently skipped.
+
+This establishes machine-checked arithmetic properties plus bounded executable correspondence. It does not formally verify JavaScript execution, IEEE arithmetic, text extraction, entity resolution, database persistence, model quality or the whole application. Those need separate local tests and human review.
 
 ## What is modelled
 
@@ -39,7 +42,7 @@ injection was found are **inputs**.
 
 ## Theorems
 
-Status of **every** row: **written, not yet checked by Lean.** None uses `sorry`. "Risk" is a guess at how likely the
+Status of **every** row: **checked Lean4.15.0.** None uses `sorry`. "Risk" is a guess at how likely the
 proof needs fixing on the first `lake build` (low: plain `omega`/`decide`/term proof on a small goal; medium: depends
 on tactic or reduction behaviour that has changed between Lean versions; high: none currently). A wrong *statement*
 would show up as a proof that cannot be repaired; the statements were checked against the code by hand and by
@@ -47,37 +50,37 @@ would show up as a proof that cannot be repaired; the statements were checked ag
 
 | Theorem | Statement | Plan step | Status | Risk |
 | --- | --- | --- | --- | --- |
-| `weights_sum` | the 8 weights sum to 100 (`decide`) | 2 | written, not yet checked by Lean | low |
-| `weight_le_14` | every weight ≤ 14 | 2, 4 | written, not yet checked by Lean | low |
-| `pts_of_true`, `pts_of_false`, `pts_le`, `pts_congr`, `pts_mono`, `pts_off` | one family's points: its weight or 0 | 2 | written, not yet checked by Lean | low |
-| `rigor_all`, `rigor_none` | all families give 100, none give 0 (`decide`) | 2 | written, not yet checked by Lean | low |
-| `rigor_mono` | p ≤ q pointwise ⇒ rigor p ≤ rigor q | 2 | written, not yet checked by Lean | low |
-| `rigor_le_100` | rigor p ≤ 100 | 2 | written, not yet checked by Lean | low |
-| `rigor_flip` | p, q differ only at f ⇒ \|rigor p − rigor q\| ≤ weight f (8 explicit cases, 7 `pts_off` facts each, then `omega`) | 2 | written, not yet checked by Lean | medium |
-| `jsRound_two` | `jsRound a 2 = (a+1)/2` (`show` to turn `2*2` into `4`, with a `simp only` fallback) | – | written, not yet checked by Lean | low |
-| `jsRound_mul_le`, `jsRound_lt_succ` | `jsRound a b · 2b ≤ 2a + b < (jsRound a b + 1) · 2b` for b > 0: together they say jsRound a b = ⌊a/b + 1/2⌋ | – | written, not yet checked by Lean | low / medium (`jsRound_lt_succ` relies on `omega` treating the product `2 * b * q` as one atom after a `rw` into that exact shape) |
-| `hype_le_100`, `hype_no_claims` | H ≤ 100; with k = 0 (or a survey) only hype words count | 3 | written, not yet checked by Lean | low |
-| `credibility_eq`, `credibility_le_100`, `credibility_rigor_le_100` | C = (R + 100 − H + 1)/2; C ≤ 100 when R ≤ 100 | 4 | written, not yet checked by Lean | low |
-| `credibility_flip_weight` | one flip, **hype held fixed**: \|ΔC\| ≤ ⌈w_f / 2⌉ | 4 | written, not yet checked by Lean | low |
-| `credibility_flip_7` | the same with today's weights: \|ΔC\| ≤ 7 | 4 | written, not yet checked by Lean | low |
-| `cap_eq`, `cap_ge_35`, `cap_le_100` | cap = (7100 + 130R)/200; 35 ≤ cap; cap ≤ 100 when R ≤ 100 | 5 | written, not yet checked by Lean | low |
-| `guarded_le_cap`, `guarded_le_base`, `guarded_inj_le_30`, `guarded_le_100`, `guarded_le_100_of` | S ≤ cap; S ≤ base; inj ⇒ S ≤ 30; S ≤ 100 (for a family-sum R, and for any R ≤ 100, which covers survey coverage) | 5 | written, not yet checked by Lean | low |
-| `band_low`, `band_border`, `band_high`, `band_eq_low_iff`, `band_eq_border_iff`, `band_eq_high_iff` | each band holds exactly on its half-open interval | 6 | written, not yet checked by Lean | low |
-| `band_exhaustive`, `band_exclusive_low_high` | at least one band / not both Low and High. True of *any* function into a 3-constructor type, so they say nothing about the thresholds; the iffs carry the content | 6 | written, not yet checked by Lean | low |
-| `flip_low_not_high`, `flip_high_not_low` | 2m ≥ 7, **hype held fixed**: one flip never moves Low ↔ High | 6 | written, not yet checked by Lean | low |
-| `rigor_allButUncertainty`, `hype_7_12_4`, `margin_3_can_jump` | the bound is sharp: T = 60, m = 3, hype 75 (u 7 of k 12, w 4), dropping uncertainty takes C from 63 (High) to 56 (Low) (`decide`, which must evaluate `Nat.div` on literals) | 6 | written, not yet checked by Lean | medium |
-| `rating_some`/`early`/`thin`/`none`, `rating_eq_*_iff` | the four cases, as conditions, are exhaustive and pairwise exclusive | 7 | written, not yet checked by Lean | low |
-| `rating_exhaustive` | one of the four (true of any function into `Rating`; the iffs carry the content) | 7 | written, not yet checked by Lean | low |
-| `rating_mono` | more credible papers, linked checks or papers never lower the rating (`repeat' split`, then `decide` or `omega` on each of 16 leaves) | 7 | written, not yet checked by Lean | medium |
-| `rating_add_credible` | adding a credible paper never lowers it | 7 | written, not yet checked by Lean | low |
-| `rating_add_noncredible` | with at least one paper and **linked held fixed**, a non-credible (Border) paper changes nothing. Since T042 a non-credible paper can't change `linked` in dossier.js, so this is the code's behaviour, not only the model's | 7 | written, not yet checked by Lean | low |
-| `first_noncredible_paper_raises` | but the first one lifts `none yet` to `thin` (`decide`) | 7 | written, not yet checked by Lean | low |
-| `noncredible_paper_with_check_raises` | in the model, raising l from 0 to 1 while adding a non-credible paper lifts `early` to `some support` (`decide`). Before T042 dossier.js did that for a Border paper a held-up check cited; now such a check doesn't count toward l, so the case can't arise in the code (gap 9, closed) | 7 | written, not yet checked by Lean | low |
+| `weights_sum` | the 8 weights sum to 100 (`decide`) | 2 | checked Lean4.15.0 | low |
+| `weight_le_14` | every weight ≤ 14 | 2, 4 | checked Lean4.15.0 | low |
+| `pts_of_true`, `pts_of_false`, `pts_le`, `pts_congr`, `pts_mono`, `pts_off` | one family's points: its weight or 0 | 2 | checked Lean4.15.0 | low |
+| `rigor_all`, `rigor_none` | all families give 100, none give 0 (`decide`) | 2 | checked Lean4.15.0 | low |
+| `rigor_mono` | p ≤ q pointwise ⇒ rigor p ≤ rigor q | 2 | checked Lean4.15.0 | low |
+| `rigor_le_100` | rigor p ≤ 100 | 2 | checked Lean4.15.0 | low |
+| `rigor_flip` | p, q differ only at f ⇒ \|rigor p − rigor q\| ≤ weight f (8 explicit cases, 7 `pts_off` facts each, then `omega`) | 2 | checked Lean4.15.0 | medium |
+| `jsRound_two` | `jsRound a 2 = (a+1)/2` (`show` to turn `2*2` into `4`, with a `simp only` fallback) | – | checked Lean4.15.0 | low |
+| `jsRound_mul_le`, `jsRound_lt_succ` | `jsRound a b · 2b ≤ 2a + b < (jsRound a b + 1) · 2b` for b > 0: together they say jsRound a b = ⌊a/b + 1/2⌋ | – | checked Lean4.15.0 | low / medium (`jsRound_lt_succ` relies on `omega` treating the product `2 * b * q` as one atom after a `rw` into that exact shape) |
+| `hype_le_100`, `hype_no_claims` | H ≤ 100; with k = 0 (or a survey) only hype words count | 3 | checked Lean4.15.0 | low |
+| `credibility_eq`, `credibility_le_100`, `credibility_rigor_le_100` | C = (R + 100 − H + 1)/2; C ≤ 100 when R ≤ 100 | 4 | checked Lean4.15.0 | low |
+| `credibility_flip_weight` | one flip, **hype held fixed**: \|ΔC\| ≤ ⌈w_f / 2⌉ | 4 | checked Lean4.15.0 | low |
+| `credibility_flip_7` | the same with today's weights: \|ΔC\| ≤ 7 | 4 | checked Lean4.15.0 | low |
+| `cap_eq`, `cap_ge_35`, `cap_le_100` | cap = (7100 + 130R)/200; 35 ≤ cap; cap ≤ 100 when R ≤ 100 | 5 | checked Lean4.15.0 | low |
+| `guarded_le_cap`, `guarded_le_base`, `guarded_inj_le_30`, `guarded_le_100`, `guarded_le_100_of` | S ≤ cap; S ≤ base; inj ⇒ S ≤ 30; S ≤ 100 (for a family-sum R, and for any R ≤ 100, which covers survey coverage) | 5 | checked Lean4.15.0 | low |
+| `band_low`, `band_border`, `band_high`, `band_eq_low_iff`, `band_eq_border_iff`, `band_eq_high_iff` | each band holds exactly on its half-open interval | 6 | checked Lean4.15.0 | low |
+| `band_exhaustive`, `band_exclusive_low_high` | at least one band / not both Low and High. True of *any* function into a 3-constructor type, so they say nothing about the thresholds; the iffs carry the content | 6 | checked Lean4.15.0 | low |
+| `flip_low_not_high`, `flip_high_not_low` | 2m ≥ 7, **hype held fixed**: one flip never moves Low ↔ High | 6 | checked Lean4.15.0 | low |
+| `rigor_allButUncertainty`, `hype_7_12_4`, `margin_3_can_jump` | the bound is sharp: T = 60, m = 3, hype 75 (u 7 of k 12, w 4), dropping uncertainty takes C from 63 (High) to 56 (Low) (`decide`, which must evaluate `Nat.div` on literals) | 6 | checked Lean4.15.0 | medium |
+| `rating_some`/`early`/`thin`/`none`, `rating_eq_*_iff` | the four cases, as conditions, are exhaustive and pairwise exclusive | 7 | checked Lean4.15.0 | low |
+| `rating_exhaustive` | one of the four (true of any function into `Rating`; the iffs carry the content) | 7 | checked Lean4.15.0 | low |
+| `rating_mono` | more credible papers, linked checks or papers never lower the rating (`repeat' split`, then `decide` or `omega` on each of 16 leaves) | 7 | checked Lean4.15.0 | medium |
+| `rating_add_credible` | adding a credible paper never lowers it | 7 | checked Lean4.15.0 | low |
+| `rating_add_noncredible` | with at least one paper and **linked held fixed**, a non-credible (Border) paper changes nothing. Since T042 a non-credible paper can't change `linked` in dossier.js, so this is the code's behaviour, not only the model's | 7 | checked Lean4.15.0 | low |
+| `first_noncredible_paper_raises` | but the first one lifts `none yet` to `thin` (`decide`) | 7 | checked Lean4.15.0 | low |
+| `noncredible_paper_with_check_raises` | in the model, raising l from 0 to 1 while adding a non-credible paper lifts `early` to `some support` (`decide`). Before T042 dossier.js did that for a Border paper a held-up check cited; now such a check doesn't count toward l, so the case can't arise in the code (gap 9, closed) | 7 | checked Lean4.15.0 | low |
 
-Summary: 0 high, 4 medium (`rigor_flip`, `jsRound_lt_succ`, the `margin_3_can_jump` group, `rating_mono`), the rest
+Historical pre-build risk estimate: 0 high, 4 medium (`rigor_flip`, `jsRound_lt_succ`, the `margin_3_can_jump` group, `rating_mono`), the rest
 low. `lakefile.lean` (an empty `lean_lib Judge where`, as `lake init` writes) is low risk.
 
-Proofs to look at first if the build fails, because they lean on tactic behaviour that varies between Lean versions:
+When upgrading Lean, revisit the previously identified tactic-sensitive proofs:
 `rating_mono` (`repeat' split` and the shape of the 16 leaves), `jsRound_lt_succ` (`omega` and a nonlinear atom),
 the `decide` proofs that evaluate `Nat.div` (`hype_7_12_4`, `margin_3_can_jump`; `margin_3_can_jump` falls back to
 rewriting with the two helper facts), and the `show` steps in `jsRound_two` and `cap_eq` (each has a `simp only`
