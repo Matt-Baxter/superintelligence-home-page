@@ -9,6 +9,12 @@
 //                                             direct network access, or a test, feeds it)
 //   --people   also search the watchlist by author name      --dry   judge and write the digest, store nothing
 //   --max N    store at most N new papers (default maxNewPerRun)
+//   --no-history  don't replay or save modules/review/history (see below)
+//
+// History: with --from, each run's entries are saved to modules/review/history/<date>.json (committed with the run's
+// branch; paper authors are left out, articles keep their outlet name) and every earlier day's file is replayed into
+// the database first, so a fresh database (the daily task's out/watch/db) still has past reviews, forecasts and track
+// records. Papers that already have a Lab example close their paper-to-code job and are not queued again.
 //
 // Environment: DATABASE_URL or DATA_DIR, like the server. ARXIV_API overrides the API base (tests). Digest files go to
 // out/watch/<date>.md and .json (gitignored). Free tier: one run a day, <= 5 queries plus people, 3 s apart.
@@ -20,6 +26,8 @@ const feeds = require("../lib/feeds");
 const { ontology } = require("../lib/tagger");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const OUT = process.env.WATCH_OUT || path.join(root, "out", "watch");
+const HISTORY = process.env.WATCH_HISTORY || path.join(root, "modules", "review", "history");
+const Built = require("../modules/lab/built");
 
 function parseEntries(text) {
   const t = String(text).trim();
@@ -58,6 +66,21 @@ async function main() {
   let advisor = null;
   try { panelModels = Panel.modelsFromEnv(); advisor = Panel.advisorFromEnv(); } catch (e) { console.log(`panel: ${e.message}`); }
   if (panelModels.length < Panel.LIMITS.minModels) console.log(`panel: ${panelModels.length} model(s) configured; set PANEL_MODELS to two different models (for example ${Panel.DEFAULT_MODELS}) to compare. Until then each review is marked "panel incomplete" and the rules judge stands.`);
+  const day = new Date().toISOString().slice(0, 10), useHistory = !!from && !dry && !has("--no-history");
+  let replayed = 0;
+  if (useHistory && fs.existsSync(HISTORY)) {
+    for (const f of fs.readdirSync(HISTORY).filter((f) => /^\d{4}-\d{2}-\d{2}\.json$/.test(f) && f < `${day}.json`).sort()) {
+      for (const e of parseEntries(fs.readFileSync(path.join(HISTORY, f), "utf8"))) {
+        const out = await saveReview(db, { kind: e.kind || "paper", title: e.title, text: e.summary, authors: (e.authors || []).join(", "), url: e.url, sourceKind: e.sourceKind || null, at: e.published ? String(e.published).slice(0, 10) : f.slice(0, 10) }, null);
+        if (!out.existing) replayed++;
+      }
+    }
+    if (replayed) console.log(`history: replayed ${replayed} earlier reviews from ${path.relative(root, HISTORY)}`);
+  }
+  // Paper-to-code jobs whose paper already has a Lab example are done.
+  const built = Built.builtArxivIds();
+  if (db) for (const j of await db.all("SELECT id, note FROM learn_jobs WHERE kind = 'paper-to-code' AND status IN ('queued', 'needs-agent')"))
+    if (Built.isBuilt(j.note, built)) await db.run("UPDATE learn_jobs SET status = 'done', output = 'Built as a Lab example (modules/lab/examples.json).', updated_at = ? WHERE id = ?", new Date().toISOString(), j.id);
   const rows = []; let stored = 0, already = 0;
   for (const e of entries) {
     // Entries may also be articles or comments (the buzz around a topic): kind, the outlet kind and the publication date.
@@ -80,7 +103,7 @@ async function main() {
   // Paper-to-code: the most credible new papers on the watched topics become Learn studio jobs (an agent does them).
   const P = CFG.paperToCode, queued = [];
   // Surveys and position papers have no single method to implement, so they are catalogued but not queued.
-  const cands = rows.filter((x) => x.isNew && !x.r.survey && x.r.kind === "paper" && !/^position\b/i.test(x.e.title) && x.r.credibility >= P.minCredibility && x.r.edges.some((ed) => P.topics.includes(ed.dst)))
+  const cands = rows.filter((x) => x.isNew && !built.has(arxivId(x.e.url)) && !x.r.survey && x.r.kind === "paper" && !/^position\b/i.test(x.e.title) && x.r.credibility >= P.minCredibility && x.r.edges.some((ed) => P.topics.includes(ed.dst)))
     .sort((a, b) => b.r.credibility + b.r.score - (a.r.credibility + a.r.score)).slice(0, P.maxPerRun);
   for (const c of cands) {
     if (!dry) {
@@ -92,8 +115,12 @@ async function main() {
     } else queued.push({ id: null, title: c.e.title, url: c.e.url });
   }
 
-  const day = new Date().toISOString().slice(0, 10);
   fs.mkdirSync(OUT, { recursive: true });
+  if (useHistory && entries.length) {
+    fs.mkdirSync(HISTORY, { recursive: true });
+    const keep = entries.map((e) => ({ kind: e.kind || "paper", sourceKind: e.sourceKind || null, published: e.published || "", title: e.title, url: e.url, summary: e.summary, authors: (e.kind || "paper") === "paper" ? [] : e.authors || [] }));
+    fs.writeFileSync(path.join(HISTORY, `${day}.json`), JSON.stringify(keep, null, 1) + "\n");
+  }
   const topicsOf = (r) => r.edges.filter((ed) => ed.rel === "about").map((ed) => ed.dst.slice(6)).join(", ");
   const md = [`# Paper watch, ${day}`, "", `${entries.length} papers found, ${stored} new${dry ? " (dry run: nothing stored)" : ""}, ${already} already in the catalog, ${queued.length} queued for paper-to-code. Scores come from the Review desk's guarded judges; people are matched by name only.`, "",
     "| Paper | Verdict | Score | Credibility | Topics | New |", "| --- | --- | --- | --- | --- | --- |",
