@@ -152,22 +152,27 @@ async function main() {
     if (!job || job.kind !== "lean-proof" || job.status !== "done") throw new Error("Choose a done Lean proof job.");
     const proof = L.leanFile(job.concept_id);
     const prefix = `out/learn/${job.id}/`;
-    const refs = JSON.parse(job.files || "[]");
-    const sourceMatches = proof && refs.some(ref => {
-      if (typeof ref !== "string" || !ref.startsWith(prefix)) return false;
-      const parts = ref.slice(prefix.length).split("/");
+    let refs;
+    try { refs = JSON.parse(job.files || "[]"); } catch { refs = []; }
+    const sourceMatches = (() => {
+      if (!proof || !Array.isArray(refs) || ![1, 3].includes(refs.length)) return false;
+      const [source, ...audit] = refs;
+      if (typeof source !== "string" || !source.startsWith(prefix)) return false;
+      const parts = source.slice(prefix.length).split("/");
       if (parts.pop() !== proof.file || parts.length > 1 || parts.some(p => !/^recheck-[A-Za-z0-9]+$/.test(p))) return false;
+      const sourceDir = source.slice(0, source.lastIndexOf("/") + 1);
+      if (audit.length && (audit[0] !== sourceDir + "proof-audit.lean" || audit[1] !== sourceDir + "proof-audit.json")) return false;
       const file = path.join(OUT, String(job.id), ...parts, proof.file);
       const stat = fs.lstatSync(file, { throwIfNoEntry: false });
       return stat?.isFile() && stat.size === Buffer.byteLength(proof.source)
         && fs.readFileSync(file).equals(Buffer.from(proof.source));
-    });
+    })();
     let result;
     if (sourceMatches) {
       if (!has(process.env.LEAN || "lean")) throw new Error("Lean is unavailable. The historical record was left for review.");
       result = await runJob(job, { recheck: true });
     } else {
-      result = { status: "needs-agent", output: "Historical proof source is missing or differs from the curated statement. Review the original before retrying.", files: [] };
+      result = { status: "needs-agent", output: "Historical proof evidence is missing, ambiguous, or differs from the curated statement. Review the original before retrying.", files: [] };
     }
     const updated = await db.run(
       "UPDATE learn_jobs SET status = ?, output = ?, files = ?, error = ?, updated_at = ? WHERE id = ? AND kind = 'lean-proof' AND status = 'done' AND updated_at = ? AND files = ? AND output = ?",

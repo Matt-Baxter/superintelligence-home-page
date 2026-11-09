@@ -72,6 +72,7 @@ const B = process.env.BASE, lean = process.env.LEAN;
       && JSON.parse(fs.readFileSync(currentFile(checkedReceipt),'utf8')).sourceSha256===receipt.sourceSha256
       && fs.existsSync(path.join(out,String(done.id),'proof-audit.json')), 'recheck saves fresh evidence and retains the original receipt');
     const checkedSource=currentFile(checked.files.find(file=>file.endsWith('/orthogonality.lean')));
+    const checkedBytes=fs.readFileSync(checkedSource);
     fs.appendFileSync(checkedSource,'\n-- Sample mismatched historical source (test data)\n');
     recheck();
     const mismatch=(await (await admin.get('/api/admin/learn/jobs/'+done.id)).json()).job;
@@ -82,6 +83,17 @@ const B = process.env.BASE, lean = process.env.LEAN;
     execFileSync(process.execPath,['--require',preload,'scripts/learn-worker.js'],{cwd:path.join(__dirname,'..'),env:{...process.env,POSTGRES_URL:'',SITE_PROFILE:'extended',LEARN_OUT:out,LEAN:lean},encoding:'utf8',timeout:300000});
     const retried=(await (await admin.get('/api/admin/learn/jobs/'+done.id)).json()).job;
     check(retried.status==='failed' && !fs.existsSync(path.join(out,String(done.id),'proof-audit.json')), 'failed retry removes the previous acceptance receipt');
+    // Reproduce the old CLI's mixed worker and manual references on this disposable row.
+    fs.writeFileSync(checkedSource,checkedBytes);
+    const legacyFiles=JSON.stringify([...checked.files,'sample-manual-proof.lean']);
+    const legacySetup=`const db=require('./lib/db');db.ready().then(()=>db.run("UPDATE learn_jobs SET status = 'done', files = ? WHERE id = ?",process.argv[1],Number(process.argv[2]))).then(()=>process.exit(0),e=>{console.error(e);process.exit(1)});`;
+    execFileSync(process.execPath,['-e',legacySetup,legacyFiles,String(done.id)],{
+      cwd:path.join(__dirname,'..'),env:{...process.env,POSTGRES_URL:''},stdio:'pipe'
+    });
+    recheck();
+    const mixed=(await (await admin.get('/api/admin/learn/jobs/'+done.id)).json()).job;
+    check(mixed.status==='needs-agent' && mixed.files.length===0 && mixed.output.includes('ambiguous'),
+      'mixed manual and worker references cannot qualify for a new receipt');
     console.log(`Lean worker E2E: ${n} passed, 0 failed.`);
   } finally {
     await Promise.all([admin.dispose(),reader.dispose(),guest.dispose()]);

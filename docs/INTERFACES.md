@@ -10,7 +10,7 @@ Log every change to a table, route or shape here, so whoever merges the builds (
 
 ## Change log
 
-- **2.1, November 9, 2026 (002/REQ-024, 003/REQ-038).** The worker accepts `recheck <id>` for one historical done Lean job. It compares the referenced job-owned source bytes with the curated statement and checks the curated source with Lean. A matching proof gets fresh evidence in a separate attempt directory. Missing or changed source moves the job to needs-agent and detaches active evidence references. Previous artifacts stay on disk. The update checks that the row still matches the snapshot read before Lean ran.
+- **2.1, November 9, 2026 (002/REQ-024, 003/REQ-038).** The worker accepts `recheck <id>` for one historical done Lean job. It compares the referenced job-owned source bytes with the curated statement and checks the curated source with Lean. A matching proof gets fresh evidence in a separate attempt directory. Missing, changed or ambiguous source evidence moves the job to needs-agent and detaches active evidence references. Previous artifacts stay on disk. The update checks that the row still matches the snapshot read before Lean ran.
 
 - **2.0, November 9, 2026 (002/REQ-024, 003/REQ-038).** The admin job update API returns 400 when a manual write would leave a Lean job done. The worker CLI rejects manual success for Lean jobs and accepts failure reports. Manual status changes detach prior proof artifacts from the job. Requeue clears proof output. The worker removes the previous acceptance receipt when it starts another attempt. Historical job records retain their stored status.
 
