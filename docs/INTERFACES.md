@@ -117,6 +117,9 @@ Every interface change gets a row here. Breaking changes bump the major version 
 - **Advisor tier:** `ADVISOR_MODEL` (one bigger model via `lib/providers.js`). `panel()` takes `advisor` and returns `advice {id, model, prefer, quotes[], quotesDropped, advice, ruleIdea}` when the models disagree or agree more than 25 from the rules judge; never a score. `npm run advise` (`scripts/advise.js`) writes `out/advice/<date>.md` and `.json`: vetted proposals (labelled test data only) and rule ideas, or the prompt to paste when no advisor is set. The status call adds `panel.advisor` and flagged items gain `advice` and `judges`.
 - **Forecast probabilities:** `review_events` gains `probability REAL` (module column); forecasts carry `probability` (0 to 1) when their sentence states one. Track records gain `brier` (from 3 scored forecasts) and `scored`; `/research/outlets` shows a Brier column; the control room shows the stated probability.
 - **Contested concepts:** dossiers gain `contested[]` (a concept two or more reviewed papers explain, judged 30 or more apart or doubtful beside credible) and a "Where papers disagree" blog section. | logged by John |
+| 2.3 | Nov 9, 2026 | Verification module (beyond the spec; extended and research versions). No routes, pages or tables.
+- **Story analysis:** `why[]` may carry a "Machine-checked" line (3 claimed, 5 statement checked against a reference, 7 checked outside the authors; max 7); a fidelity gap is named in its `detail`. No new fields.
+- **Ontology:** topic `formal-verification` (parent `math`) and organisation `axiom-math`. Learn concept `statement-fidelity` (topic `safety`; gains an optional `sources[{title, url}]` field; other concepts unchanged).
 
 **Done means:** a classmate can sign up on the live site, see a grouped, tagged feed from at least 8 sources, and vote on and save stories that are still there the next time they sign in.
 
