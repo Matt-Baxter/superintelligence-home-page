@@ -107,7 +107,15 @@ async function runJob(job, opts) {
     const sorry = /\bsorry\b/.test(lf.source);
     if (lf.needs || sorry) return { status: "needs-agent", output: `Proof still to do${lf.needs ? ` (needs ${lf.needs})` : ""}. An agent fills in the proof in a Lean project with Mathlib, checks it with \`lake build\`, then records it with: node scripts/learn-worker.js complete ${job.id} <file.lean>`, files };
     if (!lean) return { status: "needs-agent", output: "Lean isn't installed here. Install Lean 4 (elan) or set LEAN, then run the worker again.", files };
-    try { execFileSync(lean, [path.join(dir, lf.file)], { timeout: 300000, stdio: "pipe" }); return { status: "done", output: `Checked with ${path.basename(lean)}: the proof is accepted.`, files }; }
+    // These are controlled Learn sources, not arbitrary uploaded Lean programs.
+    const theorems = [...lf.source.matchAll(/^theorem ([A-Za-z_]\w*)\b/gm)].map(m => m[1]);
+    const auditName = "proof-audit.lean";
+    try {
+      const result = require("../lib/lean-proof").checkSource({lean, source:lf.source, theorems, auditFile:path.join(dir, auditName)});
+      files.push(`out/learn/${job.id}/${auditName}`);
+      put("proof-audit.json", JSON.stringify({toolVersion:result.toolVersion, sourceSha256:result.sourceSha256, theorems:result.theorems, footprints:result.footprints, allowedAxioms:result.allowedAxioms}, null, 2));
+      return { status: "done", output: `Checked with ${path.basename(lean)}: the proof is accepted. ${theorems.length} theorem(s) audited; only standard axioms allowed.`, files };
+    }
     catch (e) { return { status: "failed", output: "", error: String(e.stdout || e.stderr || e.message).slice(0, 2000), files }; }
   }
 

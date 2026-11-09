@@ -61,6 +61,8 @@ Any agent (Codex, v0, Claude or another) picks up work here. `scripts/project-sy
 - [ ] T051 [agent] [REQ-038] Lean evaluator for those rules; prove the T005 theorems with no `sorry`; differential test of Lean against JavaScript on generated cases (proofs/, test/judge-differential.js; checked2026-11-09:58 judge theorems plus3 Learn toys,384 actual Lean/JS comparisons,25088 JS vector checks; arithmetic-only correspondence, not full-system proof)
 - [x] T052 [agent] [REQ-038] Check the existing arithmetic model and Learn toy proofs with pinned Lean, audit transitive axioms, and execute actual Lean against production-derived vectors (2026-11-09:58 judge theorems plus3 toys,384 comparisons,25088 JS checks; test/judge-differential.js). T051 remains open until correspondence with the T050 si-expr rule representation is delivered.
 
+- [x] T053 [agent] [REQ-038] Share the theorem-axiom admission gate with the Learn worker, reject unfinished/custom assumptions and non-proof declarations, retain source-bound audit receipts, and verify real compiler negative controls plus queue persistence (lib/lean-proof.js, test/lean-proof-unit.js, test/lean-worker-e2e.js). This does not close T050/T051 or authorize untrusted Lean execution.
+
 ## Phase 7: reviews and comments (REQ-039, REQ-040)
 
 - [ ] T060 [rules] [REQ-039] Public peer reviews (OpenReview, CC BY 4.0): aspect tags, mean, spread, count, licence and link; no reviewer identities; missing reviews treated as unreviewed

@@ -30,6 +30,12 @@ BASE=http://localhost:3201 DATA_DIR=<disposable-si-test-directory> LEAN=<lean-bi
 
 For Postgres use the matching disposable local `DATABASE_URL` ending in `_test` and fixture port3301. Never point these checks at the preserved preview or public database. They create queue records. File artifacts are retained in a temporary directory for inspection. Browser/API checks and worker artifacts prove tested flow outcomes, not universal correctness.
 
+## Worker admission and receipts
+
+`lib/lean-proof.js` supplies the same axiom policy to the model checker and Learn worker. For curated Learn statements it also asks Lean to elaborate an inhabited proposition, rejecting numeric definitions that are not proofs. The worker stores a proof source, audit source and JSON receipt with source SHA256, actual tool version and per-theorem assumptions before reporting done. These hashes bind bytes; they are not independent signatures or evidence of source truth. Checking never publishes a result. The queue E2E now also injects a synthetic custom-axiom theorem into an isolated worker child and requires a persisted failed job with no acceptance receipt. Latest SQLite and Postgres results:11 passed,0 failed each; browser336/0 each; real admission9/0.
+
+`LEAN=<lean-binary> npm run test:proof-admission` exercises real compiler rejection, a Lean-accepted sorry, a Lean-accepted false theorem depending on a custom axiom, missing/duplicate/wrong reports, and completed proof acceptance. This is explicit runtime testing; missing Lean fails rather than silently skipping. Lean sources remain controlled repository content, not untrusted uploads or a code sandbox. Human/admin hand-recorded completion remains outside this automated gate.
+
 ## Remaining gaps
 
 - T050 si-expr arithmetic extraction and T051 rule-representation correspondence remain open; T052 records this bounded verified slice.

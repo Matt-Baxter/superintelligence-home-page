@@ -20,6 +20,8 @@ The checker also accepts `LAKE=/absolute/path/to/lake`. `lean-toolchain` pins `l
 
 `test/judge-differential.js` first validates the current production-derived vectors, builds Judge, compiles all claimed-proved Learn toys, and checks every theorem's transitive axiom footprint. It then executes the actual Lean evaluator on the vector inputs and compares rigor, hype, credibility, cap, score, bands and dossier ratings with the JavaScript expectations. Missing Lean, a compiler error, an unapproved axiom or a mismatched result fails the command; none is silently skipped.
 
+The assumption policy is shared with the controlled Learn worker through `lib/lean-proof.js`. `LEAN=<lean-binary> npm run test:proof-admission` additionally exercises real compiler negative controls and proof-type admission. Successful worker jobs retain source-bound audit receipts; compilation alone no longer qualifies.
+
 This establishes machine-checked arithmetic properties plus bounded executable correspondence. It does not formally verify JavaScript execution, IEEE arithmetic, text extraction, entity resolution, database persistence, model quality or the whole application. Those need separate local tests and human review.
 
 ## What is modelled

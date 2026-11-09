@@ -33,15 +33,7 @@ try {
   const audit = path.join(dir, 'Audit.lean');
   fs.writeFileSync(audit, statements.concat(names.map(n => '#print axioms ' + n)).join('\n'));
   const audited = run(['env', 'lean', audit]);
-  assert.doesNotMatch(audited, /sorryAx|declaration uses 'sorry'/);
-  const lines = audited.split('\n').filter(l => /depends on axioms:|does not depend on any axioms/.test(l));
-  assert.equal(lines.length, names.length, 'Each theorem must have an axiom audit');
-  for (const line of lines) {
-    const list = line.match(/depends on axioms: \[(.*)\]/);
-    if (list) for (const axiom of list[1].split(',').map(s => s.trim()).filter(Boolean)) {
-      assert.ok(['propext', 'Classical.choice', 'Quot.sound'].includes(axiom), 'Unapproved axiom: ' + axiom);
-    }
-  }
+  require('../lib/lean-proof').auditReport(audited, names);
   const vectors = require('../proofs/vectors.json'), expected = [], commands = [];
   const nat = n => { assert.ok(Number.isSafeInteger(n) && n >= 0); return String(n); };
   const emit = (label, expr, value) => {

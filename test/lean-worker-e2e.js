@@ -40,7 +40,19 @@ const B = process.env.BASE, lean = process.env.LEAN;
     check(incomplete?.status==='needs-agent' && incomplete.output.includes('Proof still to do'), 'unfinished Mathlib statement cannot be reported proved');
     const proof=path.join(out,String(done.id),'orthogonality.lean');
     check(fs.existsSync(proof) && fs.readFileSync(proof,'utf8').includes('theorem orthogonal'), 'worker retains the checked source artifact');
+    const receipt=JSON.parse(fs.readFileSync(path.join(out,String(done.id),'proof-audit.json'),'utf8'));
+    check(receipt.sourceSha256===require('node:crypto').createHash('sha256').update(fs.readFileSync(proof)).digest('hex') && receipt.theorems.includes('orthogonal') && receipt.footprints.length===1 && /^Lean \(version 4\./.test(receipt.toolVersion), 'audit receipt binds the checked source, theorem assumptions and actual tool version');
     check(done.status!=='published' && incomplete.status!=='published' && worker.includes('needs-agent'), 'checking a proof never publishes it');
+    // Inject only into a disposable worker child. The server and repository registry stay unchanged.
+    const badResponse=await admin.post('/api/admin/learn/jobs',{data:{kind:'lean-proof',concept_id:'orthogonality'}});
+    assert.equal(badResponse.status(),200);
+    const badId=(await badResponse.json()).job.id, preload=path.join(out,'sample-bad-proof.cjs');
+    const learnModule=path.join(__dirname,'../modules/learn/learn.js');
+    fs.writeFileSync(preload, `// Synthetic test data: a false theorem manufactured from a custom assumption.\nconst L=require(${JSON.stringify(learnModule)});const original=L.leanFile;L.leanFile=id=>{const file=original(id);return id==='orthogonality'?{...file,source:'axiom sampleAssumption : False\\ntheorem sampleFalse : False := sampleAssumption\\n'}:file;};`);
+    execFileSync(process.execPath,['--require',preload,'scripts/learn-worker.js'],{cwd:path.join(__dirname,'..'),env:{...process.env,POSTGRES_URL:'',SITE_PROFILE:'extended',LEARN_OUT:out,LEAN:lean},encoding:'utf8',timeout:300000});
+    const rejected=(await (await admin.get('/api/admin/learn/jobs/'+badId)).json()).job;
+    check(rejected.status==='failed' && rejected.error.includes('Unapproved axiom') && rejected.output==='', 'Lean-accepted custom assumptions persist as failed jobs, never completed proofs');
+    check(!fs.existsSync(path.join(out,String(badId),'proof-audit.json')) && rejected.status!=='published', 'rejected proof has no acceptance receipt or automatic publication');
     console.log(`Lean worker E2E: ${n} passed, 0 failed.`);
   } finally {
     await Promise.all([admin.dispose(),reader.dispose(),guest.dispose()]);
