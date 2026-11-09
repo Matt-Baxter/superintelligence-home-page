@@ -1,6 +1,7 @@
 // Two-user browser test against test/serve-fixtures.js (synthetic data). Run: node test/e2e.js
 const { chromium } = require('playwright');
 const B = process.env.BASE || 'http://localhost:3200';
+const FIXTURE_WEEK = '2026-11-02'; // Monday of the week the synthetic fixture feeds are dated in (test/fixtures)
 let pass = 0, fail = 0; const errs = [];
 const ok = (c, m) => { c ? pass++ : fail++; console.log(c ? '  ✓' : '  ✗', m); };
 async function account(b, u, name) {
@@ -78,7 +79,8 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   ok((await john.textContent('#sub')).includes('active sources'), 'sources page summarizes kinds and schedule');
 
   console.log('Weekly brief (json-render)');
-  await john.goto(B + '/brief'); await john.waitForSelector('#brief .jr-metric');
+  // The synthetic fixtures are dated in the week of 2026-11-02, so ask for that week; the current week can be empty.
+  await john.goto(B + '/brief?week=' + FIXTURE_WEEK); await john.waitForSelector('#brief .jr-metric');
   const br = await john.textContent('#brief'); ok(br.includes('Stories this week') && br.includes('Top stories'), 'brief renders from a server-built spec');
   ok(br.includes('Where the activity was'), 'topic activity bars render');
   await john.locator('#brief .jr-story button', { hasText: 'Discuss' }).first().click(); await john.waitForURL(/story\?id=/); ok(true, 'json-render action openStory navigates');
@@ -370,7 +372,7 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   for (const path of ['/', '/story?id=' + sid, '/brief', '/lists', '/sources', '/m/admin', '/m/project', '/m/capabilities', '/m/studio', '/m/decide', '/m/view?name=capability-snapshot', '/m/codemap', '/m/project#/timeline', '/m/learn', '/m/learn#/c/attention', '/m/learn#/how', '/m/knowledge', '/m/lab', '/m/lab#/x/rsi-decision-gym']) { await ph.goto(B + path); await ph.waitForTimeout(600); ok(!(await ph.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'no sideways scroll: ' + path.split('?')[0]); }
   await ph.goto(B); await ph.waitForSelector('#feed .story'); await ph.screenshot({ path: 'shots/phone-feed.png' });
   await john.goto(B); await john.waitForSelector('#feed .story'); await john.screenshot({ path: 'shots/feed.png', fullPage: true });
-  await john.goto(B + '/brief'); await john.waitForSelector('#brief .jr-metric'); await john.screenshot({ path: 'shots/brief.png', fullPage: true });
+  await john.goto(B + '/brief?week=' + FIXTURE_WEEK); await john.waitForSelector('#brief .jr-metric'); await john.screenshot({ path: 'shots/brief.png', fullPage: true });
   console.log(`\n${pass} passed, ${fail} failed`); console.log('page errors:', errs.length ? errs : 'none');
   await b.close(); process.exit(fail ? 1 : 0);
 })().catch((e) => { console.error('CRASH', e); process.exit(2); });
