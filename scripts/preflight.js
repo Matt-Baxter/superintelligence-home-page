@@ -79,6 +79,14 @@ try {
   const bad = bodies.split("----").filter((b) => /^(Co-Authored-By|Claude-Session):/im.test(b)).map((b) => b.trim().slice(0, 10));
   bad.length ? fail("Commit trailers", `${bad.length} commit(s) since main carry Co-Authored-By/Claude-Session lines: ${bad.slice(0, 3).join(", ")}`) : ok("Commit trailers", "none");
 } catch { ok("Commit trailers", "skipped (no origin/main)"); }
+// 5b6. Commits on this branch are authored by a person, not an assistant identity (the humans asked).
+try {
+  const base = sh("git merge-base HEAD origin/main").trim();
+  const who = sh(`git log ${base}..HEAD --format=%h%x09%an%x09%ae%x09%cn%x09%ce`).trim().split("\n").filter(Boolean);
+  const BOT = /noreply@anthropic\.com|noreply@openai\.com|^claude$|^codex$|copilot/i;
+  const bad = who.filter((l) => l.split("\t").slice(1).some((f) => BOT.test(f.trim()))).map((l) => l.split("\t")[0]);
+  bad.length ? fail("Commit authors", `${bad.length} commit(s) since main are authored or committed as an assistant: ${bad.slice(0, 3).join(", ")} (re-author them as the person who owns the work)`) : ok("Commit authors", `${who.length} commit(s) since main, all by people`);
+} catch { ok("Commit authors", "skipped (no origin/main)"); }
 
 // 5b6. si-expr (portable rules) and the schema registry: Node vectors, builder/registry units, generated schemas current.
 try {
