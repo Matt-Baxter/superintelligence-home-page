@@ -33,7 +33,12 @@ const SUITES = {
     let gNaive = 0, gGuard = 0, gWhite = 0;
     for (const { it } of rs) { const s = R.stress(it, 5); gNaive += s.naiveAttack.gain.naive; gGuard += s.naiveAttack.gain.guarded; gWhite += s.whiteBox.gain.guarded; }
     const n = rs.length, r3 = (x) => Math.round(x * 1000) / 1000;
+    // Proposed items (bench/review-proposed.json): misjudgements an unattended run found, reported but never gating,
+    // until a person moves them into review-set.json together with the rule change that fixes them.
+    const propFile = path.join(DIR, "review-proposed.json"), prop = fs.existsSync(propFile) ? JSON.parse(fs.readFileSync(propFile, "utf8")).items || [] : [];
+    const propOk = prop.filter((it) => ["doubtful", "withdrawn"].includes(R.review(it).verdict) === !it.credible).length;
     return {
+      ...(prop.length ? { "review.proposed_verdict_accuracy": { value: r3(propOk / prop.length), better: "info", about: `verdicts right on ${prop.length} proposed item(s) not yet adopted (bench/review-proposed.json)` } } : {}),
       "review.credibility_auc": { value: r3(auc("credibility")), better: "higher", tol: 0, about: "credible items out-rank doubtful ones on credibility" },
       "review.score_auc": { value: r3(auc("score")), better: "higher", tol: 0.02, about: "...on the guarded score" },
       "review.naive_score_auc": { value: r3(auc("naive")), better: "info", about: "...on the unguarded score (for comparison)" },
@@ -79,7 +84,22 @@ const SUITES = {
     const c = (cos) => sae.run({ latents: 24, l1: 0.1, resample: 0, steps: 1200, seed: 2, cosine: cos, norm_spread: 0.8 }).metrics.recovered;
     const rp = P.runners.find((r) => r.id === "roleplay-rsi"), rq = (m) => rp.run({ meta: m, edit_bound: 3, judge_noise: 0.2, rounds: 30, turns: 200, seed: 7 }).metrics.bad_rate;
     const ml = P.runners.find((r) => r.id === "monitor-leak-rl"), me = (l) => ml.run({ leak: l, accuracy: 0.95, easy_share: 0, steps: 300, batch: 32, seed: 13 }).metrics.evaded;
+    // Seed stability: each paper example's hypothesis verdict re-run on 3 other seed blocks; the share that agree with
+    // the published verdict. A verdict that flips with the seed shouldn't be reported as a finding. And the slowest
+    // example run, since every toy must stay well under 2 seconds.
+    const L = require("../modules/lab/lab"), paperEx = L.EX.examples.filter((e) => /arxiv\.org\/abs\//.test(e.source?.url || ""));
+    let agree = 0, tries = 0, slowest = 0;
+    for (const e of paperEx) {
+      const t0 = Date.now(), ref = L.runExample(e.id).verdict.supported; slowest = Math.max(slowest, Date.now() - t0);
+      for (const off of [1000, 2000, 3000]) {
+        const p0 = { ...e.reproduce.params, seed: (e.reproduce.params.seed || 1) + off };
+        const v = L.verdict(e, L.run(e.reproduce.runner, p0), L.run(e.reproduce.runner, { ...p0, ...e.hypothesis.params, seed: p0.seed })).supported;
+        tries++; if (v === ref) agree++;
+      }
+    }
     return {
+      "papers.verdict_seed_stability": { value: Math.round((agree / (tries || 1)) * 1000) / 1000, better: "higher", tol: 0, about: `share of paper-example verdicts that hold on 3 other seed blocks (${paperEx.length} examples)` },
+      "papers.slowest_example_ms": { value: slowest, better: "info", about: "slowest paper example (baseline and variant); each toy must stay under 2 seconds" },
       "papers.hidden_eval_hack_drop": { value: Math.round(drop * 1000) / 1000, better: "higher", tol: 0.02, about: "drop in the quirk share when a self-improving agent is judged on hidden evaluations (arXiv 2609.26457 toy)" },
       "papers.recompute_evasion": { value: ev, better: "lower", tol: 0, about: "undetected exploits with independent recomputation (arXiv 2609.28614 toy)" },
       "papers.cosine_sae_gain": { value: c(1) - c(0), better: "higher", tol: 1, about: "extra true features a cosine-scored SAE recovers when input sizes vary (arXiv 2606.15054 toy)" },

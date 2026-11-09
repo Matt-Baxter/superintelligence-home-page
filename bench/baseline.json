@@ -61,7 +61,7 @@
       "about": "points the same attack gains on the unguarded judge (the attack is real)"
     },
     "review.ms_per_doc": {
-      "value": 8.2,
+      "value": 10,
       "better": "info",
       "about": "time to review one item"
     },
@@ -106,6 +106,17 @@
       "better": "lower",
       "tol": 0,
       "about": "output error on unedited inputs with the SAE error added back (0 = exact)"
+    },
+    "papers.verdict_seed_stability": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "share of paper-example verdicts that hold on 3 other seed blocks (6 examples)"
+    },
+    "papers.slowest_example_ms": {
+      "value": 1860,
+      "better": "info",
+      "about": "slowest paper example (baseline and variant); each toy must stay under 2 seconds"
     },
     "papers.hidden_eval_hack_drop": {
       "value": 0.185,

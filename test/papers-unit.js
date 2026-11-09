@@ -32,4 +32,7 @@ ok(easy.hack_rate < full.hack_rate - 0.3, `easier training problems make honest 
 const ex = ["rsi-hidden-evals", "rrsi-edit-budget", "oversight-recompute", "cosine-sae", "roleplay-bounded-rsi", "reward-hack-monitor-leak"].map((id) => [id, L.runExample(id)]);
 ok(ex.every(([, r]) => r.example.source && /^https:\/\/arxiv\.org\/abs\/\d{4}\.\d{4,5}$/.test(r.example.source.url)), "every paper example links its arXiv source");
 ok(ex.filter(([, r]) => !r.verdict.supported).map(([id]) => id).join() === "rrsi-edit-budget,roleplay-bounded-rsi", "the edit-budget and looser-bound hypotheses are kept as refuted at toy scale");
+// Every paper toy runs its defaults (10 seeds averaged) in under 2 seconds, so the Lab and the daily task stay fast.
+const slow = P.runners.map((r) => { const t0 = Date.now(); r.run(Object.fromEntries(Object.entries(r.params).map(([k, d]) => [k, d.default]))); return [r.id, Date.now() - t0]; }).filter(([, ms]) => ms >= 2000);
+ok(!slow.length, `every paper toy runs in under 2 s with its defaults${slow.length ? ` (slow: ${slow.map(([id, ms]) => `${id} ${ms} ms`).join(", ")})` : ""}`);
 console.log(`\npapers unit: ${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);
