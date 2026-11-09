@@ -9,7 +9,7 @@ process.env.ALLOW_FIXTURE_FEEDS = "1";
 process.env.SOURCE_CATALOG = require("node:path").join(__dirname, "fixtures", "sample-catalog.json");
 const { app, db, ingestItems, boot } = require("../server");
 const feeds = require("../lib/feeds");
-const { shiftItems } = require("./fixture-dates"); // fixture dates move to last week, so tests never depend on today
+const { shiftItems } = require("./fixture-dates"); // fixture dates move forward to the last few days, so tests never depend on today
 (async () => {
   await boot();
   const add = async (name, kind, format, file) => {

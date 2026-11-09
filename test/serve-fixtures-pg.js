@@ -7,7 +7,7 @@ process.env.SOURCE_CATALOG = require("node:path").join(__dirname, "fixtures", "s
 const fs = require("node:fs"), path = require("node:path");
 const { app, db, ingestItems, boot } = require("../server");
 const feeds = require("../lib/feeds");
-const { shiftItems } = require("./fixture-dates"); // fixture dates move to last week, so tests never depend on today
+const { shiftItems } = require("./fixture-dates"); // fixture dates move forward to the last few days, so tests never depend on today
 (async () => {
   await db.exec("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
   await boot();
