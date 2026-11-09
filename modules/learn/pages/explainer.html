@@ -91,10 +91,12 @@ function finish() { done = true; window.__explainerDone = true; document.getElem
 async function load() {
   // ?c=<concept> plays a concept's storyboard; ?d=<topic> plays a topic dossier's (modules/review/dossier.js).
   const id = P.get("c") || "attention", topic = P.get("d");
-  const r = await fetch(topic ? `/api/review/dossier/${encodeURIComponent(topic)}/storyboard` : `/api/learn/explainer/${encodeURIComponent(id)}`); if (!r.ok) { document.getElementById("stage").innerHTML = `<div class="say">${topic ? "That topic wasn't found." : "That concept wasn't found."}</div>`; return; }
+  const stage = document.getElementById("stage"); stage.setAttribute("aria-busy", "true"); stage.innerHTML = `<p class="loading">Loading the explainer…</p>`;
+  const r = await fetch(topic ? `/api/review/dossier/${encodeURIComponent(topic)}/storyboard` : `/api/learn/explainer/${encodeURIComponent(id)}`); if (!r.ok) { stage.removeAttribute("aria-busy"); document.getElementById("stage").innerHTML = `<div class="say">${topic ? "That topic wasn't found." : "That concept wasn't found."}</div>`; return; }
   SB = (await r.json()).storyboard; document.title = `${SB.title} · Explainer`;
   document.getElementById("stage").innerHTML = SB.scenes.map((s) => `<section class="scene">${sceneHtml(s)}</section>`).join("");
   document.getElementById("dots").innerHTML = SB.scenes.map(() => "<i></i>").join("");
+  stage.removeAttribute("aria-busy");
   window.__explainerSeconds = SB.scenes.reduce((a, s) => a + s.seconds, 0);
   requestAnimationFrame(() => show(0));
 }

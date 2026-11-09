@@ -22,7 +22,23 @@ description: Design and review UI so it reads as deliberate rather than AI-gener
    - Stagger rows by 30 ms.
    - Turn everything off under `prefers-reduced-motion`.
    - Use the ready classes (`.enter`, `.pop`, `.stagger`, `.pulse`) instead of writing keyframes.
-7. **Run the check.** `node scripts/unslop.js` (also part of preflight) scans pages, styles and blocks for the slop patterns in `references/slop-gates.md`. Errors fail preflight. Warnings are things to look at.
-8. **Look at it.** Take a screenshot at 1280 px and at 390 px in light and dark (`test/e2e.js` already shoots the main pages into `shots/`). Then ask: would a careful human designer have made each choice on purpose?
+7. **Details that give AI away.** Each of these is a decision a careful designer makes on purpose:
+   - Delete filler badges ("New", "Beta", "AI-powered") and decorative glyphs (sparkles, fire, rockets). A badge must carry information.
+   - Drop redundant labels: a label and a placeholder that say the same thing, or a heading that repeats the nav. Make placeholders examples.
+   - Italics only for quotes, titles, terms and notes. Never for random words in headings, buttons or nav.
+   - Mono (`var(--mono)`) only for code, ids and numbers that must line up. Never for body text, headings or buttons.
+   - Headlines say what the page is for ("Sources this site reads", not "Dashboard" or "Welcome"). `h1-h3` use `text-wrap: balance` and body text `pretty`, already set in app.css.
+   - One primary button per view. Everything else is a plain `.btn`. Several primary buttons on one page are fine only when they sit in views that never show together; mark those `unslop-ok` with the reason.
+   - Show the real product: real data, never a stock illustration. Make the main thing on a view the biggest thing on it, and group by spacing (gap) before borders.
+   - Nested rounded boxes: inner radius = outer radius minus the padding between them (0 when the inset is bigger than the radius). Flush children use `overflow: hidden`.
+   - One icon style per page: text, or one set of drawn icons. Not both, and not emoji.
+   - Text contrast is at least 4.5:1 for every text token pair, light and dark (the check computes it).
+   - `tabular-nums` for any number that changes or sits in a column.
+   - Every view that loads data shows that it is loading. `api()` in `public/js/api.js` marks the page `aria-busy` and draws a thin progress line after 150 ms; a page using raw `fetch()` shows its own "Loading…".
+   - Animate feedback that helps (a saved state, a vote landing, progress), never decoration. Motion rules below.
+   - Align by eye: optical alignment (icons, quotes, numbers) beats pixel-equal padding. Check it in the screenshots.
+   - The accent is ink (black or white) by design. A colour accent is a decision for both partners, not an agent.
+8. **Run the check.** `node scripts/unslop.js` (also part of preflight) scans pages, styles and blocks for the slop patterns in `references/slop-gates.md`. Errors fail preflight. Warnings are things to look at.
+9. **Look at it.** Take a screenshot at 1280 px and at 390 px in light and dark (`test/e2e.js` already shoots the main pages into `shots/`). Then ask: would a careful human designer have made each choice on purpose?
 
 Load `references/motion.md` when adding any animation, `references/slop-gates.md` when the check fails or for a full review, and `references/external-skills.md` when the humans want to install more design skills.

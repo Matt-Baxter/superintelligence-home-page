@@ -13,8 +13,18 @@ const cases = [
   ["x.css", ".a { animation: spin 200ms; }", "reduced-motion"],
   ["p.html", "<h1>Unlock the future of AI</h1>", "buzzword"],
   ["p.html", "<button>🚀 Launch</button>", "emoji-icon"],
+  ["p.html", '<span class="badge">New</span>', "filler-badge"],
+  ["p.html", "<h2>Results for <em>this</em> week</h2>", "italic-label"],
+  ["x.css", ".btn { font-family: var(--mono); } @media (prefers-reduced-motion: reduce) {}", "mono-text"],
+  ["p.html", "<h1>Dashboard</h1>", "generic-headline"],
+  ["p.html", "<label>Email<input placeholder=\"Email\"></label>", "redundant-label"],
+  ["p.html", '<button class="btn primary">Save</button>\n<button class="btn primary">Publish</button>', "many-ctas"],
+  ["p.html", "<script>fetch('/api/x').then(r => r.json())</script>", "loading-state"],
+  ["x.css", ":root { --bg: #ffffff; --fg: #111111; --muted: #bbbbbb; } h1 { text-wrap: balance; } .n { font-variant-numeric: tabular-nums; }", "contrast"],
+  ["x.css", ":root { --bg: #ffffff; --fg: #111111; } .n { font-variant-numeric: tabular-nums; }", "headline-wrap"],
 ];
 for (const [file, text, rule] of cases) assert.ok(rules(file, text).includes(rule), `${rule} not caught in: ${text}`);
 assert.deepStrictEqual(rules("x.css", ".a { transition: all .2s; } /* unslop-ok: legacy widget */ @media (prefers-reduced-motion: reduce) {}"), [], "unslop-ok exempts a line");
 assert.deepStrictEqual(rules("x.css", ".a { transition: transform 150ms var(--ease-out); } @media (prefers-reduced-motion: reduce) {}"), [], "token motion passes");
-console.log(`unslop unit checks: ${cases.length + 2} passed`);
+assert.deepStrictEqual(rules("p.html", '<script src="/js/api.js"></script><script>api("/api/x")</script>'), [], "pages using the shared api() get its loading state");
+console.log(`unslop unit checks: ${cases.length + 3} passed`);

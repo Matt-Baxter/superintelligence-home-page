@@ -210,7 +210,7 @@ async function render() {
   const q = new URLSearchParams({ ...V.query }); for (const [k, v] of Object.entries(filters)) if (v !== "") q.set(k, v);
   const resp = await api("/api/admin/project/issues?" + q); issues = resp.issues;
   $("#viewCount").textContent = `${issues.length} issue${issues.length === 1 ? "" : "s"}`;
-  if (!M.counts || !Object.keys(M.counts).length) { $("#body").innerHTML = `<div class="empty-st"><p>No issues yet.</p><p><button class="btn primary" id="starter" type="button">Load the project's open to-dos</button> <button class="btn" type="button" onclick="newIssue()">New issue</button></p><p class="small">Loads the checklist from docs/OUR_PARTS.md as issues in three milestones: Week 9 homework, Live site, Bake-off.</p></div>`; $("#starter").onclick = loadStarter; return; }
+  if (!M.counts || !Object.keys(M.counts).length) { $("#body").innerHTML = `<div class="empty-st"><p>No issues yet.</p><p><button class="btn primary" id="starter" type="button">Load the project's open to-dos</button> <button class="btn" type="button" onclick="newIssue()">New issue</button></p><p class="small">Loads the checklist from docs/OUR_PARTS.md as issues in three milestones: Week 9 homework, Live site, Bake-off.</p></div>`; $("#starter").onclick = loadStarter; return; } // unslop-ok: empty state, before any issue exists
   V.timeline ? renderTimeline(resp.conflicts || []) : V.board ? renderBoard() : renderList();
 }
 function rowHtml(i, idx) {
@@ -348,7 +348,7 @@ async function renderMilestones() {
   $("#body").innerHTML = `<div class="ms">${M.milestones.map((m) => `<div class="m"><div style="display:flex;gap:8px;align-items:baseline"><b>${esc(m.name)}</b><span class="small muted">${m.target_date ? "Target " + m.target_date : "No target date"}</span><span style="margin-left:auto" class="small">${m.done} / ${m.total} done</span></div>
     ${m.description ? `<div class="small muted">${esc(m.description)}</div>` : ""}<div class="prog"><span style="width:${m.total ? (100 * m.done) / m.total : 0}%"></span></div>
     <div><button class="btn" type="button" data-msv="${m.id}">View issues</button> <button class="btn" type="button" data-msd="${m.id}">Delete</button></div></div>`).join("")}
-    <form class="m" id="msForm"><b>New milestone</b><div style="display:flex;gap:8px;flex-wrap:wrap"><input id="msName" required placeholder="Name" style="flex:1"><input id="msDate" type="date" aria-label="Target date"></div><input id="msDesc" placeholder="What done looks like (optional)"><div><button class="btn primary" type="submit">Add milestone</button></div></form></div>`;
+    <form class="m" id="msForm"><b>New milestone</b><div style="display:flex;gap:8px;flex-wrap:wrap"><input id="msName" required placeholder="Name" style="flex:1"><input id="msDate" type="date" aria-label="Target date"></div><input id="msDesc" placeholder="What done looks like (optional)"><div><button class="btn primary" type="submit">Add milestone</button></div></form></div>`; // unslop-ok: milestone dialog
   $$("[data-msv]").forEach((b) => (b.onclick = () => { filters.milestone = b.dataset.msv; go("all"); }));
   $$("[data-msd]").forEach((b) => (b.onclick = async () => { if (b.textContent !== "Confirm") { b.textContent = "Confirm"; return; } await api(`/api/admin/project/milestones/${b.dataset.msd}`, { method: "DELETE" }); await loadMeta(); render(); }));
   $("#msForm").onsubmit = async (e) => { e.preventDefault(); await api("/api/admin/project/milestones", { body: { name: $("#msName").value, target_date: $("#msDate").value || null, description: $("#msDesc").value } }); await loadMeta(); render(); };
@@ -425,7 +425,7 @@ function newIssue(preset = {}) {
       <select id="nMilestone" aria-label="Milestone">${opts([["", "No milestone"], ...M.milestones.map((m) => [m.id, m.name])], ms)}</select>
       <input id="nLabels" placeholder="Labels" aria-label="Labels" list="nl" value="${esc(filters.label)}"><datalist id="nl">${M.labels.map((l) => `<option value="${esc(l)}">`).join("")}</datalist>
       <input id="nDue" type="date" aria-label="Due date"></div></div>
-    <div class="mf"><span class="small muted"><span class="kbd">⌘</span><span class="kbd">Enter</span> to create</span><button class="btn" type="button" id="nCancel">Cancel</button><button class="btn primary" type="submit">Create issue</button></div></form>`;
+    <div class="mf"><span class="small muted"><span class="kbd">⌘</span><span class="kbd">Enter</span> to create</span><button class="btn" type="button" id="nCancel">Cancel</button><button class="btn primary" type="submit">Create issue</button></div></form>`; // unslop-ok: new-issue dialog
   $("#nTitle").focus();
   $("#scrim").onclick = $("#nCancel").onclick = () => ($("#overlay").innerHTML = "");
   $("#newForm").onkeydown = (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) $("#newForm").requestSubmit(); };
