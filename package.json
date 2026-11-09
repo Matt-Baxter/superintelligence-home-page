@@ -7,6 +7,7 @@
     "build": "node scripts/modules.js gen && node scripts/codemap.js build && esbuild client/jr.jsx --bundle --minify --format=iife --jsx=automatic --define:process.env.NODE_ENV=\\\"production\\\" --outfile=public/js/jr.js",
     "start": "node --no-warnings server.js",
     "dev:sample": "node --no-warnings test/serve-fixtures.js",
+    "pretest": "node scripts/build-extended.js",
     "test": "node test/e2e.js",
     "dev:sample:pg": "node --no-warnings test/serve-fixtures-pg.js",
     "preflight": "node scripts/preflight.js",

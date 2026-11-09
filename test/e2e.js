@@ -1,7 +1,7 @@
 // Two-user browser test against test/serve-fixtures.js (synthetic data). Run: node test/e2e.js
 const { chromium } = require('playwright');
 const B = process.env.BASE || 'http://localhost:3200';
-const FIXTURE_WEEK = '2026-11-02'; // Monday of the week the synthetic fixture feeds are dated in (test/fixtures)
+const FIXTURE_WEEK = require('./fixture-dates').fixtureWeek(); // Monday of the week the fixture feeds are dated in (always last week)
 let pass = 0, fail = 0; const errs = [];
 const ok = (c, m) => { c ? pass++ : fail++; console.log(c ? '  ✓' : '  ✗', m); };
 async function account(b, u, name) {
@@ -79,7 +79,7 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   ok((await john.textContent('#sub')).includes('active sources'), 'sources page summarizes kinds and schedule');
 
   console.log('Weekly brief (json-render)');
-  // The synthetic fixtures are dated in the week of 2026-11-02, so ask for that week; the current week can be empty.
+  // The fixture feeds are dated last week (test/fixture-dates.js), so ask for that week; the current week can be empty.
   await john.goto(B + '/brief?week=' + FIXTURE_WEEK); await john.waitForSelector('#brief .jr-metric');
   const br = await john.textContent('#brief'); ok(br.includes('Stories this week') && br.includes('Top stories'), 'brief renders from a server-built spec');
   ok(br.includes('Where the activity was'), 'topic activity bars render');

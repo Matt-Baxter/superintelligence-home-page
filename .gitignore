@@ -9,3 +9,4 @@ modules/codemap/data/
 out/
 !modules/learn/data/
 __pycache__/
+public/js/jr.js
