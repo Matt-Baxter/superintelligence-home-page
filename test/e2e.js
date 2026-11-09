@@ -189,11 +189,14 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   ok((await john.textContent('#sub')).includes('active sources'), 'sources page summarizes kinds and schedule');
 
   console.log('Weekly brief (json-render)');
-  await john.goto(B + '/brief'); await john.waitForSelector('#brief .jr-metric');
+  // Recorded feed fixtures belong to this explicit week; do not depend on the wall-clock week.
+  await john.goto(B + '/brief?week=2026-11-02'); await john.waitForSelector('#brief .jr-metric');
   const br = await john.textContent('#brief'); ok(br.includes('Stories this week') && br.includes('Top stories'), 'brief renders from a server-built spec');
   ok(br.includes('Where the activity was'), 'topic activity bars render');
   await john.locator('#brief .jr-story button', { hasText: 'Discuss' }).first().click(); await john.waitForURL(/story\?id=/); ok(true, 'json-render action openStory navigates');
   await john.screenshot({ path: 'shots/story.png', fullPage: true });
+  await john.goto(B + '/brief?week=2000-01-03'); await john.waitForSelector('#brief .jr-metric');
+  ok((await john.textContent('#brief')).includes('Nothing collected for this week yet') && await john.locator('#brief .jr-story').count() === 0, 'an empty week reports no coverage without inventing stories');
 
   console.log('Agent log (REQ-020: AGENT_LOG.md in the repo, not the app)');
   ok(!(await john.textContent('nav')).includes('Agent log'), 'no Agent log page in the nav');

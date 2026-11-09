@@ -181,3 +181,25 @@ Gap review found delivery tasks hard-coded to REQ-031 even when their declared r
 Delivery records now require nonempty scope/acceptance context, nonempty unique linked ideas, well-formed requirement pointers and review/completion verification context. Project sync checks pointer existence against actual spec definitions before opening the database; a syntactically valid but nonexistent requirement fails. Verification context does not itself grant partner approval. The project index now links the roadmap and generated data dictionary directly. No shared agreement, public UI, route or database schema changed.
 
 Validation: `Product backlog contract: 10 passed, 0 failed.`; `project sync unit: 23 passed, 0 failed`; dictionary check still validates14 namespaces,41 fields,160 entries and213 relationships. Preflight passed. Local sync corrected2 delivery records and created none; a repeat reported `301 items, 0 created, 0 updated, 301 unchanged`. Existing known judge gaps and incomplete CMS dictionary coverage remain open; this cleanup does not claim to close them.
+
+## Research-informed local confirmation — 2026-11-08
+
+The local preview was not listening on3200 at the start of this run. It was restarted against its preserved synthetic database; read-only checks confirmed one unpublished editorial draft and301 tracker records. The existing browser session loaded the dossier and Source records moved focus to traced references. The preview remains local and no production deployment/publication occurred.
+
+Research: [Playwright best practices](https://playwright.dev/docs/best-practices) recommends isolated browser contexts and observable readiness; [W3C Easy Checks](https://www.w3.org/WAI/test-evaluate/preliminary/) covers keyboard access, labels and feedback. These informed focused verification, not a claim of complete WCAG conformance. The standalone browser library uses explicit readiness checks rather than introducing a new test framework.
+
+Two test-quality gaps were corrected. First, initial full runs failed “brief renders from a server-built spec” and “topic activity bars render”, then timed out waiting for a story. The server had entered a new UTC week, while recorded fixtures belong to the week of2026-11-02. The populated brief test now selects that explicit fixture week; a separate2000-01-03 empty-week test confirms no stories are invented. Fixture timestamps and application behavior were not changed. Second, focused race probes now wait for actual API/JSON completion and the caller's synchronous post-await continuation instead of fixed100–300ms sleeps. Product ordering explicitly waits for the newer response while the stale response remains held. An independent browser-only negative control removed the render guard and failed specifically at the stale-response assertion; the unmodified normal control passed9/0. Production files were not changed by that control.
+
+| Check | SQLite | Postgres |
+| --- | --- | --- |
+| Full browser | `336 passed, 0 failed`; `page errors: none` | `336 passed, 0 failed`; `page errors: none` |
+| Navigation adversarial browser | `15 passed, 0 failed` | `15 passed, 0 failed` |
+| Dossier workflow browser | `17 passed, 0 failed` | `17 passed, 0 failed` |
+| Term browser | `30 passed, 0 failed` | `30 passed, 0 failed` |
+| Dictionary graph HTTP | `12 passed, 0 failed` | `12 passed, 0 failed` |
+| CMS browser | `32 passed, 0 failed` | `32 passed, 0 failed` |
+| Product backlog browser | `9 passed, 0 failed` | `9 passed, 0 failed` |
+
+The preserved preview's dossier suite separately passed17/0. Generated schema examples pass in zod, Pydantic, Arrow, protobuf/gRPC and Rust; dictionary generation remains current. All database mutations for publication/withdrawal/graph tests used disposable fixtures. Tests do not verify live-feed availability, production performance, customer demand or scientific correctness. Known judge gaps and incomplete CMS dictionary coverage remain open. The dossier's date-only snapshot currently follows UTC without an explicit zone label; retain this as a presentation-contract follow-up for approval rather than silently changing stored date semantics.
+
+Final preflight: `Preflight passed.` This confirmation used the repository's run-tests workflow and full-story verification across browser, API and database boundaries. No main-site publication or approval status was changed.
