@@ -2,13 +2,15 @@
 
 SEIS 606 Project 2 · Superintelligence Homepage · John Affolter and Matthew Baxter
 
-**Version 1.19 · November 7, 2026.**
+**Version 1.20 · November 7, 2026.**
 
 The data model, API, auth and rules of **John's build** (the code in this repo). Under the [constitution](../.specify/memory/constitution.md), each bake-off build may differ in database, framework and internal structure, so this is not the shared contract. What both builds must meet is the [shared spec](../specs/001-superintelligence-homepage/spec.md) and the bake-off rules in [CONTRACT.md](../CONTRACT.md); [SPEC_TRACE.md](SPEC_TRACE.md) shows how this build meets each requirement.
 
 Log every change to a table, route or shape here, so whoever merges the builds (or reads this API) can follow it. Rows up to 0.8 were drafted when we planned a split; their approval boxes are history, not a requirement.
 
 ## Change log
+
+- **1.20, Nov 8, 2026 — tracker metadata cleanup (002/REQ-030).** Delivery task labels follow declared requirements; phase, scope and requirement labels are source-owned on delivery tasks while freeform custom labels and human progress remain preserved. Source context includes full spec-qualified requirement pointers. Validation checks requirement references against actual spec files before opening the database and rejects missing acceptance context, malformed/empty references, empty/duplicate linked ideas, and missing review/completion evidence before importing. No route or table changes; tracker state still does not approve publication.
 
 - **1.19, Nov 7, 2026 — backend vocabulary integrity (REQ-005/007; extended002/REQ-027/031).** Schema1.2.0 aligns the existing document, event, outlet and lab identities with the runtime parser. Outlet host IDs retain dots/IPv6 brackets; no stored identities are renamed. Existing protobuf namespace numbers are preserved and additions are appended. Tag qualified-ID constraints now follow the runtime grammar; lexical validity remains separate from vocabulary membership and record existence. Backend adapter outputs are checked before merge/persistence. A deterministic offline data dictionary joins canonical schema fields, controlled terms and provenance; preflight detects namespace, pointer and generated-document drift. Protobuf and Arrow remain structural formats; backend admission enforces lexical constraints. Existing graph/chunk ID queries preserve complete identities up to320 characters and reject overlong input instead of silently truncating at80. No new route, table, navigation, main-site feature or publication action.
 

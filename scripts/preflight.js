@@ -53,6 +53,8 @@ try {
   results.push(sh("node scripts/dictionary.js check").trim());
   ok("Vocabulary contracts",results.join("; "));
 } catch(e) { fail("Vocabulary contracts",String(e.stdout||e.stderr||e.message).slice(-1200)); }
+try { ok("Product planning",sh("node test/product-backlog-contract-unit.js").trim().split("\n").pop()); }
+catch(e) { fail("Product planning",String(e.stdout||e.stderr||e.message).slice(-800)); }
 try { ok("Term properties", sh("node test/terms-property-unit.js").trim()); } catch (e) { fail("Term properties", String(e.stderr || e.message).slice(0,500)); }
 try { ok("Graph logic", sh("node test/graph-logic-unit.js").trim()); } catch (e) { fail("Graph logic", String(e.stderr || e.message)); }
 try { ok("Pipeline quality", sh("node test/pipeline-quality-unit.js").trim()); ok("Story paging", sh("node --no-warnings test/story-page-unit.js").trim().split("\n").pop()); }

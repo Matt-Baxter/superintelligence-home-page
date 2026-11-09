@@ -43,7 +43,13 @@ const JOB_STATUS = { queued: "todo", "needs-agent": "todo", running: "in_progres
 
 async function main() {
   // Validate the entire proposed idea registry before opening or writing any database.
-  const productItems = require("../modules/project/product-backlog").items(require("../docs/research/product-backlog.json"));
+  const product = require("../modules/project/product-backlog"), backlog = require("../docs/research/product-backlog.json");
+  const requirements = new Map();
+  for(const dir of ["001-superintelligence-homepage",...specDirs()]){
+    const file=path.join(root,"specs",dir,"spec.md");
+    if(fs.existsSync(file))requirements.set(dir.slice(0,3),new Set([...fs.readFileSync(file,"utf8").matchAll(/^- \*\*(REQ-\d{3})\*\*:/gm)].map(m=>m[1])));
+  }
+  const productItems = product.items(product.validateReferences(backlog, requirements));
   // The Project tracker is an extended-version module; its tables only exist with that profile loaded.
   process.env.SITE_PROFILE = process.env.SITE_PROFILE || "extended";
   const db = require("../lib/db"), { createKernel } = require("../kernel/kernel"), k = createKernel();

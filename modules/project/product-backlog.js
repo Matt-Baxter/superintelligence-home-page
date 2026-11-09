@@ -21,13 +21,23 @@ function validate(backlog) {
   function visit(id){if(visiting.has(id))throw new Error('Cyclic product idea dependencies.');if(done.has(id))return;visiting.add(id);for(const dep of byId.get(id).depends_on||[]){if(!byId.has(dep)||dep===id)throw new Error(`${id}: invalid dependency.`);visit(dep);}visiting.delete(id);done.add(id);}
   for(const id of ids)visit(id);
   const sliceIds=new Set();
-  for(const slice of backlog.delivery_slices||[]){if(!/^SLICE-\d{3}$/.test(slice.id)||sliceIds.has(slice.id)||!slice.name||!slice.scope||!['planned','in_progress','in_review','done'].includes(slice.status)||!phases.has(slice.phase)||!Array.isArray(slice.idea_ids)||slice.idea_ids.some(id=>!ids.has(id)))throw new Error('Invalid delivery slice.');sliceIds.add(slice.id);}
+  const nonempty=value=>typeof value==='string'&&value.trim().length>0;
+  function references(refs){return Array.isArray(refs)&&refs.length>0&&refs.every(ref=>ref&&/^\d{3}$/.test(ref.spec)&&/^REQ-\d{3}$/.test(ref.req)&&nonempty(ref.status));}
+  for(const slice of backlog.delivery_slices||[]){if(!/^SLICE-\d{3}$/.test(slice.id)||sliceIds.has(slice.id)||!nonempty(slice.name)||!nonempty(slice.scope)||!nonempty(slice.acceptance_source)||!references(slice.requirement_refs)||!['planned','in_progress','in_review','done'].includes(slice.status)||!phases.has(slice.phase)||!Array.isArray(slice.idea_ids)||!slice.idea_ids.length||new Set(slice.idea_ids).size!==slice.idea_ids.length||slice.idea_ids.some(id=>!ids.has(id)))throw new Error('Invalid delivery slice.');if(['in_review','done'].includes(slice.status)&&!nonempty(slice.verification))throw new Error('Reviewed delivery slices require verification context.');if(sliceLabels(slice).length>8)throw new Error('Delivery slice exceeds the tracker label limit; narrow its scope.');sliceIds.add(slice.id);}
   return backlog;
 }
+function sliceLabels(slice){return [...new Set(['product-backlog','delivery-slice',`phase:${slice.phase}`,...slice.requirement_refs.map(ref=>ref.req)])];}
 function items(backlog){validate(backlog);return [...backlog.ideas.map(idea=>({
   key:`product-idea:${String(idea.number).padStart(3,'0')}`,title:`${idea.id}: ${idea.title}`,status:'backlog',follow:false,
   priority:({P0:2,P1:3,P2:4,P3:4})[idea.priority],
   labels:['product-backlog','proposed',`phase:${idea.phase}`,`epic:${idea.epic}`,idea.scope_status==='proposed-needs-human'?'needs-spec':'scope-review'],
   description:[`Source: docs/research/product-backlog.json · ${idea.id}`,`Delivery phase: ${idea.phase} · Planning priority: ${idea.priority}`,`Buyer: ${idea.buyer}`,`Outcome: ${idea.outcome}`,`Acceptance: ${idea.acceptance}`,`Dependencies: ${(idea.depends_on||[]).join(', ')||'See phase prerequisites in docs/PRODUCT_ROADMAP.md.'}`,`Requirement pointers: ${idea.requirement_refs.map(r=>`${r.spec}/${r.req} (${r.status||'review required'})`).join(', ')||'None yet; requires a scoped proposal before implementation.'}`,`Scope: ${idea.scope_status}. Backlog capture is not requirement approval or evidence of delivery.`,`Plan: docs/PRODUCT_ROADMAP.md`].join('\n\n')
-})),...(backlog.delivery_slices||[]).map(slice=>({key:`product-slice:${slice.id}`,title:`${slice.id}: ${slice.name}`,status:slice.status==='planned'?'backlog':slice.status,follow:false,priority:2,labels:['product-backlog','delivery-slice',`phase:${slice.phase}`,'REQ-031'],description:`${slice.scope}\n\nPartial ideas: ${slice.idea_ids.join(', ')}. No whole idea is marked complete.\n\nAcceptance: ${slice.acceptance_source}\n\nVerification: ${slice.verification||'Pending implementation checks.'}`}))];}
-module.exports={validate,items};
+})),...(backlog.delivery_slices||[]).map(slice=>({key:`product-slice:${slice.id}`,title:`${slice.id}: ${slice.name}`,status:slice.status==='planned'?'backlog':slice.status,follow:false,priority:2,labels:sliceLabels(slice),description:`${slice.scope}\n\nPartial ideas: ${slice.idea_ids.join(', ')}. No whole idea is marked complete.\n\nRequirement pointers: ${slice.requirement_refs.map(ref=>`${ref.spec}/${ref.req} (${ref.status})`).join(', ')}\n\nAcceptance: ${slice.acceptance_source}\n\nVerification: ${slice.verification||'Pending implementation checks.'}`}))];}
+function validateReferences(backlog, requirements){
+  validate(backlog);
+  for(const entry of [...backlog.ideas,...(backlog.delivery_slices||[])])for(const ref of entry.requirement_refs||[]){
+    if(!requirements.get(ref.spec)?.has(ref.req))throw new Error(`${entry.id}: unknown requirement ${ref.spec}/${ref.req}.`);
+  }
+  return backlog;
+}
+module.exports={validate,validateReferences,items};

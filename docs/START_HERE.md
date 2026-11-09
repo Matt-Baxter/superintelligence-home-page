@@ -11,6 +11,8 @@ The current checkout continues on `feature/si-combined`. Use this index to find 
 | What waits for approval | [spec 003 tasks](../specs/003-judge-fidelity/tasks.md), [spec 004 tasks](../specs/004-parity/tasks.md) | Spec 004 implementation stays blocked by T000 |
 | End-to-end logic audit | [audit record](LOGIC_AUDIT.md) | Findings, fixes, evidence and explicit limits |
 | All skills and checks | [generated hub](HUB.md) | Generated index; edit its inputs |
+| Product backlog and delivery gates | [roadmap](PRODUCT_ROADMAP.md), `/m/project#/product` | 200 proposals; delivery status is not publication approval |
+| Standardized knowledge vocabulary | [data dictionary](DATA_DICTIONARY.md) | Generated from canonical registries; `npm run dictionary -- check` |
 | Current interface contracts | [interfaces](INTERFACES.md) | Build-specific routes and data shapes |
 | Sign-in, public overview and local demo | [access testing](TESTING_ACCESS.md) | Disposable reader/admin testing; no production bypass |
 | Design decisions | [design references](DESIGN_REFERENCES.md) | Applied UI patterns and screenshots |
