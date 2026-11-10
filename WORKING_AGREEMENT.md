@@ -96,4 +96,4 @@ reviews their pull requests and can step in.
 
 ---
 
-**Agreed by:** Matt Baxter 11/9/26 · John Affolter ______ (date)
+**Agreed by:** Matt Baxter 11/9/26 · John Affolter 11/9/26
