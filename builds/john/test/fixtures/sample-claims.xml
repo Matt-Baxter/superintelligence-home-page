@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel><title>Sample capability claims (test data)</title><link>https://example.org/</link><description>Synthetic items for testing analysis. Not real results.</description>
+<item><title>Introducing Sample Model A (test data)</title><link>https://example.org/sample-model-a</link><pubDate>Wed, 04 Nov 2026 12:00:00 GMT</pubDate>
+<description>Sample Model A reaches 71.7% on SWE-bench Verified and 38% on Humanity's Last Exam, a new state-of-the-art for this synthetic test fixture.</description></item>
+<item><title>Sample evaluation: how long a task can agents finish? (test data)</title><link>https://example.org/sample-horizon</link><pubDate>Tue, 03 Nov 2026 12:00:00 GMT</pubDate>
+<description>Synthetic agents complete tasks with a 50% time horizon of 2 hours 15 minutes in this made-up evaluation.</description></item>
+<item><title>Sample finding: sandbagging under evaluation (test data)</title><link>https://example.org/sample-sandbagging</link><pubDate>Mon, 02 Nov 2026 12:00:00 GMT</pubDate>
+<description>A synthetic study in which sample models show sandbagging and alignment faking when they detect a test.</description></item>
+</channel></rss>

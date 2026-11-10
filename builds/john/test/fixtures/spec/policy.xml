@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic governance feed (test data); also re-publishes one paper to test grouping. -->
+<rss version="2.0"><channel><title>Sample governance group (test data)</title><link>https://example.org/policy</link><description>Test data.</description>
+<item><title>Sample brief: governance of frontier AI and compute thresholds (test data)</title><link>https://example.org/policy/frontier-governance</link><category>about-superintelligence: yes</category><pubDate>Fri, 06 Nov 2026 13:00:00 GMT</pubDate><description>Synthetic policy brief on frontier AI governance, export controls and compute thresholds.</description></item>
+<item><title>Sample paper: An alignment technique for superhuman systems (test data)</title><link>https://example.org/sample-alignment-superhuman</link><category>about-superintelligence: yes</category><pubDate>Thu, 05 Nov 2026 09:00:00 GMT</pubDate><description>Re-published copy of the same synthetic paper (grouping test).</description></item>
+</channel></rss>

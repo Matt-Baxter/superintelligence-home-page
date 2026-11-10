@@ -1,0 +1,159 @@
+#!/usr/bin/env node
+// Daily paper watcher: find new superintelligence, interpretability and self-improvement papers on arXiv, judge each
+// with the Review desk (guarded score, credibility, verdict), catalog it in the knowledge graph as doc:<hash>, queue a
+// paper-to-code job for the most credible on-topic ones, and write a dated digest. Runs once and exits (no polling).
+//
+//   node scripts/watch.js                     query arXiv (modules/review/watch.json), at most once a day
+//   node scripts/watch.js --from <file>       use entries someone already fetched: arXiv Atom XML, or JSON
+//                                             [{title, url, abstract?, summary?, authors[], published?}] (how an agent
+//                                             without direct network access, or a test, feeds it)
+//
+// What gets scored (REQ-033): the paper's own abstract. arXiv Atom's <summary> is the abstract. In JSON, "abstract" is
+// the abstract text (CC0 arXiv metadata) and "summary" is an agent's paraphrase. With both, the abstract is scored, the
+// paraphrase is checked by fidelity() (modules/review/fidelity.js) and shown in the digest only if it passes ("summary
+// withheld: <check>" otherwise); it never changes a score and is never stored. Only the abstract's sha256 and the usual
+// 400-character excerpt are stored (REQ-007). A JSON entry with only a summary is scored from it, as before, and the
+// digest says so.
+//   --people   also search the watchlist by author name      --dry   judge and write the digest, store nothing
+//   --max N    store at most N new papers (default maxNewPerRun)
+//   --no-history  don't replay or save modules/review/history (see below)
+//
+// History: with --from, each run's entries are saved to modules/review/history/<date>.json (committed with the run's
+// branch; paper authors are left out, articles keep their outlet name) and every earlier day's file is replayed into
+// the database first, so a fresh database (the daily task's out/watch/db) still has past reviews, forecasts and track
+// records. Papers that already have a Lab example close their paper-to-code job and are not queued again.
+//
+// Environment: DATABASE_URL or DATA_DIR, like the server. ARXIV_API overrides the API base (tests). Digest files go to
+// out/watch/<date>.md and .json (gitignored). Free tier: one run a day, <= 5 queries plus people, 3 s apart.
+const fs = require("node:fs"), path = require("node:path");
+const root = path.join(__dirname, "..");
+const args = process.argv.slice(2), has = (f) => args.includes(f), val = (f) => { const i = args.indexOf(f); return i >= 0 ? args[i + 1] : null; };
+const CFG = require("../modules/review/watch.json");
+const feeds = require("../lib/feeds"), crypto = require("node:crypto");
+const { fidelity } = require("../modules/review/fidelity");
+const { ontology } = require("../lib/tagger");
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const OUT = process.env.WATCH_OUT || path.join(root, "out", "watch");
+const HISTORY = process.env.WATCH_HISTORY || path.join(root, "modules", "review", "history");
+const Built = require("../modules/lab/built");
+
+function parseEntries(text) {
+  const t = String(text).trim();
+  const str = (v) => String(v || "").replace(/\s+/g, " ").trim();
+  if (t.startsWith("[") || t.startsWith("{")) { const j = JSON.parse(t); return (Array.isArray(j) ? j : j.entries || []).map((e) => ({ title: e.title, url: e.url, abstract: str(e.abstract), summary: str(e.summary), authors: e.authors || [], published: e.published || "", kind: e.kind, sourceKind: e.sourceKind })); }
+  return feeds.parseXml(t).map(fromAtom);
+}
+async function fetchArxiv() {
+  const base = process.env.ARXIV_API || "https://export.arxiv.org/api/query?", out = [];
+  const qs = [...CFG.queries.map((q) => ({ id: q.id, q: q.q }))];
+  if (has("--people")) for (const p of ontology.people || []) qs.push({ id: `person:${p.id}`, q: `au:"${p.label}"` });
+  for (const [i, q] of qs.entries()) {
+    if (i) await sleep(Number(process.env.WATCH_DELAY_MS ?? 3100)); // arXiv: one request every 3 seconds
+    const url = base.startsWith("fixture://") ? base : `${base}search_query=${encodeURIComponent(q.q)}&sortBy=submittedDate&sortOrder=descending&max_results=${CFG.maxPerQuery}`;
+    try { const items = feeds.parseXml((await feeds.fetchText(url, { timeoutMs: 20000 })).body).map(fromAtom); out.push(...items.map((e) => ({ ...e, query: q.id }))); console.log(`  ${q.id}: ${items.length}`); }
+    catch (e) { console.log(`  ${q.id}: failed (${e.message})`); }
+  }
+  return out;
+}
+// arXiv's Atom <summary> is the paper's abstract, not a paraphrase.
+const fromAtom = (e) => ({ ...e, abstract: String(e.summary || "").trim(), summary: "" });
+// Which text is scored, and the paraphrase's fate. The paraphrase is display only: it never reaches review().
+function readEntry(e) {
+  const abstract = e.abstract || "", summary = e.summary || "";
+  if (!abstract) return { text: summary, read: "paraphrase", note: "scored from the agent's paraphrase (no abstract given)", extra: null, shown: null, withheld: null };
+  const f = summary ? fidelity(abstract, summary) : null;
+  const input = { read: "abstract", abstractSha256: crypto.createHash("sha256").update(abstract).digest("hex"), fidelity: f ? { pass: f.pass, failed: f.failed, version: f.version } : null };
+  const withheld = f && !f.pass ? f.failed[0] : null;
+  return { text: abstract, read: "abstract", note: !summary ? "scored from the abstract" : withheld ? `scored from the abstract; summary withheld: ${withheld}` : "scored from the abstract; summary checked against it",
+    extra: { input }, shown: f && f.pass ? summary : null, withheld, fidelity: f };
+}
+const { arxivId } = require("../lib/publication-identity");
+
+async function main() {
+  const from = val("--from"), dry = has("--dry"), max = Number(val("--max")) || CFG.maxNewPerRun;
+  console.log(`Paper watcher ${dry ? "(dry run) " : ""}${from ? `reading ${from}` : "asking arXiv"}`);
+  let entries = from ? parseEntries(fs.readFileSync(from, "utf8")) : await fetchArxiv();
+  // One entry per arXiv id (several queries can find the same paper); no Twitter/X links.
+  const seen = new Set(); entries = entries.filter((e) => e && e.title && !/(^|\/\/|\.)(twitter\.com|x\.com)\//i.test(e.url || "")).filter((e) => { const k = arxivId(e.url) || e.title.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
+
+  let db = null, saveReview = null, R = require("../modules/review/review");
+  if (!dry) {
+    db = require("../lib/db"); const { createKernel } = require("../kernel/kernel"); const k = createKernel();
+    db.extend({ sql: k.store.schema.join("\n"), columns: k.store.columns }); await db.ready();
+    saveReview = require("../modules/review/store").saveReview;
+  }
+  const Panel = require("../modules/review/panel"), panels = {};
+  let panelModels = [];
+  let advisor = null;
+  try { panelModels = Panel.modelsFromEnv(); advisor = Panel.advisorFromEnv(); } catch (e) { console.log(`panel: ${e.message}`); }
+  if (panelModels.length < Panel.LIMITS.minModels) console.log(`panel: ${panelModels.length} model(s) configured; set PANEL_MODELS to two different models (for example ${Panel.DEFAULT_MODELS}) to compare. Until then each review is marked "panel incomplete" and the rules judge stands.`);
+  const day = new Date().toISOString().slice(0, 10), useHistory = !!from && !dry && !has("--no-history");
+  let replayed = 0;
+  if (useHistory && fs.existsSync(HISTORY)) {
+    for (const f of fs.readdirSync(HISTORY).filter((f) => /^\d{4}-\d{2}-\d{2}\.json$/.test(f) && f < `${day}.json`).sort()) {
+      for (const e of parseEntries(fs.readFileSync(path.join(HISTORY, f), "utf8"))) {
+        const out = await saveReview(db, { kind: e.kind || "paper", title: e.title, text: e.summary, authors: (e.authors || []).join(", "), url: e.url, sourceKind: e.sourceKind || null, at: e.published ? String(e.published).slice(0, 10) : f.slice(0, 10) }, null);
+        if (!out.existing) replayed++;
+      }
+    }
+    if (replayed) console.log(`history: replayed ${replayed} earlier reviews from ${path.relative(root, HISTORY)}`);
+  }
+  // Paper-to-code jobs whose paper already has a Lab example are done.
+  const built = Built.builtArxivIds();
+  if (db) for (const j of await db.all("SELECT id, note FROM learn_jobs WHERE kind = 'paper-to-code' AND status IN ('queued', 'needs-agent')"))
+    if (Built.isBuilt(j.note, built)) await db.run("UPDATE learn_jobs SET status = 'done', output = 'Built as a Lab example (modules/lab/examples.json).', updated_at = ? WHERE id = ?", new Date().toISOString(), j.id);
+  const rows = []; let stored = 0, already = 0;
+  for (const e of entries) {
+    const rd = readEntry(e);
+    const x = { kind: e.kind || "paper", title: e.title, text: rd.text, authors: (e.authors || []).join(", "), url: e.url, sourceKind: e.sourceKind || null, at: e.published ? String(e.published).slice(0, 10) : undefined };
+    if (dry) { const r = R.review(x); rows.push({ e, r, rd, isNew: true }); continue; }
+    if (stored >= max) break;
+    const out = await saveReview(db, x, null, rd.extra);
+    if (out.existing) already++; else stored++;
+    // Judge panel: at least two different models compared with the rules judge, behind identity, prestige and wording
+    // masks (modules/review/panel.js). Only here, in the background, and only with PANEL_MODELS set.
+    if (!out.existing) {
+      const pr = await Panel.panel({ text: R.canonical(`${x.title}\n${x.text}`), rules: out.review, models: panelModels, advisor });
+      const res = { ...out.review, panel: pr, credibility: pr.credibility, verdict: pr.verdict, needsPerson: pr.needsPerson || out.review.needsPerson,
+        ...require("../modules/review/bands").judge(out.review.score, pr.credibility, { kind: out.review.kind }) };
+      res.verdictRule = pr.verdictRule || out.review.verdictRule;
+      await db.run("UPDATE review_docs SET credibility = ?, verdict = ?, needs_person = ?, result = ? WHERE id = ?", pr.credibility, pr.verdict, pr.needsPerson || out.review.needsPerson ? 1 : 0, JSON.stringify(res), out.row.id);
+      out.review = res; out.review.credibility = pr.credibility; out.review.verdict = pr.verdict;
+      panels[pr.status] = (panels[pr.status] || 0) + 1;
+    }
+    rows.push({ e, r: out.review, rd, isNew: !out.existing, docId: out.row.id });
+  }
+  // Paper-to-code: the most credible new papers on the watched topics become Learn studio jobs (an agent does them).
+  const P = CFG.paperToCode, queued = [];
+  // Surveys and position papers have no single method to implement, so they are catalogued but not queued.
+  const cands = rows.filter((x) => x.isNew && !built.has(arxivId(x.e.url)) && !x.r.survey && x.r.kind === "paper" && !/^position\b/i.test(x.e.title) && x.r.credibility >= P.minCredibility && x.r.edges.some((ed) => P.topics.includes(ed.dst)))
+    .sort((a, b) => b.r.credibility + b.r.score - (a.r.credibility + a.r.score)).slice(0, P.maxPerRun);
+  for (const c of cands) {
+    if (!dry) {
+      const note = `Paper: ${c.e.title}\n${c.e.url}\nFrom the daily watcher (review #${c.docId}, ${c.r.qid}: ${c.r.verdict}, score ${c.r.score}, credibility ${c.r.credibility}). Build a CPU toy of the core method with a test, and a Lab example (idea, reproduction, our hypothesis).`;
+      const dup = await db.get("SELECT id FROM learn_jobs WHERE kind = 'paper-to-code' AND note LIKE ?", `%${c.e.url}%`);
+      if (dup) continue;
+      const id = await db.insert("INSERT INTO learn_jobs (kind, note, updated_at) VALUES ('paper-to-code', ?, ?)", note, new Date().toISOString());
+      queued.push({ id, title: c.e.title, url: c.e.url });
+    } else queued.push({ id: null, title: c.e.title, url: c.e.url });
+  }
+
+  fs.mkdirSync(OUT, { recursive: true });
+  if (useHistory && entries.length) {
+    fs.mkdirSync(HISTORY, { recursive: true });
+    const keep = entries.map((e) => ({ kind: e.kind || "paper", sourceKind: e.sourceKind || null, published: e.published || "", title: e.title, url: e.url, summary: e.summary, authors: (e.kind || "paper") === "paper" ? [] : e.authors || [] }));
+    fs.writeFileSync(path.join(HISTORY, `${day}.json`), JSON.stringify(keep, null, 1) + "\n");
+  }
+  const topicsOf = (r) => r.edges.filter((ed) => ed.rel === "about").map((ed) => ed.dst.slice(6)).join(", ");
+  const md = [`# Paper watch, ${day}`, "", `${entries.length} papers found, ${stored} new${dry ? " (dry run: nothing stored)" : ""}, ${already} already in the catalog, ${queued.length} queued for paper-to-code. Scores come from the Review desk's guarded judges; people are matched by name only.`, "",
+    "| Paper | Verdict | Score | Credibility | Band | Topics | New | Read from |", "| --- | --- | --- | --- | --- | --- | --- | --- |",
+    ...rows.sort((a, b) => b.r.credibility - a.r.credibility).map(({ e, r, rd, isNew }) => `| [${e.title.replace(/\|/g, "/")}](${e.url}) | ${r.verdict} | ${r.score} | ${r.credibility} | ${require("../modules/review/bands").digest(r)} | ${topicsOf(r)} | ${isNew ? "yes" : ""} | ${rd.note} |`), "",
+    ...(rows.some((x) => x.rd.shown || x.rd.withheld) ? ["## Agent summaries", "", "Shown only when they pass the fidelity check against the abstract; they never change a score.", "",
+      ...rows.filter((x) => x.rd.shown || x.rd.withheld).map(({ e, rd }) => `- [${e.title}](${e.url}): ${rd.shown ? rd.shown : `summary withheld: ${rd.withheld} (${rd.fidelity.checks.find((c) => c.id === rd.withheld).detail})`}`), ""] : []),
+    "## Queued for paper-to-code", "", ...(queued.length ? queued.map((q) => `- ${q.id ? `job #${q.id}: ` : ""}[${q.title}](${q.url})`) : ["- nothing new qualified today"]), ""];
+  fs.writeFileSync(path.join(OUT, `${day}.md`), md.join("\n"));
+  fs.writeFileSync(path.join(OUT, `${day}.json`), JSON.stringify({ day, found: entries.length, stored, already, queued, papers: rows.map(({ e, r, rd, isNew }) => ({ title: e.title, url: e.url, arxiv: arxivId(e.url), verdict: r.verdict, score: r.score, credibility: r.credibility, topics: topicsOf(r), isNew, qid: r.qid,
+    read: rd.read, note: rd.note, abstractSha256: rd.extra?.input.abstractSha256 || null, summary: rd.shown, summaryWithheld: rd.withheld, fidelity: rd.extra?.input.fidelity || null })) }, null, 2));
+  console.log(`watch: ${entries.length} found, ${stored} new, ${already} already catalogued, ${queued.length} queued for paper-to-code; panel: ${JSON.stringify(panels)} -> out/watch/${day}.md`);
+}
+main().then(() => process.exit(0), (e) => { console.error("watch:", e.message); process.exit(1); });

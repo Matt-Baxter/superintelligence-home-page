@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic newsletter feed (test data). -->
+<rss version="2.0"><channel><title>Sample AI newsletter (test data)</title><link>https://example.org/news</link><description>Test data.</description>
+<item><title>Sample issue: AI agents now automate AI research experiments end to end (test data)</title><link>https://example.org/news/automated-ai-research</link><category>about-superintelligence: yes</category><pubDate>Fri, 06 Nov 2026 10:00:00 GMT</pubDate><description>Synthetic summary of automated AI research: agents that propose, run and evaluate ML experiments.</description></item>
+<item><title>Sample issue: AI helps a bakery plan its orders (test data)</title><link>https://example.org/news/bakery</link><category>about-superintelligence: no</category><pubDate>Fri, 06 Nov 2026 06:00:00 GMT</pubDate><description>A made-up story about AI in a small business.</description></item>
+</channel></rss>

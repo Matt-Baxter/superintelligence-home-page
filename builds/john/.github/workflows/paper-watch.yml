@@ -1,0 +1,62 @@
+# Daily paper watch: find new superintelligence, interpretability and self-improvement papers on arXiv, judge them
+# with the Review desk, catalog them in the knowledge graph and queue paper-to-code jobs (scripts/watch.js).
+# Once a day (the free-tier rule: no cron more often than daily). Free on public repositories.
+# Stores into the site's database when the DATABASE_URL secret is set (a human sets it; agents don't change GitHub
+# settings); otherwise it runs on a throwaway SQLite database and only the digest is kept. GitHub runs scheduled
+# workflows from the default branch, so this starts once it is merged.
+name: Daily paper watch
+on:
+  schedule:
+    - cron: "17 11 * * *"
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Watch arXiv
+        run: node scripts/watch.js
+        env:
+          SITE_PROFILE: extended
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # Judge panel (REQ-034): two models from different makers, set by a human as a repository variable, for
+          # example "groq:llama-3.1-8b-instant,openrouter:google/gemma-3-12b-it:free"; each provider's key is a secret.
+          # Unset, every review is marked "panel incomplete" and the rules judge stands alone.
+          PANEL_MODELS: ${{ vars.PANEL_MODELS }}
+          ADVISOR_MODEL: ${{ vars.ADVISOR_MODEL }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      - name: Judging quality on real reviews
+        run: node scripts/quality.js
+        env:
+          SITE_PROFILE: extended
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - name: Advisor's review (proposals only)
+        run: node scripts/advise.js
+        env:
+          SITE_PROFILE: extended
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ADVISOR_MODEL: ${{ vars.ADVISOR_MODEL }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      - name: Check in
+        run: node scripts/checkin.js
+        env:
+          SITE_PROFILE: extended
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paper-watch
+          path: |
+            out/watch/*.md
+            out/checkin/*.md
+            out/quality/*.md
+            out/advice/*.md
+          retention-days: 14

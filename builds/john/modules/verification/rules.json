@@ -1,0 +1,72 @@
+{
+  "about": "Patterns for the Machine-checked signal (verification.js). Each list is regular-expression sources, matched case-insensitively at word boundaries. 'contextual' terms (like 'formalized') count only when a maths word ('context') is within 'context_window' characters, so 'the deal was formalized' is not a proof claim. Tuned only by scripts/verification-ratchet.js against bench/verification-set.json (train split), and a change is kept only if the held-out split doesn't get worse. Edit by hand only to add a pattern a labelled item shows is missing.",
+  "version": 2,
+  "formal": [
+    "lean ?4",
+    "lean (code|proofs?|formali[sz]ations?|kernel|library|prover)",
+    "(in|into) lean",
+    "coq",
+    "rocq",
+    "isabelle(/hol)?",
+    "agda",
+    "hol light",
+    "proof assistants?",
+    "machine[- ]checked",
+    "computer[- ]checked",
+    "computer[- ]verified",
+    "autoformali[sz]\\w*",
+    "mathlib",
+    "lean (statements?|theorems?|developments?|files?|projects?|results?)"
+  ],
+  "contextual": [
+    "formali[sz](ed|es|ing|ation|ations)",
+    "formally verified",
+    "formal(ly)? verif\\w*"
+  ],
+  "context": [
+    "theorems?",
+    "proofs?",
+    "lemmas?",
+    "conjectures?",
+    "mathematic\\w*",
+    "maths?",
+    "lean",
+    "axioms?",
+    "stacks project",
+    "algebraic geometry"
+  ],
+  "context_window": 80,
+  "reference": [
+    "comparator",
+    "matches? (mathlib|the library)'?s? (own )?statement",
+    "statement (was |is )?(checked|confirmed|matched)",
+    "independent (lean )?kernel",
+    "second (independent )?kernel",
+    "nanoda",
+    "lean4checker",
+    "standard axioms",
+    "no (sorry|sorries)",
+    "zero sorr(y|ies)"
+  ],
+  "outside": [
+    "independent(ly)? (team|researchers?|mathematicians?|check\\w*|audit\\w*|review\\w*|verif\\w*|rebuil\\w*|reproduc\\w*)",
+    "outside (team|researchers?|check\\w*|experts?)",
+    "external(ly)? (audit\\w*|check\\w*|verif\\w*|review\\w*)",
+    "audit(ed|ing)? the (lean|formal)",
+    "third[- ]party (check|audit|verification)"
+  ],
+  "gap": [
+    "weaker (than|statement|claim|result)s?",
+    "does not (correspond|match)",
+    "doesn'?t (correspond|match)",
+    "mistranslat\\w*",
+    "mismatch\\w*",
+    "not semantically faithful",
+    "fidelity gap",
+    "different (theorem|statement) than claimed",
+    "less strong"
+  ],
+  "options": {
+    "gap_counts_as_reference": true
+  }
+}

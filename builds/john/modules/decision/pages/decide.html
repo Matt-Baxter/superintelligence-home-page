@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decide · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css">
+<style>
+  .grid-in { width: 100%; border-collapse: collapse; font-size: 14px; } .grid-in td, .grid-in th { border-bottom: 1px solid var(--line); padding: 6px; vertical-align: top; text-align: left; }
+  .grid-in input { width: 100%; padding: 6px 8px; } .grid-in input.num { width: 70px; } .grid-in .del { width: 1%; }
+  .cell { display: grid; gap: 4px; min-width: 150px; }
+  #external[hidden] { display: none; }
+</style></head>
+<body>
+<main>
+  <div class="pagehead">
+    <div><h1>Decide</h1><p class="muted">Judge a bake-off (or any choice) with a pluggable decision model. Agree on criteria and weights before scoring. Nothing is stored here: copy the result into both pull requests and the contract change log.</p></div>
+    <div class="actions"><button class="btn" id="loadSample" type="button">Load sample (test data)</button></div>
+  </div>
+  <section class="panel">
+    <div class="row"><label>Judge<select id="judge"></select></label><label>Decision<input id="title" placeholder="Bake-off: homepage experience"></label></div>
+    <p class="small muted" id="judgeDesc"></p>
+    <div id="external" hidden>
+      <h3>Result from the external run</h3>
+      <div class="row"><label>Recommendation<select id="extRec"></select></label><label>Ran by<input id="extBy" placeholder="Who ran it"></label><label>When<input id="extAt" type="date"></label></div>
+      <label>Rationale<input id="extWhy" placeholder="Its reasoning, in a sentence or two"></label>
+    </div>
+  </section>
+  <div class="cols">
+    <section class="panel"><h2>Criteria and weights</h2>
+      <table class="grid-in"><thead><tr><th>Criterion</th><th>Weight</th><th><span class="sr-only">Remove</span></th></tr></thead><tbody id="crit"></tbody></table>
+      <div class="actions"><button class="btn" id="addCrit" type="button">Add criterion</button></div><p class="small muted" id="wsum"></p></section>
+    <section class="panel"><h2>Entries</h2>
+      <table class="grid-in"><thead><tr><th>Entry</th><th>Link (PR or preview)</th><th><span class="sr-only">Remove</span></th></tr></thead><tbody id="ents"></tbody></table>
+      <div class="actions"><button class="btn" id="addEnt" type="button">Add entry</button></div></section>
+  </div>
+  <section class="panel"><h2>Scores (0–10) and evidence</h2><div class="tablewrap"><table class="grid-in" id="scores"></table></div>
+    <div class="actions"><button class="btn primary" id="run" type="button">Run judge</button><button class="btn" id="copyMd" type="button" disabled>Copy result as Markdown</button></div>
+    <p class="err" id="err" role="alert"></p></section>
+  <section id="result"></section>
+</main>
+<script src="/js/api.js"></script>
+<script src="/js/jr.js"></script>
+<script>
+let JUDGES = [], state = { title: "", criteria: [], entries: [], scores: {}, external: {} }, last = null;
+const KEY = "si-decide-draft";
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ judge: $("#judge").value, state })); } catch {} };
+const slug = (s, i) => (s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || `item-${i}`;
+function draw() {
+  $("#title").value = state.title || "";
+  $("#crit").innerHTML = state.criteria.map((c, i) => `<tr><td><input data-c="${i}" data-f="label" value="${esc(c.label)}" aria-label="Criterion"></td><td><input class="num" type="number" min="0" data-c="${i}" data-f="weight" value="${esc(c.weight)}" aria-label="Weight"></td><td class="del"><button class="linkish" data-dc="${i}" type="button" aria-label="Remove">✕</button></td></tr>`).join("");
+  $("#ents").innerHTML = state.entries.map((e, i) => `<tr><td><input data-e="${i}" data-f="label" value="${esc(e.label)}" aria-label="Entry"></td><td><input data-e="${i}" data-f="link" value="${esc(e.link || "")}" aria-label="Link"></td><td class="del"><button class="linkish" data-de="${i}" type="button" aria-label="Remove">✕</button></td></tr>`).join("");
+  const w = state.criteria.reduce((a, c) => a + (Number(c.weight) || 0), 0); $("#wsum").textContent = `Weights add up to ${w}${w === 100 ? "." : " (they'll be scaled to 100)."}`;
+  $("#scores").innerHTML = `<thead><tr><th>Criterion</th>${state.entries.map((e) => `<th>${esc(e.label)}</th>`).join("")}</tr></thead><tbody>${state.criteria.map((c) => `<tr><td>${esc(c.label)} <span class="small muted">${esc(c.weight)}%</span></td>${state.entries.map((e) => { const cell = state.scores[e.id]?.[c.id] || {}; return `<td><div class="cell"><input class="num" type="number" min="0" max="10" step="0.5" data-s="${esc(e.id)}|${esc(c.id)}" data-f="score" value="${cell.score ?? ""}" aria-label="Score for ${esc(e.label)}, ${esc(c.label)}"><input data-s="${esc(e.id)}|${esc(c.id)}" data-f="evidence" value="${esc(cell.evidence || "")}" placeholder="Evidence" aria-label="Evidence"></div></td>`; }).join("")}</tr>`).join("")}</tbody>`;
+  $("#extRec").innerHTML = `<option value="">Not entered</option>${state.entries.map((e) => `<option value="${esc(e.id)}" ${state.external.recommendation === e.id ? "selected" : ""}>${esc(e.label)}</option>`).join("")}<option value="merge" ${state.external.recommendation === "merge" ? "selected" : ""}>Merge</option>`;
+  $("#extBy").value = state.external.ranBy || ""; $("#extAt").value = state.external.runAt || ""; $("#extWhy").value = state.external.rationale || "";
+  $$("[data-c]").forEach((i) => (i.onchange = () => { const c = state.criteria[i.dataset.c]; const oldId = c.id; c[i.dataset.f] = i.dataset.f === "weight" ? Number(i.value) : i.value; if (i.dataset.f === "label") { c.id = slug(i.value, i.dataset.c); for (const e of Object.values(state.scores)) if (e[oldId]) { e[c.id] = e[oldId]; delete e[oldId]; } } save(); draw(); }));
+  $$("[data-e]").forEach((i) => (i.onchange = () => { const e = state.entries[i.dataset.e]; const oldId = e.id; e[i.dataset.f] = i.value; if (i.dataset.f === "label") { e.id = slug(i.value, i.dataset.e); if (state.scores[oldId]) { state.scores[e.id] = state.scores[oldId]; if (e.id !== oldId) delete state.scores[oldId]; } } save(); draw(); }));
+  $$("[data-s]").forEach((i) => (i.onchange = () => { const [e, c] = i.dataset.s.split("|"); ((state.scores[e] ||= {})[c] ||= {})[i.dataset.f] = i.dataset.f === "score" ? (i.value === "" ? null : Number(i.value)) : i.value; save(); }));
+  $$("[data-dc]").forEach((b) => (b.onclick = () => { state.criteria.splice(b.dataset.dc, 1); save(); draw(); }));
+  $$("[data-de]").forEach((b) => (b.onclick = () => { state.entries.splice(b.dataset.de, 1); save(); draw(); }));
+}
+function pickJudge() { const j = JUDGES.find((x) => x.id === $("#judge").value); $("#judgeDesc").textContent = j ? `${j.description} (module: ${j.module})` : ""; $("#external").hidden = j?.method !== "external"; save(); }
+$("#judge").onchange = pickJudge;
+$("#title").onchange = () => { state.title = $("#title").value; save(); };
+[["#extRec", "recommendation"], ["#extBy", "ranBy"], ["#extAt", "runAt"], ["#extWhy", "rationale"]].forEach(([s, k]) => ($(s).onchange = () => { state.external[k] = $(s).value; save(); }));
+$("#addCrit").onclick = () => { state.criteria.push({ id: `criterion-${state.criteria.length + 1}`, label: `Criterion ${state.criteria.length + 1}`, weight: 0 }); draw(); };
+$("#addEnt").onclick = () => { state.entries.push({ id: `entry-${state.entries.length + 1}`, label: `Entry ${state.entries.length + 1}` }); draw(); };
+$("#loadSample").onclick = async () => { const r = await api("/api/admin/decision/judges"); state = { external: {}, ...JSON.parse(JSON.stringify(r.sample)) }; save(); draw(); };
+$("#run").onclick = async () => {
+  $("#err").textContent = "";
+  try {
+    const j = JUDGES.find((x) => x.id === $("#judge").value);
+    const body = { ...state, external: j.method === "external" ? state.external : undefined };
+    const r = await api(`/api/admin/decision/judges/${j.id}/run`, { body });
+    last = { judge: j, r }; $("#copyMd").disabled = false;
+    JR.render($("#result"), r.spec, jrHandlers()); $("#result").scrollIntoView({ behavior: "smooth" });
+  } catch (e) { showErr($("#err"), e); }
+};
+$("#copyMd").onclick = (e) => {
+  const { judge, r } = last, res = r.result;
+  const md = [`**${state.title || "Decision"}**, judged by ${judge.name} (${judge.method}) on ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`, "",
+    `Recommendation: **${res.recommendation ? res.recommendation.label : "not entered"}**${res.recommendation ? `. ${res.recommendation.reason}` : ""}`,
+    res.agreement ? `Cross-check: ${res.agreement.note}` : "", "",
+    `| Entry | ${res.criteria.map((c) => `${c.label} (${c.weight}%)`).join(" | ")} | Total |`, `| --- | ${res.criteria.map(() => "---").join(" | ")} | --- |`,
+    ...res.totals.map((t) => `| ${t.label} | ${t.perCriterion.map((p) => p.score ?? "—").join(" | ")} | ${t.total} |`), "",
+    ...(res.warnings.length ? ["Open warnings:", ...res.warnings.map((w) => `- ${w}`)] : []), "", "Sign-off: John ☐ · Matt ☐"].filter((x, i, a) => x !== "" || a[i - 1] !== "").join("\n");
+  copy(md, e.currentTarget);
+};
+requireUser().then(async (u) => {
+  if (!u.admin) { $("main").innerHTML = '<div class="panel"><h1>Decide</h1><p>Deciding is for admins.</p></div>'; return; }
+  const r = await api("/api/admin/decision/judges"); JUDGES = r.judges;
+  $("#judge").innerHTML = JUDGES.map((j) => `<option value="${esc(j.id)}">${esc(j.name)}${j.method === "external" ? " (external)" : ""}</option>`).join("");
+  let draft = null; try { draft = JSON.parse(localStorage.getItem(KEY) || "null"); } catch {}
+  if (draft?.state?.criteria) { state = { external: {}, ...draft.state }; if (JUDGES.some((j) => j.id === draft.judge)) $("#judge").value = draft.judge; }
+  else state = { title: "Bake-off: homepage experience", criteria: [], entries: [{ id: "bakeoff-claude-matt", label: "bakeoff/claude-matt" }, { id: "bakeoff-v0-john", label: "bakeoff/v0-john" }], scores: {}, external: {} };
+  draw(); pickJudge();
+});
+</script>
+</body></html>

@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Explainer · Superintelligence Homepage</title>
+<style>
+  /* A dark, math-film look: one quiet background, white type, one teal accent, motion that explains. */
+  :root { --bg: #0f1115; --fg: #eef0f3; --muted: #9aa3ad; --accent: #ffffff; --line: #2a2f37;
+    --ease-out: cubic-bezier(.23, 1, .32, 1); --ease-in-out: cubic-bezier(.77, 0, .175, 1);
+    --font: -apple-system, "Segoe UI", system-ui, Helvetica, Arial, sans-serif; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: var(--font); }
+  .stage { position: fixed; inset: 0; display: grid; place-items: center; padding: 6vh 8vw 14vh; }
+  .scene { position: absolute; inset: 6vh 8vw 14vh; display: grid; place-content: center; gap: 2.4vh; text-align: center; opacity: 0; }
+  .scene.on { opacity: 1; }
+  .title { font-size: clamp(34px, 7vw, 88px); font-weight: 650; letter-spacing: -0.02em; }
+  .sub { font-size: clamp(16px, 2.4vw, 28px); color: var(--muted); }
+  .say { font-size: clamp(20px, 3.4vw, 42px); line-height: 1.35; max-width: 30ch; margin: 0 auto; }
+  .say.small { font-size: clamp(16px, 2.4vw, 28px); max-width: 44ch; color: #d5dae0; }
+  .kicker { font-size: clamp(12px, 1.6vw, 18px); text-transform: uppercase; letter-spacing: .14em; color: var(--accent); }
+  .analogy .say { font-style: italic; }
+  svg.g { width: min(1100px, 84vw); height: auto; overflow: visible; }
+  svg.g text { fill: var(--fg); font: 600 20px var(--font); }
+  svg.g .lab { fill: var(--muted); font: 14px var(--font); }
+  svg.g path { fill: none; stroke: var(--accent); stroke-width: 2.2; stroke-linecap: round; }
+  svg.g rect { fill: none; stroke: var(--fg); stroke-width: 2; }
+  .evbars { display: grid; gap: 1.6vh; width: min(1000px, 84vw); text-align: left; }
+  .evrow { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 4fr) 3ch minmax(0, 2fr); gap: 1.4vw; align-items: center; font-size: clamp(13px, 1.6vw, 19px); }
+  .evrow .bl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .evrow .bv { font-variant-numeric: tabular-nums; text-align: right; } .evrow .bn { color: var(--muted); }
+  .evrow .bt { height: 10px; background: var(--line); border-radius: 4px; overflow: hidden; } .evrow .bt i { display: block; height: 100%; background: var(--accent); }
+  .q { font-size: clamp(20px, 3vw, 36px); max-width: 32ch; margin: 0 auto; }
+  .opts { display: grid; gap: 1.4vh; justify-items: start; margin: 0 auto; text-align: left; }
+  .opt { font-size: clamp(16px, 2.2vw, 26px); padding: .4em .8em; border: 1.5px solid var(--line); border-radius: 10px; }
+  .opt.right { border-color: var(--accent); color: var(--accent); }
+  .why { font-size: clamp(14px, 1.8vw, 22px); color: var(--muted); max-width: 46ch; margin: 0 auto; }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 12px; align-items: center; padding: 14px 18px; }
+  .bar button { font: inherit; font-size: 14px; color: var(--fg); background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+  .bar button:active { transform: scale(.97); }
+  .dots { display: flex; gap: 6px; } .dots i { width: 22px; height: 3px; border-radius: 3px; background: var(--line); } .dots i.on { background: var(--accent); }
+  .brand { margin-left: auto; font-size: 13px; color: var(--muted); }
+  .rec .bar button, .rec .dots { display: none; }
+  @media (prefers-reduced-motion: no-preference) {
+    .scene { transition: opacity 320ms var(--ease-out); }
+    .scene:not(.on) { transition-duration: 220ms; } /* exits about a third shorter */
+    .scene.on .reveal { animation: reveal 900ms var(--ease-out) both; animation-delay: calc(var(--d, 0) * 1ms); } /* unslop-ok: film pacing for narration, not everyday UI */
+    .scene.on .rise { animation: rise 360ms var(--ease-out) both; animation-delay: calc(var(--d, 0) * 1ms); }
+    .scene.on svg.g path { stroke-dasharray: var(--len); stroke-dashoffset: var(--len); animation: draw 380ms var(--ease-in-out) forwards; animation-delay: calc(var(--d, 0) * 1ms); } /* unslop-ok: arrows draw along their arcs over 380ms */
+    .opt.right { animation: ping 360ms var(--ease-out) 1; }
+  }
+  @keyframes reveal { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  @keyframes ping { from { box-shadow: 0 0 0 0 rgba(94, 200, 184, .45); } to { box-shadow: 0 0 0 12px rgba(94, 200, 184, 0); } }
+  @media (prefers-reduced-motion: reduce) { .scene { transition: none; } }
+</style></head>
+<body>
+<div class="stage" id="stage" aria-live="polite"></div>
+<div class="bar"><button type="button" id="play">Pause</button><button type="button" id="again">Restart</button><div class="dots" id="dots"></div><span class="brand">Superintelligence Homepage · Learn</span></div>
+<script>
+const P = new URLSearchParams(location.search), REC = P.get("record") === "1";
+if (REC) document.body.classList.add("rec");
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+let SB, idx = -1, timer = null, playing = true, done = false;
+
+function graphSvg(s) {
+  const W = 1000, H = 520, cx = W / 2, cy = H / 2, n = Math.max(1, s.nodes.length);
+  const nodes = s.nodes.map((x, i) => { const a = -Math.PI / 2 + (i / n) * 2 * Math.PI; return { ...x, x: cx + 380 * Math.cos(a), y: cy + 200 * Math.sin(a) }; });
+  const arc = (x, y) => { const mx = (cx + x) / 2, my = (cy + y) / 2, dx = x - cx, dy = y - cy, k = 0.18; return `M${cx},${cy} Q${mx - dy * k},${my + dx * k} ${x},${y}`; };
+  const len = (x, y) => Math.ceil(Math.hypot(x - cx, y - cy) * 1.08);
+  return `<svg class="g" viewBox="0 0 ${W} ${H}" aria-hidden="true">
+    ${nodes.map((p, i) => `<path d="${arc(p.x, p.y)}" style="--len:${len(p.x, p.y)};--d:${500 + i * 260}"/>`).join("")}
+    <rect class="rise" x="${cx - 170}" y="${cy - 32}" width="340" height="64" rx="12" style="fill:var(--bg)"/><text class="rise" x="${cx}" y="${cy + 7}" text-anchor="middle">${esc(s.center)}</text>
+    ${nodes.map((p, i) => `<g class="rise" style="--d:${760 + i * 260}"><text x="${p.x}" y="${p.y + (p.y < cy ? -14 : 26)}" text-anchor="middle">${esc(p.name)}</text><text class="lab" x="${p.x}" y="${p.y + (p.y < cy ? -36 : 46)}" text-anchor="middle">${esc(p.label)}</text></g>`).join("")}
+  </svg>`;
+}
+function sceneHtml(s) {
+  if (s.kind === "title") return `<div class="title reveal">${esc(s.text)}</div><div class="sub rise" style="--d:500">${esc(s.sub)}</div>`;
+  if (s.kind === "analogy") return `<div class="kicker rise">An analogy</div><div class="say reveal" style="--d:200">${esc(s.text)}</div>`;
+  if (s.kind === "graph") return `<div class="kicker rise">How it connects</div>${s.nodes.length ? graphSvg(s) : `<div class="say">${esc(s.center)}</div>`}`;
+  if (s.kind === "bars") return `<div class="kicker rise">${esc(s.title)}</div><div class="evbars">${s.bars.map((b, i) => `<div class="evrow rise" style="--d:${200 + i * 160}"><span class="bl">${esc(b.label)}</span><span class="bt"><i style="width:${Math.max(2, Math.min(100, b.value))}%"></i></span><span class="bv">${b.value}</span><span class="bn">${esc(b.note || "")}</span></div>`).join("")}</div>`;
+  if (s.kind === "question") return `<div class="kicker rise">Check yourself</div><div class="q rise" style="--d:150">${esc(s.text)}</div><div class="opts">${s.options.map((o, i) => `<div class="opt rise" data-i="${i}" style="--d:${400 + i * 120}">${String.fromCharCode(65 + i)}. ${esc(o)}</div>`).join("")}</div><div class="why" hidden>${esc(s.why)}</div>`;
+  return `${s.kicker ? `<div class="kicker rise">${esc(s.kicker)}</div>` : s.small ? '<div class="kicker rise">A little deeper</div>' : ""}<div class="say ${s.small ? "small" : ""} reveal" style="--d:150">${esc(s.text)}</div>`;
+}
+function show(i) {
+  clearTimeout(timer); idx = i;
+  document.querySelectorAll(".scene").forEach((el, k) => el.classList.toggle("on", k === i)); // old fades out while new fades in (overlap)
+  document.querySelectorAll("#dots i").forEach((d, k) => d.classList.toggle("on", k <= i));
+  const s = SB.scenes[i], el = document.querySelectorAll(".scene")[i];
+  if (s.kind === "question") setTimeout(() => { const r = el.querySelector(`[data-i="${s.answer}"]`); r.classList.add("right"); el.querySelector(".why").hidden = false; }, Math.max(1500, s.seconds * 1000 - 3200));
+  if (playing) timer = setTimeout(() => (i + 1 < SB.scenes.length ? show(i + 1) : finish()), s.seconds * 1000);
+}
+function finish() { done = true; window.__explainerDone = true; document.getElementById("play").textContent = "Play"; playing = false; }
+async function load() {
+  // ?c=<concept> plays a concept's storyboard; ?d=<topic> plays a topic dossier's (modules/review/dossier.js).
+  const id = P.get("c") || "attention", topic = P.get("d");
+  const stage = document.getElementById("stage"); stage.setAttribute("aria-busy", "true"); stage.innerHTML = `<p class="loading">Loading the explainer…</p>`;
+  const r = await fetch(topic ? `/api/review/dossier/${encodeURIComponent(topic)}/storyboard` : `/api/learn/explainer/${encodeURIComponent(id)}`); if (!r.ok) { stage.removeAttribute("aria-busy"); document.getElementById("stage").innerHTML = `<div class="say">${topic ? "That topic wasn't found." : "That concept wasn't found."}</div>`; return; }
+  SB = (await r.json()).storyboard; document.title = `${SB.title} · Explainer`;
+  document.getElementById("stage").innerHTML = SB.scenes.map((s) => `<section class="scene">${sceneHtml(s)}</section>`).join("");
+  document.getElementById("dots").innerHTML = SB.scenes.map(() => "<i></i>").join("");
+  stage.removeAttribute("aria-busy");
+  window.__explainerSeconds = SB.scenes.reduce((a, s) => a + s.seconds, 0);
+  requestAnimationFrame(() => show(0));
+}
+document.getElementById("play").onclick = (e) => { playing = !playing; e.target.textContent = playing ? "Pause" : "Play"; if (playing) (done ? (done = false, show(0)) : show(idx)); else clearTimeout(timer); };
+document.getElementById("again").onclick = () => { playing = true; done = false; document.getElementById("play").textContent = "Pause"; show(0); };
+addEventListener("keydown", (e) => { if (e.key === " ") { e.preventDefault(); document.getElementById("play").click(); } if (e.key === "ArrowRight" && idx + 1 < SB.scenes.length) show(idx + 1); if (e.key === "ArrowLeft" && idx > 0) show(idx - 1); });
+load();
+</script>
+</body></html>

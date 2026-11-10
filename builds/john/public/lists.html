@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reading lists · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css"></head>
+<body>
+<main id="all" hidden>
+  <div class="pagehead"><div><h1>Reading lists</h1><p class="muted">Curated sets of stories, for a reading group, a lab, or yourself. Add stories from any story's page.</p></div></div>
+  <div class="cols side">
+    <section class="panel"><ul class="list" id="lists"></ul></section>
+    <form class="panel" id="newForm">
+      <h2>New list</h2>
+      <label>Title<input id="title" required placeholder="Week 10: agents and evals"></label>
+      <label>Description <span class="small">(optional)</span><textarea id="desc" style="min-height:64px"></textarea></label>
+      <label style="display:flex;flex-direction:row;gap:6px;align-items:center;color:var(--fg)"><input type="checkbox" id="pub" checked style="width:auto"> Anyone signed in can see and follow it</label>
+      <div class="actions"><button class="btn primary" type="submit">Create</button></div>
+      <p class="err" id="err" role="alert"></p>
+    </form>
+  </div>
+</main>
+<main id="one" hidden>
+  <div class="pagehead">
+    <div><p class="small"><a href="/lists">← All lists</a></p><h1 id="lTitle"></h1><p class="muted" id="lMeta"></p></div>
+    <div class="actions"><button class="btn" id="follow" type="button"></button><button class="btn danger" id="del" type="button" hidden>Delete list</button></div>
+  </div>
+  <ol class="feed" id="items"></ol>
+</main>
+<script src="/js/api.js"></script>
+<script>
+const id = Number(params.get("id")); let confirmDel = false;
+async function loadAll() {
+  $("#all").hidden = false; const { lists } = await api("/api/lists");
+  $("#lists").innerHTML = lists.length ? lists.map((l) => `<li><a class="item" href="/lists?id=${l.id}"><strong>${esc(l.title)}</strong><span class="small muted">${esc(l.owner)}${l.mine ? " (you)" : ""} · ${l.items} stor${l.items === 1 ? "y" : "ies"} · ${l.followers} follower${l.followers === 1 ? "" : "s"}${l.public ? "" : " · private"}${l.following ? " · following" : ""}</span>${l.description ? `<span class="small">${esc(l.description)}</span>` : ""}</a></li>`).join("") : `<li class="empty">No lists yet.</li>`;
+}
+async function loadOne() {
+  $("#one").hidden = false; const { list, stories } = await api(`/api/lists/${id}`);
+  document.title = list.title + " · Reading lists";
+  $("#lTitle").textContent = list.title; $("#lMeta").textContent = `${list.owner}${list.mine ? " (you)" : ""} · ${stories.length} stor${stories.length === 1 ? "y" : "ies"}${list.description ? " · " + list.description : ""}`;
+  $("#follow").hidden = list.mine || !list.public; $("#follow").textContent = list.following ? "Following ✓" : "Follow";
+  $("#del").hidden = !list.mine;
+  $("#items").innerHTML = ""; stories.forEach((s) => $("#items").append(storyCard(s, { listNote: s.listNote })));
+  if (!stories.length) $("#items").innerHTML = `<li class="empty">Empty so far. Open any story and tick this list to add it.</li>`;
+}
+$("#newForm").onsubmit = async (e) => { e.preventDefault(); try { const r = await api("/api/lists", { body: { title: $("#title").value, description: $("#desc").value, public: $("#pub").checked } }); location.href = `/lists?id=${r.id}`; } catch (err) { showErr($("#err"), err); } };
+$("#follow").onclick = async () => { const r = await api(`/api/lists/${id}/follow`, { method: "POST" }); $("#follow").textContent = r.following ? "Following ✓" : "Follow"; };
+$("#del").onclick = async () => { if (!confirmDel) { confirmDel = true; $("#del").textContent = "Click again to delete"; setTimeout(() => { confirmDel = false; $("#del").textContent = "Delete list"; }, 3000); return; } await api(`/api/lists/${id}`, { method: "DELETE" }); location.href = "/lists"; };
+requireUser().then(() => (id ? loadOne() : loadAll())).catch((e) => { document.querySelector("main").hidden = false; });
+</script>
+</body></html>
