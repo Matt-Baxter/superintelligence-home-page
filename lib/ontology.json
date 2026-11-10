@@ -318,6 +318,43 @@
       ]
     },
     {
+      "id": "formal-verification",
+      "label": "Formal verification",
+      "parent": "math",
+      "terms": [
+        "autoformaliz*",
+        "autoformalis*",
+        "proof assistant*",
+        "machine-checked",
+        "computer-checked",
+        "computer-verified",
+        "formally verified",
+        "lean proof*",
+        "lean code",
+        "lean formaliz*",
+        "lean formalis*",
+        "mathlib",
+        "isabelle/hol",
+        "coq proof*",
+        "lean 4",
+        "lean4",
+        "lean prover",
+        "lean statement*",
+        "lean theorem*",
+        "lean development*",
+        "proof in lean",
+        "proofs in lean",
+        "theorem in lean",
+        "written in lean",
+        "formalized in lean",
+        "formalised in lean",
+        "into lean",
+        "coq",
+        "isabelle",
+        "formal statement*"
+      ]
+    },
+    {
       "id": "long-horizon",
       "label": "Long-horizon autonomy",
       "parent": "agents",
@@ -550,6 +587,14 @@
       "terms": [
         "ai futures project",
         "ai 2027"
+      ]
+    },
+    {
+      "id": "axiom-math",
+      "label": "Axiom Math",
+      "terms": [
+        "axiom math",
+        "axiommath"
       ]
     }
   ],

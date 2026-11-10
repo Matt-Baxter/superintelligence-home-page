@@ -102,6 +102,7 @@ try {
   sh("node test/spec-status-unit.js"); sh("node test/sync-source-unit.js"); sh("node --no-warnings test/scope-admission.js");
   sh("node test/expr-unit.js"); sh("node test/lab-unit.js"); sh("node test/review-unit.js"); sh("node test/papers-unit.js"); sh("node test/watch-unit.js"); sh("node test/project-sync-unit.js"); sh("node test/dossier-unit.js"); sh("node test/sources-unit.js"); sh("node test/panel-unit.js"); sh("node test/quality-unit.js"); sh("node --no-warnings test/research-feed.js"); sh("node --no-warnings test/rigor-badge.js");
   sh("node test/project-specs-unit.js");
+  sh("node test/verification-unit.js");
   const ex = sh("node scripts/expr-check.js --only=node").trim().split("\n")[0].replace(/^✓ node\s+/, "");
   const sc = sh("node scripts/schema.js check").trim().split("\n")[0].replace(/^✓ up to date\s+/, "");
   ok("Rules and schemas", `si-expr ${ex} vectors; schema/gen ${sc} current`);

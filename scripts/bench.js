@@ -82,6 +82,14 @@ const SUITES = {
     const rp = P.runners.find((r) => r.id === "roleplay-rsi"), rq = (m) => rp.run({ meta: m, edit_bound: 3, judge_noise: 0.2, rounds: 30, turns: 200, seed: 7 }).metrics.bad_rate;
     const moe = P.runners.find((r) => r.id === "moe-sae-attribution").run({ router_info: 0, leak: 0.1, enc_noise: 0.2, tokens: 400, seed: 11 }).metrics;
     const cv = P.runners.find((r) => r.id === "causal-vs-correlational"), cr = (m) => cv.run({ method: m, rho: 0.9, probe_noise: 1.5, dims: 48, features: 8, trials: 30, seed: 11 }).metrics.confound_rate;
+    const ml = P.runners.find((r) => r.id === "monitor-leak-rl"), me = (l) => ml.run({ leak: l, accuracy: 0.95, easy_share: 0, steps: 300, batch: 32, seed: 13 }).metrics.evaded;
+    const ag = P.runners.find((r) => r.id === "autoformalize-gate"), af = (g) => ag.run({ gate: g, power: 1, subtle_blind: 0, difficulty: 0.6, steps: 300, batch: 32, seed: 17 }).metrics.weakened_share;
+    // The closed-form comparator threshold against the simulation: smallest power (0.05 grid) with weakened share < 0.5.
+    const thErr = Math.max(...[0.4, 0.6, 0.8].map((d) => { const pred = P.comparatorThreshold(d); let sim = 1.05;
+      for (let k = Math.max(0, Math.floor(pred * 20) - 2); k <= 20; k++) if (ag.run({ gate: 1, power: k / 20, subtle_blind: 0, difficulty: d, steps: 600, batch: 32, seed: 17 }).metrics.weakened_share < 0.5) { sim = k / 20; break; }
+      return Math.abs(sim - pred); }));
+    const lf = P.runners.find((r) => r.id === "library-fidelity"), lib = (st) => lf.run({ strategy: st, budget: 0.1, mistranslate: 0.05, def_share: 0.25, nodes: 400, seed: 29 }).metrics.contaminated;
+    const rd = P.runners.find((r) => r.id === "recursive-drift"), keep = (a) => rd.run({ anchor_every: a, power: 0.9, difficulty: 0.6, generations: 12, steps: 200, batch: 32, seed: 23 }).metrics.claim_retained;
     return {
       "papers.hidden_eval_hack_drop": { value: Math.round(drop * 1000) / 1000, better: "higher", tol: 0.02, about: "drop in the quirk share when a self-improving agent is judged on hidden evaluations (arXiv 2609.26457 toy)" },
       "papers.recompute_evasion": { value: ev, better: "lower", tol: 0, about: "undetected exploits with independent recomputation (arXiv 2609.28614 toy)" },
@@ -89,6 +97,28 @@ const SUITES = {
       "papers.roleplay_meta_bad_drop": { value: Math.round((rq(0) - rq(1)) * 1000) / 1000, better: "higher", tol: 0.02, about: "drop in the bad-reply rate when a role-play updater refines its own repair rules (arXiv 2611.07469 toy)" },
       "papers.moe_contrib_advantage": { value: moe.advantage, better: "higher", tol: 0.05, about: "how much more often crediting SAE latents by per-expert contribution, rather than gate weight, names the owning expert (arXiv 2611.08089 toy)" },
       "papers.causal_check_decoy_drop": { value: Math.round((cr(0) - cr(1)) * 1000) / 1000, better: "higher", tol: 0.02, about: "drop in claims naming a co-occurring decoy feature when features are credited by ablation instead of correlation (arXiv 2611.08438 toy)" },
+      "papers.monitor_leak_evasion_rise": { value: Math.round((me(1) - me(0)) * 1000) / 1000, better: "higher", tol: 0.02, about: "rise in the share of hacks a monitor misses when its verdict is fed into the RL reward instead of only watching (arXiv 2611.09828 toy)" },
+      "papers.comparator_threshold_error": { value: Math.round(thErr * 1000) / 1000, better: "lower", tol: 0.05, about: "largest gap between the closed-form comparator threshold, 1 - P(claim compiles) / P(easiest weakening compiles), and the simulated one at difficulties 0.4, 0.6, 0.8 (grid 0.05)" },
+      "papers.self_reference_leak": { value: Math.round((keep(1) - keep(0)) * 1000) / 1000, better: "higher", tol: 0.01, about: "claim strength lost over 12 generations of self-improvement when each generation checks against its own output instead of the original claim, comparator above threshold (recursive-drift toy)" },
+      "papers.foundations_first_gain": { value: Math.round((lib(0) - lib(2)) * 1000) / 1000, better: "higher", tol: 0.01, about: "less of a formal library resting on a wrong statement when a 10% review budget checks foundations first instead of the last results (library-fidelity toy)" },
+      "papers.comparator_weakening_drop": { value: Math.round((af(0) - af(1)) * 1000) / 1000, better: "higher", tol: 0.02, about: "drop in the share of accepted proofs that prove a weaker statement when a comparator checks the statement, versus rewarding compiling alone (autoformalize-gate toy; arXiv 2610.08144)" },
+    };
+  },
+  verification: () => {
+    // The Machine-checked signal (modules/verification) on its labelled set. Held-out is reported, never tuned on
+    // (scripts/verification-ratchet.js tunes on train only).
+    const { score } = require("../modules/verification/evaluate"), rules = require("../modules/verification/rules.json");
+    const items = JSON.parse(fs.readFileSync(path.join(DIR, "verification-set.json"), "utf8")).items;
+    const h = score(rules, items.filter((x) => x.split === "heldout")).metrics, all = score(rules, items).metrics, n = items.length;
+    // Alignment: the core feed tags topics from ontology terms, the signal from rules.json; they should agree.
+    const { tag } = require("../lib/tagger"), { check } = require("../modules/verification/verification");
+    const agree = Math.round((items.filter((x) => tag(x.text, "").topics.some((t) => t.id === "formal-verification") === (check(x.text).rung.id !== "none")).length / n) * 1000) / 1000;
+    return {
+      "verification.heldout_rung_accuracy": { value: h.rung_accuracy, better: "higher", tol: 0, about: `rung (none, claimed, statement checked, checked outside) on the held-out split (${items.filter((x) => x.split === "heldout").length} items)` },
+      "verification.heldout_gap_accuracy": { value: h.gap_accuracy, better: "higher", tol: 0, about: "fidelity gap flagged or not, held-out split" },
+      "verification.false_formal": { value: all.false_formal, better: "lower", tol: 0, about: `share of sentences with no proof claim that get credit for one ("a lean team", "the deal was formalized"), all ${n} items` },
+      "verification.topic_agreement": { value: agree, better: "higher", tol: 0, about: `share of labelled items where the feed's Formal verification topic (lib/ontology.json terms) agrees with the Machine-checked rules (${n} items)` },
+      "verification.invariance": { value: all.invariance, better: "higher", tol: 0.01, about: "share of harmless rewordings (case, spacing, synonyms) that keep the judgement, all items" },
     };
   },
   analysis: () => {

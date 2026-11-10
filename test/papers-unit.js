@@ -35,7 +35,13 @@ ok(JSON.stringify(cq({})) === JSON.stringify(abl), "causal-check toy is determin
 ok(cor.confound_rate > abl.confound_rate + 0.1, `crediting by correlation names the co-occurring decoy far more often than ablation (${abl.confound_rate} -> ${cor.confound_rate})`);
 ok(indep.confound_rate < 0.05 && indep.accuracy > 0.9, `without co-occurrence, correlation is right (${indep.accuracy}), so the decoy is what fools it`);
 ok(abl.accuracy < 0.95 && abl.passes > cor.passes, `ablation costs a forward pass per feature and is only as good as the blurred direction it removes (accuracy ${abl.accuracy})`);
-const ex = ["rsi-hidden-evals", "rrsi-edit-budget", "oversight-recompute", "cosine-sae", "roleplay-bounded-rsi", "moe-sae-expert-split", "interp-causal-check"].map((id) => [id, L.runExample(id)]);
+const ml = P.runners.find((r) => r.id === "monitor-leak-rl"), mlq = (o) => ml.run({ leak: 1, accuracy: 0.95, easy_share: 0, steps: 300, batch: 32, seed: 13, ...o }).metrics;
+const full = mlq({}), none = mlq({ leak: 0 }), easy = mlq({ easy_share: 0.5 });
+ok(JSON.stringify(mlq({})) === JSON.stringify(full), "monitor-leak toy is deterministic");
+ok(full.hack_rate < none.hack_rate - 0.3, `feeding the monitor's verdict into the reward suppresses hacking (${none.hack_rate} -> ${full.hack_rate})`);
+ok(full.evaded > none.evaded + 0.2, `...but teaches the policy to evade the monitor (missed hacks ${none.evaded} -> ${full.evaded})`);
+ok(easy.hack_rate < full.hack_rate - 0.3, `easier training problems make honest solving pay and cut hacking (${full.hack_rate} -> ${easy.hack_rate})`);
+const ex = ["rsi-hidden-evals", "rrsi-edit-budget", "oversight-recompute", "cosine-sae", "roleplay-bounded-rsi", "moe-sae-expert-split", "interp-causal-check", "reward-hack-monitor-leak"].map((id) => [id, L.runExample(id)]);
 ok(ex.every(([, r]) => r.example.source && /^https:\/\/arxiv\.org\/abs\/\d{4}\.\d{4,5}$/.test(r.example.source.url)), "every paper example links its arXiv source");
 ok(ex.filter(([, r]) => !r.verdict.supported).map(([id]) => id).join() === "rrsi-edit-budget,roleplay-bounded-rsi,moe-sae-expert-split", "the edit-budget, looser-bound and noisy-encoder hypotheses are kept as refuted at toy scale");
 console.log(`\npapers unit: ${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

@@ -61,7 +61,7 @@
       "about": "points the same attack gains on the unguarded judge (the attack is real)"
     },
     "review.ms_per_doc": {
-      "value": 10.7,
+      "value": 11.5,
       "better": "info",
       "about": "time to review one item"
     },
@@ -148,6 +148,66 @@
       "better": "higher",
       "tol": 0.02,
       "about": "drop in claims naming a co-occurring decoy feature when features are credited by ablation instead of correlation (arXiv 2611.08438 toy)"
+    },
+    "papers.monitor_leak_evasion_rise": {
+      "value": 0.35,
+      "better": "higher",
+      "tol": 0.02,
+      "about": "rise in the share of hacks a monitor misses when its verdict is fed into the RL reward instead of only watching (arXiv 2611.09828 toy)"
+    },
+    "papers.comparator_threshold_error": {
+      "value": 0.049,
+      "better": "lower",
+      "tol": 0.05,
+      "about": "largest gap between the closed-form comparator threshold, 1 - P(claim compiles) / P(easiest weakening compiles), and the simulated one at difficulties 0.4, 0.6, 0.8 (grid 0.05)"
+    },
+    "papers.self_reference_leak": {
+      "value": 0.049,
+      "better": "higher",
+      "tol": 0.01,
+      "about": "claim strength lost over 12 generations of self-improvement when each generation checks against its own output instead of the original claim, comparator above threshold (recursive-drift toy)"
+    },
+    "papers.foundations_first_gain": {
+      "value": 0.086,
+      "better": "higher",
+      "tol": 0.01,
+      "about": "less of a formal library resting on a wrong statement when a 10% review budget checks foundations first instead of the last results (library-fidelity toy)"
+    },
+    "papers.comparator_weakening_drop": {
+      "value": 0.999,
+      "better": "higher",
+      "tol": 0.02,
+      "about": "drop in the share of accepted proofs that prove a weaker statement when a comparator checks the statement, versus rewarding compiling alone (autoformalize-gate toy; arXiv 2610.08144)"
+    },
+    "verification.heldout_rung_accuracy": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "rung (none, claimed, statement checked, checked outside) on the held-out split (26 items)"
+    },
+    "verification.heldout_gap_accuracy": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "fidelity gap flagged or not, held-out split"
+    },
+    "verification.false_formal": {
+      "value": 0,
+      "better": "lower",
+      "tol": 0,
+      "about": "share of sentences with no proof claim that get credit for one (\"a lean team\", \"the deal was formalized\"), all 47 items"
+    },
+    "verification.topic_agreement": {
+      "value": 0.936,
+      "better": "higher",
+      "tol": 0,
+      "about": "share of labelled items where the feed's Formal verification topic (lib/ontology.json terms) agrees with the Machine-checked rules (47 items)"
+    },
+    "verification.invariance": {
+      "value": 0.956,
+      "better": "higher",
+      "tol": 0.01,
+      "about": "share of harmless rewordings (case, spacing, synonyms) that keep the judgement, all items"
     },
     "analysis.scope_accuracy": {
       "value": 1,

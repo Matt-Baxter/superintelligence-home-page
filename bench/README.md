@@ -10,6 +10,7 @@
   - **Adversary gains:** how much two greedy adversaries gain, one attacking the unguarded judge and one attacking the guarded judge.
 - The **lab** metrics: intent-policy accuracy on two held-out draws (so tuning to one seed shows), and its safety properties.
 - The **analysis** metric: scope accuracy on the labelled spec fixtures (REQ-003).
+- The **verification** metrics: the Machine-checked signal on `verification-set.json` (held-out rung and gap accuracy, false proof claims, invariance under harmless rewordings). `npm run verification:ratchet` tunes its rules on the train split only.
 - `history.jsonl`: one line per recorded run (`npm run bench` or `--update`), last 100 kept. Its first line is the Review desk as first committed; the next lines are after the anti-gaming fixes.
 
 Update the baseline (`npm run bench -- --update`) only for an uplift or an explained trade-off, and say which in the commit message.

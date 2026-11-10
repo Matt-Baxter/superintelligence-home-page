@@ -43,7 +43,10 @@
     "test:terms": "node test/terms-e2e.js",
     "test:proofs": "node test/judge-differential.js",
     "test:proof-worker": "node test/lean-worker-e2e.js",
-    "test:proof-admission": "node test/lean-proof-unit.js"
+    "test:proof-admission": "node test/lean-proof-unit.js",
+    "verification:ratchet": "node scripts/verification-ratchet.js",
+    "research:loop": "node scripts/research-loop.js",
+    "research:merge": "node scripts/research-loop.js --merge"
   },
   "keywords": [],
   "author": "",

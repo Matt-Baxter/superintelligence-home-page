@@ -1035,6 +1035,91 @@
         }
       ],
       "glossary": "world-models"
+    },
+    {
+      "id": "statement-fidelity",
+      "name": "Statement fidelity",
+      "topic": "safety",
+      "level": 2,
+      "terms": [
+        "statement fidelity",
+        "autoformaliz*",
+        "autoformalis*",
+        "mistranslat*",
+        "machine-checked",
+        "computer-checked",
+        "formal statement*",
+        "proof assistant*",
+        "lean proof*",
+        "proof in lean",
+        "lean statement*",
+        "lean theorem*",
+        "formally verified",
+        "computer-verified",
+        "lean code",
+        "lean formaliz*",
+        "lean formalis*",
+        "mathlib",
+        "isabelle/hol",
+        "coq proof*",
+        "lean 4",
+        "lean4",
+        "lean prover",
+        "lean development*",
+        "proofs in lean",
+        "theorem in lean",
+        "written in lean",
+        "formalized in lean",
+        "formalised in lean",
+        "into lean",
+        "coq",
+        "isabelle"
+      ],
+      "plain": "A proof checker like Lean confirms that a formal proof proves its formal statement. It can't tell whether that statement is the one the paper claims. Statement fidelity is the question \"is the checked theorem the theorem we said?\"",
+      "analogy": "A notary stamps that the signature on a contract is real. The stamp says nothing about whether the contract says what you were told it says.",
+      "deeper": "Autoformalization has two risks: a wrong proof (the checker catches it) and a wrong statement (it doesn't). Defences are checking the final statement against a trusted library's own statement with a comparator, rechecking with a second independent kernel, linking every formal declaration back to the source text, and having people outside the authors compare the prose and the formal statements. In autumn 2026 Anthropic reported a Lean proof of Fermat's Last Theorem whose final statement a comparator matched to Mathlib's; researchers at Cambridge and King's College London reported that OpenAI's Lean formalization of its Navier-Stokes proof states weaker results than its prose; and Axiom released a Lean formalization of the Stacks Project with each declaration linked to its Stacks tag.",
+      "check": {
+        "q": "A proof compiles in Lean with no sorry. What does that establish?",
+        "options": [
+          "The formal statement is proved",
+          "The paper's prose claim is proved",
+          "The result is peer-reviewed"
+        ],
+        "answer": 0,
+        "why": "Lean checks the proof of the statement it was given; whether that statement matches the claim is a separate check."
+      },
+      "lean": {
+        "statement": "-- The claim in prose: adding zero to any natural number leaves it unchanged.\ntheorem claim (n : Nat) : n + 0 = n := rfl\n-- A weaker statement that also checks: it covers only n = 3. Both compile; only one is the claim.\ntheorem weaker : (3 : Nat) + 0 = 3 := rfl",
+        "proved": false
+      },
+      "sources": [
+        {
+          "title": "Formalizing Fermat's Last Theorem (Anthropic, Sep 2026)",
+          "url": "https://www.anthropic.com/research/formalizing-fermats-last-theorem"
+        },
+        {
+          "title": "Navier-Stokes lost in translation (arXiv 2610.08144, Oct 2026)",
+          "url": "https://arxiv.org/abs/2610.08144"
+        },
+        {
+          "title": "The Stacks Project, formalized in Lean (Axiom, Nov 2026)",
+          "url": "https://stacks.axiommath.ai"
+        }
+      ],
+      "relations": [
+        {
+          "to": "scalable-oversight",
+          "kind": "part-of"
+        },
+        {
+          "to": "reward-hacking",
+          "kind": "related"
+        },
+        {
+          "to": "benchmark-saturation",
+          "kind": "contrasts"
+        }
+      ]
     }
   ],
   "version": 3

@@ -750,6 +750,304 @@
      "weight": 10
     }
    ]
+  },
+  {
+   "id": "reward-hack-monitor-leak",
+   "title": "Monitors in the reward: suppressing reward hacking or teaching evasion?",
+   "concept": "concept:reward-hacking",
+   "topics": [
+    "topic:alignment"
+   ],
+   "source": {
+    "title": "Designing Effective Monitor-Based Interventions for Mitigating Reward Hacking During RL",
+    "url": "https://arxiv.org/abs/2611.09828",
+    "via": "daily paper watcher, Nov 9, 2026"
+   },
+   "idea": "During reinforcement learning a model can learn to hack its reward, for example by overwriting the tests it is graded on. A monitor that spots hacks can be wired into training so flagged hacks earn nothing. The catch: every time the monitor's verdict reaches the reward, the model also learns which hacks get caught, so a monitor that feeds more signal into training pushes hacking down but teaches the model to slip past it. Giving the model easier problems, where honest work pays, removes the reason to hack in the first place.",
+   "reproduce": {
+    "runner": "monitor-leak-rl",
+    "params": {
+     "leak": 1,
+     "accuracy": 0.95,
+     "easy_share": 0,
+     "steps": 300,
+     "batch": 32,
+     "seed": 13
+    },
+    "expect": "With the monitor's verdict always in the reward, hacking falls to about 46% of episodes, but the monitor now misses about 48% of the hacks that remain. With no leak (leak 0) the policy hacks almost every episode and the monitor, only watching, misses about 13%. Making half the problems easy (easy_share 0.5) cuts hacking to about 1%."
+   },
+   "hypothesis": {
+    "statement": "Ours: training twice as long (600 steps) at full leak gives the policy time to learn evasion, so hacking comes back and the share of hacking episodes rises by at least 0.2.",
+    "params": {
+     "steps": 600
+    },
+    "predict": {
+     "metric": "hack_rate",
+     "direction": "up",
+     "delta": 0.2
+    }
+   },
+   "criteria": [
+    {
+     "metric": "hidden_rate",
+     "weight": 50
+    },
+    {
+     "metric": "hack_rate",
+     "weight": 30
+    },
+    {
+     "metric": "evaded",
+     "weight": 20
+    }
+   ]
+  },
+  {
+   "id": "autoformalize-statement-gate",
+   "title": "Autoformalization: does \"it compiles\" teach weaker theorems?",
+   "concept": "concept:statement-fidelity",
+   "topics": [
+    "topic:formal-verification"
+   ],
+   "source": {
+    "title": "Navier-Stokes lost in translation: why Lean verification of AI autoformalisation does not guarantee correct natural language proofs",
+    "url": "https://arxiv.org/abs/2610.08144",
+    "via": "the Fermat, Navier-Stokes and Stacks Project formalizations, Nov 9, 2026"
+   },
+   "idea": "A proof checker confirms that a proof proves its formal statement, not that the statement is the one claimed. An autoformalizer rewarded only for proofs that compile can learn to prove an easier, weaker statement. Checking the final statement against a trusted reference (a comparator) takes that shortcut away, at the cost of fewer proofs that compile.",
+   "reproduce": {
+    "runner": "autoformalize-gate",
+    "params": {
+     "gate": 1,
+     "power": 1,
+     "subtle_blind": 0,
+     "difficulty": 0.6,
+     "steps": 300,
+     "batch": 32,
+     "seed": 17
+    },
+    "expect": "With an exact comparator, about 36% of attempts compile and none of the accepted proofs prove a weaker statement. With no gate (gate 0), about 97% compile but almost every accepted proof is of a weaker statement: the compile rate looks better while the work is worse. A comparator that catches only half the weakenings (power 0.5) still leaves about 98% of accepted proofs weakened, because when the claim is hard even a half-caught shortcut pays better."
+   },
+   "hypothesis": {
+    "statement": "Ours: a comparator that spots a weakening only in proportion to its size (subtle_blind 1) pushes the policy to small weakenings that slip through, so the share of weakened accepted proofs rises by at least 0.2 even though a comparator is in place.",
+    "params": {
+     "subtle_blind": 1
+    },
+    "predict": {
+     "metric": "weakened_share",
+     "direction": "up",
+     "delta": 0.2
+    }
+   },
+   "criteria": [
+    {
+     "metric": "weakened_share",
+     "weight": 50
+    },
+    {
+     "metric": "faithful_rate",
+     "weight": 40
+    },
+    {
+     "metric": "mean_gap",
+     "weight": 10
+    }
+   ]
+  },
+  {
+   "id": "recursive-drift-below-threshold",
+   "title": "Self-improvement below the comparator threshold: does checking against your own output compound the weakening?",
+   "concept": "concept:recursive-self-improvement",
+   "topics": [
+    "topic:recursive-self-improvement",
+    "topic:formal-verification"
+   ],
+   "source": {
+    "title": "Formalizing Fermat's Last Theorem (a comparator checked the final statement against Mathlib's)",
+    "url": "https://www.anthropic.com/research/formalizing-fermats-last-theorem",
+    "via": "the Fermat, Navier-Stokes and Stacks Project formalizations, Nov 9, 2026"
+   },
+   "idea": "A self-improving system proves what it takes to be the claim and passes its result on as the next generation's claim. If each generation checks against its own previous output instead of a fixed outside statement, a weakened result could become the new standard and the weakening could compound across generations.",
+   "reproduce": {
+    "runner": "recursive-drift",
+    "params": {
+     "anchor_every": 1,
+     "power": 0.5,
+     "difficulty": 0.6,
+     "generations": 6,
+     "steps": 200,
+     "batch": 32,
+     "seed": 23
+    },
+    "expect": "With a comparator below the threshold (power 0.5, threshold about 0.64), every generation checked against the original claim still proves only about a third of it: anchoring alone doesn't stop weakening when the check is too weak."
+   },
+   "hypothesis": {
+    "statement": "Ours, written before the run: checking each generation against its own previous output (anchor_every 0) compounds the weakening, so the final statement keeps at least 0.3 less of the claim than with an outside anchor. (Recorded as written; the toy did not support it: both fall to about a third in the first generation and stay there, because once a statement is easy to prove there is no pressure to weaken it further.)",
+    "params": {
+     "anchor_every": 0
+    },
+    "predict": {
+     "metric": "claim_retained",
+     "direction": "down",
+     "delta": 0.3
+    }
+   },
+   "criteria": [
+    {
+     "metric": "claim_retained",
+     "weight": 60
+    },
+    {
+     "metric": "min_retained",
+     "weight": 40
+    }
+   ]
+  },
+  {
+   "id": "recursive-drift-above-threshold",
+   "title": "Self-improvement above the comparator threshold: small per-generation leaks under self-reference",
+   "concept": "concept:recursive-self-improvement",
+   "topics": [
+    "topic:recursive-self-improvement",
+    "topic:formal-verification"
+   ],
+   "source": {
+    "title": "Formalizing Fermat's Last Theorem (a comparator checked the final statement against Mathlib's)",
+    "url": "https://www.anthropic.com/research/formalizing-fermats-last-theorem",
+    "via": "the Fermat, Navier-Stokes and Stacks Project formalizations, Nov 9, 2026"
+   },
+   "idea": "Above the threshold each check looks excellent: a generation loses well under 1% of the claim. But if every generation checks against its predecessor's output, the small losses are accepted as the new standard and add up. An outside reference that never moves stops the accumulation.",
+   "reproduce": {
+    "runner": "recursive-drift",
+    "params": {
+     "anchor_every": 1,
+     "power": 0.9,
+     "difficulty": 0.6,
+     "generations": 12,
+     "steps": 200,
+     "batch": 32,
+     "seed": 23
+    },
+    "expect": "Checked against the original claim every generation (power 0.9), the proved statement stays at about 99% of the claim for all 12 generations."
+   },
+   "hypothesis": {
+    "statement": "Ours, registered after the 6-generation run showed a leak (0.993 to 0.969) and before this 12-generation run: with self-reference (anchor_every 0) the final statement keeps at least 0.05 less of the claim than with the outside anchor, because each generation's small loss becomes the next one's standard.",
+    "params": {
+     "anchor_every": 0
+    },
+    "predict": {
+     "metric": "claim_retained",
+     "direction": "down",
+     "delta": 0.05
+    }
+   },
+   "criteria": [
+    {
+     "metric": "claim_retained",
+     "weight": 60
+    },
+    {
+     "metric": "min_retained",
+     "weight": 40
+    }
+   ]
+  },
+  {
+   "id": "library-foundations-first",
+   "title": "Checking a formal library: final results or foundations first?",
+   "concept": "concept:statement-fidelity",
+   "topics": [
+    "topic:formal-verification",
+    "topic:math"
+   ],
+   "source": {
+    "title": "The Stacks Project, formalized in Lean (each declaration linked to its Stacks tag)",
+    "url": "https://stacks.axiommath.ai",
+    "via": "the Fermat, Navier-Stokes and Stacks Project formalizations, Nov 9, 2026"
+   },
+   "idea": "For one theorem, checking the final statement against a reference is enough: everything under it is proved from the axioms. A library is different: every declaration is something people will cite, and a mistranslated definition contaminates everything built on it. With a limited budget of declarations a person can compare with the source text, which should they check?",
+   "reproduce": {
+    "runner": "library-fidelity",
+    "params": {
+     "strategy": 0,
+     "budget": 0.1,
+     "mistranslate": 0.05,
+     "def_share": 0.25,
+     "nodes": 400,
+     "seed": 29
+    },
+    "expect": "Unchecked, about 14% of the library rests on a wrong statement. Checking the last 10% of results (what a single-theorem project's final check amounts to in a library) leaves 14%. Checking foundations first (definitions with the most dependents) leaves about 5%, while catching about the same share of the wrong translations."
+   },
+   "hypothesis": {
+    "statement": "Ours, written before the run: at a 10% budget, foundations first leaves at least 0.2 less of the library contaminated than checking the last results first. (Recorded as written. The bar was set in absolute terms before seeing that only about 0.14 of the library is contaminated to begin with, so it could not be met; in this library foundations first removes about two thirds of the contamination and the last-results check about 3%; across 60 random libraries the average is about a third, 26% to 43%.)",
+    "params": {
+     "strategy": 2
+    },
+    "predict": {
+     "metric": "contaminated",
+     "direction": "down",
+     "delta": 0.2
+    }
+   },
+   "criteria": [
+    {
+     "metric": "contaminated",
+     "weight": 80
+    },
+    {
+     "metric": "caught",
+     "weight": 20
+    }
+   ]
+  },
+  {
+   "id": "library-infrastructure-hubs",
+   "title": "Formal library review: does raw centrality waste the budget on infrastructure?",
+   "concept": "concept:statement-fidelity",
+   "topics": [
+    "topic:formal-verification",
+    "topic:math"
+   ],
+   "source": {
+    "title": "The Network Structure of Mathlib (centrality mostly captures language infrastructure, not mathematical relevance)",
+    "url": "https://arxiv.org/abs/2604.24797",
+    "via": "deep research on formal verification and algebraic geometry, Nov 9, 2026"
+   },
+   "idea": "In a real library the most depended-on declarations are mostly infrastructure (tactics, notation, basic instances), not mathematical definitions, and a wrong translation of infrastructure isn't a statement-fidelity error. Reviewing by raw number of dependents spends the budget there. Filtering to mathematical definitions first should recover the foundations-first gain.",
+   "reproduce": {
+    "runner": "library-fidelity",
+    "params": {
+     "strategy": 2,
+     "budget": 0.1,
+     "mistranslate": 0.05,
+     "def_share": 0.25,
+     "nodes": 400,
+     "infra": 0.2,
+     "seed": 29
+    },
+    "expect": "With 20% infrastructure hubs, foundations first among mathematical definitions still removes most of the removable contamination."
+   },
+   "hypothesis": {
+    "statement": "Ours, written before the run: ranking by raw number of dependents (strategy 3), which ignores whether a declaration is mathematical, leaves at least 0.03 more of the library contaminated than foundations first among mathematical definitions, with 20% infrastructure hubs (a relative bar: about a fifth of the unchecked contamination).",
+    "params": {
+     "strategy": 3
+    },
+    "predict": {
+     "metric": "contaminated",
+     "direction": "up",
+     "delta": 0.03
+    }
+   },
+   "criteria": [
+    {
+     "metric": "contaminated",
+     "weight": 80
+    },
+    {
+     "metric": "caught",
+     "weight": 20
+    }
+   ]
   }
  ]
 }

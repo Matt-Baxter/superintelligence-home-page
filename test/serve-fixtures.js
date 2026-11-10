@@ -1,5 +1,6 @@
 // Starts the server on a throwaway SQLite database preloaded with SYNTHETIC sample feeds (test/fixtures).
 // Used by the browser test and for local demos while live feeds are unreachable. Never point this at production data.
+require("./sample-clock"); // the fixtures' week stays "this week" (SAMPLE_NOW=real to turn off)
 const fs = require("node:fs"), path = require("node:path"), os = require("node:os");
 delete process.env.DATABASE_URL; delete process.env.POSTGRES_URL;
 process.env.DATA_DIR = process.env.DATA_DIR || fs.mkdtempSync(path.join(os.tmpdir(), "si-test-"));

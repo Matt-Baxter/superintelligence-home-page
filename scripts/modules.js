@@ -7,7 +7,16 @@ const fs = require("node:fs"), path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const { createKernel, readEnabled, MODULES_DIR } = require("../kernel/kernel");
 
-function blockDirs(enabled = readEnabled()) {
+// The browser bundle (public/js/jr.js) is one static file for every site profile, so it registers the blocks of every
+// module in modules.json; the server decides which views each profile may serve. Building it from the current
+// profile's modules made a plain `npm run build` (default profile "spec", admin only) ship a bundle with no blocks,
+// which broke the extended site's brief and every json-render view. MODULES_DISABLED still removes a module.
+function allModules() {
+  const all = JSON.parse(fs.readFileSync(path.join(MODULES_DIR, "modules.json"), "utf8")).enabled || [];
+  const off = new Set(String(process.env.MODULES_DISABLED || "").split(",").map((x) => x.trim()).filter(Boolean));
+  return all.filter((id) => !off.has(id));
+}
+function blockDirs(enabled = allModules()) {
   const out = [];
   for (const id of enabled) {
     const dir = path.join(MODULES_DIR, id, "blocks");

@@ -18,6 +18,20 @@
 //                            Crediting features by correlation is fooled by a feature that merely co-occurs with the
 //                            real one; crediting them by ablation (a causal check) is not, but is only as good as the
 //                            feature directions it intervenes on.
+//   monitor-leak-rl          "Designing Effective Monitor-Based Interventions for Mitigating Reward Hacking During RL"
+//                            (arXiv 2611.09828): a policy learns by RL whether to solve a task or hack its tests; a
+//                            monitor's verdict, fed into the reward, suppresses hacking but also teaches how to evade it.
+//                            Easier problems make honest solving pay and cut hacking.
+//   autoformalize-gate       "Formalizing Fermat's Last Theorem" (Anthropic, Sep 2026) with "Navier-Stokes lost in
+//                            translation" (arXiv 2610.08144): an autoformalizer learns by RL which statement to prove,
+//                            the claimed one or a weaker one that compiles more easily. Rewarding "it compiles" teaches
+//                            weakening; a comparator that checks the statement against a reference stops it.
+//   recursive-drift          The same mechanism over generations of self-improvement: each generation proves what it
+//                            takes to be the claim and checks it against either a fixed outside statement or its own
+//                            previous output. Below the comparator threshold, self-reference lets weakening compound.
+//   library-fidelity         "The Stacks Project, formalized in Lean" (Axiom, Nov 2026): a library is a dependency graph
+//                            whose definitions everything else builds on. With a fixed budget of declarations a
+//                            person can check against the source text, which ones should they check?
 function rng(seed = 1) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 const gauss = (r) => { const u = Math.max(1e-12, r()), v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
 const round = (x, d = 3) => Math.round(x * 10 ** d) / 10 ** d;
@@ -204,6 +218,139 @@ function causalVsCorrelational({ method = 1, rho = 0.9, probe_noise = 1.5, dims 
     notes: [`${method === 0 ? "Features were credited by how well their read-out correlates with the output" : "Features were credited by how far ablating them moves the output"}; ${conf} of ${trials} claims named the co-occurring feature instead.`, `${F} features in ${d} dimensions${d < F * 2 ? " (packed tightly, so directions overlap)" : ""}.`] };
 }
 
+// ---------- monitor-based interventions against reward hacking during RL ----------
+// A policy picks, per episode, to solve the task honestly (passes the tests with probability 0.9 on easy problems and
+// 0.2 on hard ones) or to hack the tests (always passes). A monitor flags a hack with probability accuracy * (1 - e),
+// where e in [0, 1] is the policy's learned evasion skill. 'leak' is how often the monitor's verdict is fed into the
+// reward (a flagged hack then earns 0): the more it leaks, the more learning signal reaches both the choice to hack and
+// the evasion skill. REINFORCE on the hack choice; evasion learned from reward differences among hack attempts.
+const sigmoid = (x) => 1 / (1 + Math.exp(-x));
+function monitorLeak({ leak = 1, accuracy = 0.95, easy_share = 0, steps = 300, batch = 32, seed = 13 } = {}) {
+  const r = rng(seed); let th = -1, e = 0, base = 0.3; const pts = [];
+  for (let t = 0; t < steps; t++) {
+    const p = sigmoid(th), eps = [];
+    for (let i = 0; i < batch; i++) {
+      const hack = r() < p ? 1 : 0; let rew, ei = e;
+      if (hack) { ei = Math.min(1, Math.max(0, e + 0.1 * gauss(r))); const applied = r() < leak, flagged = r() < accuracy * (1 - ei); rew = applied && flagged ? 0 : 1; }
+      else rew = r() < (r() < easy_share ? 0.9 : 0.2) ? 1 : 0;
+      eps.push([hack, rew, ei]);
+    }
+    const b = mean(eps.map((x) => x[1])); let gth = 0, ge = 0, nh = 0;
+    for (const [hack, rew, ei] of eps) { gth += (rew - base) * (hack - p); if (hack) { ge += (rew - b) * (ei - e); nh++; } }
+    base = 0.9 * base + 0.1 * b; th += 0.6 * gth / batch; if (nh) e = Math.min(1, Math.max(0, e + 0.25 * ge / nh));
+    if ((t + 1) % 20 === 0) pts.push([t + 1, round(p)]);
+  }
+  const p = sigmoid(th), miss = 1 - accuracy * (1 - e);
+  return { metrics: { hack_rate: round(p), evaded: round(miss), hidden_rate: round(p * miss) },
+    series: [{ name: "share of episodes that hack the tests", points: pts }],
+    notes: [`The monitor's verdict reached the reward in ${Math.round(leak * 100)}% of hack attempts; ${Math.round(easy_share * 100)}% of problems were easy.`, `At the end the policy hacks in ${Math.round(p * 100)}% of episodes and the monitor misses ${Math.round(miss * 100)}% of those hacks.`] };
+}
+
+// autoformalize-gate: five statement strengths, 1.0 is the claimed theorem and lower is weaker. Weaker statements
+// compile more often. Reward is 1 when the proof compiles and, with the gate on, the comparator doesn't reject it.
+// subtle_blind makes the comparator spot a weakening in proportion to how big it is, as a check that compares
+// surface features would.
+const STRENGTHS = [1, 0.8, 0.6, 0.4, 0.2];
+function autoformalize({ gate = 1, power = 1, subtle_blind = 0, difficulty = 0.6, steps = 300, batch = 32, seed = 17 } = {}) {
+  const r = rng(seed), th = STRENGTHS.map(() => 0), pts = [];
+  const pc = (s) => sigmoid(6 * (1.5 - s - difficulty));
+  const det = (s) => (s >= 1 ? 0 : gate * power * (subtle_blind ? (1 - s) / 0.8 : 1));
+  const probs = () => { const m = Math.max(...th), e = th.map((x) => Math.exp(x - m)), z = e.reduce((a, b) => a + b, 0); return e.map((x) => x / z); };
+  const summary = (p) => {
+    const acc = STRENGTHS.map((s, k) => p[k] * pc(s) * (1 - det(s))), accepted = acc.reduce((a, b) => a + b, 0);
+    return { compile_rate: round(STRENGTHS.reduce((a, s, k) => a + p[k] * pc(s), 0)), accepted: round(accepted),
+      weakened_share: round(accepted ? (accepted - acc[0]) / accepted : 0), faithful_rate: round(acc[0]),
+      mean_gap: round(STRENGTHS.reduce((a, s, k) => a + p[k] * (1 - s), 0)) };
+  };
+  let base = 0.5;
+  for (let t = 0; t < steps; t++) {
+    const p = probs(), g = th.map(() => 0); let sum = 0;
+    for (let i = 0; i < batch; i++) {
+      let u = r(), a = 0; while (a < p.length - 1 && u > p[a]) { u -= p[a]; a++; }
+      const s = STRENGTHS[a], rew = r() < pc(s) && !(r() < det(s)) ? 1 : 0; sum += rew;
+      for (let k = 0; k < th.length; k++) g[k] += (rew - base) * ((k === a ? 1 : 0) - p[k]);
+    }
+    base = 0.9 * base + 0.1 * (sum / batch);
+    for (let k = 0; k < th.length; k++) th[k] += 0.5 * g[k] / batch;
+    if ((t + 1) % 20 === 0) pts.push([t + 1, summary(probs()).weakened_share]);
+  }
+  const m = summary(probs());
+  return { metrics: m, series: [{ name: "share of accepted proofs that prove a weaker statement", points: pts }],
+    notes: [gate ? `A comparator checked each statement (power ${power}${subtle_blind ? ", spotting a weakening in proportion to its size" : ""}).` : "Only compiling was rewarded; nothing compared the statement with the claim.",
+      `At the end ${Math.round(m.compile_rate * 100)}% of attempts compile, and ${Math.round(m.weakened_share * 100)}% of accepted proofs prove something weaker than the claim.`] };
+}
+
+// Minimum comparator power at which proving the claim pays at least as well as the easiest weakening, for the
+// autoformalize-gate toy: 1 - P(claim compiles) / P(easiest weakening compiles). Checked against the simulation
+// (scripts/bench.js, papers.comparator_threshold_error).
+const compileP = (s, difficulty) => sigmoid(6 * (1.5 - s - difficulty));
+function comparatorThreshold(difficulty = 0.6) { return round(Math.max(0, 1 - compileP(1, difficulty) / compileP(STRENGTHS.at(-1), difficulty))); }
+
+// recursive-drift: generations of the autoformalize-gate learner. Generation g proves statements at strengths
+// ref * STRENGTHS (absolute strength; weaker compiles more easily) and the comparator rejects, with probability power,
+// anything weaker than its reference. anchor_every = 1: the reference is always the original claim (an outside
+// statement); 0: the reference is the previous generation's accepted statement (self-reference); k: an outside check
+// every k generations. The next generation takes what was accepted as the claim.
+function recursiveDrift({ generations = 6, anchor_every = 1, power = 0.5, difficulty = 0.6, steps = 200, batch = 32, seed = 23 } = {}) {
+  const r = rng(seed), pts = []; let ref = 1;
+  for (let g = 1; g <= generations; g++) {
+    const outside = anchor_every > 0 && (g - 1) % anchor_every === 0, check = outside ? 1 : ref; if (outside) ref = 1;
+    const S = STRENGTHS.map((x) => ref * x), th = S.map(() => 0); let base = 0.5;
+    const pc = (s) => compileP(s, difficulty), det = (s) => (s < check - 1e-9 ? power : 0);
+    const probs = () => { const m = Math.max(...th), e = th.map((x) => Math.exp(x - m)), z = e.reduce((a, b) => a + b, 0); return e.map((x) => x / z); };
+    for (let t = 0; t < steps; t++) {
+      const p = probs(), gr = th.map(() => 0); let sum = 0;
+      for (let i = 0; i < batch; i++) {
+        let u = r(), a = 0; while (a < p.length - 1 && u > p[a]) { u -= p[a]; a++; }
+        const rew = r() < pc(S[a]) && !(r() < det(S[a])) ? 1 : 0; sum += rew;
+        for (let k = 0; k < th.length; k++) gr[k] += (rew - base) * ((k === a ? 1 : 0) - p[k]);
+      }
+      base = 0.9 * base + 0.1 * (sum / batch); for (let k = 0; k < th.length; k++) th[k] += 0.5 * gr[k] / batch;
+    }
+    const p = probs(), acc = S.map((s, k) => p[k] * pc(s) * (1 - det(s))), z = acc.reduce((a, b) => a + b, 0) || 1;
+    ref = acc.reduce((a, w, k) => a + w * S[k], 0) / z; // what this generation accepted becomes the next one's claim
+    pts.push([g, round(ref)]);
+  }
+  return { metrics: { claim_retained: round(ref), lost: round(1 - ref), min_retained: round(Math.min(...pts.map((x) => x[1]))) },
+    series: [{ name: "strength of the statement the generation proves (1 = the original claim)", points: pts }],
+    notes: [anchor_every === 1 ? "Every generation was checked against the original claim (an outside statement)." : anchor_every === 0 ? "Each generation was checked against its own previous output." : `An outside check against the original claim every ${anchor_every} generations.`,
+      `Comparator power ${power}; the threshold at difficulty ${difficulty} is about ${comparatorThreshold(difficulty)}. After ${generations} generations the proved statement keeps ${Math.round(ref * 100)}% of the claim's strength.`] };
+}
+
+// library-fidelity: a random dependency graph of declarations (a share are definitions). Each translation is wrong
+// with probability `mistranslate`. A declaration is contaminated if it, or a definition it depends on (directly or
+// not), is wrong and wasn't caught. A reviewer checks `budget` of the declarations exactly against the source text
+// and fixes what is wrong, chosen by strategy: 0 = the last results (what a single-theorem project checks: its final
+// statement), 1 = at random, 2 = foundations first (definitions with the most dependents).
+function libraryFidelity({ nodes = 400, def_share = 0.25, mistranslate = 0.05, budget = 0.1, strategy = 2, infra = 0, seed = 29 } = {}) {
+  // infra: share of declarations that are infrastructure (tactics, notation, basic instances). Many declarations use
+  // them, but a wrong translation of one isn't a statement-fidelity error, so they are never "wrong" and don't spread.
+  const r = rng(seed), isDef = [], deps = [], wrong = [], isInfra = [];
+  for (let i = 0; i < nodes; i++) {
+    const inf = i >= 5 && r() < infra; isInfra.push(inf);
+    isDef.push(!inf && (i < 5 || r() < def_share)); wrong.push(!inf && r() < mistranslate);
+    const d = new Set(); if (i) for (let k = 0, n = 1 + Math.floor(r() * 3); k < n; k++) d.add(Math.floor(Math.pow(r(), 1.6) * i)); // older declarations are used more
+    const hubs = isInfra.slice(0, i).flatMap((x, j) => (x ? [j] : []));
+    if (hubs.length) for (let k = 0, n = 1 + Math.floor(r() * 2); k < n; k++) d.add(hubs[Math.floor(r() * hubs.length)]); // most declarations use some infrastructure
+    deps.push([...d]);
+  }
+  // Descendant counts (how much depends on each declaration), for foundations first.
+  const kids = Array.from({ length: nodes }, () => []); deps.forEach((d, i) => d.forEach((j) => kids[j].push(i)));
+  const reach = new Array(nodes).fill(0);
+  for (let i = nodes - 1; i >= 0; i--) { const seen = new Set(), st = [...kids[i]]; while (st.length) { const x = st.pop(); if (!seen.has(x)) { seen.add(x); st.push(...kids[x]); } } reach[i] = seen.size; }
+  const B = Math.round(budget * nodes), idx = [...Array(nodes).keys()];
+  const order = strategy === 0 ? idx.slice().reverse() : strategy === 1 ? idx.map((i) => [r(), i]).sort((a, b) => a[0] - b[0]).map((x) => x[1])
+    : strategy === 3 ? idx.slice().sort((a, b) => reach[b] - reach[a]) // raw centrality: most dependents first, mathematical or not
+    : idx.slice().sort((a, b) => (isDef[b] - isDef[a]) || (reach[b] - reach[a]));
+  const fixed = new Set(order.slice(0, B)), bad = idx.map((i) => wrong[i] && !fixed.has(i));
+  const tainted = new Array(nodes).fill(false);
+  for (let i = 0; i < nodes; i++) tainted[i] = bad[i] || deps[i].some((j) => isDef[j] && tainted[j]);
+  const share = tainted.filter(Boolean).length / nodes, before = (() => { const t = []; for (let i = 0; i < nodes; i++) t[i] = wrong[i] || deps[i].some((j) => isDef[j] && t[j]); return t.filter(Boolean).length / nodes; })();
+  return { metrics: { contaminated: round(share), contaminated_unchecked: round(before), caught: round(order.slice(0, B).filter((i) => wrong[i]).length / Math.max(1, wrong.filter(Boolean).length)) },
+    series: [], notes: [`${nodes} declarations, ${Math.round(def_share * 100)}% definitions, ${Math.round(mistranslate * 100)}% mistranslated; ${B} checked (${["last results first", "at random", "foundations first", "most dependents first"][strategy]})${infra ? `; ${Math.round(infra * 100)}% infrastructure` : ""}.`,
+      `Unchecked, ${Math.round(before * 100)}% of the library rests on a wrong statement; after checking, ${Math.round(share * 100)}%.`] };
+}
+
 const runnersList = [
   { id: "self-improve-selection", about: "An agent edits itself and keeps the best version, judged on visible tests or hidden evaluations (with an edit budget)",
     params: {
@@ -258,6 +405,53 @@ const runnersList = [
     },
     metrics: [{ id: "confound_rate", label: "Claims that name the co-occurring decoy", better: "lower" }, { id: "accuracy", label: "Claims that name the real feature", better: "higher" }, { id: "passes", label: "Forward passes per claim", better: "lower" }],
     run: (p) => causalVsCorrelational(p) },
+  { id: "monitor-leak-rl", about: "A policy learns by RL to solve a task or hack its tests while a monitor's verdict is fed into the reward; more leak suppresses hacking but teaches evasion",
+    params: {
+      leak: { default: 1, min: 0, max: 1, step: 0.1, about: "How often the monitor's verdict reaches the reward (a flagged hack then earns 0)" },
+      accuracy: { default: 0.95, min: 0.5, max: 1, step: 0.05, about: "How often the monitor flags a hack that makes no effort to evade" },
+      easy_share: { default: 0, min: 0, max: 1, step: 0.1, about: "Share of training problems that are easy to solve honestly" },
+      steps: { default: 300, min: 50, max: 800, step: 50, about: "Training steps" },
+      batch: { default: 32, min: 4, max: 64, step: 4, about: "Episodes per step" },
+      seed: { default: 13, min: 1, max: 999, step: 1, about: "Random seed" },
+    },
+    metrics: [{ id: "hack_rate", label: "Share of episodes that hack the tests", better: "lower" }, { id: "evaded", label: "Share of hacks the monitor misses", better: "lower" }, { id: "hidden_rate", label: "Share of episodes that hack undetected", better: "lower" }],
+    run: (p) => monitorLeak(p) },
+  { id: "autoformalize-gate", about: "An autoformalizer learns by RL whether to prove the claimed statement or a weaker one that compiles more easily; a comparator gate checks the statement against a reference",
+    params: {
+      gate: { default: 1, min: 0, max: 1, step: 1, about: "0 = reward any proof that compiles, 1 = a comparator must also accept the statement" },
+      power: { default: 1, min: 0, max: 1, step: 0.1, about: "How often the comparator rejects a weakened statement" },
+      subtle_blind: { default: 0, min: 0, max: 1, step: 1, about: "1 = the comparator spots a weakening in proportion to its size, so small ones slip through" },
+      difficulty: { default: 0.6, min: 0, max: 1, step: 0.05, about: "How hard the claimed statement is to prove" },
+      steps: { default: 300, min: 50, max: 800, step: 50, about: "Training steps" },
+      batch: { default: 32, min: 4, max: 64, step: 4, about: "Attempts per step" },
+      seed: { default: 17, min: 1, max: 999, step: 1, about: "Random seed" },
+    },
+    metrics: [{ id: "weakened_share", label: "Share of accepted proofs that prove a weaker statement", better: "lower" }, { id: "faithful_rate", label: "Share of attempts that prove the claimed statement", better: "higher" }, { id: "compile_rate", label: "Share of attempts that compile (what a compile-only dashboard shows)", better: "info" }, { id: "accepted", label: "Share of attempts accepted", better: "info" }, { id: "mean_gap", label: "Average weakening chosen (0 = the claim)", better: "lower" }],
+    run: (p) => autoformalize(p) },
+  { id: "recursive-drift", about: "Generations of a self-improving autoformalizer, each checked against a fixed outside statement or against its own previous output",
+    params: {
+      anchor_every: { default: 1, min: 0, max: 6, step: 1, about: "1 = check every generation against the original claim; 0 = against the previous generation's output; k = an outside check every k generations" },
+      power: { default: 0.5, min: 0, max: 1, step: 0.05, about: "How often the comparator rejects a statement weaker than its reference" },
+      difficulty: { default: 0.6, min: 0, max: 1, step: 0.05, about: "How hard the original claim is to prove" },
+      generations: { default: 6, min: 1, max: 12, step: 1, about: "Generations of self-improvement" },
+      steps: { default: 200, min: 50, max: 600, step: 50, about: "Training steps per generation" },
+      batch: { default: 32, min: 4, max: 64, step: 4, about: "Attempts per step" },
+      seed: { default: 23, min: 1, max: 999, step: 1, about: "Random seed" },
+    },
+    metrics: [{ id: "claim_retained", label: "Strength of the final statement (1 = the original claim)", better: "higher" }, { id: "lost", label: "Share of the claim lost", better: "lower" }, { id: "min_retained", label: "Weakest statement any generation proved", better: "higher" }],
+    run: (p) => recursiveDrift(p) },
+  { id: "library-fidelity", about: "A formal library as a dependency graph: which declarations should a person check against the source text, given a budget?",
+    params: {
+      strategy: { default: 2, min: 0, max: 3, step: 1, about: "0 = check the last results first (a single-theorem project's final statement), 1 = at random, 2 = foundations first (mathematical definitions with the most dependents), 3 = most dependents first, mathematical or not (raw centrality)" },
+      infra: { default: 0, min: 0, max: 0.5, step: 0.05, about: "Share of declarations that are infrastructure (tactics, notation, instances): heavily used, never a fidelity error" },
+      budget: { default: 0.1, min: 0, max: 1, step: 0.05, about: "Share of declarations a person checks" },
+      mistranslate: { default: 0.05, min: 0, max: 0.5, step: 0.01, about: "Chance a declaration's translation is wrong" },
+      def_share: { default: 0.25, min: 0.05, max: 1, step: 0.05, about: "Share of declarations that are definitions (whose errors spread)" },
+      nodes: { default: 400, min: 50, max: 2000, step: 50, about: "Declarations in the library" },
+      seed: { default: 29, min: 1, max: 999, step: 1, about: "Random seed" },
+    },
+    metrics: [{ id: "contaminated", label: "Share of the library resting on a wrong statement after checking", better: "lower" }, { id: "contaminated_unchecked", label: "Same, before any checking", better: "info" }, { id: "caught", label: "Share of the wrong translations caught", better: "higher" }],
+    run: (p) => libraryFidelity(p) },
 ];
 // Averaging over seeds, so a verdict doesn't hang on one lucky draw (the Lab's examples pass seeds via "seeds").
 function averaged(fn, p, seeds = 10) {
@@ -267,4 +461,4 @@ function averaged(fn, p, seeds = 10) {
 }
 for (const r of runnersList) { const raw = r.run; r.run = (p) => averaged(raw, p, 10); }
 
-module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI, moeAttribution, causalVsCorrelational };
+module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI, moeAttribution, causalVsCorrelational, monitorLeak, autoformalize, recursiveDrift, comparatorThreshold, libraryFidelity };

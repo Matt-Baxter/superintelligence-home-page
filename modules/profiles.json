@@ -33,7 +33,8 @@
         "decision",
         "lab",
         "review",
-        "research"
+        "research",
+        "verification"
       ]
     }
   }

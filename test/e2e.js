@@ -1,6 +1,8 @@
 // Two-user browser test against test/serve-fixtures.js (synthetic data). Run: node test/e2e.js
 const { chromium } = require('playwright');
+require('./sample-clock'); // same clock as the sample server, so times it returns compare correctly
 const B = process.env.BASE || 'http://localhost:3200';
+const FIXTURE_WEEK = '2026-11-02'; // Monday of the week the synthetic fixture feeds are dated in (test/fixtures)
 let pass = 0, fail = 0; const errs = [];
 const ok = (c, m) => { c ? pass++ : fail++; console.log(c ? '  ✓' : '  ✗', m); };
 async function account(b, u, name) {
@@ -190,8 +192,8 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   ok((await john.textContent('#sub')).includes('active sources'), 'sources page summarizes kinds and schedule');
 
   console.log('Weekly brief (json-render)');
-  // Recorded feed fixtures belong to this explicit week; do not depend on the wall-clock week.
-  await john.goto(B + '/brief?week=2026-11-02'); await john.waitForSelector('#brief .jr-metric');
+  // The synthetic fixtures are dated in the week of 2026-11-02, so ask for that week; the current week can be empty.
+  await john.goto(B + '/brief?week=' + FIXTURE_WEEK); await john.waitForSelector('#brief .jr-metric');
   const br = await john.textContent('#brief'); ok(br.includes('Stories this week') && br.includes('Top stories'), 'brief renders from a server-built spec');
   ok(br.includes('Where the activity was'), 'topic activity bars render');
   await john.locator('#brief .jr-story button', { hasText: 'Discuss' }).first().click(); await john.waitForURL(/story\?id=/); ok(true, 'json-render action openStory navigates');
@@ -415,6 +417,9 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   ok(td.steps.map((x) => x.id).join() === 'fetch,group,tag,scope,score,concepts,feed' && td.steps[3].output.in === true && td.steps[5].output.concepts.some((c) => c.id === 'superposition'), 'teardown runs every step with real values (in scope, linked to concepts)');
   const tdx = await j(matt, '/api/learn/teardown', 'POST', { title: 'Sample post', url: 'https://twitter.com/someone/status/1' });
   ok(tdx.stopped === 'fetch' && tdx.steps[0].output.dropped, 'teardown shows Twitter/X links dropped at fetch');
+  const tdv = await j(matt, '/api/learn/teardown', 'POST', { title: 'Sample: agents formalize a sample theorem in Lean (test data)', summary: 'A comparator confirmed the final statement matches Mathlib\'s statement. Test data.', url: 'https://example.org/sample-lean', kind: 'papers' });
+  const mc = tdv.steps.find((x) => x.id === 'score').output.why.find((w) => w.factor === 'Machine-checked');
+  ok(mc && mc.points === 5 && /checked against a reference/.test(mc.detail) && tdv.steps.find((x) => x.id === 'concepts').output.concepts.some((c) => c.id === 'statement-fidelity'), 'the running server scores a formal-proof claim (Machine-checked: statement checked) and links Statement fidelity');
   ok((await j(matt, '/api/admin/learn/jobs')).status === 403, 'studio jobs are admins only');
   const pj = await j(john, '/api/admin/learn/jobs', 'POST', { kind: 'post', concept_id: 'orthogonality' });
   ok(pj.job && pj.job.status === 'queued', 'admin queues a blog draft');
@@ -654,7 +659,7 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   for (const path of ['/', '/story?id=' + sid, '/brief', '/lists', '/sources', '/m/admin', '/m/content', '/m/editorial', '/m/journal', '/m/glossary', '/m/project', '/m/capabilities', '/m/studio', '/m/decide', '/m/view?name=capability-snapshot', '/m/codemap', '/m/project#/timeline', '/m/project#/specs', '/m/control', '/m/learn', '/m/learn#/c/attention', '/m/learn#/how', '/m/knowledge', '/m/lab', '/m/lab#/x/rsi-decision-gym']) { await ph.goto(B + path); await ph.waitForTimeout(600); ok(!(await ph.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'no sideways scroll: ' + path.split('?')[0]); }
   await ph.goto(B); await ph.waitForSelector('#feed .story'); await ph.screenshot({ path: 'shots/phone-feed.png' });
   await john.goto(B); await john.waitForSelector('#feed .story'); await john.screenshot({ path: 'shots/feed.png', fullPage: true });
-  await john.goto(B + '/brief'); await john.waitForSelector('#brief .jr-metric'); await john.screenshot({ path: 'shots/brief.png', fullPage: true });
+  await john.goto(B + '/brief?week=' + FIXTURE_WEEK); await john.waitForSelector('#brief .jr-metric'); await john.screenshot({ path: 'shots/brief.png', fullPage: true });
   console.log(`\n${pass} passed, ${fail} failed`); console.log('page errors:', errs.length ? errs : 'none');
   await b.close(); process.exit(fail ? 1 : 0);
 })().catch((e) => { console.error('CRASH', e); process.exit(2); });
