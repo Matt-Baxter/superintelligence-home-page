@@ -5,7 +5,7 @@
   .kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
   .kpi { border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; background: var(--surface); }
   .kpi b { display: block; font-size: 22px; } .kpi span { font-size: 13px; color: var(--muted); }
-  .tabs { flex-wrap: wrap; margin-bottom: 14px; }
+  .tabs { margin-bottom: 14px; } @media (min-width: 901px) { .tabs { flex-wrap: wrap; } }
   .tabpanel { display: grid; gap: 14px; }
   td .btn { padding: 3px 8px; font-size: 13px; }
   td.wrap { max-width: 340px; overflow-wrap: anywhere; }

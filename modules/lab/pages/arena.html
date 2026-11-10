@@ -7,7 +7,7 @@
   @media (max-width: 1100px) { .ide { grid-template-columns: 200px minmax(0, 1fr); } .ide .results { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line); } }
   @media (max-width: 700px) { .ide { grid-template-columns: 1fr; } .ide .explorer { border-right: 0; border-bottom: 1px solid var(--line); } }
   .explorer { border-right: 1px solid var(--line); padding: 10px 0; overflow: auto; font-size: 14px; }
-  .explorer h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 10px 12px 4px; }
+  .explorer h2, .explorer h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 10px 12px 4px; }
   .explorer button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 6px 12px; color: var(--fg); font: inherit; cursor: pointer; border-left: 2px solid transparent; }
   .explorer button:hover { background: var(--bg); } .explorer button[aria-current="true"] { background: var(--accent-soft); border-left-color: var(--accent); }
   .explorer small { display: block; color: var(--muted); font-size: 12px; }
@@ -29,7 +29,7 @@
   .pill { font-size: 12px; padding: 1px 8px; border-radius: var(--radius); background: var(--bg); border: 1px solid var(--line); white-space: nowrap; }
   .pill.ok { background: var(--fg); color: var(--surface);  } .pill.no { background: var(--surface); color: var(--fg); border: 1px solid var(--fg);  }
   .console { margin-top: 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
-  .console h3 { margin: 0; padding: 8px 12px; font-size: 13px; border-bottom: 1px solid var(--line); }
+  .console h2, .console h3 { margin: 0; padding: 8px 12px; font-size: 13px; border-bottom: 1px solid var(--line); }
   .console ol { list-style: none; margin: 0; padding: 6px 12px; max-height: 180px; overflow: auto; font: 12px/1.6 var(--mono); }
   .console li.err { color: var(--bad); } .console li span { color: var(--muted); }
   svg.chart { width: 100%; height: auto; } svg.chart path { fill: none; stroke-width: 2; } svg.chart text { fill: var(--muted); font: 10px var(--font); }
@@ -49,7 +49,7 @@
     </section>
     <section class="results" id="results" aria-live="polite"><p class="muted small">Pick something on the left, then run it.</p></section>
   </div>
-  <div class="console"><h3>Run log</h3><ol id="log"></ol></div>
+  <div class="console"><h2 class="h3">Run log</h2><ol id="log"></ol></div>
 </main>
 <script src="/js/api.js"></script>
 <script>
@@ -77,9 +77,9 @@ function status(msg, err) { $("#status").innerHTML = err ? `<span class="err">${
 // ---------- explorer ----------
 function explorer() {
   const conceptLabel = (id) => { const t = String(id || "").replace(/^concept:/, "").replace(/-/g, " "); return t ? t[0].toUpperCase() + t.slice(1) : ""; };
-  $("#explorer").innerHTML = `<h3>Experiments</h3>${EXAMPLES.map((e) => `<button type="button" data-open="ex:${e.id}" aria-current="${CUR?.key === "ex:" + e.id}">${esc(e.title)}<small>${esc(conceptLabel(e.concept))}</small></button>`).join("")}
-    <h3>Policies</h3><button type="button" data-open="policy" aria-current="${CUR?.key === "policy"}">Intent policy<small>route requests: the live decision maker</small></button>
-    <h3>Rules</h3><button type="button" data-open="rule" aria-current="${CUR?.key === "rule"}">Rule playground<small>any si-expr rule on any data</small></button>`;
+  $("#explorer").innerHTML = `<h2 class="h3">Experiments</h2>${EXAMPLES.map((e) => `<button type="button" data-open="ex:${e.id}" aria-current="${CUR?.key === "ex:" + e.id}">${esc(e.title)}<small>${esc(conceptLabel(e.concept))}</small></button>`).join("")}
+    <h2 class="h3">Policies</h2><button type="button" data-open="policy" aria-current="${CUR?.key === "policy"}">Intent policy<small>route requests: the live decision maker</small></button>
+    <h2 class="h3">Rules</h2><button type="button" data-open="rule" aria-current="${CUR?.key === "rule"}">Rule playground<small>any si-expr rule on any data</small></button>`;
 }
 $("#explorer").onclick = (e) => { const b = e.target.closest("[data-open]"); if (b) open(b.dataset.open); };
 
@@ -162,7 +162,7 @@ async function runExample(first = false, pin = false) {
 }
 function showExample(d, r) {
   const ranked = rank(d, ARENA);
-  $("#results").innerHTML = `<div><h3>${esc(d.title)}</h3><p class="small muted" style="margin:4px 0 0">${esc(d.hypothesis)}</p></div>
+  $("#results").innerHTML = `<div><h2 class="h3">${esc(d.title)}</h2><p class="small muted" style="margin:4px 0 0">${esc(d.hypothesis)}</p></div>
     <div><span class="pill ${r.verdict.supported ? "ok" : "no"}">${r.verdict.supported ? "Prediction holds" : "Prediction fails"}</span> <span class="small">${esc(r.verdict.text)}</span></div>
     ${chart(ranked.map((x) => x.series).filter(Boolean).length ? ARENA.map((x) => x.series) : [])}
     <div><h3>Arena</h3><p class="small muted" style="margin:2px 0 6px">Ranked on this example's criteria (${d.judgeInput.criteria.map((c) => `${esc(c.label)} ${c.weight}`).join(", ")}).</p>

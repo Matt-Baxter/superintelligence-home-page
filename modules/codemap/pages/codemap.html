@@ -7,7 +7,7 @@
   .mapbar input[type=search] { width: 320px; max-width: 100%; margin: 0; }
   .mapwrap { position: relative; overflow: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); max-height: 75vh; }
   .lanes { position: relative; display: grid; gap: 70px; padding: 14px 18px; min-width: 980px; }
-  .lane h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; position: sticky; top: 0; background: var(--surface); padding: 4px 0; z-index: 2; }
+  .lane h2, .lane h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; position: sticky; top: 0; background: var(--surface); padding: 4px 0; z-index: 2; }
   .lane .grp { font-size: 11px; color: var(--muted); margin: 10px 0 4px; font-weight: 600; }
   .nd { display: block; width: 100%; text-align: left; font: inherit; font-size: 12.5px; padding: 4px 8px; margin: 0 0 4px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); color: var(--fg); cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; position: relative; z-index: 1; }
   .nd .k { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-right: 4px; }
@@ -63,7 +63,7 @@ function render() {
   $("#lanes").innerHTML = V.lanes.map((L, li) => {
     const ns = G.nodes.filter((n) => L.kinds.includes(n.kind)).sort((a, b) => (L.group ? L.group(a).localeCompare(L.group(b)) : 0) || a.label.localeCompare(b.label));
     let last = null;
-    return `<div class="lane" data-lane="${li}"><h3>${L.title} (${ns.length})</h3>${ns.map((n) => { const g = L.group?.(n); const head = g && g !== last ? `<div class="grp">${esc(g)}</div>` : ""; last = g; return `${head}<button class="nd ${n.method ? "m-" + n.method : ""}" data-id="${esc(n.id)}" title="${esc(n.label)}">${short(n)}</button>`; }).join("")}</div>`;
+    return `<div class="lane" data-lane="${li}"><h2 class="h3">${L.title} (${ns.length})</h2>${ns.map((n) => { const g = L.group?.(n); const head = g && g !== last ? `<div class="grp">${esc(g)}</div>` : ""; last = g; return `${head}<button class="nd ${n.method ? "m-" + n.method : ""}" data-id="${esc(n.id)}" title="${esc(n.label)}">${short(n)}</button>`; }).join("")}</div>`;
   }).join("") + `<svg class="edges" id="svg"></svg>`;
   $$("#lanes .nd").forEach((b) => (b.onclick = () => select(b.dataset.id)));
   drawEdges();

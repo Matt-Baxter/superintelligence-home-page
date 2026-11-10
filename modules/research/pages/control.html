@@ -18,7 +18,7 @@
   .scroll { overflow-x: auto; } .scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
   .acts { display: flex; gap: 6px; flex-wrap: wrap; } .acts .btn { font-size: 13px; padding: 7px 10px; }
   .ok-no { font-size: 12px; font-weight: 600; padding: 1px 7px; border: 1px solid var(--fg); border-radius: var(--radius); white-space: nowrap; } .ok-no.yes { background: var(--fg); color: var(--surface); }
-  .research-links { display: grid; gap: 7px; } .research-links h3 { font-size: 13px; font-weight: 500; color: var(--muted); margin-bottom: 2px; }
+  .research-links { display: grid; gap: 7px; } .research-links h2, .research-links h3 { font-size: 13px; font-weight: 500; color: var(--muted); margin-bottom: 2px; }
   .research-links a { color: var(--fg); text-decoration: none; font-size: 14px; padding: 3px 0; } .research-links a:hover { text-decoration: underline; text-underline-offset: 3px; }
   .disclosure { border-bottom: 1px solid var(--line); padding: 14px 0; } .disclosure summary { cursor: pointer; font-size: 15px; font-weight: 500; padding: 4px 0; } .disclosure summary small { color: var(--muted); font-size: 13px; font-weight: 400; margin-left: 8px; }
   .disclosure[open] > :not(summary) { margin-top: 14px; } .setup-lines { display: grid; gap: 12px; } .setup-lines > div { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 12px; font-size: 14px; } .setup-lines dt { color: var(--muted); } .setup-lines dd { margin: 0; overflow-wrap: anywhere; }
@@ -64,7 +64,7 @@ async function load(message = "") {
         <a href="#approvals"><span>Approvals</span><span class="nav-count">${r.proposals.length}</span></a>
         <a href="#setup"><span>Setup & resources</span></a>
       </nav>
-      <div class="research-links"><h3>Research library</h3><a href="/m/dossier">Topic dossiers</a><a href="/research/outlets">Outlet track records</a><a href="/m/map">Knowledge map</a><a href="/m/lab">Lab experiments</a></div>
+      <div class="research-links"><h2 class="h3">Research library</h2><a href="/m/dossier">Topic dossiers</a><a href="/research/outlets">Outlet track records</a><a href="/m/map">Knowledge map</a><a href="/m/lab">Lab experiments</a></div>
     </aside>
     <div class="research-work">
     <section class="inbox-summary" aria-label="Research overview">
@@ -95,7 +95,7 @@ async function load(message = "") {
       <dl class="setup-lines"><div><dt>Judge panel</dt><dd>${r.panel.ready ? `Configured: ${r.panel.models.map(esc).join(", ")}. Live coverage is shown under judging quality.` : "Not configured. Set PANEL_MODELS in the worker environment to compare two models."}</dd></div>
       <div><dt>Advisor</dt><dd>${r.panel.advisor ? esc(r.panel.advisor) : "Not configured. Set ADVISOR_MODEL in the worker environment."}</dd></div>
       <div><dt>Public research</dt><dd>${r.public ? "Public preview enabled." : "Admin preview only. RESEARCH_PUBLIC is off."}</dd></div></dl>
-      <div class="research-links"><h3>Read & explore</h3><a href="/research">Research write-ups</a><a href="/m/dossier">Topic dossiers</a><a href="/research/outlets">Outlet track records</a><a href="/m/map">Knowledge map</a><a href="/m/lab">Lab experiments</a><a href="/m/learn">Studio jobs</a><a href="/research/criteria">Published judging criteria</a><a href="/research/feed.xml">RSS feed</a><a href="/research/data.json">Open data (JSON)</a><a href="/m/project#/specs">Specs & decisions</a><a href="https://github.com/Matt-Baxter/superintelligence-home-page/blob/feature/si-combined/docs/PARITY.md" rel="noopener noreferrer">Parity matrix</a><a href="https://github.com/Matt-Baxter/superintelligence-home-page/blob/feature/si-combined/docs/PRACTICES.md" rel="noopener noreferrer">Practices</a></div>
+      <div class="research-links"><h2 class="h3">Read & explore</h2><a href="/research">Research write-ups</a><a href="/m/dossier">Topic dossiers</a><a href="/research/outlets">Outlet track records</a><a href="/m/map">Knowledge map</a><a href="/m/lab">Lab experiments</a><a href="/m/learn">Studio jobs</a><a href="/research/criteria">Published judging criteria</a><a href="/research/feed.xml">RSS feed</a><a href="/research/data.json">Open data (JSON)</a><a href="/m/project#/specs">Specs & decisions</a><a href="https://github.com/Matt-Baxter/superintelligence-home-page/blob/feature/si-combined/docs/PARITY.md" rel="noopener noreferrer">Parity matrix</a><a href="https://github.com/Matt-Baxter/superintelligence-home-page/blob/feature/si-combined/docs/PRACTICES.md" rel="noopener noreferrer">Practices</a></div>
     </details>
     </div></div>`;
     for (const id of open) { const d = document.getElementById(id); if (d?.tagName === "DETAILS") d.open = true; }
