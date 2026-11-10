@@ -5,6 +5,8 @@
   .kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
   .kpi { border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; background: var(--surface); }
   .kpi b { display: block; font-size: 22px; } .kpi span { font-size: 13px; color: var(--muted); }
+  .kpi.zero { background: transparent; } .kpi.zero b { color: var(--muted); font-weight: 500; }
+  #attention .chips { margin-bottom: 8px; }
   .tabs { flex-wrap: wrap; margin-bottom: 14px; }
   .tabpanel { display: grid; gap: 14px; }
   td .btn { padding: 3px 8px; font-size: 13px; }
@@ -37,8 +39,8 @@
   </div>
 
   <section class="tabpanel" data-panel="overview">
+    <div class="panel"><h2>Needs attention</h2><div id="attention"></div><div id="failing"></div></div>
     <div class="kpis" id="kpis"></div>
-    <div class="panel"><h2>Needs attention</h2><div id="failing"></div></div>
     <div class="panel"><h2>Stories by source kind, last 7 days</h2><div id="kinds"></div></div>
     <div class="panel"><h2>Free tier</h2><div id="freeTier"></div></div>
     <div class="panel"><h2>Recent harvests</h2><div class="tablewrap"><table><thead><tr><th>When</th><th>Trigger</th><th>Sources</th><th>Errors</th><th>New stories</th></tr></thead><tbody id="lastRuns"></tbody></table></div></div>
@@ -146,7 +148,11 @@ $$("#tabs button").forEach((b) => (b.onclick = () => show(b.dataset.tab)));
 async function loadOverview() {
   const d = await api("/api/admin/overview"), c = d.counts;
   const k = [["Active sources", d.sources.active || 0], ["Pending review", d.sources.pending || 0], ["Failing", d.failing.length], ["Stories", c.stories], ["New in 24 h", c.storiesToday], ["Untagged", c.untagged], ["Left out (off-topic)", c.offTopic], ["Hidden", c.hidden], ["Users", c.users], ["Admins", c.admins], ["Votes", c.votes], ["Notes", c.notes]];
-  $("#kpis").innerHTML = k.map(([t, v]) => `<div class="kpi"><b>${v}</b><span>${t}</span></div>`).join("");
+  // Counters that mean work to do lead the page (only when non-zero); the rest are reference numbers, zeros receded.
+  const todo = [["Pending review", d.sources.pending || 0, "sources"], ["Untagged", c.untagged, "moderation"], ["Hidden", c.hidden, "moderation"], ["Left out (off-topic)", c.offTopic, "moderation"]].filter(([, v]) => v > 0);
+  $("#attention").innerHTML = todo.length ? `<div class="chips">${todo.map(([t, v, tab]) => `<button type="button" class="chip" data-goto="${tab}">${esc(t)}: ${v}</button>`).join("")}</div>` : "";
+  $("#attention").querySelectorAll("[data-goto]").forEach((b) => (b.onclick = () => document.querySelector(`[data-tab="${b.dataset.goto}"]`)?.click()));
+  $("#kpis").innerHTML = k.map(([t, v]) => `<div class="kpi${v ? "" : " zero"}"><b>${v}</b><span>${t}</span></div>`).join("");
   $("#sub").textContent = `Database: ${d.engine === "pg" ? "Postgres" : "SQLite"}. Harvest schedule: ${d.schedule}${process_cron(d)}.${d.harvesting ? " A harvest is running now." : ""}`;
   $("#failing").innerHTML = d.failing.length ? `<ul>${d.failing.map((s) => `<li><b>${esc(s.name)}</b>: ${esc(s.last_error || "")} <span class="small muted">(${s.failures} failures, last ${ago(s.last_fetched)})</span></li>`).join("")}</ul>` : `<p class="small muted">Nothing failing.</p>`;
   $("#kinds").innerHTML = d.kindsThisWeek.length ? `<div class="chips">${d.kindsThisWeek.map((r) => `<span class="chip">${esc(KIND[r.kind] || r.kind)}: ${r.n}</span>`).join("")}</div>` : `<p class="small muted">No stories this week yet.</p>`;

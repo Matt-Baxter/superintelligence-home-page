@@ -79,14 +79,16 @@ async function showMap(focus,request=++learnRequest) {
   const curve = (a, b) => { const ax = a.x + a.w / 2, ay = a.y + a.h / 2, bx = b.x + b.w / 2, by = b.y + b.h / 2, mx = (ax + bx) / 2, my = (ay + by) / 2 - Math.min(60, Math.abs(ax - bx) * 0.18 + 14); return `M${ax},${ay} Q${mx},${my} ${bx},${by}`; };
   $("#view").innerHTML = `<section class="panel enter"><div class="row" style="align-items:center"><p class="small muted" style="flex:1 1 300px">${g.concepts.length} concepts and ${g.edges.length} links. Click a concept to read it; its links light up. Dashed lines join ideas that are opposite worries.</p>
     <input type="search" id="find" placeholder="Find a concept" aria-label="Find a concept" style="flex:0 1 240px"></div>
-    <div class="graphwrap"><svg id="g" viewBox="0 0 ${L.width} ${L.height}" role="img" aria-label="Concept map">
+    <details class="mapfold" open><summary>Show the concept map</summary><div class="graphwrap"><svg id="g" viewBox="0 0 ${L.width} ${L.height}" role="img" aria-label="Concept map">
       ${L.cols.map((t, i) => `<text class="gcol" x="${12 + i * (L.W + 18)}" y="20">${esc(TOPIC_LABEL[t] || t)}</text>`).join("")}
       ${g.edges.map((e) => `<path class="gedge ${e.kind}" data-a="${e.from}" data-b="${e.to}" d="${curve(L.pos[e.from], L.pos[e.to])}"><title>${esc(e.from)} ${esc(e.label)} ${esc(e.to)}</title></path>`).join("")}
       ${g.concepts.map((c) => { const p = L.pos[c.id], lines = wrapText(c.name); return `<g class="gnode" data-id="${c.id}" tabindex="0" role="link" aria-label="${esc(c.name)}"><rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" rx="8"/>${lines.map((ln, i) => `<text x="${p.x + 10}" y="${p.y + (lines.length === 1 ? 27 : 19 + i * 16)}">${esc(ln)}</text>`).join("")}</g>`; }).join("")}
-    </svg></div></section>
-    <section class="panel"><h2>All concepts</h2><div class="tablewrap"><table><thead><tr><th>Concept</th><th>In plain words</th><th>Level</th></tr></thead><tbody id="clist">
+    </svg></div></details></section>
+    <section class="panel conceptlist"><h2>All concepts</h2><div class="tablewrap"><table><thead><tr><th>Concept</th><th>In plain words</th><th>Level</th></tr></thead><tbody id="clist">
       ${g.concepts.slice().sort((a, b) => a.level - b.level || a.name.localeCompare(b.name)).map((c) => `<tr data-row="${c.id}"><td><a href="#/c/${c.id}">${esc(c.name)}</a></td><td class="small">${esc(c.plain)}</td><td class="lvl">${LEVEL[c.level]}</td></tr>`).join("")}
     </tbody></table></div></section>`;
+  // On a phone the map's nodes are too small to tap: the list comes first and the map folds away (still one tap off).
+  if (matchMedia("(max-width: 640px)").matches) $("#view .mapfold").open = false;
   const svg = $("#g");
   const light = (id) => { svg.querySelectorAll(".gnode").forEach((n) => { const linked = !id || n.dataset.id === id || g.edges.some((e) => (e.from === id && e.to === n.dataset.id) || (e.to === id && e.from === n.dataset.id)); n.classList.toggle("dim", !linked); n.classList.toggle("on", n.dataset.id === id); }); svg.querySelectorAll(".gedge").forEach((p) => p.classList.toggle("hot", !!id && (p.dataset.a === id || p.dataset.b === id))); };
   svg.querySelectorAll(".gnode").forEach((n) => { n.onmouseenter = () => light(n.dataset.id); n.onmouseleave = () => light(focus || null); n.onclick = () => (location.hash = `#/c/${n.dataset.id}`); n.onkeydown = (e) => { if (e.key === "Enter") location.hash = `#/c/${n.dataset.id}`; }; });
