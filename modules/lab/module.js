@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS lab_policies (id \${ID}, policy TEXT NOT NULL, accura
     });
     const weighted = ctx.point("decision.judges").weighted; // shared judge arithmetic, used without importing the decision module
     ctx.point("http.routes").add((app, deps) => require("./routes")(app, { ...deps, weighted }));
-    ctx.point("ui.nav").add({ href: "/m/lab", label: "Lab", order: 19 });
-    ctx.point("ui.nav").add({ href: "/m/arena", label: "Arena", order: 20 });
+    ctx.point("ui.nav").add({ href: "/m/lab", label: "Lab", order: 19, group: "research" });
+    ctx.point("ui.nav").add({ href: "/m/arena", label: "Arena", order: 20, group: "research" });
   },
 };

@@ -26,7 +26,7 @@ CREATE INDEX IF NOT EXISTS idx_learn_jobs_status ON learn_jobs(status, id);
       edges: () => require("./learn").DATA.concepts.flatMap((c) => [{ src: `concept:${c.id}`, rel: "about", dst: `topic:${c.topic}`, weight: 1, evidence: ["modules/learn/data/concepts.json"] },
         ...(c.relations || []).map((r) => ({ src: `concept:${c.id}`, rel: r.kind, dst: `concept:${r.to}`, weight: 1, evidence: ["modules/learn/data/concepts.json"] }))]) });
     ctx.point("knowledge.taggers").add({id:"glossary",namespace:"term",about:"Sourced term and symbol mentions; not verified claims",tag:text=>require("./glossary").tag(text),edges:()=>require("./glossary").edges()});
-    ctx.point("ui.nav").add({href:"/m/glossary",label:"Glossary",order:19});
-    ctx.point("ui.nav").add({ href: "/m/learn", label: "Learn", order: 18 });
+    ctx.point("ui.nav").add({href:"/m/glossary",label:"Glossary",order:19,group:"research"});
+    ctx.point("ui.nav").add({ href: "/m/learn", label: "Learn", order: 18, group: "research" });
   },
 };

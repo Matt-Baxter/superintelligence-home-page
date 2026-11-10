@@ -22,7 +22,7 @@ module.exports = {
       app.get("/api/admin/codemap/trace", auth, admin, wrap((req) => { const id = str(req.query.id, 200); if (!id) bad("Give a node id."); return { id, nodes: scan.trace(graph(), id, Number(req.query.depth) || 4) }; }));
       app.get("/api/admin/codemap/ask", auth, admin, wrap((req) => ({ q: str(req.query.q, 200), answer: scan.answer(graph(), req.query.q) })));
     });
-    ctx.point("ui.nav").add({ href: "/m/codemap", label: "Map", admin: true, order: 88 });
+    ctx.point("ui.nav").add({ href: "/m/codemap", label: "Code map", admin: true, order: 88 });
   },
   DATA,
 };

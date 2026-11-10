@@ -8,7 +8,7 @@ module.exports = {
   requires: ["review"],
   setup(ctx) {
     ctx.point("http.routes").add((app, deps) => require("./routes")(app, deps));
-    ctx.point("ui.nav").add({ href: "/m/control", label: "Research", admin: true, order: 79 });
+    ctx.point("ui.nav").add({ href: "/m/control", label: "Control room", admin: true, order: 79 });
     // The research version measures buzz from what it harvests, so it switches on the catalog's checked buzz feeds
     // (entries marked "(buzz)": Medium tags, Hacker News) once, if they aren't there yet. Only in SITE_PROFILE=research;
     // the extended and spec versions get no new sources. An admin can pause them like any other source.
