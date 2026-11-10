@@ -41,8 +41,12 @@ requireUser().then(async () => {
     <p class="small" style="margin:0"><a href="/m/dossier#${encodeURIComponent(t.id)}">Evidence dossier</a> <span class="muted">· weighed, sourced, with a blog draft and video</span></p>
     ${t.docs_recent.length ? `<div><p class="k">Recently reviewed</p><ul class="docs">${t.docs_recent.map((d) => `<li><a href="/m/review#/doc/${d.id}">${esc(d.title)}</a><span>${d.score} · ${esc(d.verdict)}</span></li>`).join("")}</ul></div>` : ""}
   </section>`).join("");
-  $("#people").innerHTML = m.people.map((p) => chip(`/?person=${encodeURIComponent(p.id)}`, p.label, p.stories + p.docs)).join("") || '<p class="small muted">No watchlist yet.</p>';
-  $("#orgs").innerHTML = m.orgs.map((o) => chip(`/?org=${encodeURIComponent(o.id)}`, o.label, o.docs)).join("");
+  // Entries with mentions first; the ones nobody has mentioned yet fold away instead of a wall of zeros.
+  const split = (list, count, href) => { const on = list.filter((x) => count(x) > 0).sort((a, b) => count(b) - count(a)), off = list.filter((x) => !count(x));
+    return on.map((x) => chip(href(x), x.label, count(x))).join("") + (on.length ? "" : '<p class="small muted">No mentions in the feed or the reviews yet.</p>')
+      + (off.length ? `<details class="small" style="width:100%"><summary class="muted">${off.length} more with no mentions yet</summary><div class="entries" style="margin-top:8px">${off.map((x) => chip(href(x), x.label, 0)).join("")}</div></details>` : ""); };
+  $("#people").innerHTML = m.people.length ? split(m.people, (p) => p.stories + p.docs, (p) => `/?person=${encodeURIComponent(p.id)}`) : '<p class="small muted">No watchlist yet.</p>';
+  $("#orgs").innerHTML = split(m.orgs, (o) => o.docs, (o) => `/?org=${encodeURIComponent(o.id)}`);
 });
 </script>
 </body></html>

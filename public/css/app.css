@@ -454,3 +454,4 @@ code, .mono, pre { font-family: var(--mono); }
 .term-formula { font-family: var(--mono); white-space: pre-wrap; border-left: 2px solid var(--line); padding-left: 12px; }
 #functionOutput { overflow-wrap: anywhere; margin-top: 12px; }
 .term-entry:focus { outline: 2px solid var(--fg); outline-offset: 2px; }
+.topic-trace td:first-child { width: 34%; text-align: left; font-weight: 600; white-space: nowrap; } .topic-trace td:nth-child(2) { width: auto; font-weight: 400; }

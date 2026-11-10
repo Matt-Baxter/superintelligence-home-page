@@ -54,9 +54,18 @@ function chart(base, variant) {
 function metricsTable(runner, base, variant) {
   return `<table class="mt"><tbody>${runner.metrics.map((m) => { const b = base.metrics[m.id], v = variant.metrics[m.id]; const better = m.better === "higher" ? v > b : v < b; return `<tr><td>${esc(m.label)}</td><td>${fmt(b)} → <b class="${v === b ? "" : better ? "up" : "down"}">${fmt(v)}</b></td></tr>`; }).join("")}</tbody></table>`;
 }
+// The concept id as words ("concept:reward-hacking" -> "Reward hacking"): no machine ids in the UI.
+const conceptName = (id) => { const w = String(id || "").replace(/^concept:/, "").replace(/-/g, " "); return w.charAt(0).toUpperCase() + w.slice(1); };
+const LAB_FILTERS = [["all", "All"], ["paper", "From a paper"], ["yes", "Supported"], ["no", "Not supported"]];
 async function list() {
-  const r = await api("/api/lab/examples");
-  $("#view").innerHTML = `<h2 style="margin-top:24px">Examples</h2><div class="exlist stagger">${r.examples.map((e, i) => `<a class="excard" style="--i:${i}" href="#/x/${e.id}"><span class="small muted">${esc(e.concept)}${e.source ? " · from a paper" : ""}</span><h3>${esc(e.title)}</h3><p class="small" style="margin:0">${esc(e.idea)}</p><span class="vd ${e.verdict.supported ? "yes" : "no"}">${e.verdict.supported ? "Hypothesis supported" : "Hypothesis not supported"}</span></a>`).join("")}</div>`;
+  const r = await api("/api/lab/examples"), counts = { all: r.examples.length, paper: r.examples.filter((e) => e.source).length, yes: r.examples.filter((e) => e.verdict.supported).length, no: r.examples.filter((e) => !e.verdict.supported).length };
+  const keep = (e, f) => f === "all" || (f === "paper" ? !!e.source : f === "yes" ? e.verdict.supported : !e.verdict.supported);
+  $("#view").innerHTML = `<div class="pagehead" style="margin-top:24px"><h2 style="margin:0">Examples</h2><div class="seg-btns" role="group" aria-label="Show examples">${LAB_FILTERS.map(([id, label], i) => `<button type="button" data-f="${id}" aria-pressed="${i === 0}">${label} <span class="muted">${counts[id]}</span></button>`).join("")}</div></div>
+    <div class="exlist stagger" id="exlist">${r.examples.map((e, i) => `<a class="excard" style="--i:${i}" href="#/x/${e.id}" data-paper="${e.source ? 1 : 0}" data-yes="${e.verdict.supported ? 1 : 0}"><span class="small muted">${esc(conceptName(e.concept))}${e.source ? " · from a paper" : ""}</span><h3>${esc(e.title)}</h3><p class="small" style="margin:0">${esc(e.idea)}</p><span class="vd ${e.verdict.supported ? "yes" : "no"}">${e.verdict.supported ? "Hypothesis supported" : "Hypothesis not supported"}</span></a>`).join("")}</div>`;
+  for (const b of $$("#view [data-f]")) b.onclick = () => {
+    for (const x of $$("#view [data-f]")) x.setAttribute("aria-pressed", String(x === b));
+    $$("#exlist .excard").forEach((card, i) => { card.hidden = !keep(r.examples[i], b.dataset.f); });
+  };
 }
 async function detail(id) {
   const d = await api(`/api/lab/examples/${encodeURIComponent(id)}`);
