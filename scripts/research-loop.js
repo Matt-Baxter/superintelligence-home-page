@@ -106,7 +106,8 @@ function merge() {
   }
   L.push(`## Pre-registered hypotheses, re-tested on pooled seeds`, ``, `| example | hypothesis | effect (mean, 95% interval) | verdict |`, `| --- | --- | --- | --- |`);
   for (const h of HYPOTHESES) { const xs = pooled[h.exp]; if (!xs.length) continue; const s = stat(xs.map(h.q));
-    const v = s.lo >= h.bar ? "supported (whole interval clears the bar)" : s.hi < h.bar ? "not supported (whole interval below the bar)" : "undecided (interval straddles the bar)";
+    // Below 20 seeds a normal-approximation interval isn't trustworthy, so no verdict is given.
+    const v = s.n < 20 ? `too few seeds for a verdict (${s.n} of at least 20)` : s.lo >= h.bar ? "supported (whole interval clears the bar)" : s.hi < h.bar ? "not supported (whole interval below the bar)" : "undecided (interval straddles the bar)";
     L.push(`| ${h.id} | ${h.text} | ${s.mean} (${s.lo} to ${s.hi}) | ${v} |`); }
   L.push(``, `## Checks per machine`, ``);
   for (const r of recs) L.push(`- ${r.host}: ${r.checks.map((c) => `${c.ok ? "ok" : "FAIL"} ${c.cmd.replace(/^node /, "")}`).join(", ") || "skipped"}; Lean: ${r.lean.available ? `${r.lean.version}; ${r.lean.results.map((x) => `${x.concept} ${x.checks ? "checks" : "fails"}`).join(", ") || "nothing queued"}` : r.lean.note}`);
