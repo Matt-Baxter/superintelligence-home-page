@@ -73,14 +73,19 @@ function topbar(user) {
   const mod = nav.filter((n) => !n.admin), tools = nav.filter((n) => n.admin);
   const core = (user ? NAV : [["/", "Feed"], ...(window.SI_PUBLIC_NAV || []).map(n=>[n.href,n.label]), ["/welcome", "About"]]).filter(([, , f]) => !f || (user?.features || []).includes(f));
   const links = [core[0], ...mod.filter((n) => (n.order ?? 50) < 20).map((n) => [n.href, n.label]), ...core.slice(1), ...mod.filter((n) => (n.order ?? 50) >= 20).map((n) => [n.href, n.label])];
+  // Six destinations in the bar, the rest under "More", so the bar reads at a glance (and never wraps on a laptop).
+  const PRIMARY = ["/", "/m/review", "/m/map", "/m/lab", "/m/learn", "/brief"];
+  // Guests see few links, so all stay in the bar; the page you are on always stays visible in the bar.
+  const inBar = ([h]) => !user || PRIMARY.includes(h) || isHere(h);
+  const primary = links.filter(inBar), more = links.filter((l) => !inBar(l));
   const menu = tools.length ? `<details class="navmenu"${tools.some((n) => isHere(n.href)) ? ' data-here=""' : ""}><summary>Admin</summary><div>${tools.map((n) => `<a href="${n.href}"${isHere(n.href) ? ' aria-current="page"' : ""}>${n.label}</a>`).join("")}</div></details>` : "";
   const toolLinks = tools.length ? `<div class="nav-tools"><p class="small muted">Administration</p>${tools.map((n) => `<a href="${esc(n.href)}"${isHere(n.href) ? ' aria-current="page"' : ""}>${esc(n.label)}</a>`).join("")}</div>` : "";
-  bar.innerHTML = `<a class="skip-link" href="#mainContent">Skip to content</a><div class="in"><a class="brand" href="/" aria-label="Superintelligence Homepage"><span class="brand-long">Superintelligence Homepage</span><span class="brand-short">SI Homepage</span></a><button class="btn nav-toggle" id="navToggle" type="button" aria-expanded="false" aria-controls="siteNav">Menu</button><nav class="nav" id="siteNav" aria-label="Main navigation">${links.map(([h, t]) => `<a href="${esc(h)}"${isHere(h) ? ' aria-current="page"' : ""}>${esc(t)}</a>`).join("")}${toolLinks}</nav>
+  bar.innerHTML = `<a class="skip-link" href="#mainContent">Skip to content</a><div class="in"><a class="brand" href="/" aria-label="Superintelligence Homepage"><span class="brand-long">Superintelligence Homepage</span><span class="brand-short">SI Homepage</span></a><button class="btn nav-toggle" id="navToggle" type="button" aria-expanded="false" aria-controls="siteNav">Menu</button><nav class="nav" id="siteNav" aria-label="Main navigation">${primary.map(([h, t]) => `<a href="${esc(h)}"${isHere(h) ? ' aria-current="page"' : ""}>${esc(t)}</a>`).join("")}${more.length ? `<details class="navmenu nav-more"${more.some(([h]) => isHere(h)) ? ' data-here=""' : ""}><summary>More</summary><div>${more.map(([h, t]) => `<a href="${esc(h)}"${isHere(h) ? ' aria-current="page"' : ""}>${esc(t)}</a>`).join("")}</div></details>` : ""}${toolLinks}</nav>
     <div class="who">${menu}${user ? `<span>${esc(user.name)}</span><button class="btn" id="logout" type="button">Sign out</button>` : `<a class="btn" href="/?signin=1">Sign in</a>`}</div></div>`;
   document.querySelector(".topbar")?.remove(); document.body.prepend(bar);
   const main = document.querySelector("main") || document.querySelector("#app"); if (main) { if (!main.id) main.id = "mainContent"; bar.querySelector(".skip-link").href = `#${main.id}`; main.setAttribute("tabindex", "-1"); }
   const toggle = bar.querySelector("#navToggle"), setOpen = (open) => { bar.toggleAttribute("data-nav-open", open); toggle.setAttribute("aria-expanded", String(open)); };
-  toggle.onclick = () => setOpen(toggle.getAttribute("aria-expanded") !== "true");
+  toggle.onclick = () => { const open = toggle.getAttribute("aria-expanded") !== "true"; setOpen(open); const more = bar.querySelector(".nav-more"); if (more) more.open = open; };
   bar.addEventListener("keydown", (e) => { if (e.key === "Escape") { if (bar.hasAttribute("data-nav-open")) { setOpen(false); toggle.focus(); } for (const d of bar.querySelectorAll("details[open]")) { d.open = false; d.querySelector("summary").focus(); } } });
   document.addEventListener("pointerdown", (e) => { if (!bar.contains(e.target)) { setOpen(false); for (const d of bar.querySelectorAll("details[open]")) d.open = false; } });
   workspaceNavigation(user, here);
