@@ -698,6 +698,58 @@
      "weight": 10
     }
    ]
+  },
+  {
+   "id": "interp-causal-check",
+   "title": "Correlation or ablation: which evidence names the real feature?",
+   "concept": "concept:interpretability",
+   "topics": [
+    "topic:interpretability"
+   ],
+   "source": {
+    "title": "Understanding AI from the Inside: The State of Mechanistic Interpretability for AI Safety",
+    "url": "https://arxiv.org/abs/2611.08438",
+    "via": "daily paper watcher, Nov 8, 2026"
+   },
+   "idea": "An interpretability claim says which internal feature drives a model’s output. Evidence for it can be correlational (this feature’s read-out moves with the output) or causal (remove the feature and the output changes). A feature that merely fires alongside the real one can pass the first test but not the second. The causal test has its own weak spot: it can only remove what the analyst’s dictionary of feature directions captures.",
+   "reproduce": {
+    "runner": "causal-vs-correlational",
+    "params": {
+     "method": 1,
+     "rho": 0.9,
+     "probe_noise": 1.5,
+     "dims": 48,
+     "features": 8,
+     "trials": 30,
+     "seed": 11
+    },
+    "expect": "With ablation, about 2% of claims name the co-occurring decoy; crediting by correlation instead (method 0) names the decoy in about 20% of claims. Neither is perfect: when the dictionary blurs the real feature’s direction, ablating it moves the output less, and about 4 in 5 claims are right either way. With no co-occurrence (rho 0) correlation is almost always right, so the decoy, not correlation itself, is what fools it."
+   },
+   "hypothesis": {
+    "statement": "Ours: packing the 8 features into 8 dimensions instead of 48 makes their directions overlap, so ablating the decoy also moves the output and the share of claims naming the decoy rises by at least 0.05, even with the causal check.",
+    "params": {
+     "dims": 8
+    },
+    "predict": {
+     "metric": "confound_rate",
+     "direction": "up",
+     "delta": 0.05
+    }
+   },
+   "criteria": [
+    {
+     "metric": "confound_rate",
+     "weight": 50
+    },
+    {
+     "metric": "accuracy",
+     "weight": 40
+    },
+    {
+     "metric": "passes",
+     "weight": 10
+    }
+   ]
   }
  ]
 }

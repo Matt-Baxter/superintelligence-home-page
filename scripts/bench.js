@@ -81,12 +81,14 @@ const SUITES = {
     const c = (cos) => sae.run({ latents: 24, l1: 0.1, resample: 0, steps: 1200, seed: 2, cosine: cos, norm_spread: 0.8 }).metrics.recovered;
     const rp = P.runners.find((r) => r.id === "roleplay-rsi"), rq = (m) => rp.run({ meta: m, edit_bound: 3, judge_noise: 0.2, rounds: 30, turns: 200, seed: 7 }).metrics.bad_rate;
     const moe = P.runners.find((r) => r.id === "moe-sae-attribution").run({ router_info: 0, leak: 0.1, enc_noise: 0.2, tokens: 400, seed: 11 }).metrics;
+    const cv = P.runners.find((r) => r.id === "causal-vs-correlational"), cr = (m) => cv.run({ method: m, rho: 0.9, probe_noise: 1.5, dims: 48, features: 8, trials: 30, seed: 11 }).metrics.confound_rate;
     return {
       "papers.hidden_eval_hack_drop": { value: Math.round(drop * 1000) / 1000, better: "higher", tol: 0.02, about: "drop in the quirk share when a self-improving agent is judged on hidden evaluations (arXiv 2609.26457 toy)" },
       "papers.recompute_evasion": { value: ev, better: "lower", tol: 0, about: "undetected exploits with independent recomputation (arXiv 2609.28614 toy)" },
       "papers.cosine_sae_gain": { value: c(1) - c(0), better: "higher", tol: 1, about: "extra true features a cosine-scored SAE recovers when input sizes vary (arXiv 2606.15054 toy)" },
       "papers.roleplay_meta_bad_drop": { value: Math.round((rq(0) - rq(1)) * 1000) / 1000, better: "higher", tol: 0.02, about: "drop in the bad-reply rate when a role-play updater refines its own repair rules (arXiv 2611.07469 toy)" },
       "papers.moe_contrib_advantage": { value: moe.advantage, better: "higher", tol: 0.05, about: "how much more often crediting SAE latents by per-expert contribution, rather than gate weight, names the owning expert (arXiv 2611.08089 toy)" },
+      "papers.causal_check_decoy_drop": { value: Math.round((cr(0) - cr(1)) * 1000) / 1000, better: "higher", tol: 0.02, about: "drop in claims naming a co-occurring decoy feature when features are credited by ablation instead of correlation (arXiv 2611.08438 toy)" },
     };
   },
   analysis: () => {
