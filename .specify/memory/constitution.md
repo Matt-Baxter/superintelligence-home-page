@@ -85,18 +85,24 @@ and merge the best parts.
   internal code structure and visual styling.
 - This constitution MUST NOT choose a technology stack; each partner records theirs in their
   own `/speckit-plan`.
-- Comparison criteria and how the final version is chosen are recorded in `CONTRACT.md` before
-  either build is compared. How well each build keeps the feed on superintelligence is one of
+- Comparison criteria are recorded in `CONTRACT.md` before either partner starts building. A
+  decision model (CLEF or JEV) scores both builds against them and recommends one version or a
+  merge; both partners sign off or override, and the reason goes in the contract's change log.
+- Each build lives in its own folder (`builds/matt/`, `builds/john/`). How well each build keeps the feed on superintelligence is one of
   the criteria.
 - **Costs:** use free tiers where possible. Total spending on hosting and AI APIs MUST stay at or
   under $10 a month unless both partners agree to raise it.
 
 ## Development Workflow
 
-- Work happens on branches; `main` stays deployable.
-- The other partner reviews every pull request, and a human reviews every merge to `main`.
-- Agents MAY read code, run tests, write code on a branch and draft pull requests.
-- Agents MUST NOT merge to `main`, deploy, handle real secrets or spend money.
+- `main` stays deployable.
+- Pushing straight to `main` or opening a pull request for the other partner to review is a
+  judgment call based on the change: low-risk changes (documentation, work in your own build
+  folder) MAY go straight to `main`; riskier changes (sign-in, permissions, database,
+  deployment) SHOULD go through a pull request the other partner reviews.
+- Agents MAY read code, run tests, write code on a branch and draft pull requests, and MAY push
+  to `main` only when a partner tells them to.
+- Agents MUST NOT deploy, handle real secrets or spend money.
 - Each partner keeps an agent log in their own words in `AGENT_LOG.md`: what the agent got wrong, how it was
   caught, and the fix. Partners do not write each other's entries, and entries are not
   AI-generated.
@@ -110,4 +116,4 @@ and merge the best parts.
 - Every spec, plan and pull request review checks compliance with these principles, starting
   with the superintelligence focus; any exception must be written down with its reason.
 
-**Version**: 1.1.2 | **Ratified**: 2026-11-06 | **Last Amended**: 2026-11-07
+**Version**: 1.2.0 | **Ratified**: 2026-11-06 | **Last Amended**: 2026-11-11

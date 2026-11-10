@@ -3,7 +3,7 @@
 _What we're building against._
 
 **Team:** Matt Baxter & John Affolter
-**Current version:** 0.5
+**Current version:** 0.6
 **Date:** _YYYY-MM-DD_
 **Option:** Bake-off (Option B: partners build from the same spec on different platforms, then compare and merge the best parts)
 
@@ -18,6 +18,7 @@ Both partners approve every change, and every change gets logged here.
 | 0.3 | 2026-11-06 | Shared spec created with Spec Kit; required features now point to its REQ IDs | _Matt, John_ |
 | 0.4 | 2026-11-06 | Site focuses on superintelligence specifically, not AI in general; only superintelligence stories in the feed (new REQ-003); requirements renumbered | _Matt, John_ |
 | 0.5 | 2026-11-07 | Agent log is a human-written Markdown file in the repo (`AGENT_LOG.md`), not an app page | _Matt, John_ |
+| 0.6 | 2026-11-11 | Final version chosen by decision model (CLEF or JEV) plus both partners' sign-off; each build in its own folder | _Matt, John_ |
 
 ## Bake-off
 
@@ -76,7 +77,9 @@ build tracks its results here:
 
 #### How we'll choose or merge the final version
 
-_e.g. score both builds, pick the winning base, then port the best parts of the other build._
+A decision model (CLEF or JEV) scores both builds against the criteria above, which we agree on
+before building. It recommends one version, or a merge. We both sign off or override, and the
+reason goes in the change log.
 
 ### Changes
 
