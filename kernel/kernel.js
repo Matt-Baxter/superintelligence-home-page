@@ -93,7 +93,7 @@ function createKernel({ enabled, modulesDir = MODULES_DIR, extraPoints = {} } = 
     mount(app, deps) { for (const r of store.routes) { try { r.mount(app, deps); } catch (e) { e.message = `Module "${r.module}" failed to mount routes: ${e.message}`; throw e; } } },
     // 3b. start: async hooks (after the database is ready), e.g. seeding a module's data.
     async start(deps) { for (const s of store.starts) await s.fn(deps); },
-    nav: (user) => store.nav.filter((n) => !n.admin || user?.admin).sort((a, b) => a.order - b.order).map(({ href, label, admin, order }) => ({ href, label, admin: !!admin, order })),
+    nav: (user) => store.nav.filter((n) => !n.admin || user?.admin).sort((a, b) => a.order - b.order).map(({ href, label, admin, order, group }) => ({ href, label, admin: !!admin, order, group: admin ? "admin" : group || "reading" })),
     describe: () => ({
       modules: modules.map((m) => ({ id: m.id, version: m.version, description: m.description, requires: m.requires,
         contributes: [...points.entries()].map(([id, p]) => ({ point: id, n: p.contributions.filter((c) => c.module === m.id).length })).filter((x) => x.n) })),

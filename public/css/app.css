@@ -464,3 +464,15 @@ code, .mono, pre { font-family: var(--mono); }
 .jr-ladder-steps { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--line-strong); border-radius: var(--radius); overflow: hidden; }
 .jr-ladder-steps span { font-size: 12px; text-align: center; padding: 5px 6px; border-left: 1px solid var(--line); color: var(--muted); white-space: nowrap; } .jr-ladder-steps span:first-child { border-left: 0; }
 .jr-ladder-steps span.on { background: var(--fg); color: var(--surface); font-weight: 600; }
+
+/* Research menu in the bar (wide screens). On phones the menu shows a labelled Research section instead (.nav-tools),
+   the same pattern as Admin, so every link stays one tap away inside the open menu. */
+.nav > .navmenu { align-self: center; }
+@media (max-width: 900px) { .topbar .nav > .navmenu { display: none; } }
+
+/* Story cards: the score says what it is out of, and the two actions share one height and centre line. */
+.sig { display: inline-flex; align-items: baseline; justify-content: center; } .sig::after { content: "/100"; font-weight: 500; margin-left: 1px; font-size: 10px; }
+.acts { align-items: center; } .acts a { display: inline-flex; align-items: center; min-height: 36px; }
+@media (max-width: 900px) { .acts a { min-height: 44px; } }
+/* The Research menu sits mid-bar: drop it under its own button, not against the right edge like Admin. */
+.topbar .nav-research > div { right: auto; }

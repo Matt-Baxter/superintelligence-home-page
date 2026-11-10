@@ -76,7 +76,8 @@ function status(msg, err) { $("#status").innerHTML = err ? `<span class="err">${
 
 // ---------- explorer ----------
 function explorer() {
-  $("#explorer").innerHTML = `<h3>Experiments</h3>${EXAMPLES.map((e) => `<button type="button" data-open="ex:${e.id}" aria-current="${CUR?.key === "ex:" + e.id}">${esc(e.title)}<small>${esc(e.concept)}</small></button>`).join("")}
+  const conceptLabel = (id) => { const t = String(id || "").replace(/^concept:/, "").replace(/-/g, " "); return t ? t[0].toUpperCase() + t.slice(1) : ""; };
+  $("#explorer").innerHTML = `<h3>Experiments</h3>${EXAMPLES.map((e) => `<button type="button" data-open="ex:${e.id}" aria-current="${CUR?.key === "ex:" + e.id}">${esc(e.title)}<small>${esc(conceptLabel(e.concept))}</small></button>`).join("")}
     <h3>Policies</h3><button type="button" data-open="policy" aria-current="${CUR?.key === "policy"}">Intent policy<small>route requests: the live decision maker</small></button>
     <h3>Rules</h3><button type="button" data-open="rule" aria-current="${CUR?.key === "rule"}">Rule playground<small>any si-expr rule on any data</small></button>`;
 }
