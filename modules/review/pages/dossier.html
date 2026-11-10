@@ -39,6 +39,7 @@
     <div class="pick"><label>Topic<select id="topic"></select></label><a class="btn" id="watch" hidden>Watch the explainer</a><details id="publishingTools" hidden><summary>Publishing tools</summary><button class="btn" type="button" id="queue" hidden>Queue blog and video</button></details></div>
     <p id="status" class="small muted" role="status" aria-live="polite"></p>
   </section>
+  <div id="out" aria-busy="false"></div>
   <section class="panel" id="question-workspace" aria-labelledby="question-title">
     <h2 id="question-title">Prepare a brief</h2>
     <p class="small muted" id="question-help">Your question stays in this browser session and does not create a monitor. The brief organizes existing evidence.</p>
@@ -48,7 +49,6 @@
     <label id="manualBrief" hidden>Copy the complete evidence brief<textarea id="manualBriefText" readonly rows="10" aria-describedby="briefStatus"></textarea></label>
     <nav class="trace-links" aria-label="Evidence workflow" id="evidenceWorkflow"></nav>
   </section>
-  <div id="out" aria-busy="false"></div>
 </main>
 <script src="/js/api.js"></script>
 <script>
@@ -99,7 +99,7 @@ async function load() {
       <div class="scale" aria-label="Rating scale">${LEVELS.map((l) => `<span class="${l === d.strength ? "on" : ""}">${l}</span>`).join("")}</div>
       <p class="small muted" style="margin:0">Rule: "some support" needs two or more credible primary papers (credibility ${d.credibleAt.from} or more; ${d.credibleAt.cutoff - d.credibleAt.margin} to ${d.credibleAt.from - 1} is borderline and not counted) and a toy check of one of their ideas that held up. Papers are judged from their abstracts, so nothing here rates higher than that.</p></div></section>
     <section><div class="counts">
-      <div><b>${c.papers}</b><span>papers and articles (${c.surveys} surveys)</span></div><div><b>${c.credible}</b><span>credible primary papers</span></div>
+      <div><b>${c.papers}</b><span>reviewed: ${c.papers - (c.articles ?? 0)} paper${c.papers - (c.articles ?? 0) === 1 ? "" : "s"}, ${c.articles ?? 0} article${(c.articles ?? 0) === 1 ? "" : "s"}${c.surveys ? `, ${c.surveys} survey${c.surveys === 1 ? "" : "s"}` : ""}</span></div><div><b>${c.credible}</b><span>credible primary papers</span></div>
       <div><b>${c.checks}</b><span>toy checks (${c.supported} held up)</span></div><div><b>${c.stories}</b><span>feed stories</span></div><div><b>${c.sources}</b><span>news sources</span></div><div><b>${c.comments}</b><span>reader comments</span></div></div></section>
     ${d.buzz ? `<section class="panel"><h2>Buzz versus evidence</h2><p class="small">The topic is <b>${esc(d.buzz.gap)}</b>.</p><div class="duo">
       <div><span class="small muted">Evidence</span>${ladder(LEVELS, d.strength)}<p class="small muted">Papers and our own toy checks only.</p></div>

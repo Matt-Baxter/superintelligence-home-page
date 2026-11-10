@@ -1,4 +1,12 @@
 // /api/ui/*: catalog (with the LLM prompt), validate, and the view registry.
+const { OPERATORS } = require("../../views/operators");
+// How a spec binds data and calls operators (json-render's dynamic values), added to the LLM prompt.
+const BINDING_HELP = [
+  'Data binding: a spec may carry "state". Bind props with {"$state": "/path"}, {"$template": "text ${/path}"} or {"$cond": {"$state": "/path", "eq": value}, "$then": a, "$else": b}.',
+  'Repeat an element over an array with "repeat": {"statePath": "/items"} and read fields of each item with {"$item": "field"}. Show or hide with "visible": {"$state": "/tab", "eq": "x"}. Switch tabs with the built-in action setState {statePath, value}.',
+  'Operators, called as {"$computed": name, "args": {...}}:',
+  ...Object.entries(OPERATORS).map(([k, v]) => `- ${k}: ${v.about}`),
+].join("\n");
 module.exports = function mountGenerativeUi(app, deps) {
   const { auth, wrap, bad, notFound, views, kernel } = deps;
   const catalogInfo = async () => {
@@ -12,7 +20,9 @@ module.exports = function mountGenerativeUi(app, deps) {
     return {
       blocks: blocks.map(({ def, module }) => ({ name: def.name, description: def.description, module })),
       actions: Object.keys((await import("../../views/actions.mjs")).actions),
-      prompt: catalog.prompt(), jsonSchema: catalog.jsonSchema(),
+      prompt: `${catalog.prompt()}\n\n${BINDING_HELP}`,
+      operators: Object.entries(OPERATORS).map(([name, v]) => ({ name, about: v.about })),
+      jsonSchema: catalog.jsonSchema(),
     };
   }));
 

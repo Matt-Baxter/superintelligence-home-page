@@ -459,3 +459,8 @@ code, .mono, pre { font-family: var(--mono); }
 
 /* Feed result line: the count and 'Explain sort' read as one quiet line, not a toolbar. */
 #sortInfo.linkish { font-size: 14px; padding: 0; min-height: 0; border: 0; background: none; cursor: pointer; }
+/* json-render Ladder block: an ordered rating scale with the current step filled. */
+.jr-ladder { display: grid; gap: 4px; min-width: 0; } .jr-ladder-label, .jr-ladder-hint { margin: 0; font-size: 13px; color: var(--muted); }
+.jr-ladder-steps { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--line-strong); border-radius: var(--radius); overflow: hidden; }
+.jr-ladder-steps span { font-size: 12px; text-align: center; padding: 5px 6px; border-left: 1px solid var(--line); color: var(--muted); white-space: nowrap; } .jr-ladder-steps span:first-child { border-left: 0; }
+.jr-ladder-steps span.on { background: var(--fg); color: var(--surface); font-weight: 600; }

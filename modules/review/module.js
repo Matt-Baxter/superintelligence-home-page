@@ -30,6 +30,12 @@ CREATE INDEX IF NOT EXISTS idx_review_events_outlet ON review_events(outlet);
     });
     ctx.point("http.routes").add((app, deps) => require("./routes")(app, deps));
     ctx.point("ui.nav").add({ href: "/m/evidence", label: "Evidence", order: 16 });
+    // One live json-render view per top-level research area: data in the spec's state, bound with $state/$template,
+    // repeated with $item, switched with setState tabs and formatted by the operators in views/operators.js.
+    const { ontology } = require("../../lib/tagger");
+    for (const t of ontology.topics.filter((x) => !x.parent))
+      ctx.point("ui.views").add(`topic-${t.id}`, { title: `${t.label}: evidence explorer`, description: `Reviewed papers, our toy checks and the buzz on ${t.label}, bound to live data with tabs.`,
+        build: (deps) => require("./topic-view").build(deps, t.id) });
     ctx.point("ui.nav").add({ href: "/m/review", label: "Review", order: 21 });
     ctx.point("ui.nav").add({ href: "/m/map", label: "Map", order: 17 });
   },

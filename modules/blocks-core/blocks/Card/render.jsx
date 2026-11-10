@@ -6,6 +6,6 @@ export default ({ props, children }) => (
         {(props.title || props.subtitle) && (
           <header>{props.title && <h3>{props.title}</h3>}{props.subtitle && <p className="muted">{props.subtitle}</p>}</header>
         )}
-        <div className="jr-stack gap-sm">{children}</div>
+        {React.Children.count(children) ? <div className="jr-stack gap-sm">{children}</div> : null}
       </section>
     );

@@ -10,5 +10,6 @@ module.exports = {
   setup(ctx) {
     ctx.point("http.routes").add((app, deps) => require("./routes")(app, deps));
     ctx.point("ui.nav").add({ href: "/m/studio", label: "Studio", admin: true, order: 85 });
+    for (const [name, v] of Object.entries(require("./examples"))) ctx.point("ui.views").add(name, v);
   },
 };

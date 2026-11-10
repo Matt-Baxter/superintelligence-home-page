@@ -538,6 +538,16 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   ok((await john.textContent('#status')).includes('Valid'), 'Studio loads a live module view into the editor');
   await john.goto(B + '/m/view?name=capability-snapshot'); await john.waitForSelector('#view .jr-metric');
   ok((await john.textContent('#title')) === 'Capability snapshot' && (await john.$$('#view .jr-story')).length > 0, 'a module view renders from live data');
+  // Data binding and operators: a static example view (synthetic data) and a live topic view with setState tabs.
+  await john.goto(B + '/m/view?name=example-bindings'); await john.waitForSelector('#view .jr-metric');
+  const exText = await john.textContent('#view');
+  ok(exText.includes('25%') && exText.includes('1 of 4') && exText.includes("stays 'thin'") && (await john.$$('#view .jr-card .jr-card')).length === 4, 'bound view: $state, $template, $computed operators, an si-expr rule and a repeat over 4 items render');
+  await john.click('#view button:has-text("Papers only")'); await john.waitForTimeout(200);
+  ok((await john.$$('#view .jr-card .jr-card')).length === 2, 'a setState tab switches what is visible without a request');
+  await john.goto(B + '/m/view?name=topic-alignment'); await john.waitForSelector('#view .jr-ladder');
+  ok((await john.$$('#view .jr-ladder-steps span.on')).length === 2 && (await john.textContent('#view')).includes('Reviewed papers'), 'a topic view binds live counts and two rating ladders');
+  await john.click('#view button:has-text("Our checks")'); await john.waitForTimeout(200);
+  ok((await john.textContent('#view')).includes('Our own checks') && !(await john.textContent('#view')).includes('Judged from their abstracts'), 'topic view tabs switch between papers and checks');
   const jl = await j(john, '/api/admin/decision/judges'); ok(['weighted-criteria', 'jev', 'clef'].every((id) => jl.judges.some((x) => x.id === id)), 'three judges plugged in: weighted-criteria, JEV, CLEF');
   const wc = await j(john, '/api/admin/decision/judges/weighted-criteria/run', 'POST', jl.sample);
   ok(wc.result.recommendation.entry === 'version-b' && wc.result.totals[0].total === 79.5 && wc.result.totals[1].total === 76, 'weighted-criteria computes transparent totals (79.5 vs 76) and recommends the leader');
