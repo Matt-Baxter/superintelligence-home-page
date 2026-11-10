@@ -3,9 +3,9 @@
 // the paper-to-code queue, and abstract + paraphrase entries (the abstract is scored, the paraphrase only shown if
 // fidelity() passes, only a hash and the 400-character excerpt stored). Uses a throwaway SQLite database.
 const { execFileSync } = require("node:child_process"), fs = require("node:fs"), os = require("node:os"), path = require("node:path");
-const root = path.join(__dirname, ".."), DATA = fs.mkdtempSync(path.join(os.tmpdir(), "si-watch-")), OUT = fs.mkdtempSync(path.join(os.tmpdir(), "si-watch-out-"));
+const root = path.join(__dirname, ".."), DATA = fs.mkdtempSync(path.join(os.tmpdir(), "si-watch-")), OUT = fs.mkdtempSync(path.join(os.tmpdir(), "si-watch-out-")), HIST = fs.mkdtempSync(path.join(os.tmpdir(), "si-watch-hist-"));
 let pass = 0, fail = 0; const ok = (c, m) => { c ? pass++ : fail++; console.log(c ? "  ✓" : "  ✗", m); };
-const run = (...a) => execFileSync(process.execPath, ["--no-warnings", "scripts/watch.js", ...a], { cwd: root, env: { ...process.env, DATA_DIR: DATA, WATCH_OUT: OUT, DATABASE_URL: "", POSTGRES_URL: "", SITE_PROFILE: "extended", ALLOW_FIXTURE_FEEDS: "1", ARXIV_API: "fixture://sample-atom.xml", WATCH_DELAY_MS: "0" }, encoding: "utf8" }).trim().split("\n").at(-1);
+const run = (...a) => execFileSync(process.execPath, ["--no-warnings", "scripts/watch.js", ...a], { cwd: root, env: { ...process.env, DATA_DIR: DATA, WATCH_OUT: OUT, WATCH_HISTORY: HIST, DATABASE_URL: "", POSTGRES_URL: "", SITE_PROFILE: "extended", ALLOW_FIXTURE_FEEDS: "1", ARXIV_API: "fixture://sample-atom.xml", WATCH_DELAY_MS: "0" }, encoding: "utf8" }).trim().split("\n").at(-1);
 const a = run();
 ok(/2 found, 2 new/.test(a), `asking arXiv (fixture) stores new papers once across queries: ${a}`);
 ok(/1 queued for paper-to-code/.test(a), "the most credible on-topic paper is queued for paper-to-code");
@@ -41,7 +41,7 @@ fs.writeFileSync(in2, JSON.stringify([
   { title: T, url: "https://arxiv.org/abs/2611.90002", abstract: ABS, summary: bad, authors: ["A. Example"] },
   { title: "Sample paper: no abstract given (test data)", url: "https://arxiv.org/abs/2611.90003", summary: PARA, authors: [] },
 ]));
-const run2 = (...a) => execFileSync(process.execPath, ["--no-warnings", "scripts/watch.js", ...a], { cwd: root, env: { ...process.env, DATA_DIR: DATA2, WATCH_OUT: OUT2, DATABASE_URL: "", POSTGRES_URL: "", SITE_PROFILE: "extended", WATCH_DELAY_MS: "0" }, encoding: "utf8" }).trim().split("\n").at(-1);
+const run2 = (...a) => execFileSync(process.execPath, ["--no-warnings", "scripts/watch.js", ...a], { cwd: root, env: { ...process.env, DATA_DIR: DATA2, WATCH_OUT: OUT2, WATCH_HISTORY: fs.mkdtempSync(path.join(os.tmpdir(), "si-watch-hist2-")), DATABASE_URL: "", POSTGRES_URL: "", SITE_PROFILE: "extended", WATCH_DELAY_MS: "0" }, encoding: "utf8" }).trim().split("\n").at(-1);
 const line2 = run2("--from", in2);
 ok(/3 found, 2 new, 1 already catalogued/.test(line2), `the same abstract with a different paraphrase is the same document (stored once): ${line2}`);
 const day2 = fs.readdirSync(OUT2).find((f) => /^\d{4}-\d\d-\d\d\.json$/.test(f));
@@ -62,4 +62,14 @@ ok(ABS.length > 400 && sg.excerpt === ABS.slice(0, 400), "the stored excerpt is 
 ok(rows2.every((r) => !r.result.includes(ABS) && !r.result.includes(good.slice(0, 120)) && !r.result.includes("6 percentage points")), "no stored row holds the full abstract or a paraphrase");
 ok(JSON.parse(sg.result).input.abstractSha256 === pg.abstractSha256 && JSON.parse(sg.result).input.fidelity.pass === true, "the stored result records the abstract's hash and the fidelity verdict");
 ok(!sb && pb.qid === pg.qid && !pb.isNew, "the second paraphrase of the same abstract adds no row: the document id comes from the abstract");
+
+// History: a --from run saves the day's entries without paper authors; a fresh database replays earlier days first.
+const today = new Date().toISOString().slice(0, 10), saved = JSON.parse(fs.readFileSync(path.join(HIST, `${today}.json`), "utf8"));
+ok(saved.length === 2 && saved.every((e) => e.title && e.url && e.authors.length === 0), "a --from run saves the day's entries to the history folder, without paper authors");
+fs.renameSync(path.join(HIST, `${today}.json`), path.join(HIST, "2000-01-01.json"));
+const DATA3 = fs.mkdtempSync(path.join(os.tmpdir(), "si-watch-")), empty = path.join(OUT, "empty.json"); fs.writeFileSync(empty, "[]");
+const c = execFileSync(process.execPath, ["--no-warnings", "scripts/watch.js", "--from", empty], { cwd: root, env: { ...process.env, DATA_DIR: DATA3, WATCH_OUT: OUT, WATCH_HISTORY: HIST, DATABASE_URL: "", POSTGRES_URL: "", SITE_PROFILE: "extended" }, encoding: "utf8" });
+ok(/replayed 2 earlier reviews/.test(c), "a fresh database replays earlier days from the history folder");
+const B = require("../modules/lab/built"), ids = B.builtArxivIds();
+ok(ids.size > 0 && B.isBuilt(`Paper: x\nhttps://arxiv.org/abs/${[...ids][0]}\nFrom the daily watcher`, ids) && !B.isBuilt("Paper: x\nhttps://arxiv.org/abs/2611.00001", ids), "a paper-to-code job counts as built when its paper has a Lab example");
 console.log(`\nwatch unit: ${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

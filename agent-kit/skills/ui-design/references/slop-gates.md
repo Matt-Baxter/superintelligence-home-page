@@ -16,5 +16,17 @@
 | A hard-coded colour in a page's `<style>` that isn't a token (`#hex`, `rgb(`) | warn | Use the tokens, so dark mode works. |
 | `ease-in` used on an entrance (`.enter`, `open`, `show` or `in` keyframes) | warn | Rule 1. |
 | `box-shadow` with blur over 40 px | warn | It gives a glassy, floating look. Keep shadows for menus. |
+| Text contrast under 4.5:1 for a text token pair (`--fg`, `--muted`, `--warn`, `--accent` on their backgrounds), light or dark | error | Readability (WCAG AA). |
+| Headings without `text-wrap: balance` in a stylesheet that defines the tokens | error | Long titles break with one word on the last line. |
+| No `tabular-nums` in a stylesheet that defines the tokens | warn | Numbers in columns jiggle. |
+| Filler badge (`badge`, `pill` or `chip` saying New, Beta, Hot, Pro, AI-powered, Featured, Trending...) | warn | Badges must carry information. |
+| Sparkle, fire or rocket glyph in page text | warn | Embellishment. |
+| Italic word inside a heading, button or nav; `font-style: italic` outside quotes, titles, terms or notes | warn | Random italics read as decoration. |
+| Monospace on body text, headings, labels or buttons | warn | Mono is for code, ids and aligned numbers. |
+| Generic `h1` (Welcome, Dashboard, Overview, Home, Get started) | warn | Headlines say what the page is for. |
+| A label that its placeholder repeats word for word | warn | Redundant label: make the placeholder an example. |
+| More than one `btn primary` in a page | warn | One primary action per view. Mark buttons in views that never show together `unslop-ok`. |
+| A page that loads data with raw `fetch()` and shows no loading state | warn | Pages using `api()` get the shared one (aria-busy and a progress line). |
+| Drawn (SVG) and emoji icons on one page | warn | One icon style. |
 
 To allow one deliberate exception, put `/* unslop-ok: reason */` (or `<!-- unslop-ok: reason -->`) on the same line. The reason is required.

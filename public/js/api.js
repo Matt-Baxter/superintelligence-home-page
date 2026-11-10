@@ -4,7 +4,19 @@ const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const params = new URLSearchParams(location.search);
 
+// Loading state for every page: while any api() call is in flight for more than 150 ms, the page is marked
+// aria-busy and app.css draws a thin progress line under the top bar (static under prefers-reduced-motion).
+let apiPending = 0, apiBusyTimer = null;
+function apiBusy(delta) {
+  apiPending = Math.max(0, apiPending + delta);
+  if (apiPending && !apiBusyTimer) apiBusyTimer = setTimeout(() => { if (apiPending) document.documentElement.setAttribute("aria-busy", "true"); }, 150);
+  if (!apiPending) { clearTimeout(apiBusyTimer); apiBusyTimer = null; document.documentElement.removeAttribute("aria-busy"); }
+}
 async function api(path, opts = {}) {
+  apiBusy(1);
+  try { return await apiCall(path, opts); } finally { apiBusy(-1); }
+}
+async function apiCall(path, opts) {
   const res = await fetch(path, {
     method: opts.method || (opts.body ? "POST" : "GET"),
     headers: opts.body ? { "Content-Type": "application/json" } : {},

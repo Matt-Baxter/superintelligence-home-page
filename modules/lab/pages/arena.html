@@ -112,11 +112,11 @@ function render() {
     $("#bReset").onclick = () => { CUR.buffers.params = JSON.stringify(CUR.d.variant.params, null, 2); render(); };
   } else if (k === "policy") {
     setTabs([["policy", "policy.si.json"]]);
-    $("#toolbar").innerHTML = `<button class="btn primary" type="button" id="bRun">Run against live</button>${ME.admin ? '<button class="btn" type="button" id="bApply">Apply to the live router</button><button class="btn" type="button" id="bLearned">Reset to learned</button>' : ""}<span class="small muted">${esc(LIVE.source === "applied" ? `Live: applied #${LIVE.id}` : "Live: the gym's learned policy")}</span>`;
+    $("#toolbar").innerHTML = `<button class="btn primary" type="button" id="bRun">Run against live</button>${ME.admin ? '<button class="btn" type="button" id="bApply">Apply to the live router</button><button class="btn" type="button" id="bLearned">Reset to learned</button>' : ""}<span class="small muted">${esc(LIVE.source === "applied" ? `Live: applied #${LIVE.id}` : "Live: the gym's learned policy")}</span>`; // unslop-ok: one toolbar per arena mode, only one is shown
     $("#bRun").onclick = runPolicy; if ($("#bApply")) { $("#bApply").onclick = applyPolicy; $("#bLearned").onclick = resetPolicy; }
   } else {
     setTabs([["rule", "rule.si.json"], ["data", "data.json"]]);
-    $("#toolbar").innerHTML = `<button class="btn primary" type="button" id="bRun">Evaluate</button><span class="small muted">si-expr runs the same in Node, Python, Rust and WebAssembly.</span>`;
+    $("#toolbar").innerHTML = `<button class="btn primary" type="button" id="bRun">Evaluate</button><span class="small muted">si-expr runs the same in Node, Python, Rust and WebAssembly.</span>`; // unslop-ok: one toolbar per arena mode, only one is shown
     $("#bRun").onclick = runRule;
   }
   $("#code").value = CUR.buffers[TAB] ?? ""; $("#code").readOnly = TAB === "program";

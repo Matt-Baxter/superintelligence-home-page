@@ -14,7 +14,8 @@ async function waiting(db, today = new Date().toISOString().slice(0, 10)) {
     forecastsDue: await n("SELECT COUNT(*) AS n FROM review_events WHERE status = 'pending' AND due <= ?", today),
     forecastsPending: await n("SELECT COUNT(*) AS n FROM review_events WHERE status = 'pending'"),
     reviewsForPerson: await n("SELECT COUNT(*) AS n FROM review_docs WHERE needs_person = 1 AND label IS NULL"),
-    jobsQueued: await n("SELECT COUNT(*) AS n FROM learn_jobs WHERE status IN ('queued', 'needs-agent')"),
+    // Paper-to-code jobs whose paper already has a Lab example are done, even before the watcher closes them.
+    jobsQueued: await (async () => { try { const ids = require("../modules/lab/built").builtArxivIds(); return (await db.all("SELECT kind, note FROM learn_jobs WHERE status IN ('queued', 'needs-agent')")).filter((j) => !(j.kind === "paper-to-code" && require("../modules/lab/built").isBuilt(j.note, ids))).length; } catch { return 0; } })(),
     jobsFailed: await n("SELECT COUNT(*) AS n FROM learn_jobs WHERE status = 'failed'"),
     // Reviews judged without a two-model panel (REQ-034): the rules judge stood alone.
     unpaneled: await n("SELECT COUNT(*) AS n FROM review_docs WHERE result NOT LIKE '%\"panel\":{\"status\":\"agreed%' AND result NOT LIKE '%\"panel\":{\"status\":\"disagreed%'"),

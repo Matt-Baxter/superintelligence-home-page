@@ -72,6 +72,7 @@ Every interface change gets a row here. Breaking changes bump the major version 
 - **REQ-020:** the in-app agent log is removed. `GET/POST/PUT/DELETE /api/agent-log*` and `/api/agent-log-view` are gone; `/agent-log` redirects to `AGENT_LOG.md`; there's a one-time admin export at `GET /api/admin/agent-log.md`. The `agent_log` tables are kept untouched.
 - **Nine top-level topics:** `ai-rnd` became `automating-ai-research`, and `recursive-self-improvement` was added (ontology v4).
 - **Two versions:** `SITE_PROFILE=spec` (the default) or `extended`. In `spec`, `/api/lists*`, `/api/stories/:id/notes`, `/api/notes/:id`, `/api/brief`, `/api/sources/suggest` and the extended modules' routes and pages answer 404. `/api/me` adds `user.profile` and `user.features`.
+- **Weekly brief:** `GET /api/brief` without `week` shows last week when the current week has no stories yet (early on a Monday); the response's `week` says which week it shows.
 - **Admin routes moved under `/api/admin/`:**
   - `GET /api/modules` became `GET /api/admin/modules`;
   - `/api/codemap*` became `/api/admin/codemap*`;
@@ -119,7 +120,7 @@ Every interface change gets a row here. Breaking changes bump the major version 
   - Admins: `POST /api/admin/review/docs/:id/label {label: agree|disagree, note}`.
   - Pages `/m/review` and `/m/map`. | logged by John |
 | 1.6 | Nov 7, 2026 | Daily paper watcher and paper-to-code toys (extended version; proposed REQ-027 and REQ-028).
-- **Worker:** `node scripts/watch.js [--from file] [--people] [--dry] [--max N]` (config `modules/review/watch.json`). It queries arXiv at most once a day, 3 s between requests; judges each paper with the Review desk; stores it through `modules/review/store.js` (`saveReview`, shared with `POST /api/review/docs`); queues `learn_jobs` of kind `paper-to-code`; and writes `out/watch/<date>.md` and `.json`. `ARXIV_API` and `WATCH_DELAY_MS` exist for tests.
+- **Worker:** `node scripts/watch.js [--from file] [--people] [--dry] [--max N]` (config `modules/review/watch.json`). It queries arXiv at most once a day, 3 s between requests; judges each paper with the Review desk; stores it through `modules/review/store.js` (`saveReview`, shared with `POST /api/review/docs`); queues `learn_jobs` of kind `paper-to-code`; and writes `out/watch/<date>.md` and `.json`. With `--from`, it also saves the day's entries to `modules/review/history/<date>.json` (no paper authors) and replays earlier days' files first, so a fresh database keeps past reviews; `--no-history` turns this off and `WATCH_HISTORY` moves the folder. Paper-to-code jobs whose paper already has a Lab example (`modules/lab/built.js`) are closed as done and not queued again. `ARXIV_API` and `WATCH_DELAY_MS` exist for tests.
 - **Review result** gains `survey` (bool); `kindLabel` can be "Survey".
 - **Lab examples** gain an optional `source {title, url, via}`, returned by `GET /api/lab/examples` and `GET /api/lab/examples/:id`.
 - **New Lab runners:** `self-improve-selection` and `research-oversight` (`modules/lab/papers.js`). The `sparse-autoencoder` runner gains `cosine` and `norm_spread`. | logged by John |

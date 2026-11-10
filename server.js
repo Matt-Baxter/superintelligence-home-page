@@ -287,10 +287,15 @@ function weekBounds(weekStart) {
   return { start, end: new Date(start.getTime() + 7 * 864e5) };
 }
 app.get("/api/brief", auth, feature("brief"), wrap(async (req) => {
-  const { start, end } = weekBounds(str(req.query.week, 10));
-  const prevStart = new Date(start.getTime() - 7 * 864e5);
+  let { start, end } = weekBounds(str(req.query.week, 10));
   const inRange = "COALESCE(s.published_at, s.first_seen) >= ? AND COALESCE(s.published_at, s.first_seen) < ?";
-  const stories = await storyRows(inRange, [start.toISOString(), end.toISOString()], req.user.id, { sort: "top", limit: 1000 });
+  let stories = await storyRows(inRange, [start.toISOString(), end.toISOString()], req.user.id, { sort: "top", limit: 1000 });
+  // Early in a week nothing may be collected yet: without a chosen week, show last week rather than an empty brief.
+  if (!stories.length && !req.query.week) {
+    const ps = new Date(start.getTime() - 7 * 864e5), last = await storyRows(inRange, [ps.toISOString(), start.toISOString()], req.user.id, { sort: "top", limit: 1000 });
+    if (last.length) { end = start; start = ps; stories = last; }
+  }
+  const prevStart = new Date(start.getTime() - 7 * 864e5);
   const prev = await db.all(`SELECT t.topic, COUNT(*) AS n FROM story_topics t JOIN stories s ON s.id = t.story_id WHERE COALESCE(s.hidden, 0) = 0 AND COALESCE(s.in_scope, 0) = 1 AND ${inRange} GROUP BY t.topic`, prevStart.toISOString(), start.toISOString());
   const prevMap = Object.fromEntries(prev.map((r) => [r.topic, r.n]));
   const kinds = {}; stories.forEach((s) => new Set(s.sources.map((x) => x.kind)).forEach((k) => (kinds[k] = (kinds[k] || 0) + 1)));

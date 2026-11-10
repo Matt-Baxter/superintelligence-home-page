@@ -2,8 +2,10 @@
 const { chromium } = require('playwright');
 require('./sample-clock'); // same clock as the sample server, so times it returns compare correctly
 const B = process.env.BASE || 'http://localhost:3200';
-const FIXTURE_WEEK = '2026-11-02'; // Monday of the week the synthetic fixture feeds are dated in (test/fixtures)
+const FIXTURE_WEEK = require('./fixture-dates').fixtureWeek(); // Monday of the week that holds the newest sample story
 let pass = 0, fail = 0; const errs = [];
+// The section running now, so a crash says where it happened (section headers are the lines logged without a mark).
+let SECTION = 'start'; { const log = console.log; console.log = (...a) => { if (typeof a[0] === 'string' && !/^\s/.test(a[0]) && !a[0].startsWith('\n')) SECTION = a[0]; log(...a); }; }
 const ok = (c, m) => { c ? pass++ : fail++; console.log(c ? '  ✓' : '  ✗', m); };
 async function account(b, u, name) {
   const ctx = await b.newContext({ viewport: { width: 1200, height: 900 } }); const p = await ctx.newPage();
@@ -192,10 +194,15 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   ok((await john.textContent('#sub')).includes('active sources'), 'sources page summarizes kinds and schedule');
 
   console.log('Weekly brief (json-render)');
-  // The synthetic fixtures are dated in the week of 2026-11-02, so ask for that week; the current week can be empty.
+  // The sample stories are dated in the last few days (test/fixture-dates.js); ask for the week that holds them.
   await john.goto(B + '/brief?week=' + FIXTURE_WEEK); await john.waitForSelector('#brief .jr-metric');
   const br = await john.textContent('#brief'); ok(br.includes('Stories this week') && br.includes('Top stories'), 'brief renders from a server-built spec');
   ok(br.includes('Where the activity was'), 'topic activity bars render');
+  await john.goto(B + '/brief'); await john.waitForSelector('#brief .jr-metric');
+  ok((await john.textContent('#brief')).includes('Top stories'), 'the brief with no week chosen has stories (last week when this week has none yet)');
+  await john.goto(B + '/brief?week=2001-01-01'); await john.waitForSelector('#brief .jr-metric');
+  ok((await john.textContent('#brief')).includes('Nothing collected for this week yet'), 'an empty week renders its empty state (no missing blocks)');
+  await john.goto(B + '/brief?week=' + FIXTURE_WEEK); await john.waitForSelector('#brief .jr-story');
   await john.locator('#brief .jr-story button', { hasText: 'Discuss' }).first().click(); await john.waitForURL(/story\?id=/); ok(true, 'json-render action openStory navigates');
   await john.screenshot({ path: 'shots/story.png', fullPage: true });
   await john.goto(B + '/brief?week=2000-01-03'); await john.waitForSelector('#brief .jr-metric');
@@ -662,4 +669,4 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   await john.goto(B + '/brief?week=' + FIXTURE_WEEK); await john.waitForSelector('#brief .jr-metric'); await john.screenshot({ path: 'shots/brief.png', fullPage: true });
   console.log(`\n${pass} passed, ${fail} failed`); console.log('page errors:', errs.length ? errs : 'none');
   await b.close(); process.exit(fail ? 1 : 0);
-})().catch((e) => { console.error('CRASH', e); process.exit(2); });
+})().catch((e) => { console.error(`CRASH in "${SECTION}" after ${pass} passed, ${fail} failed: ${String(e.message || e).split('\n')[0]}`); console.error(e); process.exit(2); });

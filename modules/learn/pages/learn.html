@@ -198,7 +198,7 @@ async function showJobs(request=++learnRequest) {
       <label>Kind<select id="jKind">${kinds.map((k) => `<option value="${k.id}">${esc(k.label)} (${esc(k.runs)})</option>`).join("")}</select></label>
       <label>Concept<select id="jConcept"><option value="">None</option>${g.concepts.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select></label>
       <label>Note (paper link, what to build or check)<textarea id="jNote" placeholder="e.g. arXiv link and which result to reproduce"></textarea></label>
-      <button class="btn primary" type="button" id="jAdd">Queue</button><p class="small muted" id="jMsg" role="status"></p></section></div>`;
+      <button class="btn primary" type="button" id="jAdd">Queue</button><p class="small muted" id="jMsg" role="status"></p></section></div>`; // unslop-ok: studio view; the how-it-works view has its own action
   $("#jAdd").onclick = async () => { try { const r = await api("/api/admin/learn/jobs", { body: { kind: $("#jKind").value, concept_id: $("#jConcept").value || null, note: $("#jNote").value } }); toast(`Queued job #${r.job.id}`); if(request===learnRequest)await showJobs(); } catch (e) { if(request===learnRequest)$("#jMsg").textContent = e.message; } };
   $("#jobs").onclick = async (e) => {
     const t = e.target, id = t.dataset.pub || t.dataset.requeue || t.dataset.del; if (!id) return;

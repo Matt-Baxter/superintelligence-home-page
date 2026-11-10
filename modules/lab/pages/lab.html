@@ -78,7 +78,7 @@ async function detail(id) {
       </section>
       <section class="panel" style="align-content:start"><h2>Try your own hypothesis</h2><p class="small muted">Change the parameters and run. Runs are deterministic and take milliseconds.</p>
         <form class="params" id="pform">${Object.entries(d.runner.params).map(([k, p]) => { const v = d.variant.params[k]; return `<label>${esc(k)}<output id="o_${k}">${fmt(v)}</output><input type="range" name="${k}" min="${p.min}" max="${p.max}" step="${p.step || (p.max - p.min) / 100}" value="${v}" aria-label="${esc(p.about)}"><span class="small muted" style="grid-column:1/-1">${esc(p.about)}</span></label>`; }).join("")}
-        <button class="btn primary" type="submit">Run my variant</button></form><div id="mine" role="status"></div>
+        <button class="btn primary" type="submit">Run my variant</button></form><div id="mine" role="status"></div><!-- unslop-ok: example view; the router form is on the index view -->
         <details style="margin-top:12px"><summary class="small">The program an agent reads (autoresearch)</summary><pre class="code">${esc(d.program)}</pre><p class="small muted">Run the ratchet: <code>npm run lab -- explore ${esc(d.id)}</code>; add <code>--provider ollama</code> to let a local Gemma propose changes.</p></details>
       </section></div>`;
   $("#copyJudge").onclick = (e) => copy(JSON.stringify(d.judgeInput, null, 2), e.target);

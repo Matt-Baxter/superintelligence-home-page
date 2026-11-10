@@ -8,12 +8,13 @@ process.env.SOURCE_CATALOG = require("node:path").join(__dirname, "fixtures", "s
 const fs = require("node:fs"), path = require("node:path");
 const { app, db, ingestItems, boot } = require("../server");
 const feeds = require("../lib/feeds");
+const { shiftItems } = require("./fixture-dates"); // fixture dates move forward to the last few days, so tests never depend on today
 (async () => {
   await db.exec("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
   await boot();
   const add = async (name, kind, format, file) => {
     const id = await db.insert("INSERT INTO sources (name, kind, format, url, home, status) VALUES (?, ?, ?, ?, '', 'active')", name, kind, format, "fixture://" + file);
-    const items = feeds.parse(format, fs.readFileSync(path.join(__dirname, "fixtures", file), "utf8"));
+    const items = shiftItems(feeds.parse(format, fs.readFileSync(path.join(__dirname, "fixtures", file), "utf8")));
     await ingestItems(id, items);
     await db.run("UPDATE sources SET last_ok = ?, last_count = ? WHERE id = ?", db.now(), items.length, id);
   };

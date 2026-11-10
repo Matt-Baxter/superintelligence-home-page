@@ -13,3 +13,4 @@ __pycache__/
 
 # Lean build output (proofs/, REQ-038)
 proofs/.lake/
+public/js/jr.js
