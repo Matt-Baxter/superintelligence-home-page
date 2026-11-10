@@ -208,6 +208,11 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   await john.goto(B + '/brief?week=2000-01-03'); await john.waitForSelector('#brief .jr-metric');
   ok((await john.textContent('#brief')).includes('Nothing collected for this week yet') && await john.locator('#brief .jr-story').count() === 0, 'an empty week reports no coverage without inventing stories');
 
+  console.log('Evidence index (REQ-031)');
+  await john.goto(B + '/m/evidence'); await john.waitForSelector('#ix .row');
+  const eix = await john.evaluate(async () => (await (await fetch('/api/review/evidence-index')).json()));
+  ok((await john.$$('#ix .row')).length === eix.topics.length && eix.topics.length > 0 && eix.topics.every((t) => eix.levels.includes(t.strength) && eix.buzzLevels.includes(t.buzz.level)), `the evidence index shows one row per research area (${eix.topics.length}), each with an evidence and a buzz rating`);
+  ok((await john.getAttribute('#ix .row h2 a', 'href')).startsWith('/m/dossier#') && await john.isVisible('.topbar a[href="/m/evidence"][aria-current="page"]'), 'each row opens its dossier, and Evidence is in the top bar');
   console.log('Agent log (REQ-020: AGENT_LOG.md in the repo, not the app)');
   ok(!(await john.textContent('nav')).includes('Agent log'), 'no Agent log page in the nav');
   const alr = await john.evaluate(async () => { const r = await fetch('/agent-log', { redirect: 'manual' }); return r.type === 'opaqueredirect' || r.status === 302; });

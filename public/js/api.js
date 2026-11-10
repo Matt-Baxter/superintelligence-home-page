@@ -47,12 +47,12 @@ function workspaceNavigation(user, current) {
   const nav = user?.nav || [], available = [...(user ? NAV.filter(([, , f]) => !f || user.features?.includes(f)).map(([href,label])=>({href,label})) : [{href:"/",label:"Feed"},{href:"/welcome",label:"About"}]), ...nav, ...(!user ? (window.SI_PUBLIC_NAV || []) : [])];
   const known = {"/story":"Story", "/m/content":"Content desk"};
   if (nav.some(x=>x.href==='/m/review')) available.push({href:'/m/dossier',label:'Topic dossiers'});
-  const group = entry => entry.admin ? "Administration" : /^\/m\/(review|map|learn|lab|dossier|sources|arena|journal|glossary)/.test(entry.href) ? "Research" : "Reading";
+  const group = entry => entry.admin ? "Administration" : /^\/m\/(review|evidence|map|learn|lab|dossier|sources|arena|journal|glossary)/.test(entry.href) ? "Research" : "Reading";
   const isCurrent = href => { const url = new URL(href,location.origin); return url.pathname===current && (current!=="/" || (url.searchParams.get("saved")==="1") === (new URLSearchParams(location.search).get("saved")==="1")); };
   const selected = available.find(x=>isCurrent(x.href));
   const label = known[current] || selected?.label || document.title.split(" · ")[0];
   const category = selected ? group(selected) : "Reading";
-  const parent = category === "Administration" ? available.find(x=>x.href==="/m/admin") : category === "Research" ? available.find(x=>x.href==="/m/map") : null;
+  const parent = category === "Administration" ? available.find(x=>x.href==="/m/admin") : category === "Research" ? (available.find(x=>x.href==="/m/evidence") || available.find(x=>x.href==="/m/map")) : null;
   document.querySelector(".workspace-context")?.remove();
   const main = document.querySelector("main") || document.querySelector("#app"); if (!main) return;
   const context = document.createElement("div"); context.className="workspace-context";
@@ -74,7 +74,7 @@ function topbar(user) {
   const core = (user ? NAV : [["/", "Feed"], ...(window.SI_PUBLIC_NAV || []).map(n=>[n.href,n.label]), ["/welcome", "About"]]).filter(([, , f]) => !f || (user?.features || []).includes(f));
   const links = [core[0], ...mod.filter((n) => (n.order ?? 50) < 20).map((n) => [n.href, n.label]), ...core.slice(1), ...mod.filter((n) => (n.order ?? 50) >= 20).map((n) => [n.href, n.label])];
   // Six destinations in the bar, the rest under "More", so the bar reads at a glance (and never wraps on a laptop).
-  const PRIMARY = ["/", "/m/review", "/m/map", "/m/lab", "/m/learn", "/brief"];
+  const PRIMARY = ["/", "/m/evidence", "/m/review", "/m/lab", "/m/learn", "/brief"];
   // Guests see few links, so all stay in the bar; the page you are on always stays visible in the bar.
   const inBar = ([h]) => !user || PRIMARY.includes(h) || isHere(h);
   const primary = links.filter(inBar), more = links.filter((l) => !inBar(l));
@@ -141,7 +141,7 @@ function storyCard(s, opts = {}) {
   // A research write-up among the sources carries its judgement (the "rigor-badges" feature): verdict, credibility, grade.
   const rg = (s.sources.find((x) => x.rigor && x.rigor.verdict) || {}).rigor;
   const rigorBadge = rg ? `<a class="rigor${rg.verdict === "doubtful" ? " low" : ""}" href="${esc((s.sources.find((x) => x.rigor === rg) || {}).url || "#")}" target="_blank" rel="noopener noreferrer" title="Research write-up: ${esc(rg.verdict)}, credibility ${esc(rg.credibility ?? "?")}/100, source grade ${esc(rg.grade || "?")}${rg.panel && rg.panel !== "none" ? `, model panel ${esc(rg.panel)}` : ""}">${esc(rg.verdict)} · ${esc(rg.credibility ?? "?")}${rg.grade ? ` · ${esc(rg.grade)}` : ""}</a>` : "";
-  const sigBadge = `<button type="button" class="sig evidence-toggle ${sig >= 60 ? "hi" : sig >= 35 ? "mid" : ""}" aria-expanded="false" aria-controls="${evidenceId}" aria-label="Explain significance: ${sig} out of 100">${sig}</button>`;
+  const sigBadge = `<button type="button" class="sig evidence-toggle ${sig >= 60 ? "hi" : sig >= 35 ? "mid" : ""}" aria-expanded="false" aria-controls="${evidenceId}" aria-label="Explain significance: ${sig} out of 100" title="Significance ${sig} of 100: why it scored this">${sig}</button>`;
   const bench = (an.benchmarks || []).slice(0, 3).map((b) => `<a class="tag bench" href="/?benchmark=${esc(b.id)}" title="Benchmark${b.score ? `: reported ${esc(b.score.raw)}` : ""}">${esc(b.label)}${b.score ? ` <b>${esc(fmtScore(b.score))}</b>` : ""}</a>`).join("");
   li.innerHTML = `<button class="vote ${s.voted ? "on" : ""}" type="button" aria-pressed="${s.voted}" aria-label="Upvote"><span aria-hidden="true">▲</span><b>${s.votes}</b></button>
     <div class="body"><a class="title" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.title)}</a>

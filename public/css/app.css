@@ -148,7 +148,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, .btn:focus-vi
 .story .body { display: grid; gap: 6px; min-width: 0; }
 .story .title { font-size: 17px; font-weight: 600; color: var(--fg); text-decoration: none; line-height: 1.35; overflow-wrap: anywhere; }
 .story .title:hover { color: var(--accent); text-decoration: underline; }
-.story .meta { display: flex; gap: 6px 14px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.story .meta { display: flex; gap: 6px 14px; flex-wrap: wrap; align-items: center; font-size: 13px; color: var(--muted); }
 .story .meta .multi { color: var(--accent); font-weight: 600; }
 .story .sum { font-size: 14px; color: var(--muted); }
 .story .listnote { font-size: 14px; font-style: italic; }
@@ -314,7 +314,7 @@ code, .mono, pre { font-family: var(--mono); }
 @media (max-width: 900px) {
   #feedView { gap: 16px; padding-top: 20px; } .feed-head { align-items: center; gap: 12px; } .feed-head > div { flex-basis: 100%; }
   .feed-head #submitBtn { padding: 7px 12px; min-height: 40px; }
-  #feedView .topicbar { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 6px; min-width: 0; }
+  #feedView .topicbar { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 6px; min-width: 0; mask-image: linear-gradient(to right, #000 85%, transparent); scrollbar-width: none; } /* the fade says "more to the right" */
   #feedView .topicbar a { flex: none; display: flex; align-items: center; min-height: 44px; }
   .feed-filters { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
   .feed-filters .seg-btns, .feed-filters input[type=search] { grid-column: 1 / -1; width: 100%; }
@@ -365,7 +365,8 @@ code, .mono, pre { font-family: var(--mono); }
 
 /* Evidence stays available to touch and keyboard; graphics use the existing score factors. */
 .story-heading { font-size: 26px; line-height: 1.25; margin: 0 0 10px; }
-.evidence-toggle { font: inherit; cursor: pointer; min-width: 44px; min-height: 32px; }
+.evidence-toggle { font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; min-width: 32px; height: 24px; position: relative; }
+.evidence-toggle::after { content: ""; position: absolute; inset: -10px -6px; } /* 44px hit area, 24px box */
 .evidence-panel { margin: 12px 0; padding: 12px; border-left: 2px solid var(--line-strong); background: var(--bg); }
 .evidence-factors { display: grid; gap: 12px; list-style: none; margin: 12px 0 0; padding: 0; }
 .evidence-factors li { display: grid; grid-template-columns: minmax(130px, 1fr) minmax(80px, 1fr); gap: 4px 12px; font-size: 14px; }
@@ -380,7 +381,7 @@ code, .mono, pre { font-family: var(--mono); }
   .topbar[data-nav-open] .nav { animation: si-enter var(--dur-2) var(--ease-out) both; }
 }
 @media (max-width: 900px) {
-  .evidence-toggle, .filter-chip { min-height: 44px; } .story-heading { font-size: 20px; }
+  .filter-chip { min-height: 44px; } .story-heading { font-size: 20px; }
   #feedView #guestNotice { font-size: 13px; } #feedView .feed-head p { display: none; }
 }
 
@@ -393,7 +394,7 @@ code, .mono, pre { font-family: var(--mono); }
   #feedView .feed-results { min-height: 24px; }
 }
 
-.story-date summary { cursor: pointer; min-height: 24px; padding: 2px; }
+.story-date summary { cursor: pointer; min-height: 24px; padding: 2px; list-style: none; text-decoration: underline dotted; text-decoration-color: var(--line-strong); text-underline-offset: 3px; } .story-date summary::-webkit-details-marker { display: none; }
 .story-date[open] { flex-basis: 100%; } .story-date p { padding: 8px 0; overflow-wrap: anywhere; }
 .story-date time { font-variant-numeric: tabular-nums; }
 .sort-explanation { border-left: 2px solid var(--line-strong); padding: 10px 12px; }
@@ -455,3 +456,6 @@ code, .mono, pre { font-family: var(--mono); }
 #functionOutput { overflow-wrap: anywhere; margin-top: 12px; }
 .term-entry:focus { outline: 2px solid var(--fg); outline-offset: 2px; }
 .topic-trace td:first-child { width: 34%; text-align: left; font-weight: 600; white-space: nowrap; } .topic-trace td:nth-child(2) { width: auto; font-weight: 400; }
+
+/* Feed result line: the count and 'Explain sort' read as one quiet line, not a toolbar. */
+#sortInfo.linkish { font-size: 14px; padding: 0; min-height: 0; border: 0; background: none; cursor: pointer; }

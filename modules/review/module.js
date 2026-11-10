@@ -29,6 +29,7 @@ CREATE INDEX IF NOT EXISTS idx_review_events_outlet ON review_events(outlet);
       await db.run("DELETE FROM knowledge_edges WHERE src LIKE 'event:%' AND src NOT IN (SELECT qid FROM review_events)");
     });
     ctx.point("http.routes").add((app, deps) => require("./routes")(app, deps));
+    ctx.point("ui.nav").add({ href: "/m/evidence", label: "Evidence", order: 16 });
     ctx.point("ui.nav").add({ href: "/m/review", label: "Review", order: 21 });
     ctx.point("ui.nav").add({ href: "/m/map", label: "Map", order: 17 });
   },

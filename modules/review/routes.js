@@ -105,6 +105,20 @@ module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, no
     const d = await dossierFor(str(req.params.topic, 60)), link = `${site(req)}/m/dossier#${d.topic}`;
     return { dossier: d, blog: D.blog(d, site(req)), posts: D.posts(d, link), storyboard: D.storyboard(d) };
   }));
+  // The evidence index: every top-level topic's evidence rating next to its buzz, sorted so the topics where talk runs
+  // furthest ahead of the evidence come first. One request instead of one dossier per topic.
+  const GAP_ORDER = ["talked about far more than it has been shown", "talked about more than it has been shown", "talk and evidence roughly in step", "shown more than it is talked about"];
+  app.get("/api/review/evidence-index", auth, wrap(async () => {
+    const roots = ontology.topics.filter((t) => !t.parent), ex = labExamples(), out = [];
+    for (const t of roots) {
+      const d = D.analyse(await D.gather(db, t.id), { examples: ex, concepts: CONCEPTS });
+      out.push({ id: t.id, label: d.label, strength: d.strength, why: d.why, buzz: { level: d.buzz.level, items: d.buzz.items, hype: d.buzz.hype, gap: d.buzz.gap },
+        counts: { papers: d.counts.primary, articles: d.counts.articles ?? 0, credible: d.counts.credible, checks: d.counts.checks, supported: d.counts.supported, stories: d.counts.stories },
+        top: d.papers.filter((p) => p.kind === "paper").slice(0, 1).map((p) => ({ title: p.title, url: p.url, credibility: p.credibility, verdict: p.verdict }))[0] || null });
+    }
+    out.sort((a, b) => GAP_ORDER.indexOf(a.buzz.gap) - GAP_ORDER.indexOf(b.buzz.gap) || b.buzz.items - a.buzz.items || b.counts.papers - a.counts.papers);
+    return { at: new Date().toISOString().slice(0, 10), levels: ["none yet", "thin", "early", "some support"], buzzLevels: ["quiet", "some", "loud"], topics: out };
+  }));
   // The storyboard alone is public, like concept explainers, so the explainer player and its recorder can load it.
   app.get("/api/review/dossier/:topic/storyboard", wrap(async (req) => ({ storyboard: D.storyboard(await dossierFor(str(req.params.topic, 60))) })));
 
