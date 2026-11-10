@@ -130,7 +130,7 @@ async function main() {
     .sort((a, b) => b.r.credibility + b.r.score - (a.r.credibility + a.r.score)).slice(0, P.maxPerRun);
   for (const c of cands) {
     if (!dry) {
-      const note = `Paper: ${c.e.title}\n${c.e.url}\nFrom the daily watcher (review #${c.docId}: ${c.r.verdict}, score ${c.r.score}, credibility ${c.r.credibility}). Build a CPU toy of the core method with a test, and a Lab example (idea, reproduction, our hypothesis).`;
+      const note = `Paper: ${c.e.title}\n${c.e.url}\nFrom the daily watcher (review #${c.docId}, ${c.r.qid}: ${c.r.verdict}, score ${c.r.score}, credibility ${c.r.credibility}). Build a CPU toy of the core method with a test, and a Lab example (idea, reproduction, our hypothesis).`;
       const dup = await db.get("SELECT id FROM learn_jobs WHERE kind = 'paper-to-code' AND note LIKE ?", `%${c.e.url}%`);
       if (dup) continue;
       const id = await db.insert("INSERT INTO learn_jobs (kind, note, updated_at) VALUES ('paper-to-code', ?, ?)", note, new Date().toISOString());

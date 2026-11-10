@@ -1,5 +1,7 @@
 # Pipeline, step by step
 
+Every lineage (feeds, readers, Review desk, watcher, knowledge, Learn, Lab, project, pruning), with what each operator keeps, transforms and drops and the check that proves it: `docs/LINEAGE.md`. `test/lineage-unit.js` checks end-to-end fidelity.
+
 ## 1. Picking sources (`lib/harvest.js`)
 - `harvest({trigger, force, sourceId})` selects active sources whose `next_due_at` has passed (all of them with `force`).
 - Runs 5 at a time; stops starting new fetches after `HARVEST_BUDGET_MS` (45 s). Unreached sources stay due.

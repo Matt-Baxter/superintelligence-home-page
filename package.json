@@ -27,6 +27,7 @@
     "dictionary": "node scripts/dictionary.js",
     "resolve": "node scripts/resolve-entities.js",
     "test:spec": "node test/spec-acceptance.js --browser",
+    "test:lineage": "LINEAGE_FULL=1 node --no-warnings test/lineage-unit.js",
     "lab": "node scripts/lab.js",
     "spec:status": "node scripts/spec-status.js",
     "bench": "node scripts/bench.js --record",
