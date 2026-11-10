@@ -13,7 +13,7 @@
   <key>ProgramArguments</key>
   <array>
     <string>/bin/sh</string><string>-lc</string>
-    <string>node scripts/research-loop.js --shard SHARD --seeds 300 --and-merge</string>
+    <string>node scripts/research-loop.js --shard SHARD --seeds 300 --introspection 60 --and-merge</string>
   </array>
   <key>EnvironmentVariables</key><dict><key>LOOP_DIR</key><string>SHARED</string></dict>
   <key>StartInterval</key><integer>3600</integer>

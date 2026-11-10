@@ -56,4 +56,6 @@ const rd = P.runners.find((r) => r.id === "recursive-drift"), keep = (a) => rd.r
 assert.ok(keep(1) > 0.98 && keep(1) - keep(0) > 0.02, "above the threshold an outside anchor holds; self-reference leaks across generations");
 const lf = P.runners.find((r) => r.id === "library-fidelity"), lib = (st) => lf.run({ strategy: st, budget: 0.1, mistranslate: 0.05, def_share: 0.25, nodes: 400, seed: 29 }).metrics;
 assert.ok(lib(2).contaminated < lib(0).contaminated / 2, "foundations-first removes far more contamination than checking the last results");
-console.log("verification unit checks: 27 passed");
+const li = (st) => lf.run({ strategy: st, budget: 0.1, mistranslate: 0.05, def_share: 0.25, nodes: 400, infra: 0.2, seed: 29 }).metrics.contaminated;
+assert.ok(li(2) < li(3) && li(3) < li(0), "with infrastructure hubs: mathematical foundations first < raw centrality < last results first");
+console.log("verification unit checks: 28 passed");

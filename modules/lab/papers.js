@@ -234,11 +234,16 @@ function recursiveDrift({ generations = 6, anchor_every = 1, power = 0.5, diffic
 // not), is wrong and wasn't caught. A reviewer checks `budget` of the declarations exactly against the source text
 // and fixes what is wrong, chosen by strategy: 0 = the last results (what a single-theorem project checks: its final
 // statement), 1 = at random, 2 = foundations first (definitions with the most dependents).
-function libraryFidelity({ nodes = 400, def_share = 0.25, mistranslate = 0.05, budget = 0.1, strategy = 2, seed = 29 } = {}) {
-  const r = rng(seed), isDef = [], deps = [], wrong = [];
+function libraryFidelity({ nodes = 400, def_share = 0.25, mistranslate = 0.05, budget = 0.1, strategy = 2, infra = 0, seed = 29 } = {}) {
+  // infra: share of declarations that are infrastructure (tactics, notation, basic instances). Many declarations use
+  // them, but a wrong translation of one isn't a statement-fidelity error, so they are never "wrong" and don't spread.
+  const r = rng(seed), isDef = [], deps = [], wrong = [], isInfra = [];
   for (let i = 0; i < nodes; i++) {
-    isDef.push(i < 5 || r() < def_share); wrong.push(r() < mistranslate);
+    const inf = i >= 5 && r() < infra; isInfra.push(inf);
+    isDef.push(!inf && (i < 5 || r() < def_share)); wrong.push(!inf && r() < mistranslate);
     const d = new Set(); if (i) for (let k = 0, n = 1 + Math.floor(r() * 3); k < n; k++) d.add(Math.floor(Math.pow(r(), 1.6) * i)); // older declarations are used more
+    const hubs = isInfra.slice(0, i).flatMap((x, j) => (x ? [j] : []));
+    if (hubs.length) for (let k = 0, n = 1 + Math.floor(r() * 2); k < n; k++) d.add(hubs[Math.floor(r() * hubs.length)]); // most declarations use some infrastructure
     deps.push([...d]);
   }
   // Descendant counts (how much depends on each declaration), for foundations first.
@@ -246,13 +251,15 @@ function libraryFidelity({ nodes = 400, def_share = 0.25, mistranslate = 0.05, b
   const reach = new Array(nodes).fill(0);
   for (let i = nodes - 1; i >= 0; i--) { const seen = new Set(), st = [...kids[i]]; while (st.length) { const x = st.pop(); if (!seen.has(x)) { seen.add(x); st.push(...kids[x]); } } reach[i] = seen.size; }
   const B = Math.round(budget * nodes), idx = [...Array(nodes).keys()];
-  const order = strategy === 0 ? idx.slice().reverse() : strategy === 1 ? idx.map((i) => [r(), i]).sort((a, b) => a[0] - b[0]).map((x) => x[1]) : idx.slice().sort((a, b) => (isDef[b] - isDef[a]) || (reach[b] - reach[a]));
+  const order = strategy === 0 ? idx.slice().reverse() : strategy === 1 ? idx.map((i) => [r(), i]).sort((a, b) => a[0] - b[0]).map((x) => x[1])
+    : strategy === 3 ? idx.slice().sort((a, b) => reach[b] - reach[a]) // raw centrality: most dependents first, mathematical or not
+    : idx.slice().sort((a, b) => (isDef[b] - isDef[a]) || (reach[b] - reach[a]));
   const fixed = new Set(order.slice(0, B)), bad = idx.map((i) => wrong[i] && !fixed.has(i));
   const tainted = new Array(nodes).fill(false);
   for (let i = 0; i < nodes; i++) tainted[i] = bad[i] || deps[i].some((j) => isDef[j] && tainted[j]);
   const share = tainted.filter(Boolean).length / nodes, before = (() => { const t = []; for (let i = 0; i < nodes; i++) t[i] = wrong[i] || deps[i].some((j) => isDef[j] && t[j]); return t.filter(Boolean).length / nodes; })();
   return { metrics: { contaminated: round(share), contaminated_unchecked: round(before), caught: round(order.slice(0, B).filter((i) => wrong[i]).length / Math.max(1, wrong.filter(Boolean).length)) },
-    series: [], notes: [`${nodes} declarations, ${Math.round(def_share * 100)}% definitions, ${Math.round(mistranslate * 100)}% mistranslated; ${B} checked (${["last results first", "at random", "foundations first"][strategy]}).`,
+    series: [], notes: [`${nodes} declarations, ${Math.round(def_share * 100)}% definitions, ${Math.round(mistranslate * 100)}% mistranslated; ${B} checked (${["last results first", "at random", "foundations first", "most dependents first"][strategy]})${infra ? `; ${Math.round(infra * 100)}% infrastructure` : ""}.`,
       `Unchecked, ${Math.round(before * 100)}% of the library rests on a wrong statement; after checking, ${Math.round(share * 100)}%.`] };
 }
 
@@ -325,7 +332,8 @@ const runnersList = [
     run: (p) => recursiveDrift(p) },
   { id: "library-fidelity", about: "A formal library as a dependency graph: which declarations should a person check against the source text, given a budget?",
     params: {
-      strategy: { default: 2, min: 0, max: 2, step: 1, about: "0 = check the last results first (a single-theorem project's final statement), 1 = at random, 2 = foundations first" },
+      strategy: { default: 2, min: 0, max: 3, step: 1, about: "0 = check the last results first (a single-theorem project's final statement), 1 = at random, 2 = foundations first (mathematical definitions with the most dependents), 3 = most dependents first, mathematical or not (raw centrality)" },
+      infra: { default: 0, min: 0, max: 0.5, step: 0.05, about: "Share of declarations that are infrastructure (tactics, notation, instances): heavily used, never a fidelity error" },
       budget: { default: 0.1, min: 0, max: 1, step: 0.05, about: "Share of declarations a person checks" },
       mistranslate: { default: 0.05, min: 0, max: 0.5, step: 0.01, about: "Chance a declaration's translation is wrong" },
       def_share: { default: 0.25, min: 0.05, max: 1, step: 0.05, about: "Share of declarations that are definitions (whose errors spread)" },

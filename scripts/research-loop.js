@@ -10,6 +10,8 @@
 //   node scripts/research-loop.js --every 60            a cycle every 60 minutes until stopped
 //   node scripts/research-loop.js --merge               pool all machines' latest results into report.md
 //   LOOP_DIR=~/Sync/si-loop node scripts/research-loop.js ...   shared folder (default out/loop, git-ignored)
+//   --introspection N   also train the introspection toy (Python 3 + NumPy) on this shard of N seeds per config,
+//                       for H7 (research/introspection/HYPOTHESES.md); a few minutes per 10 seeds on a laptop
 const fs = require("fs"), os = require("os"), path = require("path"), { execSync, spawnSync } = require("child_process");
 const root = path.join(__dirname, ".."), P = require("../modules/lab/papers");
 const args = process.argv.slice(2), arg = (k, d) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : d; }, has = (k) => args.includes(k);
@@ -41,6 +43,7 @@ const HYPOTHESES = [
   { id: "recursive-drift-below-threshold", exp: "drift-below", q: (s) => s.leak, bar: 0.3, text: "below threshold, self-reference loses at least 0.3 more of the claim" },
   { id: "recursive-drift-above-threshold", exp: "drift-above", q: (s) => s.leak, bar: 0.05, text: "above threshold, self-reference loses at least 0.05 more over 12 generations" },
   { id: "library-foundations-first", exp: "library", q: (s) => s.gain, bar: 0.2, text: "foundations first leaves at least 0.2 less contaminated (absolute)" },
+  { id: "introspection H7", exp: "introspection-h7", q: (s) => s.das_gap, bar: 0.10, text: "joint training makes the reported concept's causal direction at least 0.10 easier to find" },
 ];
 
 const stat = (xs) => { const n = xs.length, m = xs.reduce((a, b) => a + b, 0) / (n || 1), sd = Math.sqrt(xs.reduce((a, b) => a + (b - m) ** 2, 0) / Math.max(1, n - 1)), h = 1.96 * sd / Math.sqrt(n || 1);
@@ -64,6 +67,18 @@ function cycle() {
   for (const c of checks) console.log(`  ${c.ok ? "ok  " : "FAIL"} ${c.cmd} (${c.ms} ms) ${c.tail.slice(0, 160)}`);
   const samples = {};
   for (const e of EXPERIMENTS) { const t = Date.now(); samples[e.id] = seeds.map((s) => ({ seed: s, ...e.sample(s) })); console.log(`  ${e.id}: ${seeds.length} samples in ${Date.now() - t} ms`); }
+  const introN = Number(arg("--introspection", 0));
+  if (introN) {
+    const ids = Array.from({ length: introN }, (_, s) => s).filter((s) => s % n === i), tmp = fs.mkdtempSync(path.join(os.tmpdir(), "si-intro-")), t = Date.now();
+    const go = (extra, f) => spawnSync("python3", ["research/introspection/introspect.py", "--concept", "2", "--restarts", "8", "--seed-list", ids.join(","), "--out", path.join(tmp, f), ...extra], { cwd: root, encoding: "utf8", timeout: 6 * 3600e3 });
+    const a = go([], "joint.json"), b = go(["--posthoc"], "posthoc.json");
+    if (a.status === 0 && b.status === 0) {
+      const J = JSON.parse(fs.readFileSync(path.join(tmp, "joint.json"), "utf8")).rows, Pp = Object.fromEntries(JSON.parse(fs.readFileSync(path.join(tmp, "posthoc.json"), "utf8")).rows.map((r) => [r.seed, r]));
+      samples["introspection-h7"] = J.filter((r) => Pp[r.seed]).map((r) => ({ seed: r.seed, joint_das: r.natural_only.das_iia, posthoc_das: Pp[r.seed].natural_only.das_iia, das_gap: r.natural_only.das_iia - Pp[r.seed].natural_only.das_iia,
+        joint_fidelity: r.natural_only.introspection_fidelity, posthoc_fidelity: Pp[r.seed].natural_only.introspection_fidelity, probe_swap: r.natural_only.probe_iia }));
+      console.log(`  introspection-h7: ${ids.length} seeds x 2 configs trained in ${Date.now() - t} ms`);
+    } else console.log(`  introspection: skipped (${((a.stderr || "") + (b.stderr || "")).trim().split("\n").pop() || "python3 with numpy needed"})`);
+  }
   const lean = has("--no-lean") ? { available: false, note: "skipped" } : leanCheck();
   console.log(`  lean: ${lean.available ? lean.results.map((r) => `${r.concept} ${r.checks ? "checks" : "FAILS"}`).join(", ") || "nothing queued" : lean.note}`);
   let commit = ""; try { commit = execSync("git rev-parse --short HEAD", { cwd: root, encoding: "utf8" }).trim(); } catch {}
@@ -80,11 +95,11 @@ function merge() {
   const recs = hosts.map((h) => JSON.parse(fs.readFileSync(path.join(DIR, h, "latest.json"), "utf8")));
   if (!recs.length) { console.log(`no results in ${DIR}`); return; }
   const commits = [...new Set(recs.map((r) => r.commit))], pooled = {};
-  for (const e of EXPERIMENTS) { const seen = new Set(); pooled[e.id] = recs.flatMap((r) => r.samples[e.id] || []).filter((s) => !seen.has(s.seed) && seen.add(s.seed)); }
+  for (const id of [...EXPERIMENTS.map((e) => e.id), "introspection-h7"]) { const seen = new Set(); pooled[id] = recs.flatMap((r) => r.samples[id] || []).filter((s) => !seen.has(s.seed) && seen.add(s.seed)); }
   const L = [`# Research loop: pooled results`, ``, `${new Date().toISOString()} · machines: ${recs.map((r) => `${r.host} (${r.platform}, ${r.cpus} cores, shard ${r.shard}, ${r.commit})`).join("; ")}`, ``];
   if (commits.length > 1) L.push(`**Warning:** machines ran different commits (${commits.join(", ")}); pool only results from the same code.`, ``);
   L.push(`## Experiments`, ``);
-  for (const e of EXPERIMENTS) {
+  for (const e of [...EXPERIMENTS, { id: "introspection-h7", about: "introspection toy, concept 2, best of 8 causal searches: jointly trained vs post-hoc reporters (Python)" }]) {
     const xs = pooled[e.id]; if (!xs.length) continue; L.push(`**${e.id}** (${xs.length} seeds): ${e.about}`, ``, `| quantity | mean | 95% interval | sd |`, `| --- | --- | --- | --- |`);
     for (const k of Object.keys(xs[0]).filter((k) => k !== "seed")) { const s = stat(xs.map((x) => x[k])); L.push(`| ${k} | ${s.mean} | ${s.lo} to ${s.hi} | ${s.sd} |`); }
     L.push(``);

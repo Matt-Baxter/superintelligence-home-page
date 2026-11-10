@@ -89,7 +89,8 @@ shows the gate refusing an edit that helps train and breaks held-out. Held-out r
 
 - **Toys.** The compile curve, five strength levels and REINFORCE learner are hand-set. The threshold formula is exact
   for this toy and a hypothesis for real systems.
-- **Pre-registration record: 1 supported, 3 not supported.** All three misses were about effect size (one direction
+- **Pre-registration record (afternoon): 1 supported, 3 not supported.** Evening: H3 supported (and replicated);
+  H1, H2 (twice), H4, H5, H6 and the infrastructure-hub bar not supported; H7 undecided. All three misses were about effect size (one direction
   was also wrong: no compounding below the threshold). Our priors overestimate effect sizes; future bars should be
   relative, not absolute.
 - **Held-out leak.** The ratchet's candidate edits were written after seeing three held-out misses, so the first 20
@@ -98,10 +99,64 @@ shows the gate refusing an edit that helps train and breaks held-out. Held-out r
 - **Synthetic sentences.** The signal hasn't been measured on real feed stories yet; the first deploy's stories should
   be labelled and added.
 
+## Introspection and interpretability: a trained toy (Nov 9, evening)
+
+Built and trained in NumPy (`research/introspection/`; every hypothesis registered in `HYPOTHESES.md` before the run
+that tested it). A two-layer network computes a concept c and uses it for its task; a report head says whether c is
+active. A self-report is a claim; an interchange intervention along the causal direction for c (found by distributed
+alignment search, DAS) is the statement check. 20 networks per configuration, paired bootstrap intervals.
+
+**1. A probe can decode a concept perfectly and be causally inert.** In every configuration a linear probe reads c
+with ~100% accuracy, yet swapping along its direction changes the network's behaviour in 0.1% of cases (interval
+0.0% to 0.2%), the same as a random direction (0.7%). The probe's direction is mostly orthogonal to the causal one
+(|cos| 0.27). It replicated on a second concept (0.0%). *H3: supported.* A probe's label is a claim, not a check.
+
+**2. Self-reports were faithful; the apparent failures were our tool's.** The first 20-seed run showed bimodal
+introspection fidelity: 5 of 20 networks' reports seemed to ignore the causal state. Every one of those seeds also had
+a weak causal direction (swap success 0.19 to 0.40). Re-running the search 8 times and keeping the best (chosen on
+training pairs only) brought 8 of 9 failing seeds to fidelity ~1.0. With the corrected protocol, all 20 jointly
+trained networks report the causal state at 100%. *H1, H4, H5 and H6 (shortcuts and post-hoc reporters break
+introspection): not supported.* The lesson is about the analyst: "the model's self-report is unfaithful" can be an
+artifact of a weak causal analysis, so interpretability claims need the same ladder.
+
+**3. Training against a wrong check teaches the wrong thing.** Fine-tuning the report on swapped states (H2, an
+outside check during training) raised measured "fidelity" in the failing seeds (seed 6: 0.00 to 0.70), but those swaps
+were along the wrong direction: the report learned to follow the analyst's mistake. With a correct direction there was
+nothing to fix (*H2: not supported*). This is the recursive-drift lesson in a trained network: an outside reference
+only helps if it is right.
+
+**4. Joint training may concentrate the reported concept (H7, undecided).** Jointly trained reporters' networks kept c
+in a more findable single direction than post-hoc ones (+0.17 on the first concept, unregistered). Registered as H7 and
+tested on a new concept: +0.148 (interval 0.085 to 0.224), bar 0.10, so undecided. The Mac loop's `--introspection`
+option trains more seeds to settle it.
+
+Limits: 12-bit inputs, 32-unit layers, one concept at a time, 1-D causal search. Real models represent concepts in
+superposition and across layers; this toy shows the checks are necessary, not that real self-reports are faithful.
+
+## Library review with infrastructure hubs (Nov 9, evening)
+
+The deep research found that centrality in Mathlib mostly measures infrastructure (tactics, notation, instances), not
+mathematics (arXiv 2604.24797). In `library-fidelity` with 20% infrastructure hubs (60 libraries, 10% budget), left
+contaminated: unchecked 10.2%, final results first 9.9%, raw most-dependents first 5.1%, mathematical foundations first
+3.7%. Filtering to mathematical definitions helps (raw leaves 38% more), but by 0.014 (interval 0.010 to 0.018)
+against a registered bar of 0.03: *not supported as registered.* Practical rule: check foundations; filter out
+infrastructure when you can.
+
+## Calibration against real systems (from the deep research)
+
+- An agent with Lean feedback compiled 87.2% of 227 graduate-level formalizations, but only 57.7% were faithful; nearly
+  half its compile gain from Lean feedback failed the semantic check (arXiv 2606.31002). That is the autoformalize-gate
+  mechanism in a real system.
+- 31.8% of ProofNet's Lean 4 statements had formalization errors (arXiv 2406.07222); an autoformalizer scored 97.5% by
+  its own judge and 62.7% by Lean experts (arXiv 2511.03108).
+- Reward hacking of provers is documented: a Lean `apply?` bug, editable context, `theorem` rewritten as `axiom`.
+- Model collapse and in-context reward hacking corroborate the drift result qualitatively; no source reports a
+  per-generation leak in comparable units, so ours stays a toy result.
+
 ## Re-running on our machines
 
 `node scripts/research-loop.js` runs one cycle (unit checks, bench, ratchet dry run, the Lean toys if Lean is
-installed, and every experiment above over many seeds). Machines split seeds with `--shard i/n`, write to a shared
+installed, and every experiment above over many seeds; `--introspection N` also trains the introspection toy). Machines split seeds with `--shard i/n`, write to a shared
 folder (`LOOP_DIR`), and `--merge` pools them into intervals and re-tests each pre-registered hypothesis against its
 original bar. `--every 60` repeats hourly; `scripts/launchd/` has a macOS launch agent for the Mac mini. Results stay
 in `LOOP_DIR`; nothing is committed or pushed.

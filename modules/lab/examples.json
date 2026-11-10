@@ -893,6 +893,55 @@
           "weight": 20
         }
       ]
+    },
+    {
+      "id": "library-infrastructure-hubs",
+      "title": "Formal library review: does raw centrality waste the budget on infrastructure?",
+      "concept": "concept:statement-fidelity",
+      "topics": [
+        "topic:formal-verification",
+        "topic:math"
+      ],
+      "source": {
+        "title": "The Network Structure of Mathlib (centrality mostly captures language infrastructure, not mathematical relevance)",
+        "url": "https://arxiv.org/abs/2604.24797",
+        "via": "deep research on formal verification and algebraic geometry, Nov 9, 2026"
+      },
+      "idea": "In a real library the most depended-on declarations are mostly infrastructure (tactics, notation, basic instances), not mathematical definitions, and a wrong translation of infrastructure isn't a statement-fidelity error. Reviewing by raw number of dependents spends the budget there. Filtering to mathematical definitions first should recover the foundations-first gain.",
+      "reproduce": {
+        "runner": "library-fidelity",
+        "params": {
+          "strategy": 2,
+          "budget": 0.1,
+          "mistranslate": 0.05,
+          "def_share": 0.25,
+          "nodes": 400,
+          "infra": 0.2,
+          "seed": 29
+        },
+        "expect": "With 20% infrastructure hubs, foundations first among mathematical definitions still removes most of the removable contamination."
+      },
+      "hypothesis": {
+        "statement": "Ours, written before the run: ranking by raw number of dependents (strategy 3), which ignores whether a declaration is mathematical, leaves at least 0.03 more of the library contaminated than foundations first among mathematical definitions, with 20% infrastructure hubs (a relative bar: about a fifth of the unchecked contamination).",
+        "params": {
+          "strategy": 3
+        },
+        "predict": {
+          "metric": "contaminated",
+          "direction": "up",
+          "delta": 0.03
+        }
+      },
+      "criteria": [
+        {
+          "metric": "contaminated",
+          "weight": 80
+        },
+        {
+          "metric": "caught",
+          "weight": 20
+        }
+      ]
     }
   ]
 }
