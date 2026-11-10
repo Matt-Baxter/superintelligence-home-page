@@ -148,6 +148,7 @@ Definitions are copied from their owning registry. Empty definitions mean the re
 | `concept:rlhf` | Learning from human feedback (concept) | After pre-training, models are tuned with people's preferences: people compare answers, a reward model learns what they prefer, and the model is trained to produce more of that. | rlhf, human feedback, preference model*, reward model*, dpo | [registry](../modules/learn/data/concepts.json) |
 | `concept:scalable-oversight` | Scalable oversight (concept) | How do you check the work of a system smarter than you? Scalable oversight looks for ways people, helped by AI, can still judge answers they couldn't produce themselves. | scalable oversight, weak-to-strong, debate, constitutional ai, ai-assisted evaluation | [registry](../modules/learn/data/concepts.json) |
 | `concept:scaling-laws` | Scaling laws (concept) | Scaling laws are the observation that models get predictably better as you add more data, parameters and compute: error falls along a smooth curve. | scaling law*, compute-optimal, chinchilla | [registry](../modules/learn/data/concepts.json) |
+| `concept:statement-fidelity` | Statement fidelity (concept) | A proof checker like Lean confirms that a formal proof proves its formal statement. It can't tell whether that statement is the one the paper claims. Statement fidelity is the question "is the checked theorem the theorem we said?" | statement fidelity, autoformaliz*, autoformalis*, mistranslat*, machine-checked, computer-checked, formal statement*, proof assistant*, lean proof*, proof in lean, lean statement*, lean theorem*, formally verified, computer-verified, lean code, lean formaliz*, lean formalis*, mathlib, isabelle/hol, coq proof*, lean 4, lean4, lean prover, lean development*, proofs in lean, theorem in lean, written in lean, formalized in lean, formalised in lean, into lean, coq, isabelle | [registry](../modules/learn/data/concepts.json) |
 | `concept:superintelligence` | Superintelligence (concept) | A superintelligence is an AI that is much better than the best humans at almost every intellectual task, including science, strategy and building better AI. | superintelligen*, asi, artificial superintelligence | [registry](../modules/learn/data/concepts.json) |
 | `concept:superposition` | Superposition and features (concept) | Models pack more ideas than they have neurons by overlapping them, so one neuron can mean several things. Sparse autoencoders try to pull those overlapping ideas apart into readable features. | superposition, sparse autoencoder*, polysemantic, monosemantic, dictionary learning | [registry](../modules/learn/data/concepts.json) |
 | `concept:transformer` | Transformer (concept) | The transformer is the network design behind today's language models. It reads all the words of a passage at once and lets each word look at every other word to decide what matters. | transformer*, large language model*, llm* | [registry](../modules/learn/data/concepts.json) |
@@ -159,6 +160,7 @@ Definitions are copied from their owning registry. Empty definitions mean the re
 | `org:anthropic` | Anthropic (org) |  | anthropic, claude | [registry](../lib/ontology.json) |
 | `org:apollo` | Apollo Research (org) |  | apollo research | [registry](../lib/ontology.json) |
 | `org:arc-prize` | ARC Prize (org) |  | arc prize | [registry](../lib/ontology.json) |
+| `org:axiom-math` | Axiom Math (org) |  | axiom math, axiommath | [registry](../lib/ontology.json) |
 | `org:caisi` | CAISI (US) (org) |  | center for ai standards and innovation, caisi | [registry](../lib/ontology.json) |
 | `org:deepseek` | DeepSeek (org) |  | deepseek | [registry](../lib/ontology.json) |
 | `org:epoch` | Epoch AI (org) |  | epoch ai | [registry](../lib/ontology.json) |
@@ -247,6 +249,7 @@ Definitions are copied from their owning registry. Empty definitions mean the re
 | `topic:economics` | Economics & labor (topic) |  | labor market, jobs, automation, productivity, economic*, investment, revenue, valuation | [registry](../lib/ontology.json) |
 | `topic:evals` | Evals & dangerous capabilities (topic) |  | benchmark*, evaluation, evals, leaderboard, swe-bench, gpqa, arc-agi, mmlu, frontiermath, humanity's last exam, dangerous capabilit* | [registry](../lib/ontology.json) |
 | `topic:forecasting` | Forecasting & timelines (topic) |  | forecast*, timeline*, trend*, prediction, takeoff, explosion, agi timeline*, timelines to agi, ai 2027 | [registry](../lib/ontology.json) |
+| `topic:formal-verification` | Formal verification (topic) |  | autoformaliz*, autoformalis*, proof assistant*, machine-checked, computer-checked, computer-verified, formally verified, lean proof*, lean code, lean formaliz*, lean formalis*, mathlib, isabelle/hol, coq proof*, lean 4, lean4, lean prover, lean statement*, lean theorem*, lean development*, proof in lean, proofs in lean, theorem in lean, written in lean, formalized in lean, formalised in lean, into lean, coq, isabelle, formal statement* | [registry](../lib/ontology.json) |
 | `topic:interpretability` | Interpretability (topic) |  | interpretab*, mechanistic, sparse autoencoder*, circuits, probing, feature visualization, explainab* | [registry](../lib/ontology.json) |
 | `topic:long-horizon` | Long-horizon autonomy (topic) |  | long-horizon, time horizon*, time-horizon*, autonomous replication, multi-day, hours-long, task length* | [registry](../lib/ontology.json) |
 | `topic:math` | Math (topic) |  | math, mathematic*, theorem prov*, olympiad, aime, frontiermath, formal proof*, lean 4, imo gold, imo problem*, international mathematical olympiad | [registry](../lib/ontology.json) |
@@ -594,6 +597,7 @@ Caveat: A research mechanism, not a demonstration of superintelligence. Check th
 - **concept:jepa:** [I-JEPA: original paper](https://arxiv.org/abs/2301.08243); [V-JEPA 2](https://arxiv.org/abs/2506.09985); [V-JEPA 2.1](https://arxiv.org/abs/2603.14482); [LeJEPA](https://arxiv.org/abs/2511.08544).
 - **concept:latent-reasoning:** [Continuous latent reasoning (Coconut)](https://arxiv.org/abs/2412.06769); [Recurrent depth](https://arxiv.org/abs/2502.05171).
 - **concept:recurrent-depth:** [Recurrent depth: original paper](https://arxiv.org/abs/2502.05171); [Depth-Recurrent Attention Mixture (Dreamer)](https://arxiv.org/abs/2601.21582); [Recurrent-Depth VLA](https://arxiv.org/abs/2602.07845).
+- **concept:statement-fidelity:** [Formalizing Fermat's Last Theorem (Anthropic, Sep 2026)](https://www.anthropic.com/research/formalizing-fermats-last-theorem); [Navier-Stokes lost in translation (arXiv 2610.08144, Oct 2026)](https://arxiv.org/abs/2610.08144); [The Stacks Project, formalized in Lean (Axiom, Nov 2026)](https://stacks.axiommath.ai).
 - **concept:world-models:** [V-JEPA 2](https://arxiv.org/abs/2506.09985); [V-JEPA 2.1](https://arxiv.org/abs/2603.14482).
 
 ## Registry relationships
@@ -693,6 +697,10 @@ These are declarations in the static registries, not a claim that the current da
 | `concept:scaling-laws` | about | `topic:compute` | [registry](../modules/learn/data/concepts.json) |
 | `concept:scaling-laws` | leads-to | `concept:emergence` | [registry](../modules/learn/data/concepts.json) |
 | `concept:scaling-laws` | needs | `concept:neural-network` | [registry](../modules/learn/data/concepts.json) |
+| `concept:statement-fidelity` | about | `topic:safety` | [registry](../modules/learn/data/concepts.json) |
+| `concept:statement-fidelity` | contrasts | `concept:benchmark-saturation` | [registry](../modules/learn/data/concepts.json) |
+| `concept:statement-fidelity` | part-of | `concept:scalable-oversight` | [registry](../modules/learn/data/concepts.json) |
+| `concept:statement-fidelity` | related | `concept:reward-hacking` | [registry](../modules/learn/data/concepts.json) |
 | `concept:superintelligence` | about | `topic:forecasting` | [registry](../modules/learn/data/concepts.json) |
 | `concept:superintelligence` | related | `concept:instrumental-convergence` | [registry](../modules/learn/data/concepts.json) |
 | `concept:superintelligence` | related | `concept:orthogonality` | [registry](../modules/learn/data/concepts.json) |
@@ -805,6 +813,7 @@ These are declarations in the static registries, not a claim that the current da
 | `topic:coding` | part-of | `topic:capabilities` | [registry](../lib/ontology.json) |
 | `topic:economics` | part-of | `topic:policy` | [registry](../lib/ontology.json) |
 | `topic:evals` | part-of | `topic:safety` | [registry](../lib/ontology.json) |
+| `topic:formal-verification` | part-of | `topic:math` | [registry](../lib/ontology.json) |
 | `topic:long-horizon` | part-of | `topic:agents` | [registry](../lib/ontology.json) |
 | `topic:math` | part-of | `topic:reasoning` | [registry](../lib/ontology.json) |
 | `topic:multimodal` | part-of | `topic:capabilities` | [registry](../lib/ontology.json) |

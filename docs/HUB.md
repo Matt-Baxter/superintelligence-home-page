@@ -4,7 +4,7 @@
 
 One page that points at every skill, spec, check, measure and pitfall in the repo. It is generated from the files it links to, so it can't drift: [scripts/hub.js](../scripts/hub.js) reads them, `npm run hub` rewrites this page, and preflight's **Hub** check fails when it is stale or a link breaks.
 
-**Contents:** [Start here](#start-here) · [Specs](#specs) · [Skills (17)](#skills) · [Subagents (3)](#subagents) · [Spec Kit (9)](#spec-kit-commands) · [Checks (24)](#checks) · [Measures (25)](#measures) · [Tips and pitfalls (43)](#tips-and-pitfalls) · [Where things live](#where-things-live) · [Open decisions](#open-decisions-for-the-humans)
+**Contents:** [Start here](#start-here) · [Specs](#specs) · [Skills (17)](#skills) · [Subagents (3)](#subagents) · [Spec Kit (9)](#spec-kit-commands) · [Checks (25)](#checks) · [Measures (38)](#measures) · [Tips and pitfalls (43)](#tips-and-pitfalls) · [Where things live](#where-things-live) · [Open decisions](#open-decisions-for-the-humans)
 
 ## Start here
 
@@ -76,7 +76,7 @@ Plain Markdown, any tool: open the one that fits, and its references only when i
   - [references/ui-kit.md](../agent-kit/skills/build-a-page/references/ui-kit.md): UI kit. Sections: Helpers in public/js/api.js; Style tokens (app.css `:root`, with a dark-mode set); Shared classes; Pitfalls.
 - **[change-the-contract](../agent-kit/skills/change-the-contract/SKILL.md)**: Change what the project is built against the right way - the shared spec, constitution, CONTRACT.md or WORKING_AGREEMENT.md (both partners approve) or this build's own tables, routes and response shapes (logged in docs/INTERFACES.md). Use whenever a change would alter a requirement, a rule, a table, an API route or a request/response shape.
 - **[codebase-map](../agent-kit/skills/codebase-map/SKILL.md)**: Map of the Superintelligence Homepage code and how a feed item becomes a scored, tagged story on a page.
-  - [references/pipeline.md](../agent-kit/skills/codebase-map/references/pipeline.md): Pipeline, step by step. Sections: 1. Picking sources (`lib/harvest.js`); 2. Fetching and parsing (`lib/feeds.js`); 3. Grouping (`addItem` in…
+  - [references/pipeline.md](../agent-kit/skills/codebase-map/references/pipeline.md): Pipeline, step by step. Every lineage (feeds, readers, Review desk, watcher, knowledge, Learn, Lab, project, pruning), with what each operator keeps,…
 - **[generative-ui](../agent-kit/skills/generative-ui/SKILL.md)**: Generate or build UI with json-render - write a view spec from the catalog's blocks, add a new block (block.mjs + render.jsx), register a live view, and validate and preview it in the Studio.
   - [references/blocks.md](../agent-kit/skills/generative-ui/references/blocks.md): Writing a block. Rules: - Props are data, not markup: strings, numbers, booleans, small arrays.
   - [references/specs.md](../agent-kit/skills/generative-ui/references/specs.md): Spec patterns
@@ -144,6 +144,7 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | No ignored source files | Nothing the code needs is git-ignored (a fresh clone in CI must have every module file). |
 | Naming | Naming convention (docs/NAMING.md): routes, tables, ids, labels, metadata |
 | Commit trailers | Commit messages on this branch carry no co-author or session trailers (the humans asked). |
+| Commit authors | Commits on this branch are authored by a person, not an assistant identity (the humans asked). |
 | Rules and schemas | si-expr (portable rules) and the schema registry: Node vectors, builder/registry units, generated schemas current. |
 | Judge edge cases | Judge edge cases (bench/judge-edge-cases.json, proposed REQ-032..REQ-037): a case marked "ok" that breaks fails; known gaps are reported, not failed, so the backlog is visible and can only shrink. |
 | Judge properties | Judge fixtures and properties (spec 003, T003-T006): fidelity set shape, near-cutoff report, the Lean model's vectors against review.js, and property tests on 300 generated synthetic texts (known… |
@@ -166,6 +167,7 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | `npm run test:demo` | Run against a disposable npm run demo server. |
 | `npm run demo` | Disposable, loopback-only demonstration. |
 | `npm run dev:sample` | Starts the server on a throwaway SQLite database preloaded with SYNTHETIC sample feeds (test/fixtures). |
+| `npm run pretest` | Builds the extended version's browser files (all module blocks and pages) before the browser test, which runs the extended site. |
 | `npm run test` | Two-user browser test against test/serve-fixtures.js (synthetic data). |
 | `npm run dev:sample:pg` | Same as serve-fixtures.js but against a Postgres database (DATABASE_URL must point at a throwaway test database). |
 | `npm run preflight` | Cheap checks before you push (~10 s): syntax, JSON, bundle build, secrets, no-Twitter rule, a contract reminder, and an API smoke test on synthetic… |
@@ -183,6 +185,7 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | `npm run dictionary` | Backend-only reference audit. |
 | `npm run resolve` | Offline review tool: no fetching, graph writes, person attribution or publication. |
 | `npm run test:spec` | Acceptance suite for Matt's shared spec (specs/001-superintelligence-homepage/spec.md), run against the SPEC version of the site (SITE_PROFILE=spec)… |
+| `npm run test:lineage` | `LINEAGE_FULL=1 node --no-warnings test/lineage-unit.js` |
 | `npm run lab` | Lab worker: runs the examples and the autoresearch ratchet off the web server (laptop, Mac mini, CI, a sandbox). |
 | `npm run spec:status` | Measure the shared spec from acceptance evidence. |
 | `npm run bench` | Benchmarks with a ratchet: every metric is measured on fixed synthetic sets, compared with bench/baseline.json, and reported as uplift. |
@@ -201,24 +204,27 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | `npm run test:proofs` | REQ-038/T051: execute real Lean, audit theorem axioms, compare with production-derived JS vectors. |
 | `npm run test:proof-worker` | REQ-024/038: disposable HTTP -> persisted queue -> actual Lean worker -> HTTP result. |
 | `npm run test:proof-admission` | REQ-038/024: synthetic proof admission, including actual Lean negative controls. |
+| `npm run verification:ratchet` | Research loop for the Machine-checked signal (modules/verification/rules.json), a ratchet like the Lab's. |
+| `npm run research:loop` | Continuous research loop for the formal-verification work, built to run on our own machines (a Mac mini, laptops). |
+| `npm run research:merge` | Continuous research loop for the formal-verification work, built to run on our own machines (a Mac mini, laptops). |
 
 ## Measures
 
-Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/README.md](../bench/README.md)): no metric may get worse than [bench/baseline.json](../bench/baseline.json) (updated 2026-11-07) allows. "info" metrics are reported, never failed.
+Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/README.md](../bench/README.md)): no metric may get worse than [bench/baseline.json](../bench/baseline.json) (updated 2026-11-10) allows. "info" metrics are reported, never failed.
 
 | Metric | Better | Baseline | What it measures |
 | --- | --- | --- | --- |
 | `review.credibility_auc` | higher | 1 | credible items out-rank doubtful ones on credibility |
-| `review.score_auc` | higher (tol 0.02) | 0.745 | ...on the guarded score |
-| `review.naive_score_auc` | info | 0.327 | ...on the unguarded score (for comparison) |
+| `review.score_auc` | higher (tol 0.02) | 0.711 | ...on the guarded score |
+| `review.naive_score_auc` | info | 0.336 | ...on the unguarded score (for comparison) |
 | `review.verdict_accuracy` | higher | 1 | 'doubtful' or 'withdrawn' exactly when the label says not credible |
 | `review.flag_recall` | higher | 1 | share of non-credible items sent to a person |
 | `review.flag_false_rate` | lower | 0 | share of credible items sent to a person |
-| `review.invariance` | higher | 1 | padding, stuffing, checklists, name-dropping, unbacked claims and injection don't raise the score (84 edits) |
+| `review.invariance` | higher | 1 | padding, stuffing, checklists, name-dropping, unbacked claims and injection don't raise the score (96 edits) |
 | `review.adversary_gain_guarded` | lower (tol 0.5) | 0 | points the guarded score gains under the attack on the unguarded judge |
-| `review.whitebox_gain` | lower (tol 0.5) | 0 | points an adversary attacking the guarded score gains |
-| `review.adversary_gain_naive` | info | 32.857 | points the same attack gains on the unguarded judge (the attack is real) |
-| `review.ms_per_doc` | info | 10.8 | time to review one item |
+| `review.whitebox_gain` | lower (tol 0.5) | 0.25 | points an adversary attacking the guarded score gains |
+| `review.adversary_gain_naive` | info | 33.875 | points the same attack gains on the unguarded judge (the attack is real) |
+| `review.ms_per_doc` | info | 9.1 | time to review one item |
 | `review.fidelity_accuracy` | higher | 1 | paraphrase-fidelity checks right on bench/fidelity-cases.json (52 synthetic pairs: pass/fail and the expected check) |
 | `lab.intent_accuracy` | higher (tol 0.005) | 0.993 | the learned intent policy on held-out requests (seed 77) |
 | `lab.intent_accuracy_seed2` | higher (tol 0.01) | 0.988 | ...on a second held-out draw (seed 1234), so tuning to one seed shows |
@@ -227,18 +233,33 @@ Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/READM
 | `interp.sae_recovery` | higher (tol 0.03) | 0.778 | share of the toy's 12 true features an SAE recovers (cosine > 0.9), mean of 3 seeds |
 | `interp.steering_selectivity` | higher (tol 0.5) | 8.28 | target gain / collateral change when clamping one SAE latent to 4x |
 | `interp.steering_exactness` | lower | 0 | output error on unedited inputs with the SAE error added back (0 = exact) |
+| `papers.verdict_seed_stability` | higher | 0.9 | share of paper-example verdicts that hold on 3 other seed blocks (10 examples) |
+| `papers.slowest_example_ms` | info | 1420 | slowest paper example (baseline and variant); each toy must stay under 2 seconds |
 | `papers.hidden_eval_hack_drop` | higher (tol 0.02) | 0.185 | drop in the quirk share when a self-improving agent is judged on hidden evaluations (arXiv 2609.26457 toy) |
 | `papers.recompute_evasion` | lower | 0 | undetected exploits with independent recomputation (arXiv 2609.28614 toy) |
 | `papers.cosine_sae_gain` | higher (tol 1) | 8 | extra true features a cosine-scored SAE recovers when input sizes vary (arXiv 2606.15054 toy) |
 | `papers.roleplay_meta_bad_drop` | higher (tol 0.02) | 0.231 | drop in the bad-reply rate when a role-play updater refines its own repair rules (arXiv 2611.07469 toy) |
 | `papers.moe_contrib_advantage` | higher (tol 0.05) | 0.288 | how much more often crediting SAE latents by per-expert contribution, rather than gate weight, names the owning expert (arXiv 2611.08089 toy) |
+| `papers.causal_check_decoy_drop` | higher (tol 0.02) | 0.18 | drop in claims naming a co-occurring decoy feature when features are credited by ablation instead of correlation (arXiv 2611.08438 toy) |
+| `papers.monitor_leak_evasion_rise` | higher (tol 0.02) | 0.35 | rise in the share of hacks a monitor misses when its verdict is fed into the RL reward instead of only watching (arXiv 2611.09828 toy) |
+| `papers.comparator_threshold_error` | lower (tol 0.05) | 0.049 | largest gap between the closed-form comparator threshold, 1 - P(claim compiles) / P(easiest weakening compiles), and the simulated one at difficulties 0.4, 0.6, 0.8 (grid 0.05) |
+| `papers.self_reference_leak` | higher (tol 0.01) | 0.049 | claim strength lost over 12 generations of self-improvement when each generation checks against its own output instead of the original claim, comparator above threshold (recursive-drift toy) |
+| `papers.foundations_first_gain` | higher (tol 0.01) | 0.086 | less of a formal library resting on a wrong statement when a 10% review budget checks foundations first instead of the last results (library-fidelity toy) |
+| `papers.comparator_weakening_drop` | higher (tol 0.02) | 0.999 | drop in the share of accepted proofs that prove a weaker statement when a comparator checks the statement, versus rewarding compiling alone (autoformalize-gate toy; arXiv 2610.08144) |
+| `verification.heldout_rung_accuracy` | higher | 1 | rung (none, claimed, statement checked, checked outside) on the held-out split (26 items) |
+| `verification.heldout_gap_accuracy` | higher | 1 | fidelity gap flagged or not, held-out split |
+| `verification.false_formal` | lower | 0 | share of sentences with no proof claim that get credit for one ("a lean team", "the deal was formalized"), all 47 items |
+| `verification.topic_agreement` | higher | 0.936 | share of labelled items where the feed's Formal verification topic (lib/ontology.json terms) agrees with the Machine-checked rules (47 items) |
+| `verification.invariance` | higher (tol 0.01) | 0.956 | share of harmless rewordings (case, spacing, synonyms) that keep the judgement, all items |
 | `analysis.scope_accuracy` | higher | 1 | scope decisions on the labelled spec fixtures (10 items) |
+
+In scripts/bench.js but not yet in the baseline: `review.proposed_verdict_accuracy`.
 
 **Labelled sets** (synthetic test data)
 
 | Set | Size | Run |
 | --- | --- | --- |
-| [Review desk benchmark set](../bench/review-set.json) | 14 items (7 credible, 7 not) | `npm run bench` |
+| [Review desk benchmark set](../bench/review-set.json) | 16 items (8 credible, 8 not) | `npm run bench` |
 | [Judge edge cases (v1.1.0)](../bench/judge-edge-cases.json) | 74 cases: 72 ok, 2 gap; stages bands 6, canonicalise 5, claims 8, clean 1, determinism 1, guards 6, hype 3, kind 4, negation 12, numbers 6, rewording 14, segment 8 | `node test/judge-edge-cases.js` |
 | [Paraphrase-fidelity set (v1.2.0, REQ-033)](../bench/fidelity-cases.json) | 5 sources, 52 paraphrases (25 faithful, 27 unfaithful); checks: numbers, units, hedges, negation, claims-added, claims-dropped, entities, limitations | `node test/fidelity-unit.js` |
 
@@ -334,6 +355,7 @@ Quoted from the repo's own pitfall, trap, troubleshooting and habits sections (n
 - [docs/DESIGN_REFERENCES.md](DESIGN_REFERENCES.md): Sections: Details inspiration, 2026-11-07; Reader workspace, 2026-11-07; Public orientation and sign-in, 2026-11-07; Reading quality and evidence…
 - [docs/HANDOFF.md](HANDOFF.md): Written 2026-11-07 for whoever picks this up next (Codex for code, v0 for the bake-off UI).
 - [docs/INTERFACES.md](INTERFACES.md): The data model, API, auth and rules of **John's build** (the code in this repo).
+- [docs/LINEAGE.md](LINEAGE.md): Where every piece of data enters, each operator it passes through, where it is stored and where it is served.
 - [docs/LOGIC_AUDIT.md](LOGIC_AUDIT.md): Scope: shared spec 001, the implemented research layer, and the work-tracking path.
 - [docs/NAMING.md](NAMING.md): One way to name routes, tables, labels, tags and metadata, so people, agents and the codebase map all agree.
 - [docs/OUR_PARTS.md](OUR_PARTS.md): Tick items off by editing this file (self-merge is fine).
@@ -342,6 +364,7 @@ Quoted from the repo's own pitfall, trap, troubleshooting and habits sections (n
 - [docs/PRACTICES.md](PRACTICES.md): One page of the practices this build follows, collected from the research layer's own lessons and from published work (research run on 2026-11-07).
 - [docs/PRODUCT_ROADMAP.md](PRODUCT_ROADMAP.md): Created November 7, 2026.
 - [docs/RESEARCH_AGENTS_SANDBOXES.md](RESEARCH_AGENTS_SANDBOXES.md): Research from Nov 7, 2026 for John's request: run agents in the background to analyse and organise the knowledge graph (articles, chunks, topics,…
+- [docs/RESEARCH_FORMAL_VERIFICATION.md](RESEARCH_FORMAL_VERIFICATION.md): Analysis, Nov 9, 2026.
 - [docs/RESEARCH_SITE.md](RESEARCH_SITE.md): Sections: What it is; How it feeds the feed; Hidden until you opt in; Deploying it (people's steps).
 - [docs/SPEC_STATUS.md](SPEC_STATUS.md): Measured on 2026-11-07 (America/Chicago) by `scripts/spec-status.js`, from the spec acceptance suite (`test/spec-acceptance.js --browser`, 48 of 48…
 - [docs/SPEC_TRACE.md](SPEC_TRACE.md): How this build meets the shared spec…
@@ -371,7 +394,7 @@ Quoted from the repo's own pitfall, trap, troubleshooting and habits sections (n
 - [bench/README.md](../bench/README.md): `npm run bench` measures the judges on fixed, synthetic, labelled sets and compares every metric with `baseline.json`.
 - [proofs/README.md](../proofs/README.md): REQ-038, task T005 (specs/003-judge-fidelity/tasks.md); T051 fills in the evaluator and the differential test.
 
-**Also**: [docs/snapshots/](snapshots) (3 build snapshots), [proofs/](../proofs) (`.lake`, `Judge.lean`, `lake-manifest.json`, `lakefile.lean`, `lean-toolchain`, `vectors.json`), [workflows](../.github/workflows) (`interop.yml`, `paper-watch.yml`, `preflight.yml`), the codebase map (`npm run codemap -- <question>`) and the [MCP server](../agent-kit/mcp/server.js).
+**Also**: [docs/snapshots/](snapshots) (3 build snapshots), [proofs/](../proofs) (`Judge.lean`, `lake-manifest.json`, `lakefile.lean`, `lean-toolchain`, `vectors.json`), [workflows](../.github/workflows) (`interop.yml`, `paper-watch.yml`, `preflight.yml`), the codebase map (`npm run codemap -- <question>`) and the [MCP server](../agent-kit/mcp/server.js).
 
 ## Open decisions for the humans
 
