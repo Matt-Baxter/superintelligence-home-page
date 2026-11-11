@@ -1,0 +1,103 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Work board · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css">
+<style>
+.wk-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1rem;align-items:start}@media (max-width:860px){.wk-grid{grid-template-columns:minmax(0,1fr)}}
+.wk-list{list-style:none;margin:0;padding:0}.wk-list>li{border-top:1px solid var(--line,#ddd);padding:.6rem 0;overflow-wrap:anywhere}
+.wk-why{margin:.25rem 0 0;padding-left:1.1rem;font-size:.86rem}.wk-tag{font-size:.75rem;border:1px solid currentColor;border-radius:.3rem;padding:0 .35rem;margin-right:.35rem;white-space:nowrap}
+.wk-draft{white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:.8rem;background:var(--surface-2,rgba(127,127,127,.08));padding:.5rem;border-radius:.3rem;margin:.4rem 0;max-height:12rem;overflow:auto}
+.wk-err{color:var(--danger,#b42318)}.wk-row{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center}
+main section{min-width:0}
+</style></head>
+<body><main>
+<div class="pagehead"><div><h1>Work board</h1><p class="muted">What to do next, who is working on what, where work would collide, and what the specs, OpenSpec, data model and bindings are missing. People and agents use the same claims; a claim that collides is refused with the reason.</p></div></div>
+<p id="wkStatus" class="small muted" role="status">Loading…</p>
+<div class="wk-grid">
+<section class="panel" id="wkNext" aria-live="polite"><h2>Next</h2></section>
+<section class="panel" id="wkClaims"><h2>Who holds what</h2></section>
+<section class="panel" id="wkConflicts"><h2>Collisions</h2></section>
+<section class="panel" id="wkInit"><h2>Initiatives</h2></section>
+</div>
+<section class="panel" id="wkAdvice"><h2>Suggestions</h2></section>
+<section class="panel" id="wkBrief"><h2>Brief for an agent</h2></section>
+</main><script src="/js/api.js"></script><script>
+const source = (id, params = {}) => api(`/api/data/sources/${encodeURIComponent(id)}`, { body: { params } }).then((r) => r.data);
+const action = (id, input) => api(`/api/data/actions/${encodeURIComponent(id)}`, { body: { input } });
+const el = (tag, text, cls) => { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (cls) e.className = cls; return e; };
+const status = (t, err) => { $("#wkStatus").className = err ? "wk-err" : "small muted"; $("#wkStatus").textContent = t; };
+const button = (label, fn, cls = "btn") => { const b = el("button", label, cls); b.type = "button"; b.onclick = async () => { b.disabled = true; try { await fn(); } catch (e) { status(e.message, true); } finally { b.disabled = false; } }; return b; };
+const reset = (id, h) => { const box = $(id); box.replaceChildren(el("h2", h)); return box; };
+let kind = "person", target = "", ideas = false;
+
+async function drawNext() {
+  const box = reset("#wkNext", "Next"), r = await source("work.next", { kind, limit: 8 });
+  const sel = el("select"); sel.setAttribute("aria-label", "Rank for"); for (const [v, t] of [["person", "for me"], ["agent", "for an agent I ask"]]) { const o = el("option", t); o.value = v; o.selected = v === kind; sel.append(o); }
+  sel.onchange = () => { kind = sel.value; drawNext().catch((e) => status(e.message, true)); };
+  box.append(el("div", undefined, "wk-row")); box.lastChild.append(el("span", "Rank", "small muted"), sel);
+  if (!r.next.length) box.append(el("p", `Nothing open that ${kind === "agent" ? "an agent" : "you"} may take (${r.skipped.length} waiting or held).`, "small muted"));
+  const ul = el("ul", undefined, "wk-list");
+  for (const n of r.next) {
+    const li = el("li"), top = el("div", undefined, "wk-row");
+    top.append(el("strong", n.key), el("span", n.who, "wk-tag"), el("span", `score ${n.score}`, "small muted"));
+    const why = el("ul", undefined, "wk-why"); for (const x of n.reasons) why.append(el("li", `${x.pts > 0 ? "+" : ""}${x.pts} ${x.why}`));
+    const acts = el("div", undefined, "wk-row"), claim = async (force) => {
+      try { const res = await action("work.claim", { task: n.key, files: n.files, force, ...(kind === "agent" ? { actor: "agent:helper" } : {}) }); status(`Claimed ${n.key} until ${res.result.expires_at}.${res.result.warnings.length ? ` Note: ${res.result.warnings.map((w) => w.why).join(" ")}` : ""}`); await drawAll(); }
+      catch (e) { status(e.message, true); if (!force && kind === "person" && !/tagged \[people\]|waits for/.test(e.message)) acts.append(button("Claim anyway", () => claim(true))); }
+    };
+    acts.append(button(kind === "agent" ? "Claim for the agent" : "Claim", () => claim(false), "btn primary"));
+    li.append(top, el("div", n.text), ...(n.files.length ? [el("div", n.files.join(", "), "small muted")] : []), why, acts); ul.append(li);
+  }
+  box.append(ul);
+}
+async function drawClaims() {
+  const box = reset("#wkClaims", "Who holds what"), rows = await source("work.claims");
+  if (!rows.length) { box.append(el("p", "Nobody holds anything right now.", "small muted")); return; }
+  const ul = el("ul", undefined, "wk-list");
+  for (const c of rows) { const li = el("li"), top = el("div", undefined, "wk-row"); top.append(el("strong", c.actor), el("span", c.soft ? "viewing" : c.kind, "wk-tag"), el("span", c.task)); li.append(top, el("div", `${c.files.join(", ") || "no files named"} · until ${c.expires_at}${c.forced ? " · forced past a collision" : ""}`, "small muted"));
+    if (!c.soft) li.append(button("Release", async () => { await action("work.release", { id: c.id }); status(`Released ${c.task}.`); await drawAll(); })); ul.append(li); }
+  box.append(ul);
+}
+async function drawConflicts() {
+  const box = reset("#wkConflicts", "Collisions"), rows = await source("work.conflicts");
+  if (!rows.length) { box.append(el("p", "No collisions.", "small muted")); return; }
+  const ul = el("ul", undefined, "wk-list"); for (const c of rows.slice(0, 20)) { const li = el("li"); li.append(el("span", c.severity, "wk-tag"), document.createTextNode(c.why)); ul.append(li); }
+  box.append(ul); if (rows.length > 20) box.append(el("p", `${rows.length - 20} more.`, "small muted"));
+}
+async function drawInitiatives() {
+  const box = reset("#wkInit", "Initiatives"), rows = (await source("work.initiatives")).slice(0, 8), ul = el("ul", undefined, "wk-list");
+  for (const r of rows) { const li = el("li"); li.append(el("strong", r.req), document.createTextNode(` ${r.text.slice(0, 140)}${r.text.length > 140 ? "…" : ""}`), el("div", `${r.open} open, ${r.ready} ready, ${r.people} for people, unblocks ${r.unblocks}`, "small muted")); ul.append(li); }
+  box.append(ul);
+}
+async function drawAdvice() {
+  const box = reset("#wkAdvice", "Suggestions"), all = await source("work.advice", target ? { target } : {}), rows = ideas ? all : all.filter((a) => a.severity !== "idea");
+  const counts = {}; for (const a of rows) counts[a.target] = (counts[a.target] || 0) + 1;
+  const sel = el("select"); sel.setAttribute("aria-label", "Show suggestions for"); for (const t of ["", "speckit", "openspec", "data-model", "bindings", "validation", "learning", "agents"]) { const o = el("option", t ? `${t}${counts[t] ? ` (${counts[t]})` : ""}` : `everything (${rows.length})`); o.value = t; o.selected = t === target; sel.append(o); }
+  sel.onchange = () => { target = sel.value; drawAdvice().catch((e) => status(e.message, true)); };
+  const more = el("label", undefined, "small"), cb = el("input"); cb.type = "checkbox"; cb.checked = ideas; cb.onchange = () => { ideas = cb.checked; drawAdvice().catch((e) => status(e.message, true)); };
+  more.append(cb, document.createTextNode(` Show ideas too (${all.length - all.filter((a) => a.severity !== "idea").length})`));
+  const filters = el("div", undefined, "wk-row"); filters.append(sel, more);
+  box.append(el("p", "Each suggestion drafts the addition and names the file it belongs in. Nothing is applied for you; a suggestion on a shared document needs both partners.", "small muted"), filters);
+  if (!rows.length) box.append(el("p", ideas ? "No suggestions." : "No errors or warnings. Tick the box to see ideas.", "small muted"));
+  const ul = el("ul", undefined, "wk-list");
+  for (const a of rows.slice(0, 60)) {
+    const li = el("li"), top = el("div", undefined, "wk-row");
+    top.append(el("span", a.severity, "wk-tag"), el("span", a.target, "wk-tag"), el("strong", a.subject), ...(a.shared ? [el("span", "needs both partners", "wk-tag")] : []), ...(a.mark ? [el("span", a.mark.state, "wk-tag")] : []));
+    const pre = el("details"), acts = el("div", undefined, "wk-row");
+    acts.append(button("Copy draft", async () => { await navigator.clipboard.writeText(a.draft); status("Draft copied."); }),
+      button("Accept", async () => { await action("work.advice-mark", { finding: a.id, state: "accepted" }); status(`Marked ${a.subject} accepted: make the change in ${a.file || "its file"}.`); await drawAdvice(); }),
+      button("Dismiss", async () => { await action("work.advice-mark", { finding: a.id, state: "dismissed" }); status(`Dismissed ${a.subject}.`); await drawAdvice(); }));
+    pre.append(el("summary", "Draft", "small"), el("div", a.draft, "wk-draft"));
+    li.append(top, el("div", a.why), ...(a.file ? [el("div", a.file, "small muted")] : []), ...(a.draft ? [pre] : []), acts); ul.append(li);
+  }
+  box.append(ul); if (rows.length > 60) box.append(el("p", `${rows.length - 60} more; narrow by kind.`, "small muted"));
+}
+function drawBrief() {
+  const box = reset("#wkBrief", "Brief for an agent"), pre = el("div", undefined, "wk-draft");
+  box.append(el("p", "The same brief the agent kit's work_brief tool gives an agent before it starts: the hard rules, who holds what, its next tasks with reasons, collisions and suggestions.", "small muted"),
+    button("Make the brief", async () => { const r = await source("work.brief", { kind: "agent", actor: "agent:helper" }); pre.textContent = r.markdown; if (!pre.isConnected) box.append(pre, button("Copy", async () => { await navigator.clipboard.writeText(pre.textContent); status("Brief copied."); })); }));
+}
+async function drawAll() { await Promise.all([drawNext(), drawClaims(), drawConflicts(), drawInitiatives()]); }
+api("/api/me", { allow401: true }).then(async ({ user }) => {
+  topbar(user);
+  if (!user || !user.admin) { $("main").replaceChildren(el("div")); $("main").firstChild.className = "panel"; $("main").firstChild.append(el("h1", "Work board"), el("p", "The work board is for admins.")); return; }
+  try { await drawAll(); await drawAdvice(); drawBrief(); status(""); } catch (e) { status(/found|404/i.test(e.message) ? "The work board is switched off here." : e.message, true); }
+}).catch((e) => status(e.message, true));
+</script></body></html>

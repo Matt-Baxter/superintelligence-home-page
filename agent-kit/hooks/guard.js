@@ -23,6 +23,25 @@ process.stdin.on("data", (c) => (raw += c)).on("end", () => {
     const text = [input.content, input.new_string, ...(input.edits || []).map((e) => e.new_string)].filter(Boolean).join("\n");
     if (/(sources|source-catalog)\.json$/.test(file) && /(twitter\.com|\/\/x\.com|nitter\.)/i.test(text))
       block("no Twitter/X sources (Paul's feedback). Use the person's blog or newsletter.");
+    coordination(file, ev);
   }
   process.exit(0);
 });
+
+// Coordination (REQ-071, proposed): don't edit a file someone else (a person or another agent) has claimed, and don't
+// edit a shared document (it needs both partners). Claims come from out/work/claims.json, which the Work board and
+// `npm run work` keep current. Missing file or repo → allow.
+function coordination(file, ev) {
+  const path = require("node:path"), fs = require("node:fs");
+  let root = path.dirname(path.resolve(ev.cwd || process.cwd(), file));
+  for (let i = 0; i < 8 && root && !fs.existsSync(path.join(root, "modules", "work", "overlap.js")); i++) root = path.dirname(root);
+  if (!root || !fs.existsSync(path.join(root, "modules", "work", "overlap.js"))) return;
+  const O = require(path.join(root, "modules", "work", "overlap.js")), rel = path.relative(root, path.resolve(ev.cwd || process.cwd(), file)).split(path.sep).join("/");
+  if (O.shared([rel]).length && process.env.SI_BOTH_PARTNERS_OK !== "1")
+    process.stderr.write(`Blocked by si-homepage-kit: ${rel} is a shared document; changing it needs both partners' approval (CLAUDE.md). Stop and say so. If both have approved, set SI_BOTH_PARTNERS_OK=1.\n`), process.exit(2);
+  let claims = []; try { claims = JSON.parse(fs.readFileSync(path.join(root, "out", "work", "claims.json"), "utf8")).claims || []; } catch { return; }
+  let branch = ""; try { branch = execSync("git rev-parse --abbrev-ref HEAD", { cwd: root, stdio: ["ignore", "pipe", "ignore"] }).toString().trim(); } catch {}
+  const me = process.env.SI_ACTOR || `agent:${branch || "local"}`, now = new Date().toISOString();
+  const held = claims.find((c) => !c.soft && !c.released_at && c.expires_at > now && c.actor !== me && (c.files || []).some((f) => O.pathsOverlap(f, rel)));
+  if (held) process.stderr.write(`Blocked by si-homepage-kit: ${rel} is claimed by ${held.actor} for ${held.task} until ${held.expires_at}. Pick other work (work_next), or ask them to release it. You are ${me} (set SI_ACTOR if that's wrong).\n`), process.exit(2);
+}

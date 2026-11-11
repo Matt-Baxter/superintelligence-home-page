@@ -94,6 +94,21 @@ TOOLS.push(...(REPO ? [{ name: "codemap_query", description: "Ask the codebase m
     if (!id) return "Nothing in the map matches. Try a table, route, page, module or REQ id.";
     return JSON.stringify(trace ? { id, connected: scan.trace(g, id) } : { answer: scan.answer(g, q), problems: g.problems }, null, 1);
   } }] : []));
+// Coordination (REQ-071, proposed): the same claims, collision checks, ranked next steps and advisor as the Work board,
+// through scripts/work.js so the database (local SQLite or the shared DATABASE_URL) is the app's. Who the agent is comes
+// from SI_ACTOR (default agent:<branch>); SI_ASKED_BY names the person it works for.
+const work = (...a) => { const r = require("node:child_process").spawnSync(process.execPath, [path.join(REPO, "scripts", "work.js"), ...a], { cwd: REPO, encoding: "utf8", timeout: 60000, env: { ...process.env, NODE_NO_WARNINGS: "1" } }); return (r.stdout || "") + (r.status ? `\n${(r.stderr || "").trim()}` : ""); };
+const csv = (x) => (Array.isArray(x) ? x.join(",") : x || "");
+TOOLS.push(...(REPO ? [
+  { name: "work_brief", description: "Start here before changing code: the hard rules, who (people and agents) holds which tasks and files, your next tasks ranked with reasons, collisions with open branches, and the advisor's errors and warnings.", inputSchema: S({}), run: () => work("brief") },
+  { name: "work_next", description: "Open tasks this agent may take (Spec Kit and OpenSpec), ranked, with the points behind each score; skips [people] tasks, blocked tasks and tasks someone holds.", inputSchema: S({}), run: () => work("next", "--json") },
+  { name: "work_check", description: "Would claiming this task (and these files) collide with someone else's claim, an open branch, a gate or a shared document? Same answer a claim gives, without claiming.", inputSchema: S({ task: { type: "string" }, files: { type: "array", items: { type: "string" } } }, ["task"]), run: ({ task, files }) => work("check", task, ...(files && files.length ? ["--files", csv(files)] : []), "--json") },
+  { name: "work_claim", description: "Claim a task and the files you will touch before you start (a lease, 2 h by default). Refused, with the reasons, if it collides; agents can't force. Release it when you push.", inputSchema: S({ task: { type: "string" }, files: { type: "array", items: { type: "string" } }, intent: { type: "string" }, minutes: { type: "integer" } }, ["task"]),
+    run: ({ task, files, intent, minutes }) => work("claim", task, ...(files && files.length ? ["--files", csv(files)] : []), ...(intent ? ["--intent", intent] : []), ...(minutes ? ["--minutes", String(minutes)] : []), "--json") },
+  { name: "work_release", description: "Release your claim on a task.", inputSchema: S({ task: { type: "string" } }, ["task"]), run: ({ task }) => work("release", task, "--json") },
+  { name: "work_who", description: "Who holds a file or folder right now, and which open branches change it.", inputSchema: S({ file: { type: "string" } }, ["file"]), run: ({ file }) => work("who", file, "--json") },
+  { name: "work_advise", description: "Highlights and drafted additions for Spec Kit, OpenSpec, the data model, sources and actions, view bindings, validation and learnings; each names its file and whether it is a shared document (needs both partners). Suggest them; don't apply shared ones.", inputSchema: S({ target: { type: "string", enum: ["speckit", "openspec", "data-model", "bindings", "validation", "learning", "agents"] } }), run: ({ target }) => work("advise", ...(target ? ["--target", target] : []), "--json") },
+] : []));
 function kernel() { return require(path.join(REPO, "kernel", "kernel.js")).createKernel(); }
 function decision() { const m = kernel().modules.find((x) => x.id === "decision"); if (!m) fail("The decision module isn't enabled."); return m; }
 const esm = (rel) => import(require("node:url").pathToFileURL(path.join(REPO, rel)).href);

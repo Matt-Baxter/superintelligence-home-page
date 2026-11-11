@@ -143,6 +143,12 @@
       "REQ-065",
       "REQ-066",
       "REQ-067"
+    ],
+    "add-coordination-and-advisor": [
+      "REQ-068",
+      "REQ-069",
+      "REQ-070",
+      "REQ-071"
     ]
   }
 }

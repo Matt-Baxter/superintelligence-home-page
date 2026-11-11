@@ -112,6 +112,16 @@ Built on `feature/paper-responses-2026-11-11` at John's request; not in scope un
 | REQ-066 | DAG check, quantified path patterns, A* | `modules/graph/algorithms.js`; sources `graph.paths`, `graph.route` | unit: graph ("REQ-066: DAG, quantified path patterns, A*") |
 | REQ-067 | Learnings to rules, recall by mutation, evolution with an overtraining stop | `modules/graph/flywheel.js`, `scripts/graph.js` (`report`, `evolve`), `modules/responses/learnings.json` | unit: graph ("REQ-067: the learning flywheel"); bench: graph suite |
 
+<!-- trace-spec: 009 -->
+## Planning and coordination for people and agents, and the advisor (proposed, `specs/009-coordination-and-advisor/spec.md`, planned in `openspec/changes/add-coordination-and-advisor`; extended version; needs both partners)
+
+| REQ | What | Where in the code | Checked by |
+| --- | --- | --- | --- |
+| REQ-068 | Work items from Spec Kit and OpenSpec; ranked next steps with reasons | `modules/work/items.js`, `planner.js`; sources `work.items`, `work.next`, `work.initiatives`; `/m/work` | unit: work ("REQ-068: work items from Spec Kit and OpenSpec", "REQ-068: ranked next steps with reasons") |
+| REQ-069 | Claims with leases, collision checks, presence, stale writes refused | `modules/work/claims.js`, `overlap.js`; actions `work.claim`, `work.release`; `expectVersion` on `responses.edit-line`, `responses.replan`, `data.restore` | unit: work ("REQ-069: collisions", "REQ-069, REQ-071: claims, presence and stale writes through the app") |
+| REQ-070 | Advisor: suggestions with drafts, accept and dismiss | `modules/work/advisor.js`; source `work.advice`; action `work.advice-mark` | unit: work ("REQ-070: the advisor") |
+| REQ-071 | Agents: CLI, MCP tools, brief, guard hook | `scripts/work.js`, `agent-kit/mcp/server.js` (`work_*`), `agent-kit/hooks/guard.js`; source `work.brief` | unit: work ("REQ-069, REQ-071: claims, presence and stale writes through the app") |
+
 ## Acceptance suite
 
 `test/spec-acceptance.js` runs every user-story scenario, edge case and success criterion that can be automated, against the **spec version**, with labelled synthetic sources (`test/fixtures/spec`: 9 sources across 7 kinds). Each check names its REQ. The run fails if a testable requirement (REQ-001 to REQ-018, REQ-020) has no passing check (SC-008). Preflight runs the API checks; `npm run test:spec` adds the browser checks at laptop and phone widths. REQ-019 (live two weeks before the presentation) is checked by people.

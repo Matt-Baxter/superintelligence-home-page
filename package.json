@@ -57,7 +57,9 @@
     "test:proof-admission": "node test/lean-proof-unit.js",
     "verification:ratchet": "node scripts/verification-ratchet.js",
     "research:loop": "node scripts/research-loop.js",
-    "research:merge": "node scripts/research-loop.js --merge"
+    "research:merge": "node scripts/research-loop.js --merge",
+    "work": "node scripts/work.js",
+    "test:work": "node test/work-unit.js"
   },
   "keywords": [],
   "author": "",

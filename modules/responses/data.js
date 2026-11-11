@@ -6,6 +6,14 @@ const KG = require("../data/kg"), video = require("./video");
 const SLUG = { type: "string", required: true, max: 120, about: "The response's slug" };
 const guard = async (req, { db, notFound }) => { const { flags: f } = await flags.read(db); if (!flags.visible(f.responses, req.user)) notFound("That page"); };
 const site = () => (process.env.SITE_URL || "").replace(/\/$/, "");
+// Optimistic concurrency (REQ-069, proposed): a write that names the version it was made against is refused when
+// someone (a person or an agent) saved a newer one in between, so nobody's change silently overwrites another's.
+const EXPECT = { type: "integer", min: 0, about: "The version you were looking at; the write is refused if a newer one exists" };
+async function fresh(c, slug, r, expect) {
+  if (expect === undefined || expect === null || r.current === expect) return;
+  const h = (await c.artifacts.history("response", slug))[0] || {}, who = h.actor_id ? await c.db.get("SELECT username FROM users WHERE id = ?", h.actor_id) : null;
+  throw Object.assign(new Error(`Version ${r.current} was saved${who ? ` by ${who.username}` : ""}${h.note ? ` (${h.note})` : ""} at ${h.at || "?"}, after the version ${expect} you were editing. Nothing was saved; reload and make your change again.`), { status: 409 });
+}
 
 function register(ctx) {
   const S = ctx.point("data.sources"), Ac = ctx.point("data.actions");
@@ -46,9 +54,9 @@ SELECT ?paper ?title ?claim ?text ?level ?section WHERE { GRAPH ?g { ?claim a si
       return { ...v, summary: pkg.analysis.summary, checks: pkg.checks };
     } });
   Ac.add("responses.edit-line", { about: "Change one spoken line of a response's plan; the plan's checks run again and a new version is saved.",
-    input: { slug: SLUG, beat: { type: "integer", required: true, min: 0, max: 30 }, line: { type: "integer", required: true, min: 0, max: 30 }, text: { type: "string", required: true, max: 400 } }, access: "admin", guard, refresh: ["responses.get"],
+    input: { slug: SLUG, beat: { type: "integer", required: true, min: 0, max: 30 }, line: { type: "integer", required: true, min: 0, max: 30 }, text: { type: "string", required: true, max: 400 }, expectVersion: EXPECT }, access: "admin", guard, refresh: ["responses.get"],
     run: async (i, c) => {
-      const r = await loadResponse(c.db, i.slug); if (!r) c.notFound("That response");
+      const r = await loadResponse(c.db, i.slug); if (!r) c.notFound("That response"); await fresh(c, i.slug, r, i.expectVersion);
       const pkg = JSON.parse(JSON.stringify(r.pkg)), b = pkg.plan.beats[i.beat];
       if (!b || !b.lines[i.line]) c.bad(`There's no line ${i.line} in beat ${i.beat}.`);
       if (/[()[\]{}]/.test(i.text)) c.bad("Spoken lines can't contain brackets: say it as it should be heard.");
@@ -61,9 +69,9 @@ SELECT ?paper ?title ?claim ?text ?level ?section WHERE { GRAPH ?g { ?claim a si
       return { ...v, before, after: b.lines[i.line].text, checks: pkg.checks };
     } });
   Ac.add("responses.replan", { about: "Plan the response again with A* under a different length limit (seconds), without re-reading the paper.",
-    input: { slug: SLUG, maxSeconds: { type: "integer", required: true, min: 40, max: 180 } }, access: "admin", guard, refresh: ["responses.get"],
+    input: { slug: SLUG, maxSeconds: { type: "integer", required: true, min: 40, max: 180 }, expectVersion: EXPECT }, access: "admin", guard, refresh: ["responses.get"],
     run: async (i, c) => {
-      const r = await loadResponse(c.db, i.slug); if (!r) c.notFound("That response");
+      const r = await loadResponse(c.db, i.slug); if (!r) c.notFound("That response"); await fresh(c, i.slug, r, i.expectVersion);
       if (!r.pkg.planInput) c.bad("This response was built before re-planning existed; build it again first.");
       const pkg = rebuild(r.pkg, { maxSeconds: i.maxSeconds, site: site() });
       const v = await saveResponse(c.db, pkg, { actor: c.user.id, note: `re-planned for ${i.maxSeconds} s` });

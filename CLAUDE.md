@@ -27,7 +27,7 @@ Load only what the task needs:
 
 Names follow [docs/NAMING.md](docs/NAMING.md) (routes, tables, `namespace:id` tags, metadata; checked in preflight). New to the code? Start with the codebase-map skill, and ask the map (`npm run codemap -- <question>` or the `codemap_query` MCP tool) before grepping. Before handing work back, use run-tests (or the verifier subagent).
 
-**Picking up work?** Start with [handoff/README.md](handoff/README.md) (state, open decisions, per-tool prompts) and the open tasks in `specs/<nnn>/tasks.md`; the tag on each task says whether an agent may do it unattended (`[agent]`), only when a person asks (`[rules]`), or only the humans (`[people]`). Tick the checkbox in the commit that finishes it.
+**Picking up work?** Start with [handoff/README.md](handoff/README.md) (state, open decisions, per-tool prompts) and the open tasks in `specs/<nnn>/tasks.md`; the tag on each task says whether an agent may do it unattended (`[agent]`), only when a person asks (`[rules]`), or only the humans (`[people]`). Tick the checkbox in the commit that finishes it. Other people and agents work here too: read `npm run work -- brief` (or the `work_brief` MCP tool), claim your task and its files (`npm run work -- claim <task> --files ...`) before editing, and release it when you push; the guard hook refuses edits to files someone else holds.
 
 **Everything in one place:** [docs/HUB.md](docs/HUB.md) indexes every skill and its references, the specs and their open tasks, every preflight check and npm script, the benchmarks, the tips and pitfalls, and the open decisions; it is generated from the repo (`npm run hub`) and preflight fails when it is stale.
 
