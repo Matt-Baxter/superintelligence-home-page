@@ -1,6 +1,6 @@
 {
   "about": "Accepted benchmark numbers (scripts/bench.js). Update only for an uplift or an explained trade-off.",
-  "updated": "2026-11-10",
+  "updated": "2026-11-11",
   "metrics": {
     "review.credibility_auc": {
       "value": 1,
@@ -61,7 +61,7 @@
       "about": "points the same attack gains on the unguarded judge (the attack is real)"
     },
     "review.ms_per_doc": {
-      "value": 9.1,
+      "value": 9.9,
       "better": "info",
       "about": "time to review one item"
     },
@@ -70,6 +70,60 @@
       "better": "higher",
       "tol": 0,
       "about": "paraphrase-fidelity checks right on bench/fidelity-cases.json (52 synthetic pairs: pass/fail and the expected check)"
+    },
+    "review.verdict_balanced_accuracy": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "credible vs not credible verdicts: mean recall over the classes present (immune to class imbalance)"
+    },
+    "review.verdict_mcc": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0.01,
+      "about": "credible vs not credible verdicts: Matthews correlation (0 = no better than a constant guess, 1 = perfect)"
+    },
+    "review.verdict_paradox_free": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "credible vs not credible verdicts: 1 when it removes at least 20% of a majority guess's errors and recognises every class"
+    },
+    "review.flag_balanced_accuracy": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "sent to a person exactly when not credible: mean recall over the classes present (immune to class imbalance)"
+    },
+    "review.flag_mcc": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0.01,
+      "about": "sent to a person exactly when not credible: Matthews correlation (0 = no better than a constant guess, 1 = perfect)"
+    },
+    "review.flag_paradox_free": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "sent to a person exactly when not credible: 1 when it removes at least 20% of a majority guess's errors and recognises every class"
+    },
+    "review.fidelity_balanced_accuracy": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "faithful vs unfaithful paraphrases: mean recall over the classes present (immune to class imbalance)"
+    },
+    "review.fidelity_mcc": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0.01,
+      "about": "faithful vs unfaithful paraphrases: Matthews correlation (0 = no better than a constant guess, 1 = perfect)"
+    },
+    "review.fidelity_paradox_free": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "faithful vs unfaithful paraphrases: 1 when it removes at least 20% of a majority guess's errors and recognises every class"
     },
     "lab.intent_accuracy": {
       "value": 0.993,
@@ -120,7 +174,7 @@
       "about": "share of paper-example verdicts that hold on 3 other seed blocks (10 examples)"
     },
     "papers.slowest_example_ms": {
-      "value": 1420,
+      "value": 1887,
       "better": "info",
       "about": "slowest paper example (baseline and variant); each toy must stay under 2 seconds"
     },
@@ -220,11 +274,65 @@
       "tol": 0.01,
       "about": "share of harmless rewordings (case, spacing, synonyms) that keep the judgement, all items"
     },
+    "verification.heldout_rung_balanced_accuracy": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "rung on the held-out split: mean recall over the classes present (immune to class imbalance)"
+    },
+    "verification.heldout_rung_mcc": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0.01,
+      "about": "rung on the held-out split: Matthews correlation (0 = no better than a constant guess, 1 = perfect)"
+    },
+    "verification.heldout_rung_paradox_free": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "rung on the held-out split: 1 when it removes at least 20% of a majority guess's errors and recognises every class"
+    },
+    "verification.heldout_gap_balanced_accuracy": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "fidelity gap on the held-out split: mean recall over the classes present (immune to class imbalance)"
+    },
+    "verification.heldout_gap_mcc": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0.01,
+      "about": "fidelity gap on the held-out split: Matthews correlation (0 = no better than a constant guess, 1 = perfect)"
+    },
+    "verification.heldout_gap_paradox_free": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "fidelity gap on the held-out split: 1 when it removes at least 20% of a majority guess's errors and recognises every class"
+    },
     "analysis.scope_accuracy": {
       "value": 1,
       "better": "higher",
       "tol": 0,
       "about": "scope decisions on the labelled spec fixtures (10 items)"
+    },
+    "analysis.scope_balanced_accuracy": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "in scope vs out of scope on the spec fixtures: mean recall over the classes present (immune to class imbalance)"
+    },
+    "analysis.scope_mcc": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0.01,
+      "about": "in scope vs out of scope on the spec fixtures: Matthews correlation (0 = no better than a constant guess, 1 = perfect)"
+    },
+    "analysis.scope_paradox_free": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "in scope vs out of scope on the spec fixtures: 1 when it removes at least 20% of a majority guess's errors and recognises every class"
     }
   }
 }

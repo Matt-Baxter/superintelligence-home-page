@@ -147,6 +147,14 @@ function topbar(user) {
   const lo = $("#logout"); if (lo) lo.onclick = async () => { lo.disabled = true; try { await api("/api/logout", { method: "POST" }); location.href = "/?signin=1"; } catch (e) { lo.disabled = false; lo.textContent = "Retry sign out"; lo.title = e.message; } };
 
 }
+// The accuracy paradox guard's result (lib/metrics.js brief()), shown where judging is measured: the Review desk and
+// the research control room. Plain accuracy sits next to what a constant guess of the common class would score.
+function honestyBlock(h, { title = "Beyond plain agreement" } = {}) {
+  if (!h) return `<p class="small muted">No person labels yet. Agree or disagree with a few verdicts and this shows whether the judging beats always giving the common verdict.</p>`;
+  const pct = (x) => (x == null ? "–" : Math.round(x * 100) + "%"), status = h.paradox.ok ? "Holds" : "Doesn't hold yet";
+  const reasons = h.paradox.reasons.map((r) => `<li>${r.level === "fail" ? "<b>Fails:</b> " : "Note: "}${esc(r.msg)}</li>`).join("");
+  return `<div class="honesty"><h3>${esc(title)}</h3><div class="metrics"><div><span class="small muted">Agreement</span><b>${pct(h.accuracy)}</b><span class="small muted">95%: ${pct(h.accuracyCI?.low)} to ${pct(h.accuracyCI?.high)}</span></div><div><span class="small muted">Always "${esc(h.majority?.label || "–")}" would get</span><b>${pct(h.majority?.accuracy)}</b></div><div><span class="small muted">Balanced accuracy</span><b>${pct(h.balancedAccuracy)}</b><span class="small muted">mean over classes</span></div><div><span class="small muted">MCC</span><b>${h.mcc ?? "–"}</b><span class="small muted">0 = a constant guess</span></div></div><p class="small"><span class="tag ${h.paradox.ok ? "good" : "warn"}">${status}</span> ${h.n} labelled. Recognised: ${Object.entries(h.recall || {}).map(([k, v]) => `${esc(k)} ${pct(v)}`).join(", ")}.</p>${reasons ? `<ul class="small">${reasons}</ul>` : ""}</div>`;
+}
 function showErr(el, e) { el.textContent = e?.message || String(e); el.className = "err"; }
 function flash(el, msg) { el.textContent = msg; el.className = "ok"; setTimeout(() => { if (el.textContent === msg) el.textContent = ""; }, 2500); }
 async function copy(text, btn) {

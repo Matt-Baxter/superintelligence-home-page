@@ -3,7 +3,9 @@
 //   hypothesis  an edit to the rules (add a pattern, drop one, toggle an option, change the context window)
 //   experiment  score the edited rules on the TRAIN split, with harmless rewordings of each item (modules/verification/evaluate.js)
 //   keep        the single best edit per round, only if it strictly raises the train objective; stop when none does
-//   accept      the tuned rules only if the HELD-OUT split's objective doesn't drop (held-out never picks an edit)
+//   accept      the tuned rules only if the HELD-OUT split's objective doesn't drop, its balanced rung accuracy doesn't
+//               drop and every rung that occurs is still recognised (the accuracy paradox guard, lib/metrics.js);
+//               held-out never picks an edit
 // Deterministic, no model calls. Ties go to the edit listed first in CANDIDATES.
 //   npm run verification:ratchet             report what the loop would change (writes nothing)
 //   npm run verification:ratchet -- --apply  also write rules.json when the held-out gate passes
@@ -65,8 +67,20 @@ function run(start, items, { rounds = 10 } = {}) {
   const before = { train: score(start, train, { augment: true }).metrics, heldout: score(start, held).metrics };
   const after = { train: score(rules, train, { augment: true }).metrics, heldout: score(rules, held).metrics };
   const changed = JSON.stringify(rules) !== JSON.stringify(start);
-  const accepted = changed && after.heldout.objective >= before.heldout.objective;
-  return { rules, log, before, after, changed, accepted, heldoutMisses: score(accepted ? rules : start, held).misses };
+  // Held-out gate: the objective may not drop, and neither may the balanced view of it (no drifting toward the common
+  // rung while plain accuracy holds), and no rung that occurs may become unrecognised (lib/metrics.js).
+  const gate = heldoutGate(before.heldout, after.heldout, changed), accepted = gate.accepted;
+  return { rules, log, before, after, changed, accepted, gate, heldoutMisses: score(accepted ? rules : start, held).misses };
+}
+
+// The held-out gate as a pure function, so it can be tested on its own (test/metrics-property-unit.js).
+function heldoutGate(before, after, changed) {
+  if (!changed) return { accepted: false, reasons: ["no edit improved train"] };
+  const reasons = [];
+  if (after.objective < before.objective) reasons.push(`objective ${before.objective} -> ${after.objective}`);
+  if (after.rung_balanced < before.rung_balanced) reasons.push(`balanced rung accuracy ${before.rung_balanced} -> ${after.rung_balanced} (accuracy paradox)`);
+  if (before.rung_paradox_free && !after.rung_paradox_free) reasons.push("a rung that occurs is no longer recognised, or the gain is no better than a majority guess");
+  return { accepted: !reasons.length, reasons };
 }
 
 if (require.main === module) {
@@ -76,10 +90,10 @@ if (require.main === module) {
   if (has("--json")) console.log(JSON.stringify({ ...r, rules: undefined }, null, 2));
   else {
     for (const l of r.log) console.log(`round ${l.round}: ${l.tried} hypotheses tried; ${l.kept ? `kept "${l.kept}" (train objective ${l.train}, +${l.gain})` : `none improved train (${l.train}); stop`}`);
-    const f = (m) => `objective ${m.objective}, rung ${m.rung_accuracy}, gap ${m.gap_accuracy}, false formal ${m.false_formal}, missed ${m.missed_formal}, invariance ${m.invariance}`;
+    const f = (m) => `objective ${m.objective}, rung ${m.rung_accuracy} (balanced ${m.rung_balanced}), gap ${m.gap_accuracy}, false formal ${m.false_formal}, missed ${m.missed_formal}, invariance ${m.invariance}`;
     console.log(`\ntrain (with rewordings)  before: ${f(r.before.train)}\n                         after:  ${f(r.after.train)}`);
     console.log(`held-out                 before: ${f(r.before.heldout)}\n                         after:  ${f(r.after.heldout)}`);
-    console.log(!r.changed ? "\nratchet: no edit improved train; rules unchanged" : r.accepted ? "\nratchet: held-out gate passed" : "\nratchet: REJECTED, held-out got worse; rules unchanged");
+    console.log(!r.changed ? "\nratchet: no edit improved train; rules unchanged" : r.accepted ? "\nratchet: held-out gate passed" : `\nratchet: REJECTED (${r.gate.reasons.join("; ")}); rules unchanged`);
     if (r.heldoutMisses.length) { console.log("still wrong on held-out (needs new train evidence, not more tuning):"); for (const m of r.heldoutMisses) console.log(`  want ${m.want}, got ${m.got}: ${m.text}`); }
   }
   if (has("--apply") && r.accepted) {
@@ -88,4 +102,4 @@ if (require.main === module) {
     console.log(`ratchet: wrote modules/verification/rules.json (version ${out.version})`);
   }
 }
-module.exports = { run, CANDIDATES };
+module.exports = { run, CANDIDATES, heldoutGate };

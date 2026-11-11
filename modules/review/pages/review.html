@@ -140,7 +140,7 @@ async function metrics() {
   $("#metrics").innerHTML = `<div class="metrics"><div><span class="small muted">Reviews</span><b>${m.reviews}</b></div><div><span class="small muted">Sent to a person</span><b>${m.sentToPeople}</b></div>
     <div><span class="small muted">Mean points the guards removed</span><b>${m.meanGapNaiveMinusGuarded}</b></div><div><span class="small muted">People agree</span><b>${m.people.agreement == null ? "–" : Math.round(m.people.agreement * 100) + "%"}</b><span class="small muted">${m.people.labelled} labelled</span></div></div>
     ${fires.length ? `<table class="t"><thead><tr><th>Guard</th><th>Fired</th><th>Rate</th></tr></thead><tbody>${fires.map(([k, v]) => `<tr><td>${esc(k)}</td><td class="n">${v.count}</td><td class="n">${Math.round(v.rate * 100)}%</td></tr>`).join("")}</tbody></table>` : ""}
-    <p class="small muted">${esc(m.people.note)}</p>`;
+    <p class="small muted">${esc(m.people.note)}</p>${honestyBlock(m.people.honesty)}`;
 }
 async function route() {
   const m = location.hash.match(/^#\/doc\/(\d+)/); if (!m) return;

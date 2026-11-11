@@ -547,3 +547,8 @@ body.embed #journal { max-width: none; }
 }
 /* Long-form reading: about 66 characters a line (Butterick; editorial guidance), headings keep their room. */
 .editorial-prose p { max-width: 68ch; }
+/* The accuracy paradox guard's block (honestyBlock in public/js/api.js): Review desk and research control room. */
+.honesty { display: grid; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); } .honesty h3 { margin: 0; }
+.honesty .metrics { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; } .honesty .metrics div { display: grid; gap: 2px; }
+.honesty .metrics b { font-size: 20px; font-variant-numeric: tabular-nums; } .honesty ul { margin: 0; padding-left: 18px; }
+.honesty .tag.good { background: var(--fg); color: var(--surface); } .honesty .tag.warn { background: var(--warn-soft); color: var(--fg); border: 1px dashed var(--line-strong); }

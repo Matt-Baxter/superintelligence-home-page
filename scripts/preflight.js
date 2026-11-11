@@ -61,6 +61,7 @@ try { ok("Term properties", sh("node test/terms-property-unit.js").trim()); } ca
 try { ok("Graph logic", sh("node test/graph-logic-unit.js").trim()); } catch (e) { fail("Graph logic", String(e.stderr || e.message)); }
 try { ok("Pipeline quality", sh("node test/pipeline-quality-unit.js").trim()); ok("Story paging", sh("node --no-warnings test/story-page-unit.js").trim().split("\n").pop()); }
 catch (e) { fail("Pipeline quality / paging", String(e.stderr || e.message).split("\n").find((l) => /Assertion|Error/.test(l)) || "failed"); }
+try { ok("Accuracy paradox guard", sh("node test/metrics-property-unit.js").trim()); ok("Type mappings", sh("node test/schema-property-unit.js").trim()); } catch (e) { fail("Measurement and types", String(e.stderr || e.stdout || e.message).trim().split("\n").slice(0, 3).join(" | ")); }
 try { ok("UI dates", sh("node test/ui-date-unit.js").trim()); }
 catch (e) { fail("UI dates", String(e.stderr || e.message).split("\n").find((l) => /Assertion|Error/.test(l)) || "failed"); }
 try { const out = sh("node test/analysis-unit.js").trim(); ok("Analysis rules", out.replace(/^analysis unit checks: /, "")); }

@@ -4,7 +4,7 @@
 
 One page that points at every skill, spec, check, measure and pitfall in the repo. It is generated from the files it links to, so it can't drift: [scripts/hub.js](../scripts/hub.js) reads them, `npm run hub` rewrites this page, and preflight's **Hub** check fails when it is stale or a link breaks.
 
-**Contents:** [Start here](#start-here) · [Specs](#specs) · [Skills (17)](#skills) · [Subagents (3)](#subagents) · [Spec Kit (9)](#spec-kit-commands) · [Checks (25)](#checks) · [Measures (38)](#measures) · [Tips and pitfalls (43)](#tips-and-pitfalls) · [Where things live](#where-things-live) · [Open decisions](#open-decisions-for-the-humans)
+**Contents:** [Start here](#start-here) · [Specs](#specs) · [Skills (17)](#skills) · [Subagents (3)](#subagents) · [Spec Kit (9)](#spec-kit-commands) · [Checks (25)](#checks) · [Measures (56)](#measures) · [Tips and pitfalls (43)](#tips-and-pitfalls) · [Where things live](#where-things-live) · [Open decisions](#open-decisions-for-the-humans)
 
 ## Start here
 
@@ -143,7 +143,7 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | Bundle builds | json-render bundle builds |
 | No secrets | No secrets in tracked files |
 | No Twitter/X sources | No Twitter/X sources |
-| No Twitter/X in catalog / Content desk / Editorial publishing / Appearance and publishing / Content management / Research foundations / Vocabulary contracts / Entity resolution / Entity grouping / Entity resolution/grouping / Product planning / Term properties / Graph logic / Pipeline quality / Story paging / Pipeline quality / paging / UI dates / Analysis rules | No Twitter/X in the source catalog either; analysis rules behave |
+| No Twitter/X in catalog / Content desk / Editorial publishing / Appearance and publishing / Content management / Research foundations / Vocabulary contracts / Entity resolution / Entity grouping / Entity resolution/grouping / Product planning / Term properties / Graph logic / Pipeline quality / Story paging / Pipeline quality / paging / Accuracy paradox guard / Type mappings / Measurement and types / UI dates / Analysis rules | No Twitter/X in the source catalog either; analysis rules behave |
 | Modules | kernel boots, boundaries hold, blocks, views and judges are valid |
 | Codebase map | every API call a page makes has a route |
 | Unslop | UI patterns that read as AI-generated (agent-kit/skills/ui-design) |
@@ -218,7 +218,7 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 
 ## Measures
 
-Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/README.md](../bench/README.md)): no metric may get worse than [bench/baseline.json](../bench/baseline.json) (updated 2026-11-10) allows. "info" metrics are reported, never failed.
+Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/README.md](../bench/README.md)): no metric may get worse than [bench/baseline.json](../bench/baseline.json) (updated 2026-11-11) allows. "info" metrics are reported, never failed.
 
 | Metric | Better | Baseline | What it measures |
 | --- | --- | --- | --- |
@@ -232,8 +232,17 @@ Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/READM
 | `review.adversary_gain_guarded` | lower (tol 0.5) | 0 | points the guarded score gains under the attack on the unguarded judge |
 | `review.whitebox_gain` | lower (tol 0.5) | 0.25 | points an adversary attacking the guarded score gains |
 | `review.adversary_gain_naive` | info | 33.875 | points the same attack gains on the unguarded judge (the attack is real) |
-| `review.ms_per_doc` | info | 9.1 | time to review one item |
+| `review.ms_per_doc` | info | 9.9 | time to review one item |
 | `review.fidelity_accuracy` | higher | 1 | paraphrase-fidelity checks right on bench/fidelity-cases.json (52 synthetic pairs: pass/fail and the expected check) |
+| `review.verdict_balanced_accuracy` | higher | 1 | credible vs not credible verdicts: mean recall over the classes present (immune to class imbalance) |
+| `review.verdict_mcc` | higher (tol 0.01) | 1 | credible vs not credible verdicts: Matthews correlation (0 = no better than a constant guess, 1 = perfect) |
+| `review.verdict_paradox_free` | higher | 1 | credible vs not credible verdicts: 1 when it removes at least 20% of a majority guess's errors and recognises every class |
+| `review.flag_balanced_accuracy` | higher | 1 | sent to a person exactly when not credible: mean recall over the classes present (immune to class imbalance) |
+| `review.flag_mcc` | higher (tol 0.01) | 1 | sent to a person exactly when not credible: Matthews correlation (0 = no better than a constant guess, 1 = perfect) |
+| `review.flag_paradox_free` | higher | 1 | sent to a person exactly when not credible: 1 when it removes at least 20% of a majority guess's errors and recognises every class |
+| `review.fidelity_balanced_accuracy` | higher | 1 | faithful vs unfaithful paraphrases: mean recall over the classes present (immune to class imbalance) |
+| `review.fidelity_mcc` | higher (tol 0.01) | 1 | faithful vs unfaithful paraphrases: Matthews correlation (0 = no better than a constant guess, 1 = perfect) |
+| `review.fidelity_paradox_free` | higher | 1 | faithful vs unfaithful paraphrases: 1 when it removes at least 20% of a majority guess's errors and recognises every class |
 | `lab.intent_accuracy` | higher (tol 0.005) | 0.993 | the learned intent policy on held-out requests (seed 77) |
 | `lab.intent_accuracy_seed2` | higher (tol 0.01) | 0.988 | ...on a second held-out draw (seed 1234), so tuning to one seed shows |
 | `lab.safety_properties` | higher | 1 | share of the 4 safety properties that hold |
@@ -242,7 +251,7 @@ Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/READM
 | `interp.steering_selectivity` | higher (tol 0.5) | 8.28 | target gain / collateral change when clamping one SAE latent to 4x |
 | `interp.steering_exactness` | lower | 0 | output error on unedited inputs with the SAE error added back (0 = exact) |
 | `papers.verdict_seed_stability` | higher | 0.9 | share of paper-example verdicts that hold on 3 other seed blocks (10 examples) |
-| `papers.slowest_example_ms` | info | 1420 | slowest paper example (baseline and variant); each toy must stay under 2 seconds |
+| `papers.slowest_example_ms` | info | 1887 | slowest paper example (baseline and variant); each toy must stay under 2 seconds |
 | `papers.hidden_eval_hack_drop` | higher (tol 0.02) | 0.185 | drop in the quirk share when a self-improving agent is judged on hidden evaluations (arXiv 2609.26457 toy) |
 | `papers.recompute_evasion` | lower | 0 | undetected exploits with independent recomputation (arXiv 2609.28614 toy) |
 | `papers.cosine_sae_gain` | higher (tol 1) | 8 | extra true features a cosine-scored SAE recovers when input sizes vary (arXiv 2606.15054 toy) |
@@ -259,7 +268,16 @@ Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/READM
 | `verification.false_formal` | lower | 0 | share of sentences with no proof claim that get credit for one ("a lean team", "the deal was formalized"), all 47 items |
 | `verification.topic_agreement` | higher | 0.936 | share of labelled items where the feed's Formal verification topic (lib/ontology.json terms) agrees with the Machine-checked rules (47 items) |
 | `verification.invariance` | higher (tol 0.01) | 0.956 | share of harmless rewordings (case, spacing, synonyms) that keep the judgement, all items |
+| `verification.heldout_rung_balanced_accuracy` | higher | 1 | rung on the held-out split: mean recall over the classes present (immune to class imbalance) |
+| `verification.heldout_rung_mcc` | higher (tol 0.01) | 1 | rung on the held-out split: Matthews correlation (0 = no better than a constant guess, 1 = perfect) |
+| `verification.heldout_rung_paradox_free` | higher | 1 | rung on the held-out split: 1 when it removes at least 20% of a majority guess's errors and recognises every class |
+| `verification.heldout_gap_balanced_accuracy` | higher | 1 | fidelity gap on the held-out split: mean recall over the classes present (immune to class imbalance) |
+| `verification.heldout_gap_mcc` | higher (tol 0.01) | 1 | fidelity gap on the held-out split: Matthews correlation (0 = no better than a constant guess, 1 = perfect) |
+| `verification.heldout_gap_paradox_free` | higher | 1 | fidelity gap on the held-out split: 1 when it removes at least 20% of a majority guess's errors and recognises every class |
 | `analysis.scope_accuracy` | higher | 1 | scope decisions on the labelled spec fixtures (10 items) |
+| `analysis.scope_balanced_accuracy` | higher | 1 | in scope vs out of scope on the spec fixtures: mean recall over the classes present (immune to class imbalance) |
+| `analysis.scope_mcc` | higher (tol 0.01) | 1 | in scope vs out of scope on the spec fixtures: Matthews correlation (0 = no better than a constant guess, 1 = perfect) |
+| `analysis.scope_paradox_free` | higher | 1 | in scope vs out of scope on the spec fixtures: 1 when it removes at least 20% of a majority guess's errors and recognises every class |
 
 In scripts/bench.js but not yet in the baseline: `review.proposed_verdict_accuracy`.
 
@@ -358,6 +376,7 @@ Quoted from the repo's own pitfall, trap, troubleshooting and habits sections (n
 
 **docs/**
 
+- [docs/CAPABILITY_MAP.md](CAPABILITY_MAP.md): John asked (2026-11-11) for every one of these capabilities to be traced end to end: where it lives, what checks it, where it is weak, and what was…
 - [docs/DATA_DICTIONARY.md](DATA_DICTIONARY.md): Generated by `node scripts/dictionary.js gen`.
 - [docs/DEPLOY.md](DEPLOY.md): The site runs on Vercel from John's v0/Vercel account, with the code on Matt's GitHub repo and a Neon Postgres database.
 - [docs/DESIGN_REFERENCES.md](DESIGN_REFERENCES.md): Sections: Details inspiration, 2026-11-07; Reader workspace, 2026-11-07; Public orientation and sign-in, 2026-11-07; Reading quality and evidence…

@@ -6,6 +6,7 @@ const V = require("./render");
 const { ontology } = require("../../lib/tagger");
 const D = require("../review/dossier");
 
+const M = require("../../lib/metrics");
 module.exports = function mountResearch(app, { db, wrap, auth, admin }) {
   const CONCEPTS = (() => { try { return require("../learn/data/concepts.json").concepts; } catch { return []; } })();
   const labExamples = () => { try { const L = require("../lab/lab"), pre = require("../lab/results.json").results; return L.EX.examples.filter((e) => pre[e.id]).map((e) => ({ ...e, verdict: pre[e.id].verdict })); } catch { return []; } };
@@ -41,6 +42,8 @@ module.exports = function mountResearch(app, { db, wrap, auth, admin }) {
     const models = (process.env.PANEL_MODELS || "").split(",").map((x) => x.trim()).filter(Boolean);
     return { today, waiting: W, proposals: proposals().reqs, specStatus: proposals().status, people: CFG.people, forecasts: due.map((e) => ({ ...e, overdue: e.due <= today })), flagged,
       quality: rows.length ? Q.analyse(rows).checks.map(({ id, label, value, ok, why, fix }) => ({ id, label, value, ok, why, fix })) : [],
+      // Person-labelled verdicts through the accuracy paradox guard (lib/metrics.js).
+      honesty: await (async () => { const lab = await db.all("SELECT verdict, label FROM review_docs WHERE label IS NOT NULL ORDER BY id DESC LIMIT 1000").catch(() => []); return lab.length ? M.brief(M.fromAgreement(lab, { predict: (r) => (["doubtful", "withdrawn"].includes(r.verdict) ? "not-credible" : "credible"), classes: ["credible", "not-credible"] })) : null; })(),
       panel: { models, ready: models.length >= 2, advisor: (process.env.ADVISOR_MODEL || "").trim() || null }, public: process.env.RESEARCH_PUBLIC === "1" };
   }));
 

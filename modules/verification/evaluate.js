@@ -17,10 +17,11 @@ function rewordings(text) {
 }
 
 const ORDER = { none: 0, claimed: 1, "statement-checked": 2, "outside-checked": 3 };
+const { classify } = require("../../lib/metrics");
 function score(rules, items, { augment = false } = {}) {
   const R = compile(rules);
   let rung = 0, gap = 0, n = 0, fp = 0, negatives = 0, fn = 0, positives = 0, inv = 0, invN = 0;
-  const misses = [];
+  const misses = [], truthR = [], predR = [];
   for (const it of items) {
     const texts = augment ? [it.text, ...rewordings(it.text)] : [it.text];
     // Invariance: a harmless rewording keeps the judgement the original gets.
@@ -28,7 +29,7 @@ function score(rules, items, { augment = false } = {}) {
     for (const r of rewordings(it.text)) { invN++; const c = check(r, R); if (c.rung.id === base.rung.id && c.gap === base.gap) inv++; }
     for (const t of texts) {
       const c = check(t, R); n++;
-      const okR = c.rung.id === it.rung, okG = c.gap === it.gap;
+      const okR = c.rung.id === it.rung, okG = c.gap === it.gap; truthR.push(it.rung); predR.push(c.rung.id);
       if (okR) rung++; if (okG) gap++;
       if (it.rung === "none") { negatives++; if (c.rung.id !== "none") fp++; } else { positives++; if (c.rung.id === "none") fn++; }
       if ((!okR || !okG) && t === it.text) misses.push({ text: it.text, want: `${it.rung}${it.gap ? "+gap" : ""}`, got: `${c.rung.id}${c.gap ? "+gap" : ""}`, off: ORDER[c.rung.id] - ORDER[it.rung] });
@@ -39,7 +40,10 @@ function score(rules, items, { augment = false } = {}) {
   // One number to climb: accuracy, with a false proof claim costing twice a miss (crediting a claim nobody made is
   // worse than missing one), plus invariance.
   m.objective = r3(m.rung_accuracy + m.gap_accuracy - 2 * m.false_formal - m.missed_formal + m.invariance);
-  return { metrics: m, misses };
+  // The accuracy paradox guard (lib/metrics.js): rung accuracy can climb by drifting toward the most common rung, so
+  // the ratchet also watches the mean recall over rungs and whether every rung that occurs is still recognised.
+  const h = classify(truthR, predR); m.rung_balanced = h.balancedAccuracy; m.rung_paradox_free = h.paradox.ok ? 1 : 0;
+  return { metrics: m, misses, honesty: h };
 }
 
 module.exports = { score, rewordings, SYNONYMS };

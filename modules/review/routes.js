@@ -8,6 +8,7 @@ const feeds = require("../../lib/feeds");
 
 const CONCEPTS = (() => { try { return JSON.parse(fs.readFileSync(path.join(__dirname, "..", "learn", "data", "concepts.json"), "utf8")).concepts; } catch { return []; } })();
 
+const M = require("../../lib/metrics");
 module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, notFound }) {
   const input = (b = {}) => {
     const x = { kind: str(b.kind, 20), title: str(b.title, 300), text: String(b.text || "").slice(0, 20000), authors: str(b.authors, 600), url: str(b.url, 500) };
@@ -93,7 +94,10 @@ module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, no
     return { reviews: n, verdicts, sentToPeople: flagged, meanGapNaiveMinusGuarded: n ? +(gap / n).toFixed(1) : 0,
       guardFires: Object.fromEntries(Object.entries(fires).map(([k, v]) => [k, { count: v, rate: +(v / n).toFixed(2) }])),
       people: { labelled: labelled.length, agree, agreement: labelled.length ? +(agree / labelled.length).toFixed(2) : null,
-        note: "Agreement between a person and the judge's verdict. Below about 0.8 on 20+ labels, the rules need tuning (tune-significance)." } };
+        note: "Agreement between a person and the judge's verdict. Below about 0.8 on 20+ labels, the rules need tuning (tune-significance).",
+        // The accuracy paradox guard (lib/metrics.js): agreement alone can't tell a judge that never says "doubtful" on a
+        // mostly-credible stream from a good one; balanced accuracy, MCC and the majority baseline can.
+        honesty: labelled.length ? M.brief(M.fromAgreement(labelled, { predict: (r) => (["doubtful", "withdrawn"].includes(r.verdict) ? "not-credible" : "credible"), classes: ["credible", "not-credible"] })) : null } };
   }));
 
   // Topic dossiers: a traced analysis of everything on one topic, with a blog draft, short posts and a video storyboard.

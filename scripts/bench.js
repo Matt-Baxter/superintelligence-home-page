@@ -10,6 +10,19 @@ const fs = require("fs"), path = require("path");
 const root = path.join(__dirname, ".."), DIR = path.join(root, "bench");
 const args = process.argv.slice(2), has = (f) => args.includes(f);
 
+// The accuracy paradox guard (lib/metrics.js, REQ-029 proposed): every labelled classifier also reports balanced
+// accuracy, MCC and whether it beats a constant guess of the majority class, so an imbalanced set can't hide a judge
+// that never recognises the rare class. Details print under the table.
+const M = require("../lib/metrics"), HONESTY = [];
+function honesty(prefix, about, truth, pred) {
+  const s = M.classify(truth, pred); HONESTY.push([prefix, about, s]);
+  return {
+    [`${prefix}_balanced_accuracy`]: { value: s.balancedAccuracy, better: "higher", tol: 0, about: `${about}: mean recall over the classes present (immune to class imbalance)` },
+    [`${prefix}_mcc`]: { value: s.mcc, better: "higher", tol: 0.01, about: `${about}: Matthews correlation (0 = no better than a constant guess, 1 = perfect)` },
+    [`${prefix}_paradox_free`]: { value: s.paradox.ok ? 1 : 0, better: "higher", tol: 0, about: `${about}: 1 when it removes at least 20% of a majority guess's errors and recognises every class` },
+  };
+}
+
 // Each metric: how to measure it, whether higher is better, and how much worse than baseline is still accepted.
 const SUITES = {
   review: () => {
@@ -52,6 +65,9 @@ const SUITES = {
       "review.adversary_gain_naive": { value: r3(gNaive / n), better: "info", about: "points the same attack gains on the unguarded judge (the attack is real)" },
       "review.ms_per_doc": { value: Math.round(ms * 10) / 10, better: "info", about: "time to review one item" },
       "review.fidelity_accuracy": { value: r3(fid.accuracy), better: "higher", tol: 0, about: `paraphrase-fidelity checks right on bench/fidelity-cases.json (${fid.n} synthetic pairs: pass/fail and the expected check)` },
+      ...honesty("review.verdict", "credible vs not credible verdicts", rs.map((x) => (x.it.credible ? "credible" : "not-credible")), rs.map((x) => (["doubtful", "withdrawn"].includes(x.r.verdict) ? "not-credible" : "credible"))),
+      ...honesty("review.flag", "sent to a person exactly when not credible", rs.map((x) => (x.it.credible ? "no" : "yes")), rs.map((x) => (x.r.needsPerson ? "yes" : "no"))),
+      ...honesty("review.fidelity", "faithful vs unfaithful paraphrases", fid.rows.map((x) => x.kind), fid.rows.map((x) => (x.failed.length ? "unfaithful" : "faithful"))),
     };
   },
   lab: () => {
@@ -139,20 +155,22 @@ const SUITES = {
       "verification.false_formal": { value: all.false_formal, better: "lower", tol: 0, about: `share of sentences with no proof claim that get credit for one ("a lean team", "the deal was formalized"), all ${n} items` },
       "verification.topic_agreement": { value: agree, better: "higher", tol: 0, about: `share of labelled items where the feed's Formal verification topic (lib/ontology.json terms) agrees with the Machine-checked rules (${n} items)` },
       "verification.invariance": { value: all.invariance, better: "higher", tol: 0.01, about: "share of harmless rewordings (case, spacing, synonyms) that keep the judgement, all items" },
+      ...(() => { const ho = items.filter((x) => x.split === "heldout"), got = ho.map((x) => check(x.text));
+        return { ...honesty("verification.heldout_rung", "rung on the held-out split", ho.map((x) => x.rung), got.map((c) => c.rung.id)), ...honesty("verification.heldout_gap", "fidelity gap on the held-out split", ho.map((x) => String(Boolean(x.gap))), got.map((c) => String(Boolean(c.gap)))) }; })(),
     };
   },
   analysis: () => {
     // Scope and tagging on the labelled spec fixtures: in-scope titles vs off-topic ones (REQ-003).
     const A = require("../lib/analysis"), { tag } = require("../lib/tagger");
-    const dir = path.join(root, "test", "fixtures", "spec"); let right = 0, n = 0;
+    const dir = path.join(root, "test", "fixtures", "spec"); let right = 0, n = 0; const truthS = [], predS = [];
     // Each fixture item carries its label: <category>about-superintelligence: yes|no</category> (Twitter/X items are skipped).
     const strip = (x) => x.replace(/<!\[CDATA\[|\]\]>/g, "").replace(/<[^>]+>/g, "").trim();
     for (const f of fs.readdirSync(dir).filter((x) => x.endsWith(".xml"))) for (const m of fs.readFileSync(path.join(dir, f), "utf8").matchAll(/<item>([\s\S]*?)<\/item>/g)) {
       const lab = (m[1].match(/about-superintelligence:\s*(yes|no)/) || [])[1]; if (!lab) continue;
       const title = strip((m[1].match(/<title>([\s\S]*?)<\/title>/) || [])[1] || ""), summary = strip((m[1].match(/<description>([\s\S]*?)<\/description>/) || [])[1] || "");
-      const a = A.analyze({ title, summary, topics: tag(title, summary).topics }); n++; if (a.scope.in === (lab === "yes")) right++;
+      const a = A.analyze({ title, summary, topics: tag(title, summary).topics }); n++; if (a.scope.in === (lab === "yes")) right++; truthS.push(lab === "yes" ? "in" : "out"); predS.push(a.scope.in ? "in" : "out");
     }
-    return { "analysis.scope_accuracy": { value: n ? Math.round((right / n) * 1000) / 1000 : 1, better: "higher", tol: 0, about: `scope decisions on the labelled spec fixtures (${n} items)` } };
+    return { "analysis.scope_accuracy": { value: n ? Math.round((right / n) * 1000) / 1000 : 1, better: "higher", tol: 0, about: `scope decisions on the labelled spec fixtures (${n} items)` }, ...honesty("analysis.scope", "in scope vs out of scope on the spec fixtures", truthS, predS) };
   },
 };
 
@@ -169,11 +187,13 @@ for (const [k, m] of Object.entries(now)) {
 if (has("--record") || has("--update")) fs.appendFileSync(path.join(DIR, "history.jsonl"), JSON.stringify({ at: new Date().toISOString(), metrics: Object.fromEntries(Object.entries(now).map(([k, m]) => [k, m.value])) }) + "\n");
 const hist = fs.existsSync(path.join(DIR, "history.jsonl")) ? fs.readFileSync(path.join(DIR, "history.jsonl"), "utf8").trim().split("\n") : []; if (hist.length > 100) fs.writeFileSync(path.join(DIR, "history.jsonl"), hist.slice(-100).join("\n") + "\n");
 
-if (has("--json")) console.log(JSON.stringify({ rows, regressions: bad }, null, 2));
+if (has("--json")) console.log(JSON.stringify({ rows, regressions: bad, honesty: HONESTY.map(([k, about, st]) => ({ classifier: k, about, accuracy: st.accuracy, balancedAccuracy: st.balancedAccuracy, mcc: st.mcc, kappa: st.kappa, majority: st.majority, paradox: st.paradox, perClass: st.perClass })) }, null, 2));
 else {
   const w = Math.max(...rows.map((r) => r.metric.length));
   console.log(`${"metric".padEnd(w)}  baseline      now   change  verdict`);
   for (const r of rows) console.log(`${r.metric.padEnd(w)}  ${String(r.baseline).padStart(8)} ${String(r.now).padStart(8)} ${String(r.change).padStart(8)}  ${r.verdict}`);
+  console.log("\nClassifier honesty (lib/metrics.js: accuracy against a constant majority guess, per class):");
+  for (const [k, about, st] of HONESTY) console.log(`  ${st.paradox.ok ? "ok  " : "FAIL"} ${k} (${about}): ${M.summary(st)}`);
 }
 if (has("--update")) {
   fs.writeFileSync(basePath, JSON.stringify({ about: "Accepted benchmark numbers (scripts/bench.js). Update only for an uplift or an explained trade-off.", updated: new Date().toISOString().slice(0, 10), metrics: now }, null, 2) + "\n");
