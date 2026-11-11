@@ -1,0 +1,158 @@
+{
+ "about": "What building paper responses has taught us. A problem counts as learned only when it has a symptom, a cause, a fix and an automated guard that would catch it again (a QA check in modules/responses/qa.js or a named unit check in test/responses-unit.js). test/responses-unit.js fails if a guard doesn't exist. This is the pipeline's own record; the humans' agent log (AGENT_LOG.md) is separate and written only by them.",
+ "learnings": [
+  {
+   "id": "L1",
+   "found": "2026-11-11",
+   "area": "video",
+   "symptom": "Picture ran 0.8 s short of the voice over a 72 s video.",
+   "cause": "Each play and wait is rounded to whole frames; 50 rounded calls add up.",
+   "fix": "The scene holds to one clock (the narration's) and waits until each line's end on that clock.",
+   "guard": "qa:sync"
+  },
+  {
+   "id": "L2",
+   "found": "2026-11-11",
+   "area": "voice",
+   "symptom": "The narration read written labels aloud, brackets and all, and the first voice was robotic.",
+   "cause": "Checklist labels were written for a page; espeak-ng was the only installed voice.",
+   "fix": "Spoken phrasings per check (SPOKEN in plan.js); Kokoro neural voice by default, sentences cached by voice and text.",
+   "guard": "qa:speakable"
+  },
+  {
+   "id": "L3",
+   "found": "2026-11-11",
+   "area": "planning",
+   "symptom": "A 'partly supported' paper was planned as 'strong-table'.",
+   "cause": "Five hand-named situations; the mapping only checked for thin and abstract-only, so any paper with a table counted as strong.",
+   "fix": "Situations are composed from strength, table, toy and method (sitKey); the Q-learner uses a coarser class.",
+   "guard": "qa:situation"
+  },
+  {
+   "id": "L4",
+   "found": "2026-11-11",
+   "area": "planning",
+   "symptom": "The model's assumed beat lengths were off by up to 1.9x (one claim: 7 s assumed, 11.9 s measured).",
+   "cause": "Variant lengths were guesses; real lengths come from the voice.",
+   "fix": "Measured lengths fold into modules/lab/production-calibration.json (running mean) and replace the guesses in A*.",
+   "guard": "qa:calibration"
+  },
+  {
+   "id": "L5",
+   "found": "2026-11-11",
+   "area": "video",
+   "symptom": "Flow-box labels spilled out of their boxes; the gauge arc was hidden behind its ring; a gauge animation crashed the render.",
+   "cause": "Text wasn't fitted to its box; draw order; fading a mobject that is redrawn every frame.",
+   "fix": "Labels fitted to boxes, arc drawn above the ring, redrawn parts faded through a tracker.",
+   "guard": "qa:edges"
+  },
+  {
+   "id": "L6",
+   "found": "2026-11-11",
+   "area": "learning",
+   "symptom": "The Q-learner's weekly reward ranged 3.2 to 5.0 across seeds and it made odd choices in rarely visited states.",
+   "cause": "Too few updates for the state space, a high learning rate, and no account of how often a state was seen.",
+   "fix": "40,000 training weeks at a learning rate of 0.05, and the hand rule decides in states visited fewer than 30 times. Seeds now land within about 0.25 of each other.",
+   "guard": "unit:the learned offering is stable across seeds and beats the hand rule"
+  },
+  {
+   "id": "L7",
+   "found": "2026-11-11",
+   "area": "planning",
+   "symptom": "A* returned a worse plan than uniform-cost search.",
+   "cause": "The lower bound for the last step was undefined, so f was NaN and the queue's order broke; an attention-bucket closed set also merged different histories.",
+   "fix": "The bound past the last unit is 0, and the search keeps every path (attention depends on the whole history).",
+   "guard": "unit:A* finds the same optimum as uniform-cost search in every situation"
+  },
+  {
+   "id": "L8",
+   "found": "2026-11-11",
+   "area": "honesty",
+   "symptom": "The learned offering 'never gives a thin paper the full video', which looks like a finding.",
+   "cause": "It is the trust penalty we wrote into the reward; the learner only rediscovers it.",
+   "fix": "Reports say the policy follows from the stated reward, and the unit check shows that without the penalty the learner does oversell thin papers.",
+   "guard": "unit:without the trust penalty the learner oversells thin papers"
+  },
+  {
+   "id": "L9",
+   "found": "2026-11-11",
+   "area": "video",
+   "symptom": "The last 0.6 s (the closing card) was cut from video.mp4, and QA's blank check found an empty final frame.",
+   "cause": "ffmpeg's -shortest ended the file with the subtitle track, whose last cue ends before the closing beat's tail.",
+   "fix": "No -shortest; picture and voice are built to the same clock, so nothing needs trimming.",
+   "guard": "qa:blank"
+  },
+  {
+   "id": "L10",
+   "found": "2026-11-11",
+   "area": "learning",
+   "symptom": "After the first calibration A* switched to claim chips and the bare score gauge: the variants it had never rendered.",
+   "cause": "Only measured variants got their real (longer) lengths; unmeasured ones kept optimistic guesses, so trying something made it look worse than not trying it.",
+   "fix": "Unmeasured variants are scaled by the mean measured/assumed ratio, so tried and untried options carry the same observed bias.",
+   "guard": "unit:calibration scales unmeasured variants by the observed bias"
+  },
+  {
+   "id": "L11",
+   "found": "2026-11-11",
+   "area": "planning",
+   "symptom": "The shipped video could silently drop a beat A* had planned (a quote card with no result sentence, questions with none open), while the plan still reported A*'s numbers.",
+   "cause": "A* didn't know whether the paper had a result to quote or questions left open.",
+   "fix": "Situations carry +res and +q; A* only offers what the paper can fill.",
+   "guard": "unit:every beat A* plans is a beat the video shows"
+  },
+  {
+   "id": "L12",
+   "found": "2026-11-11",
+   "area": "learning",
+   "symptom": "The Q-learner treated the last day of the week and the first as the same state.",
+   "cause": "Days left wasn't in the state, so values mixed one-step and seven-step horizons and couldn't learn when to save budget.",
+   "fix": "Days left (1, 2-3, 4+) is part of the state key.",
+   "guard": "unit:the learned offering is stable across seeds and beats the hand rule"
+  },
+  {
+   "id": "L13",
+   "found": "2026-11-11",
+   "area": "learning",
+   "symptom": "Policies were compared on different weeks, and 'overclaims' were counted for videos that never shipped.",
+   "cause": "One random stream drove both arrivals and reward noise, and an over-budget action skipped its noise draw; the overclaim count ignored failure.",
+   "fix": "Separate streams for arrivals and noise, the noise drawn first every time, and overclaims counted only when something ships.",
+   "guard": "unit:every policy is evaluated on the same weeks"
+  },
+  {
+   "id": "L14",
+   "found": "2026-11-11",
+   "area": "planning",
+   "symptom": "Every plan said 'Suggested offering: undefined'.",
+   "cause": "The learned table is keyed by coarse class ('partial+visual'); the lookup used the full situation key.",
+   "fix": "Look up by classOf(situation); one learned table per budget.",
+   "guard": "unit:the plan names a suggested offering"
+  },
+  {
+   "id": "L15",
+   "found": "2026-11-11",
+   "area": "video",
+   "symptom": "Renders crashed for a toy check with no verdict, a curve with one point or all points at one x, and a one-step flow.",
+   "cause": "Empty Text, a zero-width axis range, and a motion path through one point.",
+   "fix": "A default verdict label, padded axis ranges, and a highlight instead of the loop for one step.",
+   "guard": "unit:edge-case scenes are generated without zero-width axes or empty labels"
+  },
+  {
+   "id": "L16",
+   "found": "2026-11-11",
+   "area": "process",
+   "symptom": "Four ledger entries named unit checks that didn't exist.",
+   "cause": "The ledger was written before its guards, and nothing checked it.",
+   "fix": "test/responses-unit.js fails when any learning's guard is missing.",
+   "guard": "unit:every learning has a guard that exists"
+  },
+  {
+   "id": "L17",
+   "found": "2026-11-11",
+   "area": "process",
+   "symptom": "QA's pace check kept failing after the voice was slowed twice, on 7- and 9-word lines.",
+   "cause": "The check measured short phrases against a whole-narration speaking rate; short phrases are naturally spoken faster. The check, not the video, was miscalibrated.",
+   "fix": "Per-line limits apply to lines of 12+ words; the whole narration is held to 130-185 spoken words a minute (the sample runs at 171).",
+   "guard": "qa:pace"
+  }
+ ]
+}

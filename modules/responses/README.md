@@ -10,3 +10,10 @@ Reads one paper in full, checks its claims against its own body, plans a respons
 - `flags.js`: `responses` = `off` | `staff` | `public`, stored in `appearance_settings` (key `features`).
 
 Run: `npm run respond -- 2611.10787 --render` writes `out/response/<slug>/` (plan.md, article.md, social.md, scene.py, captions.srt, narration, video.mp4). Install `pip install manim` (needs the Pango dev headers) and `espeak-ng`, or a Piper voice for a better one. Checks: `npm run test:responses`.
+
+## Planning, QA and learning (proposed REQ-060)
+
+- `../lab/production.js`: a synthetic viewer model, A* over beats (which variant of each part, or skip; optimal in the model, checked against uniform-cost search) and a Q-learner over offerings (format, voice, channel) under a weekly compute budget. Simulations with stated assumptions, labelled as such; Lab runners `response-astar` and `response-qlearn`.
+- Each beat is lines of `{text, cue}`: one spoken sentence, one animation cue. Every line is voiced (Kokoro by default, cached by voice and text) and the scene holds to the narration's clock, so picture and voice stay in step.
+- `qa.js` checks every render: sync, speakable text, pace, frame edges, empty frames, situation, model lengths, cited numbers. `--learn` folds measured lengths into `../lab/production-calibration.json`.
+- `learnings.json` is the pipeline's ledger: each problem found, its cause, its fix and the guard that catches it again. A problem counts as learned only when that guard exists; `npm run test:responses` fails otherwise. (The humans' agent log, AGENT_LOG.md, is separate and theirs alone.)

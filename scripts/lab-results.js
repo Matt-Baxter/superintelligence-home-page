@@ -7,7 +7,7 @@
 const fs = require("node:fs"), path = require("node:path"), crypto = require("node:crypto");
 const dir = path.join(__dirname, "..", "modules", "lab"), out = path.join(dir, "results.json");
 // Everything a default run depends on: the examples and every runner's code.
-const SOURCES = ["examples.json", "lab.js", "runners.js", "gym.js", "intent.js", "interp.js", "papers.js"];
+const SOURCES = ["examples.json", "lab.js", "runners.js", "gym.js", "intent.js", "interp.js", "papers.js", "production.js"];
 const hash = () => crypto.createHash("sha256").update(SOURCES.map((f) => fs.readFileSync(path.join(dir, f), "utf8")).join("\0")).digest("hex").slice(0, 16);
 
 if (process.argv.includes("--check")) {

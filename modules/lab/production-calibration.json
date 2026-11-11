@@ -1,0 +1,54 @@
+{
+  "about": "Seconds per explainer variant measured in real renders (running mean). Written by npm run respond -- <paper> --render --learn; read by modules/lab/production.js in place of the assumed seconds.",
+  "variants": {
+    "question-hook": {
+      "seconds": 6.56,
+      "n": 1,
+      "by": {
+        "gated-self-repair-sample-paper-for-the-paper-reader-test-dat": 6.56
+      }
+    },
+    "one-claim": {
+      "seconds": 13.16,
+      "n": 1,
+      "by": {
+        "gated-self-repair-sample-paper-for-the-paper-reader-test-dat": 13.16
+      }
+    },
+    "flow-diagram": {
+      "seconds": 10.65,
+      "n": 1,
+      "by": {
+        "gated-self-repair-sample-paper-for-the-paper-reader-test-dat": 10.65
+      }
+    },
+    "bars": {
+      "seconds": 12.89,
+      "n": 1,
+      "by": {
+        "gated-self-repair-sample-paper-for-the-paper-reader-test-dat": 12.89
+      }
+    },
+    "top-checks": {
+      "seconds": 17.66,
+      "n": 1,
+      "by": {
+        "gated-self-repair-sample-paper-for-the-paper-reader-test-dat": 17.66
+      }
+    },
+    "three-questions": {
+      "seconds": 11.86,
+      "n": 1,
+      "by": {
+        "gated-self-repair-sample-paper-for-the-paper-reader-test-dat": 11.86
+      }
+    },
+    "source-card": {
+      "seconds": 6.16,
+      "n": 1,
+      "by": {
+        "gated-self-repair-sample-paper-for-the-paper-reader-test-dat": 6.16
+      }
+    }
+  }
+}

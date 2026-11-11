@@ -4,7 +4,7 @@
 
 One page that points at every skill, spec, check, measure and pitfall in the repo. It is generated from the files it links to, so it can't drift: [scripts/hub.js](../scripts/hub.js) reads them, `npm run hub` rewrites this page, and preflight's **Hub** check fails when it is stale or a link breaks.
 
-**Contents:** [Start here](#start-here) · [Specs](#specs) · [Skills (17)](#skills) · [Subagents (3)](#subagents) · [Spec Kit (9)](#spec-kit-commands) · [Checks (25)](#checks) · [Measures (56)](#measures) · [Tips and pitfalls (43)](#tips-and-pitfalls) · [Where things live](#where-things-live) · [Open decisions](#open-decisions-for-the-humans)
+**Contents:** [Start here](#start-here) · [Specs](#specs) · [Skills (17)](#skills) · [Subagents (3)](#subagents) · [Spec Kit (9)](#spec-kit-commands) · [Checks (25)](#checks) · [Measures (61)](#measures) · [Tips and pitfalls (43)](#tips-and-pitfalls) · [Where things live](#where-things-live) · [Open decisions](#open-decisions-for-the-humans)
 
 ## Start here
 
@@ -24,11 +24,11 @@ One page that points at every skill, spec, check, measure and pitfall in the rep
 | [003-judge-fidelity](../specs/003-judge-fidelity/spec.md): Judge fidelity and stability (extended version) | Proposed, not approved. | REQ-032..REQ-040 (9) | [spec](../specs/003-judge-fidelity/spec.md) · [plan](../specs/003-judge-fidelity/plan.md) · [tasks](../specs/003-judge-fidelity/tasks.md) · [research](../specs/003-judge-fidelity/research.md) | 6 / 24 (agent 2/9, rules 2/15, people 2/0) |
 | [004-parity](../specs/004-parity/spec.md): Feature parity with AI-news and research apps (extended version) | Proposed, not approved. | REQ-041..REQ-052 (12) | [spec](../specs/004-parity/spec.md) · [plan](../specs/004-parity/plan.md) · [tasks](../specs/004-parity/tasks.md) | 25 / 1 (agent 18/1, rules 3/0, people 4/0) |
 | [005-appearance-and-publishing](../specs/005-appearance-and-publishing/spec.md): Appearance, CMS delivery and content generation (extended version) | Proposed, not approved. | REQ-053..REQ-055 (3) | [spec](../specs/005-appearance-and-publishing/spec.md) · [tasks](../specs/005-appearance-and-publishing/tasks.md) | 4 / 7 (agent 2/7, people 2/0) |
-| [006-paper-responses](../specs/006-paper-responses/spec.md): Paper responses (extended version) | Proposed, not approved. | REQ-056..REQ-059 (4) | [spec](../specs/006-paper-responses/spec.md) · [tasks](../specs/006-paper-responses/tasks.md) | 5 / 7 (agent 2/6, rules 1/1, people 2/0) |
+| [006-paper-responses](../specs/006-paper-responses/spec.md): Paper responses (extended version) | Proposed, not approved. | REQ-056..REQ-060 (5) | [spec](../specs/006-paper-responses/spec.md) · [tasks](../specs/006-paper-responses/tasks.md) | 7 / 10 (agent 3/9, rules 1/1, people 3/0) |
 
 Tags: `[agent]` any agent, unattended; `[rules]` changes scoring, only when a person asks; `[people]` the humans. Requirement traceability: [SPEC_TRACE.md](SPEC_TRACE.md); measured status: [SPEC_STATUS.md](SPEC_STATUS.md); this build's tables and routes: [INTERFACES.md](INTERFACES.md).
 
-**Open tasks (40)**
+**Open tasks (42)**
 
 - [003 T000](../specs/003-judge-fidelity/tasks.md) `[people]` REQ-032: Approve, change or drop REQ-032..REQ-040 (this spec).
 - [003 T007](../specs/003-judge-fidelity/tasks.md) `[people]` REQ-038: Install Lean 4 (elan, from https://lean-lang.org) on a machine you control, run `cd proofs && lake build`, and record which theorems check; agents…
@@ -67,6 +67,8 @@ Tags: `[agent]` any agent, unattended; `[rules]` changes scoring, only when a pe
 - [005 T551](../specs/005-appearance-and-publishing/tasks.md) `[agent]` REQ-054: Atom output to match REQ-045 if both partners prefer one feed format
 - [006 T600](../specs/006-paper-responses/tasks.md) `[people]` REQ-056: Approve, change or drop REQ-056..REQ-059, and confirm that reading public arXiv HTML or PDFs one at a time, cached, is acceptable automated access.
 - [006 T601](../specs/006-paper-responses/tasks.md) `[people]` REQ-059: Decide the flag's default for a deployment (today: staff only).
+- [006 T673](../specs/006-paper-responses/tasks.md) `[agent]` REQ-060: Let A* choose the order of beats too (a strong paper scored best evidence-first, a thin one question-first)
+- [006 T674](../specs/006-paper-responses/tasks.md) `[people]` REQ-060: Replace the simulated viewer and channel numbers with real ones (watch time, reach) once anything is published
 - [006 T660](../specs/006-paper-responses/tasks.md) `[agent]` REQ-056: Read the daily watcher's top papers in full and attach the full-text rigor to their Review desk records
 - [006 T661](../specs/006-paper-responses/tasks.md) `[rules]` REQ-057: Benchmark the full-text checklist on a labelled synthetic set (bench/), like the Review desk's judges (REQ-029)
 - [006 T662](../specs/006-paper-responses/tasks.md) `[agent]` REQ-058: A neural local voice by default (Piper voice download step in docs), and a burned-in caption option
@@ -240,7 +242,7 @@ Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/READM
 | `review.adversary_gain_guarded` | lower (tol 0.5) | 0 | points the guarded score gains under the attack on the unguarded judge |
 | `review.whitebox_gain` | lower (tol 0.5) | 0.25 | points an adversary attacking the guarded score gains |
 | `review.adversary_gain_naive` | info | 33.875 | points the same attack gains on the unguarded judge (the attack is real) |
-| `review.ms_per_doc` | info | 9.9 | time to review one item |
+| `review.ms_per_doc` | info | 13.8 | time to review one item |
 | `review.fidelity_accuracy` | higher | 1 | paraphrase-fidelity checks right on bench/fidelity-cases.json (52 synthetic pairs: pass/fail and the expected check) |
 | `review.verdict_balanced_accuracy` | higher | 1 | credible vs not credible verdicts: mean recall over the classes present (immune to class imbalance) |
 | `review.verdict_mcc` | higher (tol 0.01) | 1 | credible vs not credible verdicts: Matthews correlation (0 = no better than a constant guess, 1 = perfect) |
@@ -259,7 +261,7 @@ Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/READM
 | `interp.steering_selectivity` | higher (tol 0.5) | 8.28 | target gain / collateral change when clamping one SAE latent to 4x |
 | `interp.steering_exactness` | lower | 0 | output error on unedited inputs with the SAE error added back (0 = exact) |
 | `papers.verdict_seed_stability` | higher | 0.9 | share of paper-example verdicts that hold on 3 other seed blocks (10 examples) |
-| `papers.slowest_example_ms` | info | 1887 | slowest paper example (baseline and variant); each toy must stay under 2 seconds |
+| `papers.slowest_example_ms` | info | 1412 | slowest paper example (baseline and variant); each toy must stay under 2 seconds |
 | `papers.hidden_eval_hack_drop` | higher (tol 0.02) | 0.185 | drop in the quirk share when a self-improving agent is judged on hidden evaluations (arXiv 2609.26457 toy) |
 | `papers.recompute_evasion` | lower | 0 | undetected exploits with independent recomputation (arXiv 2609.28614 toy) |
 | `papers.cosine_sae_gain` | higher (tol 1) | 8 | extra true features a cosine-scored SAE recovers when input sizes vary (arXiv 2606.15054 toy) |
@@ -271,6 +273,11 @@ Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/READM
 | `papers.self_reference_leak` | higher (tol 0.01) | 0.049 | claim strength lost over 12 generations of self-improvement when each generation checks against its own output instead of the original claim, comparator above threshold (recursive-drift toy) |
 | `papers.foundations_first_gain` | higher (tol 0.01) | 0.086 | less of a formal library resting on a wrong statement when a 10% review budget checks foundations first instead of the last results (library-fidelity toy) |
 | `papers.comparator_weakening_drop` | higher (tol 0.02) | 0.999 | drop in the share of accepted proofs that prove a weaker statement when a comparator checks the statement, versus rewarding compiling alone (autoformalize-gate toy; arXiv 2610.08144) |
+| `production.astar_optimal_gap` | lower | 0 | largest cost gap between A* and uniform-cost search across the six named situations (0 = A* is optimal) |
+| `production.astar_nodes_saved` | higher (tol 5) | 114 | search nodes A*'s bound saves over uniform-cost search, summed over the situations |
+| `production.astar_value_gain` | higher (tol 0.1) | 5.448 | information kept by the A* plan minus the first shipped plan, strong+table+toy+mech situation (model units) |
+| `production.qlearn_vs_rule_800` | higher (tol 0.3) | 0.621 | weekly reward of the learned offering minus the hand rule at an 800 CPU-second budget (simulation) |
+| `production.qlearn_overclaims` | lower | 0 | full videos the learned policy gives thin or abstract-only papers per week (simulation) |
 | `verification.heldout_rung_accuracy` | higher | 1 | rung (none, claimed, statement checked, checked outside) on the held-out split (26 items) |
 | `verification.heldout_gap_accuracy` | higher | 1 | fidelity gap flagged or not, held-out split |
 | `verification.false_formal` | lower | 0 | share of sentences with no proof claim that get credit for one ("a lean team", "the deal was formalized"), all 47 items |
@@ -443,4 +450,4 @@ From [handoff/STATE.md](../handoff/STATE.md) (2026-11-07), "Waiting for the huma
 5. **Merge `fix/sync-with-main`** when ready, then the feature branches above; the GitHub Actions paper watch only runs from the default branch.
 6. **Agent log**: write entries in your own words for anything the agents got wrong (REQ-020). Agents never write them.
 
-Open `[people]` tasks: [003 T000](../specs/003-judge-fidelity/tasks.md), [003 T007](../specs/003-judge-fidelity/tasks.md), [004 T000](../specs/004-parity/tasks.md), [004 T001](../specs/004-parity/tasks.md), [004 T002](../specs/004-parity/tasks.md), [004 T080](../specs/004-parity/tasks.md), [005 T500](../specs/005-appearance-and-publishing/tasks.md), [005 T501](../specs/005-appearance-and-publishing/tasks.md), [006 T600](../specs/006-paper-responses/tasks.md), [006 T601](../specs/006-paper-responses/tasks.md).
+Open `[people]` tasks: [003 T000](../specs/003-judge-fidelity/tasks.md), [003 T007](../specs/003-judge-fidelity/tasks.md), [004 T000](../specs/004-parity/tasks.md), [004 T001](../specs/004-parity/tasks.md), [004 T002](../specs/004-parity/tasks.md), [004 T080](../specs/004-parity/tasks.md), [005 T500](../specs/005-appearance-and-publishing/tasks.md), [005 T501](../specs/005-appearance-and-publishing/tasks.md), [006 T600](../specs/006-paper-responses/tasks.md), [006 T601](../specs/006-paper-responses/tasks.md), [006 T674](../specs/006-paper-responses/tasks.md).

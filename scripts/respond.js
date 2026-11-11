@@ -5,7 +5,8 @@
 //   npm run respond -- 2611.10787                     arXiv id or link (HTML first, PDF fallback; cached in out/papers)
 //   npm run respond -- paper.pdf --title "..." --url https://...    a local PDF, HTML or text file
 //   npm run respond -- 2611.10787 2611.10261 --render       several papers; --render needs Manim (pip install manim)
-//   options: --render, --quality l|m|h (default m), --offline (cache only), --out <dir> (default out/response/<slug>)
+//   options: --render, --learn (fold measured lengths into the planner), --quality l|m|h (default m), --offline (cache only),
+//            --out <dir> (default out/response/<slug>)
 // Voice: Piper when PIPER_MODEL points at a voice file, else espeak-ng, else captions only. Nothing is posted.
 const path = require("node:path");
 const { respond } = require("../modules/responses/respond");
@@ -26,6 +27,12 @@ if (val("--quality")) process.env.RESPONSE_QUALITY = val("--quality");
       console.log(`${p.slug}: ${p.analysis.summary}`);
       for (const c of p.checks) console.log(`  ${c.ok ? "✓" : "✗"} ${c.id}: ${c.why}`);
       for (const n of p.video.notes) console.log(`  ${n}`);
+      if (flag("--render")) {
+        // Quality checks on the render, each guarding a learning in modules/responses/learnings.json.
+        const qa = require("../modules/responses/qa"), res = qa.run(out);
+        for (const r of res) console.log(`  ${r.skip ? "-" : r.ok ? "✓" : "✗"} qa ${r.id}: ${r.skip || r.why}`);
+        if (flag("--learn")) { qa.calibrate(out); console.log("  learned: measured beat lengths folded into modules/lab/production-calibration.json"); }
+      }
       console.log(`  -> ${out}/ (plan.md, article.md, social.md, scene.py, captions.srt${p.video.files.includes("video.mp4") ? ", video.mp4" : ""}) in ${((Date.now() - t0) / 1000).toFixed(1)} s`);
     } catch (e) { failed++; console.error(`${input}: ${e.message}`); }
   }

@@ -2,7 +2,7 @@
 // Paper responses (proposed REQ-056..059, spec 006): reading, analysis, plan, video script, captions, article, posts,
 // the feature flag and the routes behind it. Synthetic sample papers only (test/fixtures/papers, labelled test data).
 const fs = require("node:fs"), path = require("node:path"), os = require("node:os"), { execFileSync } = require("node:child_process");
-let pass = 0, fail = 0; const ok = (c, m) => { c ? pass++ : fail++; console.log(c ? "  ✓" : "  ✗", m); };
+let pass = 0, fail = 0; const NAMES = []; const ok = (c, m, name = null) => { c ? pass++ : fail++; if (name) NAMES.push(name); console.log(c ? "  ✓" : "  ✗", m); };
 const has = (cmd, args = ["--version"]) => { try { execFileSync(cmd, args, { stdio: "ignore" }); return true; } catch { return false; } };
 const FX = path.join(__dirname, "fixtures", "papers");
 process.env.SITE_PROFILE = "extended"; process.env.FETCH_MINUTES = "0";
@@ -49,9 +49,9 @@ const V = require("../modules/responses/video"), W = require("../modules/respons
   const p = P.plan(a, html), checks = P.check(p, a);
   ok(p.beats.map((b) => b.visual.kind).join() === "title,claims,flow,bars,checklist,questions,sources", `beats (${p.beats.map((b) => b.visual.kind).join(", ")})`);
   ok(checks.every((c) => c.ok), `machine acceptance checks pass (${checks.map((c) => `${c.id}: ${c.why}`).join("; ")})`);
-  ok(p.beats.find((b) => b.id === "evidence").narration.includes("These are the paper's numbers"), "the paper's numbers are labelled as the paper's");
+  ok(p.beats.find((b) => b.id === "evidence").narration.includes("Those are the paper's numbers"), "the paper's numbers are labelled as the paper's");
   ok(p.beats.every((b) => !/\b(we|our) (propose|show|prove|introduce)\b/i.test(b.narration)), "the paper's claims are voiced as the authors', not ours");
-  const bad = { ...p, beats: [...p.beats, { id: "x", goal: "", narration: "It is 99.9 times better.", visual: { kind: "sources", items: [] }, seconds: 3 }] };
+  const bad = { ...p, beats: [...p.beats, { id: "x", goal: "", narration: "It is 99.9 times better.", lines: [{ text: "It is 99.9 times better.", cue: 0 }], visual: { kind: "sources", items: [] }, seconds: 3 }] };
   ok(!P.check(bad, a).find((c) => c.id === "cites").ok, "a number in the narration that isn't in the paper fails the 'cites' check");
   const sc = V.scene(p);
   ok(/class PaperResponse\(Scene\)/.test(sc.source) && !/MathTex|Tex\(|DecimalNumber/.test(sc.source), "the Manim scene needs no LaTeX install");
@@ -64,6 +64,51 @@ const V = require("../modules/responses/video"), W = require("../modules/respons
   const art = W.article(a, p), posts = W.posts(a, p, "https://example.test/m/responses?r=sample");
   ok(/## References/.test(art) && /not a peer review/.test(art) && /Full-text rigor: \*\*\d+\/100\*\*/.test(art), "the article has the rigor table, a references list and says it isn't a peer review");
   ok(posts.every((x) => !x.limit || x.length <= x.limit) && posts.every((x) => !/twitter|x\.com/i.test(x.channel + x.text)), `every post fits its network and none is for Twitter/X (${posts.map((x) => `${x.channel} ${x.length || "-"}`).join(", ")})`);
+
+  console.log("REQ-060: production planning, QA and what it learned");
+  const Prod = require("../modules/lab/production"), QA = require("../modules/responses/qa"), { offering } = require("../modules/responses/respond");
+  const same = Prod.SIT_IDS.map((sit) => { const x = Prod.astar({ situation: sit }), u = Prod.astar({ situation: sit, heuristic: 0 }); return { sit, eq: Math.abs(x.cost - u.cost) < 1e-9, fewer: x.expanded <= u.expanded }; });
+  ok(same.every((x) => x.eq) && same.every((x) => x.fewer), `A* finds the same optimum as uniform-cost search in every situation, expanding no more nodes`, "A* finds the same optimum as uniform-cost search in every situation");
+  // Robustness: halve or raise by half every assumption of the viewer and cost model; the A* plan should still beat
+  // the first plan we shipped.
+  const simBase = JSON.parse(JSON.stringify(Prod.SIM)); let wins = 0, tries = 0;
+  for (const [g, k] of [["viewer", "decayPerSecond"], ["viewer", "densityDrain"], ["viewer", "motionLift"], ["viewer", "misalignDrain"], ["viewer", "dropK"], ["cost", "perSecond"], ["cost", "perLostUnit"], ["cost", "perLostViewer"]])
+    for (const f of [0.5, 1.5]) { Prod.SIM[g][k] = simBase[g][k] * f; for (const sit of Prod.SIT_IDS.slice(0, 5)) { tries++; if (Prod.astar({ situation: sit }).cost < Prod.scorePlan(Prod.FIRST_PLAN, sit).cost) wins++; } Prod.SIM[g][k] = simBase[g][k]; }
+  ok(wins === tries, `the A* plan beats the first shipped plan in ${wins} of ${tries} perturbed models`);
+  ok(p.search.situation === "partial+table+mech+res+q" && Prod.parseSit(p.search.situation).strength === a.strength, `the plan's situation agrees with the analysis (${p.search.situation})`);
+  const planned = (p.search.chosen || []).filter((x) => !x.startsWith("skip")), shown = p.beats.map((b) => b.variant);
+  ok(JSON.stringify(planned) === JSON.stringify(shown), `every beat A* plans is a beat the video shows (${shown.join(", ")})`, "every beat A* plans is a beat the video shows");
+  const noRes = Prod.astar({ situation: "partial+mech+q" }).plan.map((x) => x.variant);
+  ok(!noRes.includes("quote-card") && !Prod.astar({ situation: "partial+mech+res" }).plan.some((x) => ["three-questions", "one-question"].includes(x.variant)), "...and it never plans a quote with no result to quote, or questions when none are open");
+  const rule = Prod.evaluate(Prod.BASELINES["full video on strong papers, else article"]);
+  const learned = [1, 2, 3].map((seed) => { const L = Prod.qlearn({ seed }); return Prod.evaluate(Prod.policyFrom(L.Q, L.visits, 30)); });
+  const lo = Math.min(...learned.map((x) => x.reward)), hi = Math.max(...learned.map((x) => x.reward));
+  ok(hi - lo < 0.5 && lo > rule.reward + 0.3, `the learned offering is stable across seeds (${lo}..${hi}) and beats the hand rule (${rule.reward})`, "the learned offering is stable across seeds and beats the hand rule");
+  const fullW = Prod.evaluate(Prod.BASELINES["always full video"], { budget: 800 }), postsW = Prod.evaluate(Prod.BASELINES["always posts"], { budget: 800 });
+  ok(fullW.weeks === postsW.weeks && fullW.weeks.length > 50, "every policy is evaluated on the same weeks (same papers arrive, whatever a policy does)", "every policy is evaluated on the same weeks");
+  ok(Prod.evaluate(Prod.BASELINES["always full video"], { budget: 0 }).overclaimPerWeek === 0, "an oversell only counts when the video actually ships");
+  const trust = { ...Prod.SIM.trust }; Prod.SIM.trust.full = 0; Prod.SIM.trust.short = 0;
+  const noPenalty = (() => { const L = Prod.qlearn({ seed: 7 }); return Prod.evaluate(Prod.policyFrom(L.Q, L.visits, 30)); })(); Object.assign(Prod.SIM.trust, trust);
+  ok(noPenalty.overclaimPerWeek > 0.5 && learned.every((x) => x.overclaimPerWeek < 0.1), `without the trust penalty the learner oversells thin papers (${noPenalty.overclaimPerWeek} a week vs ${learned[0].overclaimPerWeek}): that behaviour comes from the reward we wrote, not from data`, "without the trust penalty the learner oversells thin papers");
+  const before = Prod.UNITS.flatMap((u) => u.variants).find((v) => v.id === "bars").seconds;
+  Prod.applyCalibration({ "one-claim": { seconds: Prod.UNITS.flatMap((u) => u.variants).find((v) => v.id === "one-claim").assumedSeconds * 2, n: 1 } });
+  const bars2 = Prod.UNITS.flatMap((u) => u.variants).find((v) => v.id === "bars");
+  ok(bars2.seconds === Math.round(bars2.assumedSeconds * 2) && !bars2.calibrated, `calibration scales unmeasured variants by the observed bias (bars ${bars2.assumedSeconds} s assumed -> ${bars2.seconds} s when the one measured variant ran 2x)`, "calibration scales unmeasured variants by the observed bias");
+  Prod.applyCalibration(); ok(Prod.UNITS.flatMap((u) => u.variants).find((v) => v.id === "bars").seconds === before, "...and reloading the calibration file restores the planner exactly");
+  const off = offering(p.search.situation);
+  ok(off.offering && off.channel && off.class === "partial+visual", `the plan names a suggested offering (${off.offering}, ${off.voice}, ${off.channel})`, "the plan names a suggested offering");
+  const edge = { slug: "edge", title: "Sample edge cases (test data)", beats: [
+    { id: "toy", variant: "curve-trace", visual: { kind: "curve", title: "Sample (test data)", series: [{ name: "one point", points: [[3, 5]] }], verdict: "" }, lines: [{ text: "One.", cue: 0 }, { text: "Two.", cue: 1 }], seconds: 3 },
+    { id: "toy", variant: "curve-trace", visual: { kind: "curve", title: "Sample (test data)", series: [{ name: "all negative", points: [[0, -3], [1, -2], [2, -1]] }], verdict: "toy scale" }, lines: [{ text: "One.", cue: 0 }], seconds: 3 },
+    { id: "mechanism", variant: "flow-diagram", visual: { kind: "flow", steps: ["Only one step"] }, lines: [{ text: "One.", cue: 0 }, { text: "Loop.", cue: 1 }], seconds: 3 } ] };
+  const es = V.scene(edge).source, ranges = [...es.matchAll(/x_range=\[([-\d.e]+), ([-\d.e]+), ([-\d.e]+)\], y_range=\[([-\d.e]+), ([-\d.e]+)/g)].map((m) => m.slice(1).map(Number));
+  ok(ranges.length === 2 && ranges.every(([a0, a1, st, b0, b1]) => a1 > a0 && st > 0 && b1 > b0) && ranges[1][4] >= -1 && !/T\(""/.test(es) && /len\(boxes\) > 1/.test(es), "edge-case scenes are generated without zero-width axes or empty labels", "edge-case scenes are generated without zero-width axes or empty labels");
+  const fake = { slug: "fake", analysis: { strength: "partly supported" }, checks: [{ id: "cites", ok: true, why: "ok" }], plan: { search: { situation: "strong+table+mech+res+q" }, beats: [{ id: "rigor", variant: "top-checks", seconds: 12, slots: [6], lines: [{ text: "It reports spread (seeds, runs, intervals or error bars).", cue: 0 }] }] } };
+  const q = Object.fromEntries(Object.entries(QA.CHECKS).map(([id, fn]) => [id, fn(fake, os.tmpdir())]));
+  ok(!q.speakable.ok && !q.situation.ok && q.sync.skip && q.edges.skip, "QA flags brackets in spoken lines and a situation that disagrees with its analysis, and skips video checks when there's no video");
+  const ledger = require("../modules/responses/learnings.json").learnings;
+  const missingGuard = ledger.filter((l) => { const [kind, name] = [l.guard.split(":")[0], l.guard.slice(l.guard.indexOf(":") + 1)]; return kind === "qa" ? !QA.CHECKS[name] : kind === "unit" ? !(NAMES.includes(name) || name === "every learning has a guard that exists") : true; });
+  ok(!missingGuard.length && ledger.every((l) => l.symptom && l.cause && l.fix), `every learning has a guard that exists (${ledger.length} learnings${missingGuard.length ? `; missing: ${missingGuard.map((l) => `${l.id} ${l.guard}`).join(", ")}` : ""})`, "every learning has a guard that exists");
 
   console.log("REQ-059: feature flag in the CMS meta layer");
   ok(F.resolve({}).responses === "staff", "default: staff only (behind the curtain)");

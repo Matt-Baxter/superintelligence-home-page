@@ -19,6 +19,14 @@ Same tags as `specs/004-parity/tasks.md`: `[agent]` any agent on a `feature/` br
 - [x] T640 [agent] [REQ-059] Feature flag in appearance_settings, audited admin route, gated routes and page (modules/responses/flags.js, routes.js, pages/responses.html)
 - [x] T650 [agent] [REQ-056] Unit and route checks on synthetic sample papers (test/responses-unit.js)
 
+## Phase 1b: production planning and learning
+
+- [x] T670 [agent] [REQ-060] Viewer model, A* over beats, Q-learning over offerings, Lab runners and bench suite (modules/lab/production.js)
+- [x] T671 [agent] [REQ-060] Line-aligned scenes with a local neural voice and a voice cache (modules/responses/video.js, tts_kokoro.py)
+- [x] T672 [agent] [REQ-060] Render QA, calibration and the learnings ledger with enforced guards (modules/responses/qa.js, learnings.json)
+- [ ] T673 [agent] [REQ-060] Let A* choose the order of beats too (a strong paper scored best evidence-first, a thin one question-first)
+- [ ] T674 [people] [REQ-060] Replace the simulated viewer and channel numbers with real ones (watch time, reach) once anything is published
+
 ## Phase 2: later
 
 - [ ] T660 [agent] [REQ-056] Read the daily watcher's top papers in full and attach the full-text rigor to their Review desk records

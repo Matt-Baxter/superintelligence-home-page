@@ -90,6 +90,7 @@ Built on `feature/paper-responses-2026-11-11` at John's request; not in scope un
 | REQ-056 | Read a paper's full text (HTML, PDF, text), polite cached fetch | `modules/responses/reader.js` (`read`, `fromHtml`, `fromPdf`, `fromText`) | unit: responses ("REQ-056: reading the full text") |
 | REQ-057 | Claims matched to their evidence, abstract numbers in the body, full-text rigor checklist, open questions | `modules/responses/analysis.js` (`analyse`, `CHECKS`) | unit: responses ("REQ-057: analysis") |
 | REQ-058 | Plan, narrated Manim explainer with captions, article and posts; a person publishes | `modules/responses/plan.js`, `video.js`, `write.js`, `respond.js`; `scripts/respond.js`; Learn job `response`; `/m/explainer?r=` | unit: responses ("REQ-058: plan, video, article and posts") |
+| REQ-060 | A* beats, Q-learned offering, render QA, learnings with guards, calibration | `modules/lab/production.js` (runners `response-astar`, `response-qlearn`), `modules/responses/qa.js`, `learnings.json`, `video.js` line alignment, `scripts/respond.js --render --learn` | unit: responses ("REQ-060: production planning, QA and what it learned"); bench: production suite |
 | REQ-059 | Feature flag (off, staff, public) in the CMS meta layer, audited | `modules/responses/flags.js`, `routes.js` (`/api/admin/features`, gated `/api/responses*`), `pages/responses.html` | unit: responses ("REQ-059: feature flag in the CMS meta layer") |
 
 ## Acceptance suite

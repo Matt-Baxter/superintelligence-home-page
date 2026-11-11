@@ -140,6 +140,21 @@ const SUITES = {
       "papers.comparator_weakening_drop": { value: Math.round((af(0) - af(1)) * 1000) / 1000, better: "higher", tol: 0.02, about: "drop in the share of accepted proofs that prove a weaker statement when a comparator checks the statement, versus rewarding compiling alone (autoformalize-gate toy; arXiv 2610.08144)" },
     };
   },
+  production: () => {
+    // Response production planning (modules/lab/production.js, proposed REQ-060): a simulation, so these guard the
+    // search and learning code, not any audience number.
+    const P = require("../modules/lab/production"), out = {};
+    let gap = 0, saved = 0; // over all six named situations
+    for (const s of P.SIT_IDS) { const a = P.astar({ situation: s }), u = P.astar({ situation: s, heuristic: 0 }); gap = Math.max(gap, Math.abs(a.cost - u.cost)); saved += u.expanded - a.expanded; }
+    const L = P.qlearn({ budget: 800, seed: 7 }), l = P.evaluate(P.policyFrom(L.Q, L.visits, 30), { budget: 800 }), r = P.evaluate(P.BASELINES["full video on strong papers, else article"], { budget: 800 });
+    const first = P.scorePlan(P.FIRST_PLAN, "strong+table+toy+mech+res+q"), best = P.astar({ situation: "strong+table+toy+mech+res+q" });
+    out["production.astar_optimal_gap"] = { value: Math.round(gap * 1e4) / 1e4, better: "lower", tol: 0, about: "largest cost gap between A* and uniform-cost search across the six named situations (0 = A* is optimal)" };
+    out["production.astar_nodes_saved"] = { value: saved, better: "higher", tol: 5, about: "search nodes A*'s bound saves over uniform-cost search, summed over the situations" };
+    out["production.astar_value_gain"] = { value: Math.round((best.value - first.value) * 1000) / 1000, better: "higher", tol: 0.1, about: "information kept by the A* plan minus the first shipped plan, strong+table+toy+mech situation (model units)" };
+    out["production.qlearn_vs_rule_800"] = { value: Math.round((l.reward - r.reward) * 1000) / 1000, better: "higher", tol: 0.3, about: "weekly reward of the learned offering minus the hand rule at an 800 CPU-second budget (simulation)" };
+    out["production.qlearn_overclaims"] = { value: l.overclaimPerWeek, better: "lower", tol: 0, about: "full videos the learned policy gives thin or abstract-only papers per week (simulation)" };
+    return out;
+  },
   verification: () => {
     // The Machine-checked signal (modules/verification) on its labelled set. Held-out is reported, never tuned on
     // (scripts/verification-ratchet.js tunes on train only).

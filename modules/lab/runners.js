@@ -142,5 +142,7 @@ runners.register(require("./gym").runner);
 for (const r of require("./interp").runners) runners.register(r);
 // Paper-to-code toys from the daily paper watcher: modules/lab/papers.js.
 for (const r of require("./papers").runners) runners.register(r);
+// Response production planning (proposed REQ-060): A* over beats, Q-learning over offerings; modules/lab/production.js.
+for (const r of require("./production").runners) runners.register(r);
 
 module.exports = { runners, rng, gauss, round };
