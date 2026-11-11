@@ -1,0 +1,65 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Elements · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css">
+<style>
+.el-grid{display:grid;grid-template-columns:minmax(0,20rem) minmax(0,1fr);gap:1rem;align-items:start}@media (max-width:860px){.el-grid{grid-template-columns:minmax(0,1fr)}}
+.el-list{list-style:none;margin:0;padding:0;max-height:70vh;overflow:auto}.el-list li{border-top:1px solid var(--line,#ddd);padding:.4rem 0;overflow-wrap:anywhere}.el-list a[aria-current]{font-weight:600}
+.el-table td:nth-child(2),.el-table td:nth-child(3){white-space:nowrap}.el-table{width:100%;border-collapse:collapse;font-size:.88rem}.el-table td,.el-table th{border-top:1px solid var(--line,#ddd);padding:.3rem;text-align:left;vertical-align:top;overflow-wrap:anywhere}
+.el-tag{font-size:.75rem;border:1px solid currentColor;border-radius:.3rem;padding:0 .35rem;margin:0 .25rem .25rem 0;display:inline-block}
+#elOne,#elNav{min-width:0}.el-facts{display:grid;grid-template-columns:8rem minmax(0,1fr);gap:.25rem .75rem;font-size:.92rem}.el-facts dt{color:var(--muted,#666)}.el-facts dd{margin:0;overflow-wrap:anywhere}
+</style></head>
+<body><main>
+<div class="pagehead"><div><h1>Elements</h1><p class="muted">Every table, type, data operation, module, requirement, task and learning, described the same way: properties, keys, grain, relationships, constraints, lifecycle, series, aliases and tags, with the SHACL shape generated from it. Search by any name people use.</p></div></div>
+<p id="elStatus" class="small muted" role="status">Loading…</p>
+<section class="panel" id="elReport"></section>
+<div class="el-grid"><section class="panel" id="elNav" aria-label="Elements"></section><section id="elOne" aria-live="polite"></section></div>
+</main><script src="/js/api.js"></script><script>
+const source = (id, params = {}) => api(`/api/data/sources/${encodeURIComponent(id)}`, { body: { params } }).then((r) => r.data);
+const el = (tag, text, cls) => { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (cls) e.className = cls; return e; };
+const status = (t, err) => { $("#elStatus").className = err ? "err" : "small muted"; $("#elStatus").textContent = t; };
+let current = params.get("e"), kind = "", q = "";
+function table(rows, cols) { const t = el("table", undefined, "el-table"), h = el("tr"); cols.forEach((c) => h.append(el("th", c))); const th = el("thead"); th.append(h); const tb = el("tbody"); rows.forEach((r) => { const tr = el("tr"); r.forEach((c) => tr.append(el("td", c))); tb.append(tr); }); t.append(th, tb); return t; }
+async function report() {
+  const r = await source("elements.report"), box = $("#elReport"); box.replaceChildren(el("h2", "Catalog"));
+  box.append(el("p", `${r.elements} elements (${Object.entries(r.byKind).map(([k, n]) => `${n} ${k}`).join(", ")}). Mean completeness ${r.completeness.mean}; ${r.completeness.complete} complete. Acyclic relations ${r.dag.violations.length ? `break the DAG in ${r.dag.violations.length} places` : "form a DAG"}; ${r.dag.dangling} relationships point at nothing; ${r.invalid.length} invalid descriptors; ${r.aliasConflicts.length} alias conflicts.`));
+  if (r.aliasConflicts.length) box.append(el("p", `Alias conflicts: ${r.aliasConflicts.slice(0, 6).map((c) => `“${c.alias}” (${c.ids.join(", ")})`).join("; ")}.`, "small"));
+  box.append(el("p", `Load order (referenced tables first): ${r.dag.loadOrder.map((x) => x.slice(6)).join(" → ")}.`, "small muted"));
+}
+async function nav() {
+  const box = $("#elNav"); box.replaceChildren(el("h2", "Find"));
+  const input = el("input"); input.type = "search"; input.placeholder = "Name or alias"; input.value = q; input.setAttribute("aria-label", "Search elements"); input.style.width = "100%";
+  const sel = el("select"); sel.setAttribute("aria-label", "Kind"); for (const k of ["", "table", "type", "operation", "module", "requirement", "task", "learning", "collection"]) { const o = el("option", k || "every kind"); o.value = k; o.selected = k === kind; sel.append(o); }
+  input.onchange = () => { q = input.value.trim(); list(); }; sel.onchange = () => { kind = sel.value; list(); };
+  box.append(input, sel, el("ul", undefined, "el-list")); await list();
+}
+async function list() {
+  const rows = await source("elements.list", { ...(kind ? { kind } : {}), ...(q ? { q } : {}) }), ul = $("#elNav ul"); ul.replaceChildren();
+  for (const d of rows.slice(0, 300)) { const li = el("li"), a = el("a", d.id); a.href = `?e=${encodeURIComponent(d.id)}`; if (d.id === current) a.setAttribute("aria-current", "true"); a.onclick = (e) => { e.preventDefault(); open(d.id); }; li.append(a, el("div", `${d.grain || d.description || ""}`.slice(0, 90), "small muted")); ul.append(li); }
+  if (!rows.length) ul.append(el("li", "Nothing matches.", "small muted"));
+  if (!current && rows[0]) open(rows[0].id);
+}
+async function open(id) {
+  current = id; history.replaceState(null, "", `?e=${encodeURIComponent(id)}`);
+  const d = await source("elements.get", { id }), box = $("#elOne"); box.replaceChildren();
+  const head = el("section", undefined, "panel"); head.append(el("h2", d.id), el("p", d.description || "No description yet."));
+  const tags = el("div"); for (const t of d.tags || []) tags.append(el("span", t, "el-tag")); head.append(tags);
+  const dl = el("dl", undefined, "el-facts"), fact = (k, v) => { if (v) dl.append(el("dt", k), el("dd", v)); };
+  fact("Grain", d.grain && d.grain.statement); fact("Surrogate key", d.keys && d.keys.surrogate); fact("Primary key", d.keys && d.keys.primary && d.keys.primary.join(", "));
+  fact("Natural keys", d.keys && (d.keys.natural || []).map((k) => `(${k.join(", ")})`).join(" ")); fact("Lifecycle", d.lifecycle && `${d.lifecycle.persistence}${d.lifecycle.retention ? `: ${d.lifecycle.retention}` : ""}`);
+  fact("Series", d.series && d.series.time && `${d.series.time}, ${d.series.cadence || "event"}${d.series.retention ? `, ${d.series.retention}` : ""}`); fact("Aliases", (d.aliases || []).join(", ")); fact("Owner", d.owner); fact("Defined in", d.source);
+  fact("Completeness", `${d.completeness.score}${d.completeness.missing.length ? ` (missing ${d.completeness.missing.join(", ")})` : ""}`);
+  head.append(dl); box.append(head);
+  if (Object.keys(d.properties || {}).length) { const s = el("section", undefined, "panel"); s.append(el("h2", "Properties"), table(Object.entries(d.properties).map(([n, p]) => [n, `${p.type}${p.unit ? ` (${p.unit})` : ""}`, p.required ? "required" : "", `${p.description || ""}${p.enum ? ` One of: ${p.enum.join(", ")}.` : ""}${p.inferred ? " (inferred from the name)" : ""}`]), ["Name", "Type", "", "Meaning"])); box.append(s); }
+  if ((d.relationships || []).length) { const s = el("section", undefined, "panel"); s.append(el("h2", "Relationships"), table(d.relationships.map((r) => [r.rel, r.direction === "in" ? "←" : "→", r.target, r.cardinality || "", [r.via && `via ${r.via}`, r.onDelete && `on delete ${r.onDelete}`, r.acyclic && "acyclic"].filter(Boolean).join(", ")]), ["Relation", "", "Target", "Cardinality", "Notes"])); box.append(s); }
+  if ((d.constraints || []).length) { const s = el("section", undefined, "panel"); s.append(el("h2", "Constraints"), table(d.constraints.map((c) => [c.id, c.kind, Array.isArray(c.value) ? c.value.join(", ") : String(c.value ?? ""), c.message || ""]), ["Id", "Kind", "Value", "Why"])); box.append(s); }
+  const sh = el("section", undefined, "panel"), pre = el("pre"); pre.style.whiteSpace = "pre-wrap"; pre.style.overflowWrap = "anywhere"; pre.style.fontSize = ".78rem";
+  const btn = el("button", "Check its data here", "btn"); btn.type = "button"; const out = el("p", "", "small");
+  btn.onclick = async () => { btn.disabled = true; try { const r = await source("elements.check", { id }); out.textContent = r.rows ? `${r.rows} rows: ${r.problemCount ? `${r.problemCount} problems (${Object.entries(r.byRule).map(([a, b]) => `${b} ${a}`).join(", ")})` : "keys, grain and references hold"}; SHACL ${r.shacl.conforms ? "conforms" : `${r.shacl.violations} violations`}.` : r.note; } catch (e) { out.textContent = e.message; } finally { btn.disabled = false; } };
+  sh.append(el("h2", "Shape and data"), btn, out, pre); box.append(sh);
+  pre.textContent = (await source("elements.shapes", { id })).turtle;
+  status("");
+}
+api("/api/me", { allow401: true }).then(async ({ user }) => {
+  topbar(user);
+  if (!user || !user.admin) { $("main").replaceChildren(el("div", undefined, "panel")); $("main").firstChild.append(el("h1", "Elements"), el("p", "The element catalog is for admins.")); return; }
+  try { await Promise.all([report(), nav()]); if (current) await open(current); status(""); } catch (e) { status(/found|404/i.test(e.message) ? "The element catalog is switched off here." : e.message, true); }
+}).catch((e) => status(e.message, true));
+</script></body></html>

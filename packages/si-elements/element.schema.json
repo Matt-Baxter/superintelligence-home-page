@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://superintelligence-homepage.example/schema/element.schema.json",
+  "title": "Element descriptor",
+  "description": "One portable description of any element of a system: what it is, its properties, keys, grain, relationships, constraints, lifecycle, series, aliases and tags. Generators turn it into SHACL shapes, N-Quads and JSON-LD (index.js).",
+  "type": "object",
+  "required": ["id", "kind"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*:[A-Za-z0-9_./@-]+$", "description": "kind:name, unique across the catalog" },
+    "kind": { "enum": ["table", "type", "collection", "operation", "module", "requirement", "task", "learning", "page", "view", "block", "document", "file"] },
+    "label": { "type": "string" },
+    "description": { "type": "string", "minLength": 12 },
+    "owner": { "type": "string", "description": "The module, package or repo that owns it" },
+    "source": { "type": "string", "description": "Where it is defined (a file path)" },
+    "aliases": { "type": "array", "items": { "type": "string" }, "uniqueItems": true, "description": "Other names that resolve to this element; unique across the catalog" },
+    "tags": { "type": "array", "items": { "type": "string" }, "uniqueItems": true, "description": "namespace:id tags (layer:core, domain:feed, pii:none, ...)" },
+    "properties": { "type": "object", "additionalProperties": { "$ref": "#/$defs/property" } },
+    "keys": { "type": "object", "properties": {
+      "surrogate": { "type": ["string", "null"], "description": "A generated id with no meaning outside the system" },
+      "primary": { "type": "array", "items": { "type": "string" } },
+      "natural": { "type": "array", "items": { "type": "array", "items": { "type": "string" } }, "description": "Keys that mean something in the domain (a URL, a username)" },
+      "unique": { "type": "array", "items": { "type": "array", "items": { "type": "string" } } } } },
+    "grain": { "type": "object", "properties": { "statement": { "type": "string", "description": "One row per ..." }, "keys": { "type": "array", "items": { "type": "string" } } } },
+    "relationships": { "type": "array", "items": { "$ref": "#/$defs/relationship" } },
+    "constraints": { "type": "array", "items": { "type": "object", "required": ["id", "kind"], "properties": { "id": { "type": "string" }, "kind": { "type": "string" }, "on": {}, "value": {}, "message": { "type": "string" } } } },
+    "lifecycle": { "type": "object", "required": ["persistence"], "properties": { "persistence": { "enum": ["perpetual", "versioned", "leased", "append-only", "ephemeral", "generated"] }, "retention": { "type": "string" }, "prunedBy": { "type": "string" } } },
+    "series": { "type": "object", "properties": { "time": { "type": "string" }, "cadence": { "type": "string", "description": "event, daily, weekly, per run, ..." }, "order": { "enum": ["asc", "desc"] }, "retention": { "type": "string" }, "partition": { "type": "array", "items": { "type": "string" } } } },
+    "graph": { "type": "object", "properties": { "class": { "type": "string", "format": "iri" }, "namedGraph": { "type": "string" } } }
+  },
+  "$defs": {
+    "property": { "type": "object", "required": ["type"], "properties": {
+      "type": { "enum": ["string", "text", "integer", "decimal", "number", "boolean", "dateTime", "date", "json", "iri"] },
+      "required": { "type": "boolean" }, "unique": { "type": "boolean" }, "default": {}, "unit": { "type": "string" },
+      "enum": { "type": "array" }, "pattern": { "type": "string" }, "min": { "type": "number" }, "max": { "type": "number" }, "maxLength": { "type": "integer" },
+      "description": { "type": "string" }, "aliases": { "type": "array", "items": { "type": "string" } }, "pii": { "type": "boolean" } } },
+    "relationship": { "type": "object", "required": ["rel", "target"], "properties": {
+      "rel": { "type": "string" }, "target": { "type": "string" }, "direction": { "enum": ["out", "in", "both"] },
+      "cardinality": { "enum": ["1", "0..1", "0..*", "1..*"] }, "via": { "type": "string" }, "inverse": { "type": "string" },
+      "onDelete": { "type": "string" }, "acyclic": { "type": "boolean", "description": "This relation must form a DAG" }, "description": { "type": "string" } } }
+  }
+}

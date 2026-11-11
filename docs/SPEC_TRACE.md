@@ -122,6 +122,16 @@ Built on `feature/paper-responses-2026-11-11` at John's request; not in scope un
 | REQ-070 | Advisor: suggestions with drafts, accept and dismiss | `modules/work/advisor.js`; source `work.advice`; action `work.advice-mark` | unit: work ("REQ-070: the advisor"); properties: advisor recall by mutation |
 | REQ-071 | Agents: CLI, MCP tools, brief, guard hook | `scripts/work.js`, `agent-kit/mcp/server.js` (`work_*`), `agent-kit/hooks/guard.js`; source `work.brief` | unit: work ("REQ-069, REQ-071: claims, presence and stale writes through the app") |
 
+<!-- trace-spec: 010 -->
+## Element descriptors, interoperability and formal checks (proposed, `specs/010-element-descriptors/spec.md`, planned in `openspec/changes/add-element-descriptors`; extended version; needs both partners)
+
+| REQ | What | Where in the code | Checked by |
+| --- | --- | --- | --- |
+| REQ-072 | One portable descriptor; SHACL, N-Quads, JSON-LD | `packages/si-elements/`, `modules/elements/sql.js`; sources `elements.list`, `elements.get`, `elements.shapes` | unit: elements ("REQ-072: the portable descriptor", "REQ-072: descriptors from SQL") |
+| REQ-073 | Providers, overlay, aliases, another repo | `modules/elements/providers.js`, `vibe.js`, `overlay.json`, `module.js` (`elements.providers`) | unit: elements ("REQ-073: the catalog over the whole repo", "REQ-073: another repo's records") |
+| REQ-074 | Rows against keys, grain, references and shapes | `packages/si-elements` (`checkRows`, `rowToQuads`), `modules/graph/shacl.js`; source `elements.check` | unit: elements ("REQ-074: the app's own data against its shapes and keys") |
+| REQ-075 | Lean proofs, manifest, differential; agent tools | `proofs/CoordinationSpec.lean`, `Coordination.lean`, `FinalCheck.lean`, `formalization.yaml`; `scripts/elements.js`; MCP `elements_*`; `/m/elements` | `npm run test:coordination-proofs`; unit: elements ("REQ-075: plugins and routes") |
+
 ## Acceptance suite
 
 `test/spec-acceptance.js` runs every user-story scenario, edge case and success criterion that can be automated, against the **spec version**, with labelled synthetic sources (`test/fixtures/spec`: 9 sources across 7 kinds). Each check names its REQ. The run fails if a testable requirement (REQ-001 to REQ-018, REQ-020) has no passing check (SC-008). Preflight runs the API checks; `npm run test:spec` adds the browser checks at laptop and phone widths. REQ-019 (live two weeks before the presentation) is checked by people.

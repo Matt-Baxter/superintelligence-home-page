@@ -1,0 +1,59 @@
+# Machine-readable record of what proofs/ proves, after the formalization.yaml layout (v0.4) used by public
+# Lean projects (anthropics/fermats-last-theorem, anthropics/formal-math, openai/math). Checked by
+# test/coordination-lean.js (fields, theorem names, axioms, sorry count) on every run.
+version: "0.4"
+project:
+  name: si-homepage-proofs
+  description: Core Lean 4 models of the review judge's arithmetic (Judge.lean) and of coordination and the element catalog (CoordinationSpec.lean, Coordination.lean, FinalCheck.lean).
+  authors: [John Affolter, Matthew Baxter]
+  license: UNLICENSED
+sources:
+  - title: Coordination and the advisor (proposed)
+    id: specs/009-coordination-and-advisor/spec.md
+    type: specification
+    relationship: formalizes REQ-069 (claims never conflict; stale writes refused)
+  - title: Element descriptors (proposed)
+    id: specs/010-element-descriptors/spec.md
+    type: specification
+    relationship: formalizes REQ-072 (key checks, the relationship DAG)
+  - title: Code the statements are read against
+    id: modules/work/overlap.js, modules/work/claims.js, modules/data/artifacts.js, packages/si-elements/index.js
+    type: code
+    relationship: modelled; agreement checked on generated inputs by test/coordination-lean.js
+classification:
+  subject: [distributed coordination, data modelling]
+status:
+  scope: Coordination invariants and catalog checks in a finite model; not the database, the network or JavaScript semantics.
+  toolchain: leanprover/lean4:v4.15.0
+  sorry_count: 0
+  sorry_in_definitions: 0
+  axioms: [propext, Quot.sound]
+  trusted_statements: proofs/CoordinationSpec.lean
+  final_check: proofs/FinalCheck.lean
+  main_results:
+    - { declaration: Coord.admit_safe, statement: Coord.AdmitSafe, file: proofs/Coordination.lean, meaning: "admitting a claim that conflicts with no live claim keeps every pair of live claims conflict-free (SC-901)" }
+    - { declaration: Coord.release_safe, statement: Coord.ReleaseSafe, file: proofs/Coordination.lean, meaning: "releasing or expiring claims keeps the board conflict-free" }
+    - { declaration: Coord.admit_refuses_conflict, statement: Coord.AdmitRefusesConflict, file: proofs/Coordination.lean, meaning: "a claim that conflicts with a live claim changes nothing" }
+    - { declaration: Coord.conflictB_sound, statement: Coord.ConflictBSound, file: proofs/Coordination.lean, meaning: "the computed conflict test is exactly the stated relation" }
+    - { declaration: Coord.conflict_symm, statement: Coord.ConflictSymm, file: proofs/Coordination.lean, meaning: "conflict is symmetric" }
+    - { declaration: Coord.overlap_symm, statement: Coord.OverlapSymm, file: proofs/Coordination.lean, meaning: "path overlap is symmetric" }
+    - { declaration: Coord.overlap_refl, statement: Coord.OverlapRefl, file: proofs/Coordination.lean, meaning: "a non-empty path overlaps itself" }
+    - { declaration: Coord.saves_counted, statement: Coord.SavesCounted, file: proofs/Coordination.lean, meaning: "the version grows by exactly the number of saves that landed" }
+    - { declaration: Coord.burst_exactly_one, statement: Coord.BurstExactlyOne, file: proofs/Coordination.lean, meaning: "k+1 saves of the current version: exactly one lands (L21)" }
+    - { declaration: Coord.noDup_sound, statement: Coord.NoDupSound, file: proofs/Coordination.lean, meaning: "the seen-set key check passes exactly when the keys are distinct (keys and grain)" }
+    - { declaration: Coord.witness_acyclic, statement: Coord.WitnessAcyclic, file: proofs/Coordination.lean, meaning: "an order in which every edge goes forward proves the relation acyclic (the catalog's load order)" }
+automation:
+  methods:
+    - method: agent
+      note: Statements and proofs written with an AI coding assistant; Lean is the arbiter for proofs, people for statements.
+fidelity:
+  divergences:
+    - Paths are inputs already normalized (no leading ./, at most one trailing /); the code normalizes first.
+    - Only unforced claims are modelled; a person's forced claim is an override the board reports, outside AdmitSafe.
+    - Saves are modelled one at a time; that they are serialized is the row lock's job (FOR UPDATE on Postgres), tested by the concurrency burst in test/work-unit.js, not proved.
+    - Keys are strings; checkRows compares JSON of the key columns.
+    - The DAG theorem is about a given order; that the catalog's order is such an order is checked per run by orderWitness on its output.
+review:
+  status: unchecked
+  reviewers: []
+  notes: The statement file (CoordinationSpec.lean) needs a person to read it against the code before these count as reviewed. Proofs need no review beyond the build and the axiom audit.

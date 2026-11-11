@@ -1,0 +1,896 @@
+{
+  "about": "What the schema SQL can't say about an element: what it means, its grain where no key states it, its other names, its tags, how long it lives and how it grows. Merged over the generated descriptors by modules/elements (packages/si-elements merge). Keys are element ids; unknown ids are reported. Tags are namespace:value (domain, pii, layer, storage).",
+  "elements": {
+    "table:users": {
+      "description": "Accounts: a username and password hash, with an optional display name and an admin flag.",
+      "aliases": [
+        "account",
+        "accounts",
+        "user"
+      ],
+      "tags": [
+        "domain:accounts",
+        "pii:yes",
+        "req:REQ-012"
+      ],
+      "properties": {
+        "pass_hash": {
+          "pii": true,
+          "description": "scrypt hash of the password; never the password itself."
+        },
+        "username": {
+          "description": "The name a person signs in with; unique ignoring case."
+        },
+        "display_name": {
+          "description": "How the name is shown (extended version)."
+        }
+      },
+      "lifecycle": {
+        "persistence": "perpetual",
+        "retention": "until the account is deleted"
+      }
+    },
+    "table:sessions": {
+      "description": "Signed-in sessions: a random token in a cookie, its user and when it expires.",
+      "aliases": [
+        "session",
+        "login session"
+      ],
+      "tags": [
+        "domain:accounts",
+        "pii:yes"
+      ],
+      "properties": {
+        "token": {
+          "description": "Random session token (the cookie value)."
+        },
+        "expires_at": {
+          "type": "integer",
+          "description": "Expiry as milliseconds since 1970 (BIGINT)."
+        }
+      },
+      "lifecycle": {
+        "persistence": "leased",
+        "retention": "until expires_at; expired rows are deleted on sign-in"
+      },
+      "series": {
+        "time": "expires_at",
+        "cadence": "per sign-in",
+        "retention": "expired rows deleted"
+      }
+    },
+    "table:sources": {
+      "description": "Where stories come from: a feed or page, its format, schedule and fetch health.",
+      "aliases": [
+        "source",
+        "feed",
+        "feeds"
+      ],
+      "tags": [
+        "domain:harvest",
+        "req:REQ-001",
+        "req:REQ-008"
+      ],
+      "series": {
+        "time": "last_fetched",
+        "cadence": "per scheduled fetch (interval_minutes)",
+        "order": "desc"
+      },
+      "properties": {
+        "interval_minutes": {
+          "description": "How often to fetch it, in minutes."
+        },
+        "etag": {
+          "description": "The ETag from the last response, for conditional fetches."
+        },
+        "last_modified": {
+          "description": "The Last-Modified header from the last response, for conditional fetches."
+        },
+        "verified": {
+          "description": "Flag: the feed was checked to parse."
+        },
+        "from_catalog": {
+          "description": "Flag: added from the admin source catalog."
+        }
+      }
+    },
+    "table:stories": {
+      "description": "One story on the homepage: a piece of AI-progress news grouped across the sources that carried it, with its tags, analysis and significance score.",
+      "aliases": [
+        "story",
+        "item",
+        "news item"
+      ],
+      "tags": [
+        "domain:feed",
+        "req:REQ-002",
+        "req:REQ-003",
+        "req:REQ-005"
+      ],
+      "grain": {
+        "statement": "one row per grouped story (all links to the same item share one row; see story_keys)",
+        "keys": [
+          "id"
+        ]
+      },
+      "lifecycle": {
+        "persistence": "perpetual",
+        "retention": "pruned by the harvester to stay inside Neon Free"
+      },
+      "properties": {
+        "authors": {
+          "description": "Authors as the source gave them (text); never claims about them."
+        },
+        "ext_score": {
+          "description": "A score from the source itself where it has one (points, upvotes), else 0."
+        },
+        "hidden": {
+          "description": "Flag: hidden from the feed by an admin."
+        },
+        "hidden_reason": {
+          "description": "Why an admin hid it."
+        },
+        "significance": {
+          "description": "The explainable 0-100 significance score (lib/analysis.js)."
+        },
+        "analysis": {
+          "description": "The analysis behind the score and tags, as JSON text."
+        },
+        "in_scope": {
+          "description": "Flag: inside the superintelligence scope (REQ-002)."
+        }
+      }
+    },
+    "table:story_keys": {
+      "description": "Grouping keys (canonical URL, arXiv id, DOI, title fingerprint) that map to one story, so a second link to the same item joins it.",
+      "aliases": [
+        "grouping key"
+      ],
+      "tags": [
+        "domain:feed",
+        "req:REQ-003"
+      ]
+    },
+    "table:story_links": {
+      "description": "Each link to a story from a source: the same story carried by several sources has several links.",
+      "aliases": [
+        "link",
+        "story link"
+      ],
+      "tags": [
+        "domain:feed",
+        "req:REQ-003"
+      ],
+      "properties": {
+        "rigor": {
+          "description": "The rigor badge for this link's source, if any."
+        }
+      }
+    },
+    "table:story_topics": {
+      "description": "Which ontology topics a story is tagged with, one row per tag, for filtering.",
+      "aliases": [
+        "story tag",
+        "topic tag"
+      ],
+      "tags": [
+        "domain:feed",
+        "req:REQ-004",
+        "req:REQ-005"
+      ],
+      "properties": {
+        "topic": {
+          "description": "The topic's qualified id (topic:...)."
+        }
+      }
+    },
+    "table:votes": {
+      "description": "A person's upvote on a story.",
+      "aliases": [
+        "vote",
+        "upvote"
+      ],
+      "tags": [
+        "domain:engagement",
+        "req:REQ-013"
+      ]
+    },
+    "table:saves": {
+      "description": "A story a person saved for later.",
+      "aliases": [
+        "save",
+        "bookmark",
+        "saved story"
+      ],
+      "tags": [
+        "domain:engagement",
+        "req:REQ-014"
+      ]
+    },
+    "table:notes": {
+      "description": "A person's note on a story, private unless they share it (extended version).",
+      "aliases": [
+        "note"
+      ],
+      "tags": [
+        "domain:engagement",
+        "profile:extended",
+        "pii:maybe"
+      ],
+      "grain": {
+        "statement": "one row per note (a person may write several notes on one story)",
+        "keys": [
+          "id"
+        ]
+      }
+    },
+    "table:lists": {
+      "description": "Reading lists a person curates (extended version).",
+      "aliases": [
+        "reading list",
+        "list"
+      ],
+      "tags": [
+        "domain:engagement",
+        "profile:extended"
+      ],
+      "grain": {
+        "statement": "one row per reading list",
+        "keys": [
+          "id"
+        ]
+      }
+    },
+    "table:list_items": {
+      "description": "Stories on a reading list, with an optional note.",
+      "aliases": [
+        "list item"
+      ],
+      "tags": [
+        "domain:engagement",
+        "profile:extended"
+      ]
+    },
+    "table:follows": {
+      "description": "A person following someone's reading list.",
+      "aliases": [
+        "follow"
+      ],
+      "tags": [
+        "domain:engagement",
+        "profile:extended"
+      ]
+    },
+    "table:agent_log": {
+      "description": "Old in-app agent log entries, kept only so they survive; the agent log is now AGENT_LOG.md (REQ-020).",
+      "aliases": [
+        "agent log entry (legacy)"
+      ],
+      "tags": [
+        "domain:process",
+        "legacy:yes",
+        "req:REQ-020"
+      ],
+      "grain": {
+        "statement": "one row per legacy entry",
+        "keys": [
+          "id"
+        ]
+      },
+      "lifecycle": {
+        "persistence": "perpetual",
+        "retention": "kept; nothing new is written"
+      }
+    },
+    "table:agent_log_saves": {
+      "description": "Edit history of the legacy agent log entries (how much was typed or pasted per save).",
+      "tags": [
+        "domain:process",
+        "legacy:yes"
+      ],
+      "grain": {
+        "statement": "one row per save of an entry",
+        "keys": [
+          "id"
+        ]
+      }
+    },
+    "table:fetch_runs": {
+      "description": "One fetch of one source: when, how it ended, how many items it found and stored.",
+      "aliases": [
+        "fetch run",
+        "harvest run"
+      ],
+      "tags": [
+        "domain:harvest",
+        "req:REQ-008"
+      ],
+      "grain": {
+        "statement": "one row per fetch of a source",
+        "keys": [
+          "id"
+        ]
+      },
+      "series": {
+        "time": "started_at",
+        "cadence": "per scheduled fetch",
+        "order": "desc",
+        "partition": [
+          "source_id"
+        ],
+        "retention": "pruned with the runs history"
+      }
+    },
+    "table:admin_audit": {
+      "description": "Every admin action and data action: who, what, on which target, with a short detail.",
+      "aliases": [
+        "audit log",
+        "audit"
+      ],
+      "tags": [
+        "domain:admin"
+      ],
+      "grain": {
+        "statement": "one row per audited action",
+        "keys": [
+          "id"
+        ]
+      },
+      "series": {
+        "time": "at",
+        "cadence": "event",
+        "order": "desc"
+      },
+      "properties": {
+        "target": {
+          "description": "What the action was on (source:12, action:responses.build, ...)."
+        }
+      }
+    },
+    "table:story_entities": {
+      "description": "Numbers and entities found in a story (a benchmark and its reported score, with its unit), for the capability tracker.",
+      "aliases": [
+        "entity",
+        "benchmark score"
+      ],
+      "tags": [
+        "domain:analysis"
+      ],
+      "properties": {
+        "entity": {
+          "description": "The entity's qualified id (a benchmark, an organisation)."
+        },
+        "unit": {
+          "description": "The unit of value (%, points, ...)."
+        }
+      }
+    },
+    "table:appearance_settings": {
+      "description": "Site appearance and feature switches, one value per key (theme, layout, feature flags).",
+      "aliases": [
+        "settings",
+        "feature flags"
+      ],
+      "tags": [
+        "domain:cms",
+        "profile:extended"
+      ],
+      "lifecycle": {
+        "persistence": "perpetual",
+        "retention": "current value only"
+      },
+      "properties": {
+        "key": {
+          "description": "The setting's name (theme, layout, features, ...)."
+        },
+        "value": {
+          "description": "The setting's value as JSON text."
+        },
+        "updated_by": {
+          "description": "The admin who last changed it."
+        }
+      },
+      "series": {
+        "time": "updated_at",
+        "cadence": "per change",
+        "retention": "current value only"
+      }
+    },
+    "table:data_artifacts": {
+      "description": "Versioned artifacts the site generates (a paper response, a draft), one row per artifact with its current version.",
+      "aliases": [
+        "artifact"
+      ],
+      "tags": [
+        "domain:data-layer",
+        "req:REQ-062"
+      ]
+    },
+    "table:data_artifact_versions": {
+      "description": "Each saved version of an artifact: its body, files, note and who saved it.",
+      "aliases": [
+        "artifact version"
+      ],
+      "tags": [
+        "domain:data-layer",
+        "req:REQ-062"
+      ],
+      "lifecycle": {
+        "persistence": "versioned",
+        "retention": "newest 20 versions per artifact"
+      },
+      "series": {
+        "time": "at",
+        "cadence": "per save",
+        "order": "desc",
+        "partition": [
+          "artifact_id"
+        ],
+        "retention": "newest 20"
+      }
+    },
+    "table:data_kg_snapshots": {
+      "description": "The knowledge graph as N-Quads, one snapshot per named store, with a version so instances stay in step.",
+      "aliases": [
+        "graph snapshot"
+      ],
+      "tags": [
+        "domain:data-layer",
+        "storage:rdf",
+        "req:REQ-063"
+      ],
+      "lifecycle": {
+        "persistence": "versioned",
+        "retention": "current snapshot only"
+      },
+      "series": {
+        "time": "updated_at",
+        "cadence": "per graph write",
+        "retention": "current snapshot only"
+      }
+    },
+    "table:editorial_posts": {
+      "description": "Editorial posts (journal entries) with a draft and a published revision.",
+      "aliases": [
+        "post",
+        "journal entry"
+      ],
+      "tags": [
+        "domain:cms",
+        "profile:extended"
+      ]
+    },
+    "table:editorial_revisions": {
+      "description": "Each revision of an editorial post and the action that made it.",
+      "aliases": [
+        "post revision"
+      ],
+      "tags": [
+        "domain:cms",
+        "profile:extended"
+      ],
+      "lifecycle": {
+        "persistence": "versioned",
+        "retention": "all revisions"
+      },
+      "series": {
+        "time": "at",
+        "cadence": "per edit",
+        "partition": [
+          "post_id"
+        ]
+      }
+    },
+    "table:knowledge_chunks": {
+      "description": "Text chunks of stories with their tags and embedding vectors, for retrieval.",
+      "aliases": [
+        "chunk",
+        "embedding"
+      ],
+      "tags": [
+        "domain:knowledge",
+        "profile:extended"
+      ],
+      "series": {
+        "time": "updated_at",
+        "cadence": "per re-embedding",
+        "retention": "current chunks only"
+      },
+      "properties": {
+        "text": {
+          "description": "The chunk's text."
+        }
+      }
+    },
+    "table:knowledge_edges": {
+      "description": "Weighted, evidenced edges between knowledge nodes (src rel dst).",
+      "aliases": [
+        "edge",
+        "knowledge edge"
+      ],
+      "tags": [
+        "domain:knowledge",
+        "profile:extended"
+      ],
+      "series": {
+        "time": "updated_at",
+        "cadence": "per update",
+        "retention": "current edges only"
+      },
+      "properties": {
+        "evidence": {
+          "description": "Why the edge exists (the text or source behind it), as JSON text."
+        }
+      }
+    },
+    "table:lab_runs": {
+      "description": "Results of Lab toy checks: which example, which metric, its value and result.",
+      "aliases": [
+        "lab run"
+      ],
+      "tags": [
+        "domain:lab",
+        "profile:extended"
+      ],
+      "grain": {
+        "statement": "one row per run of a Lab check",
+        "keys": [
+          "id"
+        ]
+      },
+      "series": {
+        "time": "created_at",
+        "cadence": "per run",
+        "partition": [
+          "example_id"
+        ]
+      }
+    },
+    "table:lab_policies": {
+      "description": "Policies the Lab proposed or adopted, with their measured accuracy and properties.",
+      "aliases": [
+        "lab policy"
+      ],
+      "tags": [
+        "domain:lab",
+        "profile:extended"
+      ],
+      "grain": {
+        "statement": "one row per proposed policy",
+        "keys": [
+          "id"
+        ]
+      }
+    },
+    "table:learn_jobs": {
+      "description": "Learn studio jobs (explainers, videos, proofs, paper responses) queued for the local worker, with their output.",
+      "aliases": [
+        "job",
+        "learn job"
+      ],
+      "tags": [
+        "domain:learn",
+        "profile:extended"
+      ],
+      "grain": {
+        "statement": "one row per queued job",
+        "keys": [
+          "id"
+        ]
+      },
+      "series": {
+        "time": "created_at",
+        "cadence": "event"
+      },
+      "properties": {
+        "concept_id": {
+          "description": "The Learn concept the job is about, if any."
+        },
+        "output": {
+          "description": "The job's output text or a summary of it."
+        }
+      }
+    },
+    "table:project_milestones": {
+      "description": "Project tracker milestones.",
+      "aliases": [
+        "milestone"
+      ],
+      "tags": [
+        "domain:project",
+        "profile:extended"
+      ],
+      "grain": {
+        "statement": "one row per milestone",
+        "keys": [
+          "id"
+        ]
+      }
+    },
+    "table:project_issues": {
+      "description": "Project tracker issues with status, priority, assignee and milestone.",
+      "aliases": [
+        "issue",
+        "ticket"
+      ],
+      "tags": [
+        "domain:project",
+        "profile:extended"
+      ]
+    },
+    "table:project_comments": {
+      "description": "Comments on project issues.",
+      "aliases": [
+        "comment"
+      ],
+      "tags": [
+        "domain:project",
+        "profile:extended"
+      ],
+      "grain": {
+        "statement": "one row per comment",
+        "keys": [
+          "id"
+        ]
+      }
+    },
+    "table:project_activity": {
+      "description": "History of changes to project issues.",
+      "aliases": [
+        "activity"
+      ],
+      "tags": [
+        "domain:project",
+        "profile:extended"
+      ],
+      "grain": {
+        "statement": "one row per change to an issue",
+        "keys": [
+          "id"
+        ]
+      },
+      "series": {
+        "time": "at",
+        "cadence": "event",
+        "partition": [
+          "issue_id"
+        ]
+      }
+    },
+    "table:project_deps": {
+      "description": "Which project issue depends on which; must form a DAG.",
+      "aliases": [
+        "issue dependency"
+      ],
+      "tags": [
+        "domain:project",
+        "profile:extended"
+      ],
+      "constraints": [
+        {
+          "id": "deps-acyclic",
+          "kind": "acyclic",
+          "on": [
+            "issue_id",
+            "depends_on"
+          ],
+          "message": "Issue dependencies can't loop."
+        }
+      ]
+    },
+    "table:responses_papers": {
+      "description": "Paper responses: the latest package (analysis, plan, article) for each paper; versions live in data_artifacts.",
+      "aliases": [
+        "paper response",
+        "response"
+      ],
+      "tags": [
+        "domain:responses",
+        "profile:extended",
+        "req:REQ-056"
+      ]
+    },
+    "table:review_docs": {
+      "description": "Reviewed papers, articles and comments with their evidence scores and an optional human label.",
+      "aliases": [
+        "reviewed doc",
+        "review"
+      ],
+      "tags": [
+        "domain:review",
+        "profile:extended"
+      ]
+    },
+    "table:review_events": {
+      "description": "Dated forecast records found in reviewed documents, to check when they fall due (never attributed to a person).",
+      "aliases": [
+        "forecast",
+        "dated claim"
+      ],
+      "tags": [
+        "domain:review",
+        "profile:extended"
+      ],
+      "series": {
+        "time": "due",
+        "cadence": "by due date",
+        "order": "asc"
+      }
+    },
+    "table:work_claims": {
+      "description": "Claims by people and agents on tasks and files, as leases that run out.",
+      "aliases": [
+        "claim",
+        "lease"
+      ],
+      "tags": [
+        "domain:coordination",
+        "profile:extended",
+        "req:REQ-069"
+      ],
+      "grain": {
+        "statement": "one row per claim (renewals update it)",
+        "keys": [
+          "id"
+        ]
+      },
+      "lifecycle": {
+        "persistence": "leased",
+        "retention": "released and expired claims pruned after 30 days"
+      },
+      "series": {
+        "time": "created_at",
+        "cadence": "event"
+      },
+      "properties": {
+        "task": {
+          "description": "The claimed task's key (spec:006/T673, change:<id>/1.1, response:<slug>)."
+        },
+        "actor": {
+          "description": "Who holds it: person:<username> or agent:<name>."
+        },
+        "branch": {
+          "description": "The git branch the work is on."
+        },
+        "intent": {
+          "description": "What the holder means to do."
+        },
+        "asked_by": {
+          "description": "The person who asked an agent to do it."
+        }
+      }
+    },
+    "table:work_advice": {
+      "description": "Whether a person accepted or dismissed each advisor suggestion.",
+      "aliases": [
+        "advice mark"
+      ],
+      "tags": [
+        "domain:coordination",
+        "profile:extended",
+        "req:REQ-070"
+      ],
+      "properties": {
+        "finding": {
+          "description": "The advisor finding's stable id."
+        },
+        "actor": {
+          "description": "The person who marked it."
+        }
+      }
+    },
+    "type:PublicationIdentity": {
+      "grain": {
+        "statement": "one per publication link resolved"
+      }
+    },
+    "type:VocabularyResolution": {
+      "grain": {
+        "statement": "one per term looked up"
+      }
+    },
+    "type:Tag": {
+      "grain": {
+        "statement": "one per tag on one story"
+      },
+      "lifecycle": {
+        "persistence": "perpetual",
+        "retention": "stored in its table"
+      }
+    },
+    "type:ScopeDecision": {
+      "grain": {
+        "statement": "one per story judged for scope"
+      }
+    },
+    "type:Story": {
+      "grain": {
+        "statement": "one per grouped story"
+      },
+      "series": {
+        "time": "published_at",
+        "cadence": "event"
+      },
+      "keys": {
+        "surrogate": null,
+        "primary": [
+          "id"
+        ],
+        "natural": []
+      },
+      "lifecycle": {
+        "persistence": "perpetual",
+        "retention": "stored in its table"
+      }
+    },
+    "type:Chunk": {
+      "grain": {
+        "statement": "one per chunk of a story's text"
+      },
+      "keys": {
+        "primary": [
+          "story_id",
+          "ord"
+        ],
+        "natural": [
+          [
+            "story_id",
+            "ord"
+          ]
+        ]
+      },
+      "lifecycle": {
+        "persistence": "perpetual",
+        "retention": "stored in its table"
+      }
+    },
+    "type:Embedding": {
+      "grain": {
+        "statement": "one per embedded chunk"
+      }
+    },
+    "type:Edge": {
+      "grain": {
+        "statement": "one per knowledge-graph edge"
+      },
+      "keys": {
+        "primary": [
+          "src",
+          "rel",
+          "dst"
+        ],
+        "natural": [
+          [
+            "src",
+            "rel",
+            "dst"
+          ]
+        ]
+      },
+      "lifecycle": {
+        "persistence": "perpetual",
+        "retention": "stored in its table"
+      }
+    },
+    "type:TagRequest": {
+      "grain": {
+        "statement": "one per tagging request"
+      }
+    },
+    "type:TagResult": {
+      "grain": {
+        "statement": "one per tagging response"
+      }
+    },
+    "type:EvalRequest": {
+      "grain": {
+        "statement": "one per rule evaluation request"
+      }
+    },
+    "type:EvalResult": {
+      "grain": {
+        "statement": "one per rule evaluation result"
+      }
+    }
+  }
+}

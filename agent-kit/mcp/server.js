@@ -109,6 +109,14 @@ TOOLS.push(...(REPO ? [
   { name: "work_who", description: "Who holds a file or folder right now, and which open branches change it.", inputSchema: S({ file: { type: "string" } }, ["file"]), run: ({ file }) => work("who", file, "--json") },
   { name: "work_advise", description: "Highlights and drafted additions for Spec Kit, OpenSpec, the data model, sources and actions, view bindings, validation and learnings; each names its file and whether it is a shared document (needs both partners). Suggest them; don't apply shared ones.", inputSchema: S({ target: { type: "string", enum: ["speckit", "openspec", "data-model", "bindings", "validation", "learning", "agents"] } }), run: ({ target }) => work("advise", ...(target ? ["--target", target] : []), "--json") },
 ] : []));
+// Elements (REQ-075, proposed): every element's descriptor (keys, grain, relationships, constraints, lifecycle, series,
+// aliases, tags) and its SHACL, from the same catalog as /m/elements.
+const elements = (...a) => { const r = require("node:child_process").spawnSync(process.execPath, ["--no-warnings", path.join(REPO, "scripts", "elements.js"), ...a], { cwd: REPO, encoding: "utf8", timeout: 120000 }); return (r.stdout || "") + (r.status ? `\n${(r.stderr || "").trim()}` : ""); };
+TOOLS.push(...(REPO ? [
+  { name: "elements_describe", description: "Describe any element (a table, type, data operation, module, requirement, task or learning) by id or any alias (\"bookmark\", \"req:REQ-056\"): its properties, keys and surrogate, grain, relationships with direction and cardinality, constraints, lifecycle, series, aliases, tags and completeness. Read this before changing a table or a type.", inputSchema: S({ id: { type: "string" } }, ["id"]), run: ({ id }) => elements("get", id) },
+  { name: "elements_report", description: "The element catalog's health: counts by kind, completeness and what is missing, alias conflicts, invalid descriptors and whether acyclic relations form a DAG.", inputSchema: S({}), run: () => elements("report") },
+  { name: "elements_check_vibe", description: "Check a vibe-coding checkout's prompts.md files against the conventions' shapes, keys and vocabularies (missing context blocks, repeated prompt numbers, tags not in the list).", inputSchema: S({ dir: { type: "string" } }, ["dir"]), run: ({ dir }) => elements("check-vibe", dir) },
+] : []));
 function kernel() { return require(path.join(REPO, "kernel", "kernel.js")).createKernel(); }
 function decision() { const m = kernel().modules.find((x) => x.id === "decision"); if (!m) fail("The decision module isn't enabled."); return m; }
 const esm = (rel) => import(require("node:url").pathToFileURL(path.join(REPO, rel)).href);

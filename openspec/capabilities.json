@@ -149,6 +149,12 @@
       "REQ-069",
       "REQ-070",
       "REQ-071"
+    ],
+    "add-element-descriptors": [
+      "REQ-072",
+      "REQ-073",
+      "REQ-074",
+      "REQ-075"
     ]
   }
 }

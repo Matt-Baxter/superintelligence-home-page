@@ -28,10 +28,11 @@ One page that points at every skill, spec, check, measure and pitfall in the rep
 | [007-data-and-builders](../specs/007-data-and-builders/spec.md): Data layer and builders (extended version) | Proposed, not approved. | REQ-061..REQ-064 (4) | [spec](../specs/007-data-and-builders/spec.md) | no tasks.md |
 | [008-graph-model-and-flywheel](../specs/008-graph-model-and-flywheel/spec.md): The system as a graph, and the learning flywheel (extended version) | Proposed, not approved. | REQ-065..REQ-067 (3) | [spec](../specs/008-graph-model-and-flywheel/spec.md) | no tasks.md |
 | [009-coordination-and-advisor](../specs/009-coordination-and-advisor/spec.md): Planning and coordination for people and agents, and the advisor (extended version) | Proposed, not approved. | REQ-068..REQ-071 (4) | [spec](../specs/009-coordination-and-advisor/spec.md) · [tasks](../specs/009-coordination-and-advisor/tasks.md) | 4 / 9 (agent 2/9, people 2/0) |
+| [010-element-descriptors](../specs/010-element-descriptors/spec.md): Element descriptors, interoperability and formal checks (extended version) | Proposed, not approved. | REQ-072..REQ-075 (4) | [spec](../specs/010-element-descriptors/spec.md) · [tasks](../specs/010-element-descriptors/tasks.md) | 4 / 7 (agent 2/7, people 2/0) |
 
 Tags: `[agent]` any agent, unattended; `[rules]` changes scoring, only when a person asks; `[people]` the humans. Requirement traceability: [SPEC_TRACE.md](SPEC_TRACE.md); measured status: [SPEC_STATUS.md](SPEC_STATUS.md); this build's tables and routes: [INTERFACES.md](INTERFACES.md).
 
-**Open tasks (46)**
+**Open tasks (50)**
 
 - [003 T000](../specs/003-judge-fidelity/tasks.md) `[people]` REQ-032: Approve, change or drop REQ-032..REQ-040 (this spec).
 - [003 T007](../specs/003-judge-fidelity/tasks.md) `[people]` REQ-038: Install Lean 4 (elan, from https://lean-lang.org) on a machine you control, run `cd proofs && lake build`, and record which theorems check; agents…
@@ -79,6 +80,10 @@ Tags: `[agent]` any agent, unattended; `[rules]` changes scoring, only when a pe
 - [009 T921](../specs/009-coordination-and-advisor/tasks.md) `[agent]` REQ-070: Let the advisor open a draft branch with the accepted, non-shared suggestions applied, for a person to review (scripts/work.js)
 - [009 T922](../specs/009-coordination-and-advisor/tasks.md) `[agent]` REQ-068: Learn the planner's weights from which suggestions people take, and report them as proposals (modules/work/planner.js)
 - [009 T923](../specs/009-coordination-and-advisor/tasks.md) `[people]` REQ-071: Decide whether the shared Neon database should hold claims (needs DATABASE_URL on agents' machines)
+- [010 T000](../specs/010-element-descriptors/tasks.md) `[people]` REQ-072: Approve, change or drop REQ-072..REQ-075, and read proofs/CoordinationSpec.lean against the code (the trusted statements need a person).
+- [010 T020](../specs/010-element-descriptors/tasks.md) `[agent]` REQ-075: Second-kernel check of the pinned results with comparator and nanoda when they can be installed (proofs/)
+- [010 T021](../specs/010-element-descriptors/tasks.md) `[agent]` REQ-074: Write property descriptions for the elements still missing them (modules/elements/overlay.json)
+- [010 T022](../specs/010-element-descriptors/tasks.md) `[people]` REQ-073: Decide whether the vibe-coding repo should vendor packages/si-elements and run its check in CI
 
 ## Skills
 
@@ -240,6 +245,9 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | `npm run research:merge` | Continuous research loop for the formal-verification work, built to run on our own machines (a Mac mini, laptops). |
 | `npm run work` | Work board for agents and people at the terminal (REQ-068..REQ-071, proposed). |
 | `npm run test:work` | Work: planning and coordination for people and agents (proposed REQ-068..REQ-071, spec 009, openspec/changes/add-coordination-and-advisor).; Properties of the work module (proposed REQ-068..REQ-071), checked on many generated cases (seeded), plus the advisor's recall by mutation and the… |
+| `npm run elements` | Element catalog at the terminal (REQ-072..REQ-075, proposed). |
+| `npm run test:elements` | Element descriptors (proposed REQ-072..REQ-075, spec 010, openspec/changes/add-element-descriptors): the portable package, the SQL provider, the… |
+| `npm run test:coordination-proofs` | Lean proofs of coordination and the element catalog (proposed REQ-069, REQ-072; proofs/CoordinationSpec.lean, Coordination.lean, FinalCheck.lean),… |
 
 ## Measures
 
@@ -455,7 +463,7 @@ Quoted from the repo's own pitfall, trap, troubleshooting and habits sections (n
 - [bench/README.md](../bench/README.md): `npm run bench` measures the judges on fixed, synthetic, labelled sets and compares every metric with `baseline.json`.
 - [proofs/README.md](../proofs/README.md): REQ-038, task T005 (specs/003-judge-fidelity/tasks.md); T051 fills in the evaluator and the differential test.
 
-**Also**: [docs/snapshots/](snapshots) (3 build snapshots), [proofs/](../proofs) (`Judge.lean`, `lake-manifest.json`, `lakefile.lean`, `lean-toolchain`, `vectors.json`), [workflows](../.github/workflows) (`interop.yml`, `paper-watch.yml`, `preflight.yml`), the codebase map (`npm run codemap -- <question>`) and the [MCP server](../agent-kit/mcp/server.js).
+**Also**: [docs/snapshots/](snapshots) (3 build snapshots), [proofs/](../proofs) (`.lake`, `Coordination.lean`, `CoordinationSpec.lean`, `FinalCheck.lean`, `Judge.lean`, `formalization.yaml`, `lake-manifest.json`, `lakefile.lean`, `lean-toolchain`, `vectors.json`), [workflows](../.github/workflows) (`interop.yml`, `paper-watch.yml`, `preflight.yml`), the codebase map (`npm run codemap -- <question>`) and the [MCP server](../agent-kit/mcp/server.js).
 
 ## Open decisions for the humans
 
@@ -468,4 +476,4 @@ From [handoff/STATE.md](../handoff/STATE.md) (2026-11-07), "Waiting for the huma
 5. **Merge `fix/sync-with-main`** when ready, then the feature branches above; the GitHub Actions paper watch only runs from the default branch.
 6. **Agent log**: write entries in your own words for anything the agents got wrong (REQ-020). Agents never write them.
 
-Open `[people]` tasks: [003 T000](../specs/003-judge-fidelity/tasks.md), [003 T007](../specs/003-judge-fidelity/tasks.md), [004 T000](../specs/004-parity/tasks.md), [004 T001](../specs/004-parity/tasks.md), [004 T002](../specs/004-parity/tasks.md), [004 T080](../specs/004-parity/tasks.md), [005 T500](../specs/005-appearance-and-publishing/tasks.md), [005 T501](../specs/005-appearance-and-publishing/tasks.md), [006 T600](../specs/006-paper-responses/tasks.md), [006 T601](../specs/006-paper-responses/tasks.md), [006 T674](../specs/006-paper-responses/tasks.md), [009 T900](../specs/009-coordination-and-advisor/tasks.md), [009 T923](../specs/009-coordination-and-advisor/tasks.md).
+Open `[people]` tasks: [003 T000](../specs/003-judge-fidelity/tasks.md), [003 T007](../specs/003-judge-fidelity/tasks.md), [004 T000](../specs/004-parity/tasks.md), [004 T001](../specs/004-parity/tasks.md), [004 T002](../specs/004-parity/tasks.md), [004 T080](../specs/004-parity/tasks.md), [005 T500](../specs/005-appearance-and-publishing/tasks.md), [005 T501](../specs/005-appearance-and-publishing/tasks.md), [006 T600](../specs/006-paper-responses/tasks.md), [006 T601](../specs/006-paper-responses/tasks.md), [006 T674](../specs/006-paper-responses/tasks.md), [009 T900](../specs/009-coordination-and-advisor/tasks.md), [009 T923](../specs/009-coordination-and-advisor/tasks.md), [010 T000](../specs/010-element-descriptors/tasks.md), [010 T022](../specs/010-element-descriptors/tasks.md).

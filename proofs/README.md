@@ -1,4 +1,4 @@
-# proofs/: a Lean 4 model of the review judge's arithmetic
+# proofs/: Lean 4 models of the review judge's arithmetic, coordination and the element catalog
 
 REQ-038, task T005 (specs/003-judge-fidelity/tasks.md); T051 fills in the evaluator and the differential test.
 Plain core Lean 4, no Mathlib and no other dependencies.
@@ -137,3 +137,44 @@ These are things the theorems do **not** say about today's code.
   and expected rigor, hype, credibility, cap, score and bands at (35, 5), (60, 5), (70, 5), (60, 3)) plus 24 rating
   cases. Cases 3 and 4 are the `margin_3_can_jump` pair. Expected values come from the real `rigor()` and `hype()`
   and review.js's own expressions, so T051 compares a Lean evaluator with the JavaScript, not with this model.
+
+
+## Coordination and elements (REQ-069, REQ-072, proposed)
+
+`CoordinationSpec.lean` holds the **trusted statements**: definitions and `Prop`s only, no proofs, to be read against
+`modules/work/overlap.js`, `modules/work/claims.js`, `modules/data/artifacts.js` and `packages/si-elements/index.js`.
+`Coordination.lean` proves them. `FinalCheck.lean` pins each one: `example : <Statement> := <theorem>` (the proof
+has exactly the trusted type) and `#guard_msgs in #print axioms <theorem>` (the build fails unless the axioms are
+exactly the ones listed), then `#guard` cases on the smallest inputs. `formalization.yaml` records the results.
+
+| Statement | Theorem | Says |
+| --- | --- | --- |
+| `AdmitSafe`, `ReleaseSafe`, `AdmitRefusesConflict` | `admit_safe`, `release_safe`, `admit_refuses_conflict` | SC-901: admitting only non-conflicting claims, and releasing any, keeps every pair of live claims conflict-free |
+| `ConflictBSound`, `ConflictSymm` | `conflictB_sound`, `conflict_symm` | the computed test is the stated relation, and it is symmetric |
+| `OverlapSymm`, `OverlapRefl` | `overlap_symm`, `overlap_refl` | path overlap is symmetric; a non-empty path overlaps itself |
+| `SavesCounted`, `BurstExactlyOne` | `saves_counted`, `burst_exactly_one` | the version grows by the saves that landed; k+1 saves of one version land exactly once (L21) |
+| `NoDupSound` | `noDup_sound` | the seen-set key check (keys, grain) passes exactly when the keys are distinct |
+| `WitnessAcyclic` | `witness_acyclic` | an order in which every edge goes forward proves the relation acyclic |
+
+All 11 use only `propext` and `Quot.sound`. `npm run test:coordination-proofs` builds, audits (with `lib/lean-proof.js`
+and a scan for `sorry`, `axiom`, `native_decide`, `unsafe`, `extern`, `implemented_by`, `partial def`, `#eval`),
+runs two negative controls (a `sorry` proof and a false statement must fail), checks the manifest, and runs the Lean
+definitions on generated inputs against the real code: 404 path pairs against `overlap.js`, 120 claim sequences
+against the claim check, 60 save sequences against the **real artifact store** (SQLite), 150 key lists against
+`checkRows`, and every acyclic catalog's load order against `orderWitness`. The first run found that the model said
+an empty path overlaps itself while the code says it overlaps nothing; the model now matches the code.
+
+**Not modelled** (`formalization.yaml`, `fidelity.divergences`): path normalization, forced claims, the database lock
+that serializes saves (tested by the concurrency burst in `test/work-unit.js` on SQLite and Postgres, not proved),
+and that the catalog's order is a witness (checked per run, then the theorem applies).
+
+**Practices taken from public Lean projects** (read 2026-11-11): the statement/proof split and `#guard_msgs` on
+`#print axioms` from [anthropics/fermats-last-theorem](https://github.com/anthropics/fermats-last-theorem) (`FinalCheck.lean`)
+and [anthropics/formal-math](https://github.com/anthropics/formal-math) (`Challenge.lean` / `Solution.lean`, CI that
+allows `sorry` only in challenge files); the `formalization.yaml` record from those and
+[openai/math](https://github.com/openai/math) (`lean/formalization.yaml`); `autoImplicit false` and the forbidden-construct
+list from the Fermat project's README; testing the smallest inputs, and never adding `axiom`, from
+[google-deepmind/formal-conjectures](https://github.com/google-deepmind/formal-conjectures) (`STATEMENTS.md`,
+`AGENTS.md`); frozen, named statement sets from [openai/miniF2F](https://github.com/openai/miniF2F). Not adopted:
+Mathlib (core Lean is enough for these statements and keeps the build to seconds), the `comparator` and `nanoda`
+second-kernel checks (not installable here; a reasonable next step).

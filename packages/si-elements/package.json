@@ -1,0 +1,9 @@
+{
+  "name": "si-elements",
+  "version": "0.1.0",
+  "description": "One portable descriptor for any element of a system, with SHACL, N-Quads, JSON-LD, key and grain checks and the relationship DAG. No dependencies.",
+  "main": "index.js",
+  "license": "UNLICENSED",
+  "private": true,
+  "files": ["index.js", "element.schema.json", "README.md"]
+}

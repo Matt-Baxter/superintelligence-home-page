@@ -1,6 +1,7 @@
 // SHACL core over the knowledge graph store (REQ-065, proposed): shapes (Turtle) and data are loaded into Oxigraph
 // stores and each constraint is checked with SPARQL. Supported: sh:targetClass; sh:path as an IRI or
-// [ sh:inversePath IRI ]; sh:minCount, sh:maxCount, sh:datatype, sh:class, sh:in, sh:pattern, sh:message.
+// [ sh:inversePath IRI ]; sh:minCount, sh:maxCount, sh:datatype, sh:class, sh:in, sh:pattern, sh:minInclusive,
+// sh:maxInclusive, sh:maxLength, sh:message.
 const { Store } = require("oxigraph");
 const SH = "http://www.w3.org/ns/shacl#", RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
 const rows = (store, q) => [...store.query(q)].map((m) => Object.fromEntries([...m.entries()].map(([k, t]) => [k, t])));
@@ -11,17 +12,18 @@ function loadShapes(ttl) {
   // Blank nodes can't be named in a later query, so read every property shape's fields in one query per field.
   const shapes = [];
   for (const ns of rows(s, `SELECT ?shape ?cls WHERE { ?shape a <${SH}NodeShape> ; <${SH}targetClass> ?cls }`)) {
-    const props = rows(s, `SELECT ?p ?path ?inv ?min ?max ?dt ?cls ?pat ?msg ?in WHERE { <${ns.shape.value}> <${SH}property> ?p .
+    const props = rows(s, `SELECT ?p ?path ?inv ?min ?max ?dt ?cls ?pat ?msg ?in ?lo ?hi ?len WHERE { <${ns.shape.value}> <${SH}property> ?p .
       OPTIONAL { ?p <${SH}path> ?path FILTER(isIRI(?path)) } OPTIONAL { ?p <${SH}path> ?b . ?b <${SH}inversePath> ?inv }
       OPTIONAL { ?p <${SH}minCount> ?min } OPTIONAL { ?p <${SH}maxCount> ?max } OPTIONAL { ?p <${SH}datatype> ?dt } OPTIONAL { ?p <${SH}class> ?cls }
-      OPTIONAL { ?p <${SH}pattern> ?pat } OPTIONAL { ?p <${SH}message> ?msg } OPTIONAL { ?p <${SH}in> ?in } }`);
+      OPTIONAL { ?p <${SH}pattern> ?pat } OPTIONAL { ?p <${SH}message> ?msg } OPTIONAL { ?p <${SH}in> ?in }
+      OPTIONAL { ?p <${SH}minInclusive> ?lo } OPTIONAL { ?p <${SH}maxInclusive> ?hi } OPTIONAL { ?p <${SH}maxLength> ?len } }`);
     // sh:in lists: walk each list with a store-side query from the property shape (blank node ids are per-store).
     const inLists = new Map();
     for (const r of rows(s, `SELECT ?p ?v WHERE { <${ns.shape.value}> <${SH}property> ?p . ?p <${SH}in>/<${RDF}rest>*/<${RDF}first> ?v }`)) { const k = r.p.value; if (!inLists.has(k)) inLists.set(k, []); inLists.get(k).push(r.v); }
     shapes.push({ id: ns.shape.value, targetClass: ns.cls.value, properties: props.map((p) => ({
       path: p.path ? p.path.value : null, inverse: p.inv ? p.inv.value : null, min: p.min ? Number(p.min.value) : null, max: p.max ? Number(p.max.value) : null,
       datatype: p.dt ? p.dt.value : null, class: p.cls ? p.cls.value : null, pattern: p.pat ? p.pat.value : null, message: p.msg ? p.msg.value : null,
-      in: inLists.get(p.p.value) || null })) });
+      in: inLists.get(p.p.value) || null, minInclusive: p.lo ? Number(p.lo.value) : null, maxInclusive: p.hi ? Number(p.hi.value) : null, maxLength: p.len ? Number(p.len.value) : null })) });
   }
   return shapes;
 }
@@ -44,6 +46,9 @@ function validate(shapes, data) {
         if (p.class && !rows(store, `ASK { { <${v.value}> a <${p.class}> } UNION { GRAPH ?g { <${v.value}> a <${p.class}> } } }`.replace(/^ASK/, "SELECT (1 AS ?x) WHERE")).length) add(`${v.value} isn't a ${p.class.split("#").pop()}`);
         if (p.in && !p.in.some((x) => x.value === v.value)) add(`${v.value} isn't one of ${p.in.map((x) => x.value).join(", ")}`);
         if (p.pattern && !new RegExp(p.pattern).test(v.value)) add(`“${v.value}” doesn't match ${p.pattern}`);
+        if (p.minInclusive !== undefined && p.minInclusive !== null && Number(v.value) < p.minInclusive) add(`${v.value} is below ${p.minInclusive}`);
+        if (p.maxInclusive !== undefined && p.maxInclusive !== null && Number(v.value) > p.maxInclusive) add(`${v.value} is above ${p.maxInclusive}`);
+        if (p.maxLength && v.termType === "Literal" && v.value.length > p.maxLength) add(`${v.value.length} characters, at most ${p.maxLength}`);
       }
     }
   }
