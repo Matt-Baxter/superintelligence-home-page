@@ -14,6 +14,6 @@
 
 ## 3. Phase 2
 
-- [ ] 3.1 [agent] Atomic version check inside the save transaction (modules/responses/store.js, modules/data/artifacts.js)
+- [x] 3.1 [agent] Atomic version check inside the save transaction (modules/responses/store.js, modules/data/artifacts.js)
 - [ ] 3.2 [agent] Draft branch with accepted, non-shared suggestions applied, for review (scripts/work.js)
 - [ ] 3.3 [agent] Learn the planner's weights from what people pick, as a proposal (modules/work/planner.js)

@@ -118,8 +118,8 @@ Built on `feature/paper-responses-2026-11-11` at John's request; not in scope un
 | REQ | What | Where in the code | Checked by |
 | --- | --- | --- | --- |
 | REQ-068 | Work items from Spec Kit and OpenSpec; ranked next steps with reasons | `modules/work/items.js`, `planner.js`; sources `work.items`, `work.next`, `work.initiatives`; `/m/work` | unit: work ("REQ-068: work items from Spec Kit and OpenSpec", "REQ-068: ranked next steps with reasons") |
-| REQ-069 | Claims with leases, collision checks, presence, stale writes refused | `modules/work/claims.js`, `overlap.js`; actions `work.claim`, `work.release`; `expectVersion` on `responses.edit-line`, `responses.replan`, `data.restore` | unit: work ("REQ-069: collisions", "REQ-069, REQ-071: claims, presence and stale writes through the app") |
-| REQ-070 | Advisor: suggestions with drafts, accept and dismiss | `modules/work/advisor.js`; source `work.advice`; action `work.advice-mark` | unit: work ("REQ-070: the advisor") |
+| REQ-069 | Claims with leases, collision checks, presence, stale writes refused | `modules/work/claims.js`, `overlap.js`; actions `work.claim`, `work.release`; `expectVersion` on `responses.edit-line`, `responses.replan`, `data.restore` | unit: work ("REQ-069: collisions", "REQ-069, REQ-071: claims, presence and stale writes through the app"); properties: `test/work-props.js` (SC-901 over generated claim sequences, the simulation) |
+| REQ-070 | Advisor: suggestions with drafts, accept and dismiss | `modules/work/advisor.js`; source `work.advice`; action `work.advice-mark` | unit: work ("REQ-070: the advisor"); properties: advisor recall by mutation |
 | REQ-071 | Agents: CLI, MCP tools, brief, guard hook | `scripts/work.js`, `agent-kit/mcp/server.js` (`work_*`), `agent-kit/hooks/guard.js`; source `work.brief` | unit: work ("REQ-069, REQ-071: claims, presence and stale writes through the app") |
 
 ## Acceptance suite

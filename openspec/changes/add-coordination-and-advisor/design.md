@@ -23,8 +23,8 @@ that use both.
   `modules/sample/x.js`).
 - **One transaction per claim**, serialised with an advisory lock on Postgres, so two claims can't both pass the check.
 - **Stale writes: optimistic concurrency.** The builder sends the version it shows; the action compares it with the
-  current one and refuses with who saved in between. (The check and the save are separate statements today; making
-  them one transaction is task T920.)
+  current one and refuses with who saved in between. The check runs inside the save's transaction with the artifact row locked
+  (`FOR UPDATE` on Postgres), so of N simultaneous saves of one version exactly one lands.
 - **Branches from git, not a service.** `npm run work -- sync` diffs each `origin/*` branch against `origin/main` and
   writes `out/work/branches.json`. No GitHub API calls, no polling.
 - **The hook needs no database.** Every claim change writes `out/work/claims.json`; the guard hook reads it, finds the

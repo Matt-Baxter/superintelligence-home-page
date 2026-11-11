@@ -27,11 +27,11 @@ One page that points at every skill, spec, check, measure and pitfall in the rep
 | [006-paper-responses](../specs/006-paper-responses/spec.md): Paper responses (extended version) | Proposed, not approved. | REQ-056..REQ-060 (5) | [spec](../specs/006-paper-responses/spec.md) · [tasks](../specs/006-paper-responses/tasks.md) | 7 / 10 (agent 3/9, rules 1/1, people 3/0) |
 | [007-data-and-builders](../specs/007-data-and-builders/spec.md): Data layer and builders (extended version) | Proposed, not approved. | REQ-061..REQ-064 (4) | [spec](../specs/007-data-and-builders/spec.md) | no tasks.md |
 | [008-graph-model-and-flywheel](../specs/008-graph-model-and-flywheel/spec.md): The system as a graph, and the learning flywheel (extended version) | Proposed, not approved. | REQ-065..REQ-067 (3) | [spec](../specs/008-graph-model-and-flywheel/spec.md) | no tasks.md |
-| [009-coordination-and-advisor](../specs/009-coordination-and-advisor/spec.md): Planning and coordination for people and agents, and the advisor (extended version) | Proposed, not approved. | REQ-068..REQ-071 (4) | [spec](../specs/009-coordination-and-advisor/spec.md) · [tasks](../specs/009-coordination-and-advisor/tasks.md) | 5 / 7 (agent 3/7, people 2/0) |
+| [009-coordination-and-advisor](../specs/009-coordination-and-advisor/spec.md): Planning and coordination for people and agents, and the advisor (extended version) | Proposed, not approved. | REQ-068..REQ-071 (4) | [spec](../specs/009-coordination-and-advisor/spec.md) · [tasks](../specs/009-coordination-and-advisor/tasks.md) | 4 / 9 (agent 2/9, people 2/0) |
 
 Tags: `[agent]` any agent, unattended; `[rules]` changes scoring, only when a person asks; `[people]` the humans. Requirement traceability: [SPEC_TRACE.md](SPEC_TRACE.md); measured status: [SPEC_STATUS.md](SPEC_STATUS.md); this build's tables and routes: [INTERFACES.md](INTERFACES.md).
 
-**Open tasks (47)**
+**Open tasks (46)**
 
 - [003 T000](../specs/003-judge-fidelity/tasks.md) `[people]` REQ-032: Approve, change or drop REQ-032..REQ-040 (this spec).
 - [003 T007](../specs/003-judge-fidelity/tasks.md) `[people]` REQ-038: Install Lean 4 (elan, from https://lean-lang.org) on a machine you control, run `cd proofs && lake build`, and record which theorems check; agents…
@@ -76,7 +76,6 @@ Tags: `[agent]` any agent, unattended; `[rules]` changes scoring, only when a pe
 - [006 T661](../specs/006-paper-responses/tasks.md) `[rules]` REQ-057: Benchmark the full-text checklist on a labelled synthetic set (bench/), like the Review desk's judges (REQ-029)
 - [006 T662](../specs/006-paper-responses/tasks.md) `[agent]` REQ-058: A neural local voice by default (Piper voice download step in docs), and a burned-in caption option
 - [009 T900](../specs/009-coordination-and-advisor/tasks.md) `[people]` REQ-068: Approve, change or drop REQ-068..REQ-071, and decide whether claims live in the shared Neon database (every machine sees them) or stay local.
-- [009 T920](../specs/009-coordination-and-advisor/tasks.md) `[agent]` REQ-069: Make the builder's version check atomic inside the save transaction (modules/responses/store.js, modules/data/artifacts.js)
 - [009 T921](../specs/009-coordination-and-advisor/tasks.md) `[agent]` REQ-070: Let the advisor open a draft branch with the accepted, non-shared suggestions applied, for a person to review (scripts/work.js)
 - [009 T922](../specs/009-coordination-and-advisor/tasks.md) `[agent]` REQ-068: Learn the planner's weights from which suggestions people take, and report them as proposals (modules/work/planner.js)
 - [009 T923](../specs/009-coordination-and-advisor/tasks.md) `[people]` REQ-071: Decide whether the shared Neon database should hold claims (needs DATABASE_URL on agents' machines)
@@ -240,7 +239,7 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | `npm run research:loop` | Continuous research loop for the formal-verification work, built to run on our own machines (a Mac mini, laptops). |
 | `npm run research:merge` | Continuous research loop for the formal-verification work, built to run on our own machines (a Mac mini, laptops). |
 | `npm run work` | Work board for agents and people at the terminal (REQ-068..REQ-071, proposed). |
-| `npm run test:work` | Work: planning and coordination for people and agents (proposed REQ-068..REQ-071, spec 009, openspec/changes/add-coordination-and-advisor). |
+| `npm run test:work` | Work: planning and coordination for people and agents (proposed REQ-068..REQ-071, spec 009, openspec/changes/add-coordination-and-advisor).; Properties of the work module (proposed REQ-068..REQ-071), checked on many generated cases (seeded), plus the advisor's recall by mutation and the… |
 
 ## Measures
 

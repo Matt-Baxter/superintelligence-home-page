@@ -132,6 +132,13 @@ const CHANGE = `## 1. Built
     ok((await act(matt, "responses.replan", { slug, maxSeconds: 60, expectVersion: 1 })).status === 409 && (await act(matt, "data.restore", { kind: "response", key: slug, version: 1, expectVersion: 1 })).status === 409, "re-plan and restore refuse a stale version too");
     const g = await src(matt, "responses.get", { slug });
     ok(g.version === 2 && g.plan.beats[0].lines[1].text === "Does the gate really help?" && (await act(matt, "responses.edit-line", { slug, beat: 0, line: 2, text: "We read all of it.", expectVersion: 2 })).status === 200, "after reloading, Matt's edit goes in on top of John's");
+    // Many writers at the same instant: the version check and the claim check run inside one transaction each.
+    const N = 20, cur = (await src(john, "responses.get", { slug })).version;
+    const burst = await Promise.all(Array.from({ length: N }, (_, n) => act(n % 2 ? matt : john, "responses.edit-line", { slug, beat: 0, line: 2, text: `Sample burst edit ${n}.`, expectVersion: cur }).then((x) => x.status)));
+    const after = (await src(john, "responses.get", { slug })).history.map((h) => h.version);
+    ok(burst.filter((s) => s === 200).length === 1 && burst.filter((s) => s === 409).length === N - 1 && after[0] === cur + 1, `${N} simultaneous saves of version ${cur}: exactly one lands, the rest are refused (${burst.filter((s) => s === 200).length} saved)`);
+    const grab = await Promise.all(Array.from({ length: N }, (_, n) => act(john, "work.claim", { task: `sample:burst-${n}`, files: ["modules/sample-burst/one.js"], actor: `agent:sample-burst-${n}` }).then((x) => x.status)));
+    ok(grab.filter((s) => s === 200).length === 1 && grab.filter((s) => s === 409).length === N - 1, `${N} agents claiming one file at the same instant: exactly one gets it`);
   } finally { await new Promise((res) => server.close(res)); if (db.end) await db.end(); }
   console.log(`\nwork unit: ${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);
 })().catch((e) => { console.error(e); process.exit(1); });

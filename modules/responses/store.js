@@ -28,15 +28,14 @@ function triples(pkg, version) {
 }
 
 // Save a response package (from a build, an edit or a render). Returns { slug, version }.
-async function saveResponse(db, pkg, { actor = null, note = "", files = [] } = {}) {
+async function saveResponse(db, pkg, { actor = null, note = "", files = [], expectVersion = null } = {}) {
   const value = JSON.stringify({ ...pkg }), now = db.now();
   const have = await db.get("SELECT id FROM responses_papers WHERE slug = ?", pkg.slug);
+  if (!have && (await db.get("SELECT COUNT(*) AS n FROM responses_papers")).n >= MAX_ROWS) { const e = new Error(`The limit is ${MAX_ROWS} responses. Delete old ones first.`); e.status = 400; throw e; }
+  // The versioned save decides (and refuses a stale write) first; the row and the graph follow only if it succeeded.
+  const v = await artifacts(db).save("response", pkg.slug, { title: pkg.title, body: pkg, note, files, actor, expectVersion });
   if (have) await db.run("UPDATE responses_papers SET title = ?, url = ?, package = ?, updated_at = ? WHERE id = ?", pkg.title, pkg.url || "", value, now, have.id);
-  else {
-    if ((await db.get("SELECT COUNT(*) AS n FROM responses_papers")).n >= MAX_ROWS) { const e = new Error(`The limit is ${MAX_ROWS} responses. Delete old ones first.`); e.status = 400; throw e; }
-    await db.run("INSERT INTO responses_papers (slug, title, url, package, created_at, updated_at, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)", pkg.slug, pkg.title, pkg.url || "", value, now, now, actor);
-  }
-  const v = await artifacts(db).save("response", pkg.slug, { title: pkg.title, body: pkg, note, files, actor });
+  else await db.run("INSERT INTO responses_papers (slug, title, url, package, created_at, updated_at, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)", pkg.slug, pkg.title, pkg.url || "", value, now, now, actor);
   const kg = await KG.open(db);
   await kg.replaceGraph(responseIri(pkg.slug), triples(pkg, v.version));
   return { slug: pkg.slug, version: v.version };

@@ -180,6 +180,15 @@
    "cause": "The listing checked access only; feature guards ran only when a source was called.",
    "fix": "The listing runs each guard and leaves out what it refuses.",
    "guard": "unit:a feature hidden from a reader isn't listed to them either"
+  },
+  {
+   "id": "L21",
+   "found": "2026-11-11",
+   "area": "process",
+   "symptom": "On Postgres, 2 of 20 simultaneous builder saves made against the same version both landed (a lost update), and 2 more failed with a duplicate-key error.",
+   "cause": "The version check ran before the save's transaction, and the save read the current version without locking its row.",
+   "fix": "The check runs inside the save's transaction with the artifact row locked (FOR UPDATE); the response row and graph are written only after the versioned save succeeds.",
+   "guard": "unit:simultaneous saves of version"
   }
  ]
 }

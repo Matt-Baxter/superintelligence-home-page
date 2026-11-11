@@ -59,7 +59,7 @@
     "research:loop": "node scripts/research-loop.js",
     "research:merge": "node scripts/research-loop.js --merge",
     "work": "node scripts/work.js",
-    "test:work": "node test/work-unit.js"
+    "test:work": "node --no-warnings test/work-unit.js && node --no-warnings test/work-props.js"
   },
   "keywords": [],
   "author": "",

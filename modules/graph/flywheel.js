@@ -11,7 +11,7 @@ const round = (x, d = 3) => Math.round(x * 10 ** d) / 10 ** d;
 
 function stages(learnings = require("../responses/learnings.json").learnings, { unitNames = null, recalled = new Set() } = {}) {
   const QA = require("../responses/qa").CHECKS;
-  const unitText = unitNames || ["test/responses-unit.js", "test/data-unit.js", "test/graph-unit.js"].map((f) => { try { return fs.readFileSync(path.join(__dirname, "..", "..", f), "utf8"); } catch { return ""; } }).join("\n");
+  const unitText = unitNames || ["test/responses-unit.js", "test/data-unit.js", "test/graph-unit.js", "test/work-unit.js", "test/work-props.js"].map((f) => { try { return fs.readFileSync(path.join(__dirname, "..", "..", f), "utf8"); } catch { return ""; } }).join("\n");
   return learnings.map((l) => {
     const [kind, name] = [l.guard.split(":")[0], l.guard.slice(l.guard.indexOf(":") + 1)];
     const ruled = !!l.guard, validated = kind === "qa" ? !!QA[name] : typeof unitText === "string" ? unitText.includes(name) : unitText.includes(name);
