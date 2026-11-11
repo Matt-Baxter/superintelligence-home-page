@@ -43,7 +43,7 @@ module.exports = function mountResearch(app, { db, wrap, auth, admin }) {
     return { today, waiting: W, proposals: proposals().reqs, specStatus: proposals().status, people: CFG.people, forecasts: due.map((e) => ({ ...e, overdue: e.due <= today })), flagged,
       quality: rows.length ? Q.analyse(rows).checks.map(({ id, label, value, ok, why, fix }) => ({ id, label, value, ok, why, fix })) : [],
       // Person-labelled verdicts through the accuracy paradox guard (lib/metrics.js).
-      honesty: await (async () => { const lab = await db.all("SELECT verdict, label FROM review_docs WHERE label IS NOT NULL ORDER BY id DESC LIMIT 1000").catch(() => []); return lab.length ? M.brief(M.fromAgreement(lab, { predict: (r) => (["doubtful", "withdrawn"].includes(r.verdict) ? "not-credible" : "credible"), classes: ["credible", "not-credible"] })) : null; })(),
+      honesty: await (async () => { const lab = await db.all("SELECT verdict, label FROM review_docs WHERE label IS NOT NULL ORDER BY id DESC LIMIT 1000").catch(() => []); return M.agreementBy(lab, (r) => r.verdict); })(),
       panel: { models, ready: models.length >= 2, advisor: (process.env.ADVISOR_MODEL || "").trim() || null }, public: process.env.RESEARCH_PUBLIC === "1" };
   }));
 

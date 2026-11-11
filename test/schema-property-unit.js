@@ -40,7 +40,9 @@ for (let i = 0; i < 500; i++) {
   const ns = pick(Object.keys(ids.NAMESPACES)), id = idFor(ns), q = ids.qid(ns, id), back = ids.parse(q);
   assert.deepEqual(back, { ns, id, qid: q }, `qid round trip: ${q}`); assert.ok(QRE.test(q), `schema pattern refuses ${q}`);
 }
-for (const bad of ["topic:Alignment", "topic:", "req:REQ-1", "story:x", "nope:abc", "topic:a--b", " topic:a"]) assert.ok(!ids.parse(bad) || bad.trim() !== bad, `parsed malformed ${bad}`);
+for (const bad of ["topic:Alignment", "topic:", "req:REQ-1", "story:x", "nope:abc", "topic:a--b", "topic:a b", "", null]) assert.equal(ids.parse(bad), null, `parsed malformed ${bad}`);
+assert.equal(ids.parse("  topic:a  ").qid, "topic:a", "parse trims surrounding space (lenient on input, strict on output)");
+for (const bad of [" topic:a", "Topic:a"]) assert.ok(!QRE.test(bad), `the schema pattern accepts ${JSON.stringify(bad)}`);
 n++;
 
 // 4. Instances: generated values of every type pass zod, round-trip through JSON, and broken copies fail.
@@ -68,7 +70,7 @@ function instance(t, depth = 0) {
 }
 (async () => {
   const Z = await import(path.join(GEN, "zod.mjs"));
-  let cases = 0;
+  let cases = 0; const ran = { missing: new Set(), scalar: new Set(), unknown: new Set(), enum: new Set(), list: new Set(), pattern: new Set() };
   for (const t of model.types) {
     const schema = Z[t.name]; assert.ok(schema, `zod has no ${t.name}`);
     for (let i = 0; i < 60; i++) {
@@ -77,17 +79,22 @@ function instance(t, depth = 0) {
       assert.deepEqual(schema.parse(JSON.parse(JSON.stringify(v))), schema.parse(v), `${t.name}: JSON round trip changed the value`);
       // Broken copies.
       const req = t.fields.filter((f) => !f.optional);
-      if (req.length) { const f = pick(req), b = { ...v }; delete b[f.name]; assert.ok(!schema.safeParse(b).success, `${t.name} accepted a missing ${f.name}`); }
+      if (req.length) { const f = pick(req), b = { ...v }; delete b[f.name]; assert.ok(!schema.safeParse(b).success, `${t.name} accepted a missing ${f.name}`); ran.missing.add(t.name); }
       const sc = t.fields.filter((f) => !f.optional && !f.list && f.scalar && f.base !== "json");
-      if (sc.length) { const f = pick(sc), b = { ...v, [f.name]: f.base === "string" || f.base === "datetime" ? 12345 : "not-a-number" }; assert.ok(!schema.safeParse(b).success, `${t.name} accepted a wrong ${f.base} in ${f.name}`); }
-      assert.ok(!schema.safeParse({ ...v, not_in_types_json: 1 }).success, `${t.name} accepted an unknown key`);
-      const en = t.fields.filter((f) => enumBy[f.base] && !f.list && !f.optional);
-      if (en.length) { const f = pick(en); assert.ok(!schema.safeParse({ ...v, [f.name]: "not-a-value" }).success, `${t.name} accepted a bad ${f.base}`); }
+      if (sc.length) { const f = pick(sc), b = { ...v, [f.name]: f.base === "string" || f.base === "datetime" ? 12345 : "not-a-number" }; assert.ok(!schema.safeParse(b).success, `${t.name} accepted a wrong ${f.base} in ${f.name}`); ran.scalar.add(t.name); }
+      assert.ok(!schema.safeParse({ ...v, not_in_types_json: 1 }).success, `${t.name} accepted an unknown key`); ran.unknown.add(t.name);
+      const en = t.fields.filter((f) => enumBy[f.base]);
+      if (en.length) { const f = pick(en); assert.ok(!schema.safeParse({ ...v, [f.name]: f.list ? ["not-a-value"] : "not-a-value" }).success, `${t.name} accepted a bad ${f.base}`); ran.enum.add(t.name); }
+      const ls = t.fields.filter((f) => f.list);
+      if (ls.length) { const f = pick(ls); assert.ok(!schema.safeParse({ ...v, [f.name]: "not-a-list" }).success, `${t.name} accepted a non-list ${f.name}`); ran.list.add(t.name); }
       const pf = t.fields.find((f) => f.pattern);
-      if (pf) assert.ok(!schema.safeParse({ ...v, [pf.name]: "Topic:Bad Id" }).success, `${t.name} accepted a malformed ${pf.name}`);
+      if (pf) { assert.ok(!schema.safeParse({ ...v, [pf.name]: "Topic:Bad Id" }).success, `${t.name} accepted a malformed ${pf.name}`); ran.pattern.add(t.name); }
       cases++;
     }
   }
+  // Every type met at least one broken copy, so no type is checked only on valid input.
+  for (const t of model.types) assert.ok(Object.values(ran).some((x) => x.has(t.name)), `${t.name} was never given a broken copy`);
   n++;
-  console.log(`Schema properties: ${n} passed, 0 failed; ${files.length} generated formats mapped both ways, 500 qids round-tripped, ${cases} generated instances with broken copies.`);
+  const cover = Object.entries(ran).map(([k, v]) => `${k} ${v.size}`).join(", ");
+  console.log(`Schema properties: ${n} passed, 0 failed; ${files.length} generated formats mapped both ways, 500 qids round-tripped, ${cases} generated instances with broken copies (types per kind: ${cover}).`);
 })().catch((e) => { console.error(e); process.exit(1); });

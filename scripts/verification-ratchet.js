@@ -76,6 +76,9 @@ function run(start, items, { rounds = 10 } = {}) {
 // The held-out gate as a pure function, so it can be tested on its own (test/metrics-property-unit.js).
 function heldoutGate(before, after, changed) {
   if (!changed) return { accepted: false, reasons: ["no edit improved train"] };
+  // Refuse on anything unmeasured: an empty held-out split, or a metric missing on either side, is not a pass.
+  const missing = ["objective", "rung_balanced"].filter((k) => !Number.isFinite(before?.[k]) || !Number.isFinite(after?.[k]));
+  if (missing.length) return { accepted: false, reasons: [`held-out ${missing.join(" and ")} not measured on both sides`] };
   const reasons = [];
   if (after.objective < before.objective) reasons.push(`objective ${before.objective} -> ${after.objective}`);
   if (after.rung_balanced < before.rung_balanced) reasons.push(`balanced rung accuracy ${before.rung_balanced} -> ${after.rung_balanced} (accuracy paradox)`);

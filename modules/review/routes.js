@@ -97,7 +97,7 @@ module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, no
         note: "Agreement between a person and the judge's verdict. Below about 0.8 on 20+ labels, the rules need tuning (tune-significance).",
         // The accuracy paradox guard (lib/metrics.js): agreement alone can't tell a judge that never says "doubtful" on a
         // mostly-credible stream from a good one; balanced accuracy, MCC and the majority baseline can.
-        honesty: labelled.length ? M.brief(M.fromAgreement(labelled, { predict: (r) => (["doubtful", "withdrawn"].includes(r.verdict) ? "not-credible" : "credible"), classes: ["credible", "not-credible"] })) : null } };
+        honesty: M.agreementBy(await db.all("SELECT verdict, label FROM review_docs WHERE label IS NOT NULL ORDER BY id DESC LIMIT 1000"), (r) => r.verdict) } };
   }));
 
   // Topic dossiers: a traced analysis of everything on one topic, with a blog draft, short posts and a video storyboard.

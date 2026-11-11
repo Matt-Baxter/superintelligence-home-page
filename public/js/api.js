@@ -147,13 +147,15 @@ function topbar(user) {
   const lo = $("#logout"); if (lo) lo.onclick = async () => { lo.disabled = true; try { await api("/api/logout", { method: "POST" }); location.href = "/?signin=1"; } catch (e) { lo.disabled = false; lo.textContent = "Retry sign out"; lo.title = e.message; } };
 
 }
-// The accuracy paradox guard's result (lib/metrics.js brief()), shown where judging is measured: the Review desk and
-// the research control room. Plain accuracy sits next to what a constant guess of the common class would score.
-function honestyBlock(h, { title = "Beyond plain agreement" } = {}) {
-  if (!h) return `<p class="small muted">No person labels yet. Agree or disagree with a few verdicts and this shows whether the judging beats always giving the common verdict.</p>`;
-  const pct = (x) => (x == null ? "–" : Math.round(x * 100) + "%"), status = h.paradox.ok ? "Holds" : "Doesn't hold yet";
+// Person labels against the judge's verdicts (lib/metrics.js agreementBy), shown where judging is measured: the Review
+// desk and the research control room. Plain agreement sits next to agreement per verdict, so a judge that is only
+// ever labelled on one verdict can't look good.
+function honestyBlock(h, { title = "Agreement by verdict" } = {}) {
+  if (!h) return `<p class="small muted">No person labels yet. Agree or disagree with a few verdicts of different kinds and this shows whether people agree with each kind, not only overall.</p>`;
+  const pct = (x) => (x == null ? "–" : Math.round(x * 100) + "%"), few = h.paradox.reasons.some((r) => r.code === "small-sample"), status = !h.paradox.ok ? "Doesn't hold yet" : few ? "Holds so far" : "Holds";
   const reasons = h.paradox.reasons.map((r) => `<li>${r.level === "fail" ? "<b>Fails:</b> " : "Note: "}${esc(r.msg)}</li>`).join("");
-  return `<div class="honesty"><h3>${esc(title)}</h3><div class="metrics"><div><span class="small muted">Agreement</span><b>${pct(h.accuracy)}</b><span class="small muted">95%: ${pct(h.accuracyCI?.low)} to ${pct(h.accuracyCI?.high)}</span></div><div><span class="small muted">Always "${esc(h.majority?.label || "–")}" would get</span><b>${pct(h.majority?.accuracy)}</b></div><div><span class="small muted">Balanced accuracy</span><b>${pct(h.balancedAccuracy)}</b><span class="small muted">mean over classes</span></div><div><span class="small muted">MCC</span><b>${h.mcc ?? "–"}</b><span class="small muted">0 = a constant guess</span></div></div><p class="small"><span class="tag ${h.paradox.ok ? "good" : "warn"}">${status}</span> ${h.n} labelled. Recognised: ${Object.entries(h.recall || {}).map(([k, v]) => `${esc(k)} ${pct(v)}`).join(", ")}.</p>${reasons ? `<ul class="small">${reasons}</ul>` : ""}</div>`;
+  const rows = Object.entries(h.groups || {}).map(([g, x]) => `<tr><td>${esc(g)}</td><td class="n">${x.agree} of ${x.n}</td><td class="n">${pct(x.rate)}</td><td class="n">${pct(x.ci.low)} to ${pct(x.ci.high)}</td></tr>`).join("");
+  return `<div class="honesty"><h3>${esc(title)}</h3><div class="metrics"><div><span class="small muted">Agreement</span><b>${pct(h.accuracy)}</b><span class="small muted">95%: ${pct(h.accuracyCI?.low)} to ${pct(h.accuracyCI?.high)}</span></div><div><span class="small muted">Mean over verdicts</span><b>${pct(h.balancedAccuracy)}</b><span class="small muted">each verdict counts once</span></div><div><span class="small muted">Labels on "${esc(h.majority?.label || "–")}"</span><b>${pct(h.majority?.accuracy)}</b><span class="small muted">the most labelled verdict</span></div></div><p class="small"><span class="tag ${h.paradox.ok && !few ? "good" : "warn"}">${status}</span> ${h.n} labelled${few ? ", too few to be sure" : ""}.</p>${rows ? `<div class="scroll" tabindex="0" role="region" aria-label="Agreement by verdict"><table class="t"><thead><tr><th>Verdict</th><th>Agreed</th><th>Rate</th><th>95% interval</th></tr></thead><tbody>${rows}</tbody></table></div>` : ""}${reasons ? `<ul class="small">${reasons}</ul>` : ""}</div>`;
 }
 function showErr(el, e) { el.textContent = e?.message || String(e); el.className = "err"; }
 function flash(el, msg) { el.textContent = msg; el.className = "ok"; setTimeout(() => { if (el.textContent === msg) el.textContent = ""; }, 2500); }

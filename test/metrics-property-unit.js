@@ -67,6 +67,20 @@ assert.ok(classify(["x", "y"], ["x", "z"], { labels: ["x", "y", "z"] }).classes.
 assert.match(summary(lazy), /majority "credible" 0\.9/); n++;
 const w = require("../lib/metrics").wilson(16, 16); assert.ok(w.low > 0.8 && w.low < 0.82 && w.high === 1, "16 of 16 right only shows accuracy above about 0.81"); n++;
 assert.ok(classify([...Array(8).fill("a"), ...Array(8).fill("b")], [...Array(8).fill("a"), ...Array(8).fill("b")]).paradox.reasons.some((r) => r.code === "small-sample"), "16 items warn as a small sample"); n++;
+// From the independent review (2026-11-11): a judge that trades a little common-class accuracy for the rare class is
+// better than a constant guess and must pass; a class the judge invents counts 0 in macro F1.
+const traded = classify(["a", "a", "a", "b"], ["a", "a", "c", "b"]);
+assert.equal(traded.mcc, 0.645); assert.ok(!traded.paradox.reasons.some((r) => r.code === "no-lift"), summary(traded)); n++;
+assert.equal(traded.macroF1, 0.6); n++;
+// Person labels by verdict: agreement alone can't pass when only one verdict was labelled.
+const { agreementBy } = require("../lib/metrics");
+const L = (v, l, k = 1) => Array.from({ length: k }, () => ({ verdict: v, label: l }));
+assert.equal(agreementBy([], (r) => r.verdict), null); n++;
+const one = agreementBy(L("solid", "agree", 30), (r) => r.verdict); assert.equal(one.accuracy, 1); assert.equal(one.paradox.ok, false); assert.equal(one.paradox.reasons[0].code, "one-class"); n++;
+const blind = agreementBy([...L("solid", "agree", 27), ...L("doubtful", "disagree", 3)], (r) => r.verdict);
+assert.equal(blind.accuracy, 0.9); assert.equal(blind.balancedAccuracy, 0.5); assert.ok(blind.paradox.reasons.some((r) => r.code === "blind-class") && !blind.paradox.ok, blind.summary); n++;
+const fine = agreementBy([...L("solid", "agree", 18), ...L("solid", "disagree", 2), ...L("doubtful", "agree", 9), ...L("doubtful", "disagree", 1), { verdict: "solid", label: null }], (r) => r.verdict);
+assert.equal(fine.n, 30); assert.equal(fine.groups.solid.rate, 0.9); assert.ok(fine.paradox.ok, fine.summary); n++;
 // The verification ratchet's held-out gate refuses a gain in accuracy that comes from drifting to the common rung.
 const { heldoutGate } = require("../scripts/verification-ratchet");
 const before = { objective: 2.5, rung_balanced: 0.8, rung_paradox_free: 1 };
@@ -74,4 +88,6 @@ assert.equal(heldoutGate(before, { objective: 2.6, rung_balanced: 0.7, rung_para
 assert.equal(heldoutGate(before, { objective: 2.6, rung_balanced: 0.85, rung_paradox_free: 0 }, true).accepted, false, "losing a rung entirely is refused"); n++;
 assert.equal(heldoutGate(before, { objective: 2.6, rung_balanced: 0.85, rung_paradox_free: 1 }, true).accepted, true, "a real improvement passes"); n++;
 assert.equal(heldoutGate(before, before, false).accepted, false, "no change, nothing to accept"); n++;
+assert.equal(heldoutGate({ objective: 1, rung_balanced: null }, { objective: 1, rung_balanced: 0.1 }, true).accepted, false, "an unmeasured held-out split is refused"); n++;
+assert.equal(heldoutGate({ objective: 1 }, { objective: 1 }, true).accepted, false, "missing metrics are refused"); n++;
 console.log(`Metrics properties: ${n} passed, 0 failed; 800 generated labelled sets.`);
