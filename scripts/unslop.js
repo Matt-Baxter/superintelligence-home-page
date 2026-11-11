@@ -41,7 +41,9 @@ const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y
 function tokenSets(css) {
   const grab = (block) => Object.fromEntries([...String(block || "").matchAll(/--([\w-]+)\s*:\s*(#[0-9a-f]{3,6})\b/gi)].map((m) => [m[1], m[2]]));
   const light = grab((css.match(/:root\s*\{([^}]*)\}/) || [])[1]), dark = grab((css.match(/prefers-color-scheme:\s*dark\)\s*\{\s*:root\s*\{([^}]*)\}/) || [])[1]);
-  return [["light", light], ["dark", { ...light, ...dark }]];
+  // Themes a reader or admin can switch to (modules/appearance): each :root[data-theme="x"] block, laid over light.
+  const themes = [...css.matchAll(/:root\[data-theme="([\w-]+)"\]\s*\{([^}]*)\}/g)].map((m) => [`theme ${m[1]}`, { ...light, ...grab(m[2]) }]);
+  return [["light", light], ["dark", { ...light, ...dark }], ...themes];
 }
 // Text pairs that must stay readable (4.5:1, WCAG AA for body text).
 const TEXT_PAIRS = [["fg", "bg"], ["fg", "surface"], ["muted", "bg"], ["muted", "surface"], ["warn", "warn-soft"], ["accent", "accent-soft"]];

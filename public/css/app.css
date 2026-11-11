@@ -486,3 +486,50 @@ h2.h3, .jr-card-title { font-size: 16px; margin: 0; }
 
 /* Phones: a tab row scrolls sideways in one line instead of wrapping into a list of words. */
 @media (max-width: 900px) { .tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; mask-image: linear-gradient(to right, #000 88%, transparent); } .tabs button { flex: none; white-space: nowrap; min-height: 44px; } }
+
+/* Appearance (extended version, modules/appearance): a theme, a feed layout, a headline face and a text size, set as
+   attributes on <html> by public/js/api.js from the site default and the reader's own choice. No attribute = the
+   look above, which follows the system light/dark setting. The accent stays ink in every theme (a colour accent is a
+   decision for both partners); themes change only the neutral surface and text tokens. The unslop check reads each
+   :root[data-theme] block and holds its text pairs to 4.5:1. */
+:root[data-theme="light"] {
+  --bg: #f4f4f4; --surface: #ffffff; --fg: #171717; --muted: #646464; --line: #d9d9d9; --line-strong: #a3a3a3;
+  --accent: #000000; --accent-soft: #ebebeb; --good: #000000; --good-soft: #e3e3e3; --warn: #3d3d3d; --warn-soft: #f0f0f0; --bad: #000000; --bad-soft: #ffffff; color-scheme: light; }
+:root[data-theme="dark"] {
+  --bg: #0e0e0e; --surface: #171717; --fg: #ededed; --muted: #a0a0a0; --line: #303030; --line-strong: #5c5c5c;
+  --accent: #ffffff; --accent-soft: #262626; --good: #ffffff; --good-soft: #2e2e2e; --warn: #cfcfcf; --warn-soft: #222222; --bad: #ffffff; --bad-soft: #171717; color-scheme: dark; }
+:root[data-theme="contrast"] {
+  --bg: #ffffff; --surface: #ffffff; --fg: #000000; --muted: #2b2b2b; --line: #000000; --line-strong: #000000;
+  --accent: #000000; --accent-soft: #e6e6e6; --good: #000000; --good-soft: #e6e6e6; --warn: #000000; --warn-soft: #f2f2f2; --bad: #000000; --bad-soft: #ffffff; color-scheme: light; }
+:root[data-theme="newsprint"] {
+  --bg: #f3efe6; --surface: #fbf9f4; --fg: #1c1a16; --muted: #59544b; --line: #ddd6c8; --line-strong: #a39b8b;
+  --accent: #000000; --accent-soft: #e9e3d6; --good: #000000; --good-soft: #e6e0d2; --warn: #3a362f; --warn-soft: #efe9dd; --bad: #000000; --bad-soft: #fbf9f4; color-scheme: light; }
+:root[data-theme="contrast"] .story, :root[data-theme="contrast"] .panel { border-width: 2px; }
+:root[data-theme="contrast"] a { text-decoration-thickness: 2px; }
+/* Headline face: serif (default) or the interface sans. */
+:root[data-type="sans"] .story .title, :root[data-type="sans"] .jr-story .t, :root[data-type="sans"] h1 { font-family: var(--font); font-weight: 600; letter-spacing: 0; }
+/* Text size: large raises the base size; every size in rem/em follows, pixel sizes stay. */
+:root[data-size="large"] body { font-size: 18px; } :root[data-size="large"] .story .title { font-size: 23px; } :root[data-size="large"] .story .sum, :root[data-size="large"] .story .meta { font-size: 15px; }
+/* Feed layouts. list = the default rows above. */
+:root[data-layout="compact"] .feed .story { padding: 8px 10px; gap: 10px; grid-template-columns: 40px minmax(0, 1fr); }
+:root[data-layout="compact"] .feed .story .sum { display: none; }
+:root[data-layout="compact"] .feed .story .title { font-size: 17px; }
+:root[data-layout="compact"] .feed .story .body { gap: 2px; }
+:root[data-layout="cards"] .feed, :root[data-layout="magazine"] .feed { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+:root[data-layout="cards"] .feed .story, :root[data-layout="magazine"] .feed .story { border-width: 1px; border-radius: var(--radius); align-content: start; }
+:root[data-layout="magazine"] .feed .story:first-child { grid-column: 1 / -1; padding: 20px 18px; }
+:root[data-layout="magazine"] .feed .story:first-child .title { font-size: 30px; line-height: 1.15; }
+:root[data-layout="magazine"] .feed .story:first-child .sum { font-size: 16px; color: var(--fg); max-width: 70ch; }
+@media (max-width: 640px) { :root[data-layout="cards"] .feed, :root[data-layout="magazine"] .feed { grid-template-columns: minmax(0, 1fr); } :root[data-layout="magazine"] .feed .story:first-child .title { font-size: 24px; } }
+/* The reader's Display menu in the top bar. */
+.display-menu > div { display: grid; gap: 10px; min-width: 260px; padding: 12px; }
+.display-menu label { display: grid; gap: 4px; font-size: 14px; }
+.display-menu .small { margin: 0; }
+.look-concepts { border: 0; padding: 0; margin: 0 0 12px; display: grid; gap: 8px; } .look-concepts legend { font-weight: 600; margin-bottom: 6px; }
+.check { display: flex; gap: 8px; align-items: flex-start; } .check input { width: auto; margin-top: 5px; flex: none; }
+#lookForm { display: grid; gap: 12px; } #lookForm > label:not(.check) { display: grid; gap: 4px; }
+/* Editorial CMS: generate form, delivery addresses, and the embeddable journal card (?embed=1). */
+.generate-form { display: grid; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); } .generate-form label { display: grid; gap: 4px; }
+.delivery-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+body.embed main { padding: 0; max-width: none; } body.embed #journal { margin: 0; }
+body.embed #journal { max-width: none; }

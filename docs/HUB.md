@@ -23,10 +23,11 @@ One page that points at every skill, spec, check, measure and pitfall in the rep
 | [002-research-layer](../specs/002-research-layer/spec.md): Research layer (extended version) | Proposed, not approved. | REQ-021..REQ-034 (14) | [spec](../specs/002-research-layer/spec.md) | no tasks.md |
 | [003-judge-fidelity](../specs/003-judge-fidelity/spec.md): Judge fidelity and stability (extended version) | Proposed, not approved. | REQ-032..REQ-040 (9) | [spec](../specs/003-judge-fidelity/spec.md) · [plan](../specs/003-judge-fidelity/plan.md) · [tasks](../specs/003-judge-fidelity/tasks.md) · [research](../specs/003-judge-fidelity/research.md) | 6 / 24 (agent 2/9, rules 2/15, people 2/0) |
 | [004-parity](../specs/004-parity/spec.md): Feature parity with AI-news and research apps (extended version) | Proposed, not approved. | REQ-041..REQ-052 (12) | [spec](../specs/004-parity/spec.md) · [plan](../specs/004-parity/plan.md) · [tasks](../specs/004-parity/tasks.md) | 25 / 1 (agent 18/1, rules 3/0, people 4/0) |
+| [005-appearance-and-publishing](../specs/005-appearance-and-publishing/spec.md): Appearance, CMS delivery and content generation (extended version) | Proposed, not approved. | REQ-053..REQ-055 (3) | [spec](../specs/005-appearance-and-publishing/spec.md) · [tasks](../specs/005-appearance-and-publishing/tasks.md) | 4 / 7 (agent 2/7, people 2/0) |
 
 Tags: `[agent]` any agent, unattended; `[rules]` changes scoring, only when a person asks; `[people]` the humans. Requirement traceability: [SPEC_TRACE.md](SPEC_TRACE.md); measured status: [SPEC_STATUS.md](SPEC_STATUS.md); this build's tables and routes: [INTERFACES.md](INTERFACES.md).
 
-**Open tasks (31)**
+**Open tasks (35)**
 
 - [003 T000](../specs/003-judge-fidelity/tasks.md) `[people]` REQ-032: Approve, change or drop REQ-032..REQ-040 (this spec).
 - [003 T007](../specs/003-judge-fidelity/tasks.md) `[people]` REQ-038: Install Lean 4 (elan, from https://lean-lang.org) on a machine you control, run `cd proofs && lake build`, and record which theorems check; agents…
@@ -59,6 +60,10 @@ Tags: `[agent]` any agent, unattended; `[rules]` changes scoring, only when a pe
 - [004 T062](../specs/004-parity/tasks.md) `[agent]` REQ-052: Optional agree/disagree mark in its own table, shown apart from votes, never read by rank (lib/db.js, server.js, public/story.html,…
 - [004 T070](../specs/004-parity/tasks.md) `[agent]` REQ-051: Public append-only change log of rule and ontology versions and moderation actions without admin names, pruned to a year (lib/audit.js, lib/db.js, a…
 - [004 T090](../specs/004-parity/tasks.md) `[agent]`: When a gap closes, update our column in docs/market/apps.json and docs/PARITY.md; the count of missing and partial dimensions only goes down (SC-406)
+- [005 T500](../specs/005-appearance-and-publishing/tasks.md) `[people]` REQ-053: Approve, change or drop REQ-053..REQ-055, and confirm that a reader's look kept in their browser is a preference, not personal data under REQ-012.
+- [005 T501](../specs/005-appearance-and-publishing/tasks.md) `[people]` REQ-053: Decide whether any theme may have a colour accent (today every theme keeps the ink accent).
+- [005 T550](../specs/005-appearance-and-publishing/tasks.md) `[agent]` REQ-053: Keep a signed-in reader's look with their account so it follows them between devices (needs T500's answer on REQ-012)
+- [005 T551](../specs/005-appearance-and-publishing/tasks.md) `[agent]` REQ-054: Atom output to match REQ-045 if both partners prefer one feed format
 
 ## Skills
 
@@ -137,7 +142,7 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | Bundle builds | json-render bundle builds |
 | No secrets | No secrets in tracked files |
 | No Twitter/X sources | No Twitter/X sources |
-| No Twitter/X in catalog / Content desk / Editorial publishing / Content management / Research foundations / Vocabulary contracts / Entity resolution / Entity grouping / Entity resolution/grouping / Product planning / Term properties / Graph logic / Pipeline quality / Story paging / Pipeline quality / paging / UI dates / Analysis rules | No Twitter/X in the source catalog either; analysis rules behave |
+| No Twitter/X in catalog / Content desk / Editorial publishing / Appearance and publishing / Content management / Research foundations / Vocabulary contracts / Entity resolution / Entity grouping / Entity resolution/grouping / Product planning / Term properties / Graph logic / Pipeline quality / Story paging / Pipeline quality / paging / UI dates / Analysis rules | No Twitter/X in the source catalog either; analysis rules behave |
 | Modules | kernel boots, boundaries hold, blocks, views and judges are valid |
 | Codebase map | every API call a page makes has a route |
 | Unslop | UI patterns that read as AI-generated (agent-kit/skills/ui-design) |
@@ -166,9 +171,11 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | `npm run start` | Superintelligence Homepage: multi-source AI-progress feed with accounts, curation, and a weekly brief (the agent log is AGENT_LOG.md in the repo,… |
 | `npm run test:demo` | Run against a disposable npm run demo server. |
 | `npm run demo` | Disposable, loopback-only demonstration. |
+| `npm run predev:sample` | `npm run build --silent` |
 | `npm run dev:sample` | Starts the server on a throwaway SQLite database preloaded with SYNTHETIC sample feeds (test/fixtures). |
 | `npm run pretest` | Builds the extended version's browser files (all module blocks and pages) before the browser test, which runs the extended site. |
 | `npm run test` | Two-user browser test against test/serve-fixtures.js (synthetic data). |
+| `npm run predev:sample:pg` | `npm run build --silent` |
 | `npm run dev:sample:pg` | Same as serve-fixtures.js but against a Postgres database (DATABASE_URL must point at a throwaway test database). |
 | `npm run preflight` | Cheap checks before you push (~10 s): syntax, JSON, bundle build, secrets, no-Twitter rule, a contract reminder, and an API smoke test on synthetic… |
 | `npm run prepare` | Installs a git pre-push hook that runs `npm run preflight`. |
@@ -408,4 +415,4 @@ From [handoff/STATE.md](../handoff/STATE.md) (2026-11-07), "Waiting for the huma
 5. **Merge `fix/sync-with-main`** when ready, then the feature branches above; the GitHub Actions paper watch only runs from the default branch.
 6. **Agent log**: write entries in your own words for anything the agents got wrong (REQ-020). Agents never write them.
 
-Open `[people]` tasks: [003 T000](../specs/003-judge-fidelity/tasks.md), [003 T007](../specs/003-judge-fidelity/tasks.md), [004 T000](../specs/004-parity/tasks.md), [004 T001](../specs/004-parity/tasks.md), [004 T002](../specs/004-parity/tasks.md), [004 T080](../specs/004-parity/tasks.md).
+Open `[people]` tasks: [003 T000](../specs/003-judge-fidelity/tasks.md), [003 T007](../specs/003-judge-fidelity/tasks.md), [004 T000](../specs/004-parity/tasks.md), [004 T001](../specs/004-parity/tasks.md), [004 T002](../specs/004-parity/tasks.md), [004 T080](../specs/004-parity/tasks.md), [005 T500](../specs/005-appearance-and-publishing/tasks.md), [005 T501](../specs/005-appearance-and-publishing/tasks.md).

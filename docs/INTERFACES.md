@@ -2,13 +2,15 @@
 
 SEIS 606 Project 2 · Superintelligence Homepage · John Affolter and Matthew Baxter
 
-**Version 2.1 · November 9, 2026.**
+**Version 2.2 · November 11, 2026.**
 
 The data model, API, auth and rules of **John's build** (the code in this repo). Under the [constitution](../.specify/memory/constitution.md), each bake-off build may differ in database, framework and internal structure, so this is not the shared contract. What both builds must meet is the [shared spec](../specs/001-superintelligence-homepage/spec.md) and the bake-off rules in [CONTRACT.md](../CONTRACT.md); [SPEC_TRACE.md](SPEC_TRACE.md) shows how this build meets each requirement.
 
 Log every change to a table, route or shape here, so whoever merges the builds (or reads this API) can follow it. Rows up to 0.8 were drafted when we planned a split; their approval boxes are history, not a requirement.
 
 ## Change log
+
+- **2.2, November 11, 2026 (proposed 005/REQ-053, REQ-054, REQ-055; extended only).** New module `appearance` (not in the spec or research profiles): table `appearance_settings(key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at, updated_by)`, one row `site` holding JSON `{concept, theme, layout, type, size, allowReader}`. Public `GET /api/appearance` returns `{site, updatedAt, options:{themes, layouts, types, sizes, concepts}}` (cached 60 s); admin `PUT /api/admin/appearance` takes any of those fields, refuses unknown values with 400 and writes an `appearance.default` audit row. Page `/m/appearance` (admin). `GET /api/me` adds `appearance: true|false` (module loaded). A reader's own look is browser storage only (`si.look.mine`), never sent to the server. Editorial: public `GET /api/editorial/feed.xml` (RSS 2.0) and `GET /api/editorial/feed.json` (JSON Feed 1.1, `content_text` is the published body), newest 50 published posts, cached 300 s; `/m/journal?slug=…&embed=1` renders a bare card for iframes. Admin `GET /api/admin/editorial/generate` lists `{kinds, topics}`; `POST /api/admin/editorial/generate {kind: weekly-digest|topic-roundup|story-explainer, topic?, story?}` writes a draft through the same quota, revision and audit path as a new post (revision action `generate`) and returns `{id, revision, kind, sources}`; `GET /api/admin/editorial/posts/:id/channels` returns `{blog:{title,text}, newsletter:{subject,preheader,text}, social:[{network,label,limit,length,text}], note}` for the saved draft. Nothing is posted anywhere.
 
 - **2.1, November 9, 2026 (002/REQ-024, 003/REQ-038).** The worker accepts `recheck <id>` for one historical done Lean job. It compares the referenced job-owned source bytes with the curated statement and checks the curated source with Lean. A matching proof gets fresh evidence in a separate attempt directory. Missing, changed or ambiguous source evidence moves the job to needs-agent and detaches active evidence references. Previous artifacts stay on disk. The update checks that the row still matches the snapshot read before Lean ran.
 

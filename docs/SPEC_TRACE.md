@@ -68,6 +68,18 @@ From the public-features survey in `docs/PARITY.md` (data `docs/market/apps.json
 | REQ-051 | Public change log of rules and moderation | proposed, not built (today: admin-only `GET /api/admin/audit`) | none yet (task T070) |
 | REQ-052 | Vote cap, new-account weight, separate agree mark | proposed, not built | none yet (tasks T060, T061, T062) |
 
+<!-- trace-spec: 005 -->
+
+## Appearance, CMS delivery and content generation (proposed, `specs/005-appearance-and-publishing/spec.md`; extended version; needs both partners)
+
+Built on `feature/themes-layouts-cms-2026-11-11` at John's request; not in scope until both partners approve (task T500).
+
+| REQ | What | Where in the code | Checked by |
+| --- | --- | --- | --- |
+| REQ-053 | Design concepts, themes, feed layouts; admin default, reader switch | `modules/appearance/` (catalog, settings, routes, `/m/appearance`), `resolveLook`/`appearanceMenu` in `public/js/api.js`, `[data-theme\|layout\|type\|size]` in `public/css/app.css`, theme contrast in `scripts/unslop.js` | unit: publishing (REQ-053 checks); e2e: "REQ-053" in "Appearance and publishing" |
+| REQ-054 | RSS, JSON Feed, per-post JSON and embed card for published posts | `modules/editorial/routes.js` (`/api/editorial/feed.xml`, `/api/editorial/feed.json`), `rss`/`jsonFeed` in `modules/editorial/content.js`, `?embed=1` in `modules/editorial/pages/journal.html` | unit: publishing (REQ-054 checks); e2e: "REQ-054" |
+| REQ-055 | Rule-written drafts and channel versions, no posting, no Twitter/X | `weeklyDigest`, `topicRoundup`, `storyExplainer`, `channels` in `modules/editorial/content.js`; `/api/admin/editorial/generate`, `/api/admin/editorial/posts/:id/channels`; Editorial CMS page | unit: publishing (REQ-055 checks); e2e: "REQ-055" |
+
 ## Acceptance suite
 
 `test/spec-acceptance.js` runs every user-story scenario, edge case and success criterion that can be automated, against the **spec version**, with labelled synthetic sources (`test/fixtures/spec`: 9 sources across 7 kinds). Each check names its REQ. The run fails if a testable requirement (REQ-001 to REQ-018, REQ-020) has no passing check (SC-008). Preflight runs the API checks; `npm run test:spec` adds the browser checks at laptop and phone widths. REQ-019 (live two weeks before the presentation) is checked by people.

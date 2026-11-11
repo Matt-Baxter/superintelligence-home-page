@@ -27,7 +27,7 @@ async function apiCall(path, opts) {
   let data = {}; try { data = await res.json(); } catch (e) {}
   if (res.status === 401 && !opts.allow401) { location.href = "/?next=" + encodeURIComponent(location.pathname + location.search + location.hash); throw new Error("Please sign in."); }
   if (!res.ok) throw new Error(data.error || `Request failed (${res.status}).`);
-  if (path === "/api/me") window.SI_PUBLIC_NAV = data.publicNav || [];
+  if (path === "/api/me") { window.SI_PUBLIC_NAV = data.publicNav || []; window.SI_APPEARANCE = Boolean(data.appearance); }
   return data;
 }
 
@@ -42,6 +42,50 @@ async function requireUser() {
   const need = PAGE_FEATURE[location.pathname.replace(/\.html$/, "")];
   if (need && !(user.features || []).includes(need)) { const m = document.querySelector("main"); if (m) m.innerHTML = `<div class="panel"><h1>Not in this version</h1><p class="muted">This page is an extra beyond the shared spec. It runs when the site uses the extended profile (SITE_PROFILE=extended).</p><p><a href="/">Back to the feed</a></p></div>`; return new Promise(() => {}); } // stop here: the page stays on the notice
   return user;
+}
+// ---------- Appearance (extended version, modules/appearance; REQ-053 proposed) ----------
+// The look is four settings set as attributes on <html> (app.css styles them): theme, layout (the feed), type
+// (headline face) and size. The site default comes from GET /api/appearance; a reader's own choice is kept in this
+// browser only. The last look is cached so the next page starts in it before any request returns.
+const LOOK_KEYS = ["theme", "layout", "type", "size"], LOOK_PLAIN = { theme: "auto", layout: "list", type: "serif", size: "normal" };
+const lookStore = { get(k) { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch (e) { return null; } }, set(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
+function resolveLook(site, mine, options) {
+  const look = { ...LOOK_PLAIN, ...(site || {}) };
+  if (!site || site.allowReader === false || !mine) return look;
+  const preset = mine.concept && (options?.concepts || []).find((c) => c.id === mine.concept);
+  if (preset) { look.concept = preset.id; for (const k of LOOK_KEYS) look[k] = preset[k]; }
+  for (const k of LOOK_KEYS) if (mine[k]) look[k] = mine[k];
+  const named = (options?.concepts || []).find((c) => c.id === look.concept);
+  if (!named || LOOK_KEYS.some((k) => named[k] !== look[k])) look.concept = "custom";
+  return look;
+}
+function applyLook(look) {
+  const root = document.documentElement;
+  for (const k of LOOK_KEYS) { const v = look?.[k]; if (!v || v === LOOK_PLAIN[k]) root.removeAttribute("data-" + k); else root.setAttribute("data-" + k, v); }
+}
+if (typeof document !== "undefined") applyLook(lookStore.get("si.look.effective"));
+async function appearanceMenu(bar) {
+  if (!window.SI_APPEARANCE) { lookStore.set("si.look.effective", null); applyLook(null); return; }
+  let data = lookStore.get("si.look.site");
+  const fresh = data && Date.now() - (data.at || 0) < 5 * 60e3;
+  if (!fresh) { try { data = { ...(await apiCall("/api/appearance", { allow401: true })), at: Date.now() }; lookStore.set("si.look.site", data); } catch (e) { if (!data) return; } }
+  const mine = lookStore.get("si.look.mine"), look = resolveLook(data.site, mine, data.options);
+  if (!window.SI_LOOK_PREVIEW) applyLook(look); // the Appearance page previews its own unsaved choice
+  lookStore.set("si.look.effective", look);
+  window.SI_LOOK = { data, look };
+  if (!data.site?.allowReader) return;
+  const o = data.options, sel = (id, label, list, value) => `<label>${label}<select data-look="${id}">${list.map((x) => `<option value="${esc(x.id)}"${x.id === value ? " selected" : ""}>${esc(x.label)}</option>`).join("")}</select></label>`;
+  const concepts = [...o.concepts, ...(look.concept === "custom" ? [{ id: "custom", label: "Custom" }] : [])];
+  const menu = document.createElement("details"); menu.className = "navmenu display-menu";
+  menu.innerHTML = `<summary>Display</summary><div><form>${sel("concept", "Concept", concepts, look.concept)}${sel("theme", "Theme", o.themes, look.theme)}${sel("layout", "Feed layout", o.layouts, look.layout)}${sel("type", "Headlines", o.types, look.type)}${sel("size", "Text size", o.sizes, look.size)}</form><p class="small muted" id="lookAbout">${esc((o.concepts.find((c) => c.id === look.concept) || {}).about || "Your own mix of settings.")} Saved in this browser only.</p><button class="btn" type="button" data-look-reset${mine ? "" : " hidden"}>Use the site's look</button></div>`;
+  menu.querySelector("form").addEventListener("change", (e) => {
+    const k = e.target.dataset.look; if (!k) return;
+    const now = lookStore.get("si.look.mine") || {};
+    const next = k === "concept" ? { concept: e.target.value } : { ...now, [k]: e.target.value };
+    lookStore.set("si.look.mine", next); menu.remove(); appearanceMenu(bar).then(() => bar.querySelector(".display-menu")?.setAttribute("open", ""));
+  });
+  menu.querySelector("[data-look-reset]").onclick = () => { lookStore.set("si.look.mine", null); menu.remove(); appearanceMenu(bar); };
+  bar.querySelector(".who")?.prepend(menu);
 }
 function workspaceNavigation(user, current) {
   const nav = user?.nav || [], available = [...(user ? NAV.filter(([, , f]) => !f || user.features?.includes(f)).map(([href,label])=>({href,label})) : [{href:"/",label:"Feed"},{href:"/welcome",label:"About"}]), ...nav, ...(!user ? (window.SI_PUBLIC_NAV || []) : [])];
@@ -90,6 +134,7 @@ function topbar(user) {
   bar.addEventListener("keydown", (e) => { if (e.key === "Escape") { if (bar.hasAttribute("data-nav-open")) { setOpen(false); toggle.focus(); } for (const d of bar.querySelectorAll("details[open]")) { d.open = false; d.querySelector("summary").focus(); } } });
   document.addEventListener("pointerdown", (e) => { if (!bar.contains(e.target)) { setOpen(false); for (const d of bar.querySelectorAll("details[open]")) d.open = false; } });
   workspaceNavigation(user, here);
+  appearanceMenu(bar);
   if ((window.SI_PUBLIC_NAV || []).some(n=>n.href==="/m/glossary") && !document.querySelector('script[data-term-loader]')) { const script=document.createElement("script"); script.src="/js/terms.js"; script.dataset.termLoader=""; document.head.append(script); }
   const lo = $("#logout"); if (lo) lo.onclick = async () => { lo.disabled = true; try { await api("/api/logout", { method: "POST" }); location.href = "/?signin=1"; } catch (e) { lo.disabled = false; lo.textContent = "Retry sign out"; lo.title = e.message; } };
 

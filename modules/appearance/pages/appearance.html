@@ -1,0 +1,58 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Appearance · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css"></head>
+<body><main>
+<div class="pagehead"><div><h1>How the site looks</h1><p class="muted">Pick the site's default concept, theme and feed layout. Readers start from it and can switch for themselves in the Display menu, unless you turn that off.</p></div></div>
+<p id="lookStatus" class="small muted" role="status">Loading the current look…</p>
+<div class="content-layout">
+<section class="panel"><h2>Site default</h2>
+<form id="lookForm">
+<fieldset class="look-concepts"><legend>Concept</legend><div id="conceptList"></div></fieldset>
+<label>Theme<select id="lookTheme" data-field="theme"></select></label>
+<label>Feed layout<select id="lookLayout" data-field="layout"></select></label>
+<label>Headlines<select id="lookType" data-field="type"></select></label>
+<label>Text size<select id="lookSize" data-field="size"></select></label>
+<label class="check"><input type="checkbox" id="allowReader"> Readers may switch the look for themselves</label>
+<p class="small muted">The accent stays ink in every theme. A colour accent is a decision for both partners, not a setting.</p>
+<div class="actions"><button class="btn primary" type="submit" id="saveLook">Save as site default</button><button class="btn" type="button" id="resetLook">Back to the saved default</button></div>
+</form></section>
+<section class="panel content-detail"><h2>Preview</h2><p class="small muted" id="previewNote">This page shows the look you pick before you save it. The three newest stories:</p><ul class="feed" id="previewFeed"><li class="muted">Loading stories…</li></ul></section>
+</div>
+</main><script>window.SI_LOOK_PREVIEW = true;</script><script src="/js/api.js"></script><script>
+let catalog = null, saved = null, current = null;
+const FIELDS = ["theme", "layout", "type", "size"];
+function fill(sel, list, value) { sel.innerHTML = list.map((x) => `<option value="${esc(x.id)}"${x.id === value ? " selected" : ""}>${esc(x.label)}</option>`).join(""); }
+function render() {
+  const named = catalog.concepts.find((c) => c.id === current.concept);
+  $("#conceptList").innerHTML = [...catalog.concepts, ...(named ? [] : [{ id: "custom", label: "Custom", about: "Your own mix of the settings below." }])].map((c) => `<label class="check"><input type="radio" name="concept" value="${esc(c.id)}"${c.id === current.concept ? " checked" : ""}${c.id === "custom" ? " disabled" : ""}> <span><b>${esc(c.label)}</b> <span class="small muted">${esc(c.about)}</span></span></label>`).join("");
+  fill($("#lookTheme"), catalog.themes, current.theme); fill($("#lookLayout"), catalog.layouts, current.layout); fill($("#lookType"), catalog.types, current.type); fill($("#lookSize"), catalog.sizes, current.size);
+  $("#allowReader").checked = current.allowReader !== false;
+  applyLook(current);
+  const changed = JSON.stringify(current) !== JSON.stringify(saved);
+  $("#previewNote").textContent = changed ? "Previewing an unsaved look on this page. The three newest stories:" : "This is the saved site default. The three newest stories:";
+}
+function recompute() {
+  const named = catalog.concepts.find((c) => FIELDS.every((f) => c[f] === current[f]));
+  current.concept = named ? named.id : "custom";
+}
+$("#conceptList").addEventListener("change", (e) => { const c = catalog.concepts.find((x) => x.id === e.target.value); if (!c) return; current = { ...current, concept: c.id, theme: c.theme, layout: c.layout, type: c.type, size: c.size }; render(); });
+for (const sel of document.querySelectorAll("[data-field]")) sel.addEventListener("change", () => { current[sel.dataset.field] = sel.value; recompute(); render(); });
+$("#allowReader").addEventListener("change", (e) => { current.allowReader = e.target.checked; render(); });
+$("#resetLook").onclick = () => { current = { ...saved }; render(); $("#lookStatus").textContent = "Back to the saved default."; };
+$("#lookForm").onsubmit = async (e) => {
+  e.preventDefault(); const b = $("#saveLook"); b.disabled = true;
+  try {
+    const r = await api("/api/admin/appearance", { method: "PUT", body: { concept: current.concept === "custom" ? undefined : current.concept, ...Object.fromEntries(FIELDS.map((f) => [f, current[f]])), allowReader: current.allowReader !== false } });
+    saved = { ...r.site }; current = { ...r.site };
+    lookStore.set("si.look.site", null); lookStore.set("si.look.effective", null);
+    render(); flash($("#lookStatus"), "Saved. New visitors and readers who haven't chosen their own look now see it.");
+  } catch (err) { showErr($("#lookStatus"), err); } finally { b.disabled = false; }
+};
+requireUser().then(async (u) => {
+  if (!u.admin) { document.querySelector("main").innerHTML = '<h1>Admin access required</h1><p><a href="/">Return to the feed</a></p>'; return; }
+  const d = await api("/api/appearance"); catalog = d.options; saved = { ...d.site }; current = { ...d.site };
+  $("#lookStatus").textContent = d.updatedAt ? `Saved default last changed ${d.updatedAt.replace("T", " ").slice(0, 16)} UTC.` : "No default saved yet: the site uses the Reader concept.";
+  render();
+  const { stories } = await api("/api/stories?sort=new");
+  $("#previewFeed").replaceChildren(...(stories || []).slice(0, 3).map((s) => storyCard(s)));
+  if (!(stories || []).length) $("#previewFeed").innerHTML = '<li class="muted">No stories yet. Add a source in Admin to see the preview.</li>';
+}).catch((e) => showErr($("#lookStatus"), e));
+</script></body></html>

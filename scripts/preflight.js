@@ -46,7 +46,7 @@ const src = fs.readFileSync(path.join(root, "lib/sources.json"), "utf8");
 // 5b. No Twitter/X in the source catalog either; analysis rules behave
 const cat = fs.readFileSync(path.join(root, "lib/source-catalog.json"), "utf8");
 /(twitter\.com|x\.com\/|nitter)/i.test(cat) ? fail("No Twitter/X in catalog", "lib/source-catalog.json") : ok("No Twitter/X in catalog");
-try { ok("Content desk", sh("node --no-warnings test/content-desk-unit.js").trim()); ok("Editorial publishing", sh("node --no-warnings test/editorial-unit.js").trim()); } catch (e) { fail("Content management", String(e.stderr || e.message).slice(0,600)); }
+try { ok("Content desk", sh("node --no-warnings test/content-desk-unit.js").trim()); ok("Editorial publishing", sh("node --no-warnings test/editorial-unit.js").trim()); ok("Appearance and publishing", sh("node --no-warnings test/publishing-unit.js").trim()); } catch (e) { fail("Content management", String(e.stderr || e.message).slice(0,600)); }
 try { ok("Research foundations", sh("node test/research-foundations-unit.js").trim()); } catch (e) { fail("Research foundations", String(e.stderr || e.message).slice(0,500)); }
 try {
   const results=["test/identity-contract-unit.js","test/tagger-contract-unit.js","test/vocabulary-unit.js"].map(file=>sh(`node ${file}`).trim().split("\n").pop());

@@ -11,3 +11,9 @@ Original plain-text commentary, separate from harvested publisher records. Enabl
 Public routes: `GET /api/editorial/posts`, `GET /api/editorial/posts/:slug`. Admin routes: list/detail/create/update under `/api/admin/editorial/posts`; `POST /api/admin/editorial/posts/:id/restore`. Publication requires an original-content confirmation. Text is escaped with DOM textContent and never treated as HTML or an external tool instruction.
 
 Serves existing extended REQ-031/032 authoring/publication behavior alongside shared REQ-007/018. Shared specifications and deployment approval gates are unchanged. This module adds no source-feed ingestion and makes no claim of reviewed scientific evidence.
+
+## Delivery, generation and channels (proposed REQ-054, REQ-055)
+
+- **Delivery**: `GET /api/editorial/feed.xml` (RSS 2.0) and `GET /api/editorial/feed.json` (JSON Feed 1.1) list the newest 50 published posts; `/m/journal?slug=…&embed=1` is a bare card for another site's iframe. Drafts and revisions are never delivered.
+- **Generate a draft** (Editorial CMS, left column): weekly digest, topic round-up or story explainer, written by rules in `content.js` from the stored stories, their scores and their explanations. No model calls, no authors named, no claim put in anyone's mouth. The draft's first revision is recorded as `generate`; a person edits and publishes it.
+- **Channel versions**: blog Markdown, newsletter, Bluesky, Threads, Mastodon and LinkedIn text of the saved draft, each within its network's limit. Nothing is posted; there is no Twitter/X version.
