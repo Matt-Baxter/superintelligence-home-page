@@ -2,19 +2,25 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Story · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css"></head>
 <body>
-<main>
-  <p class="small"><a href="/" id="backToResults">← Back to results</a></p>
-  <ol class="feed" id="card"></ol><section class="panel" id="storyTrace" aria-label="Trace this story"></section>
-  <div class="cols side">
-    <section class="panel">
-      <h2>Significance and evidence</h2>
-      <div id="analysis"></div>
-      <h2 style="margin-top:8px">Why it's tagged this way</h2>
-      <div id="why"></div>
-      <h2 style="margin-top:8px">Covered by</h2>
-      <div class="tablewrap"><table><thead><tr><th>Source</th><th>Kind</th><th>Their headline</th></tr></thead><tbody id="covered"></tbody></table></div>
+<main class="story-page">
+  <p class="story-return"><a href="/" id="backToResults">← Back to results</a></p>
+  <ol class="feed" id="card"></ol><section class="panel" id="storyTrace" hidden aria-label="Trace this story"></section>
+  <div class="story-layout" id="storyLayout" hidden>
+    <section class="panel story-evidence" aria-label="Story evidence">
+      <section aria-labelledby="scoreHeading">
+        <h2 id="scoreHeading">Significance and evidence</h2>
+        <div id="analysis"></div>
+      </section>
+      <section aria-labelledby="topicHeading">
+        <h2 id="topicHeading">Why it's tagged this way</h2>
+        <div id="why"></div>
+      </section>
+      <section aria-labelledby="coverageHeading">
+        <h2 id="coverageHeading">Covered by</h2>
+        <div class="tablewrap"><table><thead><tr><th>Source</th><th>Kind</th><th>Their headline</th></tr></thead><tbody id="covered"></tbody></table></div>
+      </section>
     </section>
-    <div style="display:grid;gap:22px">
+    <aside class="story-tools" id="storyTools" aria-label="Reading tools" hidden>
       <form class="panel" id="noteForm" hidden>
         <h2>Notes</h2>
         <div id="notes" style="display:grid;gap:10px"></div>
@@ -28,7 +34,7 @@
         <form class="row" id="newList"><input id="newListTitle" placeholder="New list, e.g. Interpretability reading group" aria-label="New list title"><button class="btn" type="submit">Create and add</button></form>
         <p class="small muted" id="inLists"></p>
       </section>
-    </div>
+    </aside>
   </div>
 </main>
 <script src="/js/api.js"></script>
@@ -44,7 +50,7 @@ async function load() {
   const an = s.analysis || {};
   setPageContext(s.title);
   const nav = window.SI_USER?.nav || [], has = path => nav.some(n=>n.href===path);
-  $("#storyTrace").innerHTML = `<h2>Follow the evidence</h2><p class="small muted">Story #${s.id} · source coverage, topic matches and the stored score all refer to this record.</p><div class="trace-links"><a href="#covered">Source coverage</a><a href="#analysis">Score explanation</a>${(window.SI_PUBLIC_NAV||[]).some(n=>n.href==='/m/glossary')?'<a href="/m/glossary">Terms and symbols</a>':''}${has("/m/content") ? `<a href="/m/content?id=${s.id}">Manage this record</a>`:""}</div><table class="why topic-trace" aria-label="Where each topic leads"><tbody>${s.topics.filter(t=>!t.via).map(t=>`<tr><td>${esc(t.label)}</td><td><a href="/?topic=${encodeURIComponent(t.id)}">Topic feed</a>${has("/m/map") ? ` · <a href="/m/dossier#${encodeURIComponent(t.id)}">Evidence dossier</a>`:""}${has("/m/knowledge") ? ` · <a href="/m/knowledge?qid=${encodeURIComponent('topic:'+t.id)}">Graph node</a>`:""}</td></tr>`).join("")}</tbody></table>`;
+  $("#storyTrace").innerHTML = `<h2>Follow the evidence</h2><p class="small muted">Story #${s.id} · source coverage, topic matches and the stored score all refer to this record.</p><div class="trace-links"><a href="#coverageHeading">Source coverage</a><a href="#scoreHeading">Score explanation</a><a href="#topicHeading">Topic matches</a>${(window.SI_PUBLIC_NAV||[]).some(n=>n.href==='/m/glossary')?'<a href="/m/glossary">Terms and symbols</a>':''}${has("/m/content") ? `<a href="/m/content?id=${s.id}">Manage this record</a>`:""}</div><table class="why topic-trace" aria-label="Where each topic leads"><tbody>${s.topics.filter(t=>!t.via).map(t=>`<tr><td>${esc(t.label)}</td><td><a href="/?topic=${encodeURIComponent(t.id)}">Topic feed</a>${has("/m/map") ? ` · <a href="/m/dossier#${encodeURIComponent(t.id)}">Evidence dossier</a>`:""}${has("/m/knowledge") ? ` · <a href="/m/knowledge?qid=${encodeURIComponent('topic:'+t.id)}">Graph node</a>`:""}</td></tr>`).join("")}</tbody></table>`;
   $("#analysis").innerHTML = `<p><span class="sig ${s.significance >= 60 ? "hi" : s.significance >= 35 ? "mid" : ""}" style="font-size:15px;height:26px;min-width:36px">${s.significance}</span> out of 100 ·
       <b>${esc(an.type?.label || "Update")}</b> · ${esc(an.evidence?.label || "")}</p>
     ${an.scope ? `<p class="small"><b>Why it's on a superintelligence feed:</b> ${esc(an.scope.reason)}</p>` : ""}
@@ -54,15 +60,17 @@ async function load() {
     ${(an.people || []).length ? `<p class="small">People: ${an.people.map((p) => `<a class="tag" href="/?person=${esc(p.id)}">${esc(p.label)}</a>`).join(" ")}</p>` : ""}
     <p class="small muted">The score is rule-based and explainable: stronger evidence, more linked sources, reported benchmark results and frontier claims raise it. <a href="/m/capabilities">Capability tracker</a></p>`;
   // The table above already lists every factor with its points; the feed shows the same factors as meters.
-  $("#covered").innerHTML = s.sources.map((x) => `<tr><td>${esc(x.name)}</td><td>${esc(KIND[x.kind] || x.kind)}</td><td><a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.title)}</a>${x.rigor && x.rigor.verdict ? `<br><span class="small muted">Research write-up: ${esc(x.rigor.verdict)}, credibility ${esc(x.rigor.credibility || "?")}/100, source grade ${esc(x.rigor.grade || "?")}</span>` : ""}</td></tr>`).join("");
+  $("#covered").innerHTML = s.sources.map((x) => `<tr><td>${esc(x.name)}</td><td>${esc(KIND[x.kind] || x.kind)}</td><td><a class="source-link" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.title)}</a>${x.rigor && x.rigor.verdict ? `<br><span class="small muted">Research write-up: ${esc(x.rigor.verdict)}, credibility ${esc(x.rigor.credibility || "?")}/100, source grade ${esc(x.rigor.grade || "?")}</span>` : ""}</td></tr>`).join("");
   $("#notes").innerHTML = d.notes.length ? d.notes.map((n) => `<div class="note"><div class="who">${esc(n.name)} · ${ago(n.created_at)} · ${n.private ? "only you" : "shared"}${n.mine ? ` · <button class="linkish" data-del="${n.id}" type="button">Delete</button>` : ""}</div>${esc(n.text)}</div>`).join("") : `<p class="muted small">No notes yet.</p>`;
   $$("[data-del]").forEach((b) => b.onclick = async () => { await api(`/api/notes/${b.dataset.del}`, { method: "DELETE" }); load(); });
   $("#myLists").innerHTML = d.lists.length ? d.lists.map((l) => `<label style="display:flex;flex-direction:row;gap:8px;align-items:center;color:var(--fg)"><input type="checkbox" data-list="${l.id}" ${l.has ? "checked" : ""} style="width:auto"> ${esc(l.title)}</label>`).join("") : `<p class="muted small">You don't have any lists yet.</p>`;
   $$("[data-list]").forEach((c) => c.onchange = () => api(`/api/lists/${c.dataset.list}/items/${id}`, { method: "PUT", body: c.checked ? { note: "" } : { remove: true } }));
+  $("#storyTrace").hidden = false;
+  $("#storyLayout").hidden = false;
   $("#inLists").textContent = d.inPublicLists.length ? "Also in: " + d.inPublicLists.map((l) => `${l.title} (${l.owner})`).join(", ") : "";
 }
 $("#noteForm").onsubmit = async (e) => { e.preventDefault(); try { await api(`/api/stories/${id}/notes`, { body: { text: $("#noteText").value, private: !$("#shareNote").checked } }); $("#noteText").value = ""; load(); } catch (err) { showErr($("#noteErr"), err); } };
 $("#newList").onsubmit = async (e) => { e.preventDefault(); const t = $("#newListTitle").value.trim(); if (!t) return; const r = await api("/api/lists", { body: { title: t } }); await api(`/api/lists/${r.id}/items/${id}`, { method: "PUT", body: { note: "" } }); $("#newListTitle").value = ""; load(); };
-api("/api/me", { allow401: true }).then(({user: u}) => { topbar(u); const f = u?.features || []; $("#noteForm").hidden = !f.includes("notes"); $("#listsPanel").hidden = !f.includes("lists"); return load(); }).catch((e) => { $("#card").innerHTML = `<li class="empty">${esc(e.message)}</li>`; });
+api("/api/me", { allow401: true }).then(({user: u}) => { topbar(u); const f = u?.features || []; $("#storyTools").hidden = !f.includes("notes") && !f.includes("lists"); $("#noteForm").hidden = !f.includes("notes"); $("#listsPanel").hidden = !f.includes("lists"); return load(); }).catch((e) => { $("#card").innerHTML = `<li class="empty">${esc(e.message)}</li>`; });
 </script>
 </body></html>

@@ -158,7 +158,7 @@ function storyCard(s, opts = {}) {
   li.addEventListener("keydown", (e) => { if (e.key === "Escape" && !panel.hidden) { e.preventDefault(); e.stopPropagation(); panel.hidden = true; toggle.setAttribute("aria-expanded", "false"); toggle.focus(); } });
   if (opts.detail) {
     const title = li.querySelector(".title"), heading = document.createElement("h1"); heading.className = "story-heading"; heading.textContent = s.title; title.replaceWith(heading);
-    const source = li.querySelector(".acts a"); source.textContent = "Open original source"; source.href = s.url; source.target = "_blank"; source.rel = "noopener noreferrer";
+    const source = li.querySelector(".acts a"); source.classList.add("source-link"); source.textContent = "Open original source"; source.href = s.url; source.target = "_blank"; source.rel = "noopener noreferrer";
   } else {
     const from = opts.returnTo || (location.pathname === "/" ? location.pathname + location.search + `#story-${s.id}` : "");
     if (from) li.querySelector(".acts a").href += "&from=" + encodeURIComponent(localReturnPath(from));
