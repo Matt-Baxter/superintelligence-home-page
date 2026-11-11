@@ -2,8 +2,8 @@
   "about": "What a reader or an admin can switch between (REQ-053, proposed). A concept is a named preset of the four settings; choosing one sets them all, and any setting can then be changed on its own. Themes change only the neutral surface and text tokens in public/css/app.css; the accent stays ink (a colour accent needs both partners). Add an option here and its CSS in app.css; test/appearance-unit.js checks that every option has its CSS and every concept names real options.",
   "themes": [
     { "id": "auto", "label": "Follow my system", "about": "Light or dark, whichever the device is set to." },
-    { "id": "light", "label": "Light", "about": "Off-white page, white cards, black ink." },
-    { "id": "dark", "label": "Dark", "about": "Near-black page, light text." },
+    { "id": "light", "label": "Light", "about": "White page, hairline rules, black ink." },
+    { "id": "dark", "label": "Dark", "about": "Dark grey page (#121212), light text." },
     { "id": "contrast", "label": "High contrast", "about": "Pure white and black, heavier rules and underlines." },
     { "id": "newsprint", "label": "Newsprint", "about": "Warm paper tones for long reading; ink stays black." }
   ],
@@ -19,7 +19,7 @@
   ],
   "sizes": [
     { "id": "normal", "label": "Normal text", "about": "16 px body text." },
-    { "id": "large", "label": "Large text", "about": "18 px body text and larger titles." }
+    { "id": "large", "label": "Large text", "about": "18 px body text; every size steps up." }
   ],
   "concepts": [
     { "id": "reader", "label": "Reader", "about": "The default: a quiet list that follows the device's light or dark setting.", "theme": "auto", "layout": "list", "type": "serif", "size": "normal" },

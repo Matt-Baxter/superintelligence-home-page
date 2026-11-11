@@ -4,7 +4,7 @@
 <link rel="alternate" type="application/rss+xml" title="Learn explainers" href="/api/learn/feed.xml">
 <style>
   .ltabs { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
-  .ltabs a { padding: 8px 12px; text-decoration: none; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; font-size: 15px; }
+  .ltabs a { padding: 8px 12px; text-decoration: none; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; font-size: var(--fs-base, 16px); }
   .ltabs a[aria-current="page"] { color: var(--fg); border-bottom-color: var(--accent); font-weight: 600; }
   .graphwrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
   .graphwrap svg { display: block; min-width: 860px; width: 100%; height: auto; }
@@ -18,29 +18,29 @@
   .gedge.contrasts { stroke-dasharray: 4 4; }
   .gedge.hot { stroke: var(--accent); stroke-width: 2; }
   .gcol { fill: var(--muted); font: 600 12px var(--font); }
-  .lvl { font-size: 12px; color: var(--muted); }
+  .lvl { font-size: var(--fs-xs, 12px); color: var(--muted); }
   .concept { display: grid; gap: 14px; } .concept > *, .quiz > * { min-width: 0; } .samples { flex: 0 0 auto !important; display: inline-flex; gap: 10px; align-items: center; }
-  .concept .plain { font-size: 18px; line-height: 1.5; }
+  .concept .plain { font-size: var(--fs-md, 18px); line-height: 1.5; }
   .concept blockquote { margin: 0; padding: 10px 14px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 8px 8px 0; }
-  .crumbs { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  .crumbs { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: var(--fs-sm, 13px); }
   .crumbs a { text-decoration: none; } .crumbs span.sep { color: var(--muted); }
   .quiz { display: grid; gap: 6px; } .quiz button { text-align: left; justify-content: flex-start; }
   .quiz button.right { border-color: var(--good); background: var(--good-soft); } .quiz button.wrong { border-color: var(--bad); background: var(--bad-soft); }
-  pre.lean { margin: 0; padding: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); overflow-x: auto; font: 13px/1.5 var(--mono); white-space: pre; }
+  pre.lean { margin: 0; padding: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); overflow-x: auto; font: var(--fs-sm, 13px)/1.5 var(--mono); white-space: pre; }
   .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; counter-reset: st; }
   .steps > li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
-  .steps > li::before { counter-increment: st; content: counter(st); display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 14px; }
+  .steps > li::before { counter-increment: st; content: counter(st); display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: var(--fs-sm, 13px); }
   .steps .io { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
   @media (max-width: 700px) { .steps .io { grid-template-columns: 1fr; } }
-  .steps .box { background: var(--bg); border-radius: var(--radius); padding: 8px 10px; font-size: 13px; overflow-wrap: anywhere; }
-  .steps .box b { display: block; font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+  .steps .box { background: var(--bg); border-radius: var(--radius); padding: 8px 10px; font-size: var(--fs-sm, 13px); overflow-wrap: anywhere; }
+  .steps .box b { display: block; font-size: var(--fs-xs, 12px); color: var(--muted); margin-bottom: 2px; }
   .jobrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
-  .st { font-size: 12px; padding: 2px 8px; border-radius: var(--radius); background: var(--bg); border: 1px solid var(--line); white-space: nowrap; }
+  .st { font-size: var(--fs-xs, 12px); padding: 2px 8px; border-radius: var(--radius); background: var(--bg); border: 1px solid var(--line); white-space: nowrap; }
   .st.done, .st.published { background: var(--fg); color: var(--surface);  }
   .st.failed { background: var(--surface); color: var(--fg); border: 1px solid var(--fg);  }
   .st.needs-agent, .st.running { background: var(--warn-soft); color: var(--fg); border: 1px dashed var(--line-strong);  }
-  .out { white-space: pre-wrap; font-size: 14px; background: var(--bg); border-radius: var(--radius); padding: 10px 12px; max-height: 420px; overflow: auto; }
-  .md h1 { font-size: 24px; } .md h2 { font-size: 18px; margin-top: 14px; } .md p { margin: 8px 0; }
+  .out { white-space: pre-wrap; font-size: var(--fs-sm, 13px); background: var(--bg); border-radius: var(--radius); padding: 10px 12px; max-height: 420px; overflow: auto; }
+  .md h1 { font-size: var(--fs-lg, 22px); } .md h2 { font-size: var(--fs-md, 18px); margin-top: 14px; } .md p { margin: 8px 0; }
 </style></head>
 <body>
 <main>
@@ -104,7 +104,7 @@ async function showConcept(id,request=++learnRequest) {
   $("#view").innerHTML = `<div class="cols side">
     <section class="panel concept enter">
       <div class="crumbs"><a href="#/">Concept map</a><span class="sep">/</span>${pre.map((p) => `<a href="#/c/${p.id}">${esc(p.name)}</a><span class="sep">→</span>`).join("")}<b>${esc(c.name)}</b></div>
-      <div><h2 style="font-size:24px">${esc(c.name)}</h2><span class="lvl">${LEVEL[c.level]} · ${esc(TOPIC_LABEL[c.topic] || c.topic)}</span></div>
+      <div><h2 style="font-size: var(--fs-lg, 22px)">${esc(c.name)}</h2><span class="lvl">${LEVEL[c.level]} · ${esc(TOPIC_LABEL[c.topic] || c.topic)}</span></div>
       <p class="plain">${esc(c.plain)}</p>
       <blockquote><b>Analogy.</b> ${esc(c.analogy)}</blockquote>
       <details><summary>A little deeper</summary><p style="margin-top:8px">${esc(c.deeper)}</p></details>

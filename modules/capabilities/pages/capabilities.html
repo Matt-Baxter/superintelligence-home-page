@@ -28,7 +28,7 @@ async function load() {
   $("#areas").innerHTML = d.areas.map((a) => {
     const diff = a.now - a.prev, cls = diff > 0 ? "up" : diff < 0 ? "down" : "";
     return `<a class="cap" href="/?topic=${a.id}&sort=signal"><span class="small">${esc(a.label)}</span><b>${a.now}</b>
-      <span class="d ${cls}">${diff > 0 ? "▲ " + diff : diff < 0 ? "▼ " + -diff : "no change"} vs previous ${days} d${a.top ? ` · top <span class="sig ${a.top >= 60 ? "hi" : a.top >= 35 ? "mid" : ""}">${a.top}</span>` : ""}</span></a>`;
+      <span class="d ${cls}">${diff > 0 ? "▲ " + diff : diff < 0 ? "▼ " + -diff : "no change"} vs previous ${days} d${a.top ? ` · top <span class="sig ${a.top >= 60 ? "hi" : a.top >= 35 ? "mid" : ""}" style="--sig:${Math.max(0, Math.min(100, Number(a.top) || 0))}">${a.top}</span>` : ""}</span></a>`;
   }).join("");
   $("#signals").innerHTML = ""; d.signals.forEach((s) => $("#signals").append(storyCard(s, { compact: true })));
   if (!d.signals.length) $("#signals").innerHTML = `<li class="empty">No stories in this window yet.</li>`;

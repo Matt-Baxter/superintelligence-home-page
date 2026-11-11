@@ -82,30 +82,30 @@ ${desc ? `<meta name="description" content="${esc(desc)}">` : ""}<link rel="styl
 <link rel="alternate" type="application/rss+xml" title="Superintelligence research write-ups" href="${esc(base)}/research/feed.xml">
 <style>
   .rx { max-width: 760px; margin: 0 auto; display: grid; gap: 18px; }
-  .rx .flag { justify-self: start; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; padding: 2px 8px; border: 1px solid var(--fg); border-radius: var(--radius); }
+  .rx .flag { justify-self: start; font-size: var(--fs-xs, 12px); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; padding: 2px 8px; border: 1px solid var(--fg); border-radius: var(--radius); }
   .rx h1 { font-family: var(--serif); font-weight: 500; font-size: clamp(26px, 5vw, 36px); line-height: 1.15; margin: 0; overflow-wrap: anywhere; }
-  .rx .lede { font-size: 17px; line-height: 1.6; margin: 0; }
-  .rx h2 { font-size: 15px; font-weight: 600; margin: 0 0 8px; }
+  .rx .lede { font-size: var(--fs-md, 18px); line-height: 1.6; margin: 0; }
+  .rx h2 { font-size: var(--fs-base, 16px); font-weight: 600; margin: 0 0 8px; }
   .rx section { border-top: 1px solid var(--line); padding-top: 14px; }
-  .rx ul, .rx ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 15px; line-height: 1.5; }
-  .rx .lv { font-size: 12px; color: var(--muted); white-space: nowrap; }
-  .rx table.card { width: 100%; border-collapse: collapse; font-size: 14px; } .rx table.card th { text-align: left; font-weight: 500; color: var(--muted); font-size: 12px; padding: 0 8px 6px 0; } .rx table.card th.n { text-align: right; }
+  .rx ul, .rx ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: var(--fs-base, 16px); line-height: 1.5; }
+  .rx .lv { font-size: var(--fs-xs, 12px); color: var(--muted); white-space: nowrap; }
+  .rx table.card { width: 100%; border-collapse: collapse; font-size: var(--fs-sm, 13px); } .rx table.card th { text-align: left; font-weight: 500; color: var(--muted); font-size: var(--fs-xs, 12px); padding: 0 8px 6px 0; } .rx table.card th.n { text-align: right; }
   .rx table.card td { padding: 7px 8px 7px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
   .rx table.card td.n { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; } .rx table.card td.mk { width: 1.5em; color: var(--muted); }
   .rx table.card tr.met td.mk { color: var(--fg); font-weight: 600; } .rx table.sc tr:not(.met):not(.tot) td:nth-child(2) { color: var(--muted); }
-  .rx table.card .ev { display: block; font-size: 12px; color: var(--muted); overflow-wrap: anywhere; } .rx table.card tr.tot td { font-weight: 600; border-bottom: 0; }
-  .rx dl.sum { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 12px 0 0; font-size: 14px; } .rx dl.sum dt { color: var(--muted); } .rx dl.sum dd { margin: 0; font-variant-numeric: tabular-nums; }
+  .rx table.card .ev { display: block; font-size: var(--fs-xs, 12px); color: var(--muted); overflow-wrap: anywhere; } .rx table.card tr.tot td { font-weight: 600; border-bottom: 0; }
+  .rx dl.sum { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 12px 0 0; font-size: var(--fs-sm, 13px); } .rx dl.sum dt { color: var(--muted); } .rx dl.sum dd { margin: 0; font-variant-numeric: tabular-nums; }
   .rx .duo { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; } .rx .duo p { margin: 8px 0 0; }
   .rx .ladder { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--fg); border-radius: var(--radius); overflow: hidden; }
-  .rx .ladder span { font-size: 12px; text-align: center; padding: 6px 4px; border-left: 1px solid var(--line); color: var(--muted); } .rx .ladder span:first-child { border-left: 0; }
+  .rx .ladder span { font-size: var(--fs-xs, 12px); text-align: center; padding: 6px 4px; border-left: 1px solid var(--line); color: var(--muted); } .rx .ladder span:first-child { border-left: 0; }
   .rx .ladder span.on { background: var(--fg); color: var(--surface); font-weight: 600; }
   .rx .scroll { overflow-x: auto; }
-  .rx .chips { display: flex; flex-wrap: wrap; gap: 6px; } .rx .chips span { font-size: 13px; padding: 2px 8px; border: 1px solid var(--line); border-radius: var(--radius); }
-  .rx blockquote { margin: 0; padding-left: 12px; border-left: 2px solid var(--line); color: var(--muted); font-size: 14px; }
-  .rx .md p { margin: 0 0 10px; line-height: 1.6; } .rx .md h2 { margin-top: 16px; } .rx .md code { font-size: 12px; }
+  .rx .chips { display: flex; flex-wrap: wrap; gap: 6px; } .rx .chips span { font-size: var(--fs-sm, 13px); padding: 2px 8px; border: 1px solid var(--line); border-radius: var(--radius); }
+  .rx blockquote { margin: 0; padding-left: 12px; border-left: 2px solid var(--line); color: var(--muted); font-size: var(--fs-sm, 13px); }
+  .rx .md p { margin: 0 0 10px; line-height: 1.6; } .rx .md h2 { margin-top: 16px; } .rx .md code { font-size: var(--fs-xs, 12px); }
   .rx .list { display: grid; gap: 0; } .rx .list a.row { display: grid; gap: 2px; padding: 12px 0; border-bottom: 1px solid var(--line); text-decoration: none; color: inherit; }
-  .rx .list a.row:hover b { text-decoration: underline; } .rx .list .row span { font-size: 13px; color: var(--muted); }
-  .rx footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 12px; }
+  .rx .list a.row:hover b { text-decoration: underline; } .rx .list .row span { font-size: var(--fs-sm, 13px); color: var(--muted); }
+  .rx footer { font-size: var(--fs-sm, 13px); color: var(--muted); border-top: 1px solid var(--line); padding-top: 12px; }
 </style></head><body><main class="rx">
 <span class="flag">Research preview</span>
 ${body}

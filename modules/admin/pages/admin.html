@@ -4,16 +4,16 @@
 <style>
   .kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
   .kpi { border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; background: var(--surface); }
-  .kpi b { display: block; font-size: 22px; } .kpi span { font-size: 13px; color: var(--muted); }
+  .kpi b { display: block; font-size: var(--fs-lg, 22px); } .kpi span { font-size: var(--fs-sm, 13px); color: var(--muted); }
   .kpi.zero { background: transparent; } .kpi.zero b { color: var(--muted); font-weight: 500; }
   #attention .chips { margin-bottom: 8px; }
   .tabs { margin-bottom: 14px; } @media (min-width: 901px) { .tabs { flex-wrap: wrap; } }
   .tabpanel { display: grid; gap: 14px; }
-  td .btn { padding: 3px 8px; font-size: 13px; }
+  td .btn { padding: 3px 8px; font-size: var(--fs-sm, 13px); }
   td.wrap { max-width: 340px; overflow-wrap: anywhere; }
   .preview li { margin: 4px 0; } .preview .small { color: var(--muted); }
-  textarea.opml { width: 100%; min-height: 120px; font-family: ui-monospace, monospace; font-size: 12px; }
-  .catgroup h3 { margin: 10px 0 4px; font-size: 15px; }
+  textarea.opml { width: 100%; min-height: 120px; font-family: ui-monospace, monospace; font-size: var(--fs-xs, 12px); }
+  .catgroup h3 { margin: 10px 0 4px; font-size: var(--fs-base, 16px); }
   .catgroup label { display: flex; gap: 8px; align-items: baseline; font-weight: normal; margin: 3px 0; }
   .catgroup label.added { color: var(--muted); }
   .tablewrap { overflow-x: auto; }

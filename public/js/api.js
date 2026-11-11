@@ -68,7 +68,7 @@ function applyLook(look) {
 function themeColor() {
   if (typeof document === "undefined" || !document.head) return;
   let m = document.querySelector('meta[name="theme-color"]'); if (!m) { m = document.createElement("meta"); m.name = "theme-color"; document.head.append(m); }
-  m.content = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || "#f4f4f4";
+  const css = getComputedStyle(document.documentElement); m.content = (css.getPropertyValue("--paper") || css.getPropertyValue("--bg")).trim() || "#ffffff";
 }
 if (typeof window !== "undefined" && window.matchMedia) window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", themeColor);
 if (typeof document !== "undefined") applyLook(lookStore.get("si.look.effective"));
@@ -191,15 +191,17 @@ function storyCard(s, opts = {}) {
   const tags = s.topics.filter((t) => !t.via).slice(0, 4).map((t) => `<a class="tag" href="/?topic=${t.id}" title="${t.matched.length ? "Matched: " + esc(t.matched.join(", ")) : ""}">${esc(t.label)}</a>`).join("");
   const orgs = s.orgs.slice(0, 2).map((o) => `<a class="tag org" href="/?org=${o.id}">${esc(o.label)}</a>`).join("");
   const kinds = [...new Set(s.sources.map((x) => KIND[x.kind] || x.kind))];
+  // The source kind rides with the source name, so the meta row stays on one line (it truncates, full text in its title).
+  const srcLine = [s.sources[0]?.name || "", kinds.join(" · ")].filter(Boolean).join(" · ");
   const an = s.analysis || {}, sig = s.significance || 0, evidenceId = `evidence-${s.id}-${++cardSequence}`;
   // A research write-up among the sources carries its judgement (the "rigor-badges" feature): verdict, credibility, grade.
   const rg = (s.sources.find((x) => x.rigor && x.rigor.verdict) || {}).rigor;
   const rigorBadge = rg ? `<a class="rigor${rg.verdict === "doubtful" ? " low" : ""}" href="${esc((s.sources.find((x) => x.rigor === rg) || {}).url || "#")}" target="_blank" rel="noopener noreferrer" title="Research write-up: ${esc(rg.verdict)}, credibility ${esc(rg.credibility ?? "?")}/100, source grade ${esc(rg.grade || "?")}${rg.panel && rg.panel !== "none" ? `, model panel ${esc(rg.panel)}` : ""}">${esc(rg.verdict)} · ${esc(rg.credibility ?? "?")}${rg.grade ? ` · ${esc(rg.grade)}` : ""}</a>` : "";
-  const sigBadge = `<button type="button" class="sig evidence-toggle ${sig >= 60 ? "hi" : sig >= 35 ? "mid" : ""}" aria-expanded="false" aria-controls="${evidenceId}" aria-label="Explain significance: ${sig} out of 100" title="Significance ${sig} out of 100: select to see why">${sig}</button>`;
+  const sigBadge = `<button type="button" class="sig evidence-toggle ${sig >= 60 ? "hi" : sig >= 35 ? "mid" : ""}" style="--sig:${Math.max(0, Math.min(100, Number(sig) || 0))}" aria-expanded="false" aria-controls="${evidenceId}" aria-label="Explain significance: ${sig} out of 100" title="Significance ${sig} out of 100: select to see why">${sig}</button>`;
   const bench = (an.benchmarks || []).slice(0, 3).map((b) => `<a class="tag bench" href="/?benchmark=${esc(b.id)}" title="Benchmark${b.score ? `: reported ${esc(b.score.raw)}` : ""}">${esc(b.label)}${b.score ? ` <b>${esc(fmtScore(b.score))}</b>` : ""}</a>`).join("");
   li.innerHTML = `<button class="vote ${s.voted ? "on" : ""}" type="button" aria-pressed="${s.voted}" aria-label="Upvote"><span aria-hidden="true">▲</span><b>${s.votes}</b></button>
     <div class="body"><a class="title" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.title)}</a>
-    <div class="meta">${sigBadge}${rigorBadge}${an.type ? `<span class="utype">${esc(an.type.label)}</span>` : ""}<span>${esc(s.sources[0]?.name || "")}${s.nsources > 1 ? ` <span class="multi">+ ${s.nsources - 1} more source${s.nsources > 2 ? "s" : ""}</span>` : ""}</span><span>${kinds.map(esc).join(" · ")}</span>${storyDate(s)}</div>
+    <div class="meta">${sigBadge}${rigorBadge}${an.type ? `<span class="utype">${esc(an.type.label)}</span>` : ""}<span class="src" title="${esc(srcLine)}">${esc(srcLine)}</span>${s.nsources > 1 ? `<span class="multi">+ ${s.nsources - 1}<span class="more-label"> more source${s.nsources > 2 ? "s" : ""}</span></span>` : ""}${storyDate(s)}</div>
     <section class="evidence-panel" id="${evidenceId}" aria-label="Significance explanation" hidden></section>
     ${s.summary && !opts.compact ? `<p class="sum">${esc(s.summary.slice(0, 260))}${s.summary.length > 260 ? "…" : ""}</p>` : ""}
     ${opts.listNote ? `<p class="listnote">“${esc(opts.listNote)}”</p>` : ""}
@@ -211,6 +213,8 @@ function storyCard(s, opts = {}) {
   li.addEventListener("keydown", (e) => { if (e.key === "Escape" && !panel.hidden) { e.preventDefault(); e.stopPropagation(); panel.hidden = true; toggle.setAttribute("aria-expanded", "false"); toggle.focus(); } });
   if (opts.detail) {
     const title = li.querySelector(".title"), heading = document.createElement("h1"); heading.className = "story-heading"; heading.textContent = s.title; title.replaceWith(heading);
+    // The story page explains the score in full below, so the card does not repeat it.
+    toggle.remove(); panel.remove();
     const source = li.querySelector(".acts a"); source.textContent = "Open original source"; source.href = s.url; source.target = "_blank"; source.rel = "noopener noreferrer";
   } else {
     const from = opts.returnTo || (location.pathname === "/" ? location.pathname + location.search + `#story-${s.id}` : "");

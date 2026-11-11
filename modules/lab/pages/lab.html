@@ -5,23 +5,23 @@
   .exlist { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
   .excard { display: grid; gap: 8px; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); text-decoration: none; color: inherit; }
   .excard:hover { border-color: var(--accent); }
-  .excard h3 { margin: 0; font-size: 16px; }
-  .vd { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: var(--radius); justify-self: start; }
+  .excard h3 { margin: 0; font-size: var(--fs-base, 16px); }
+  .vd { font-size: var(--fs-xs, 12px); font-weight: 600; padding: 2px 8px; border-radius: var(--radius); justify-self: start; }
   .vd.yes { background: var(--fg); color: var(--surface); } .vd.no { background: var(--warn-soft); color: var(--fg); border: 1px dashed var(--line-strong); }
   .chain { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; counter-reset: c; }
   @media (max-width: 860px) { .chain { grid-template-columns: 1fr; } }
   .step { padding: 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); display: grid; gap: 8px; align-content: start; min-width: 0; }
-  .step h3 { margin: 0; font-size: 15px; } .step .k { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
-  .mt { width: 100%; font-size: 14px; border-collapse: collapse; } .mt td { padding: 4px 0; border-bottom: 1px solid var(--line); } .mt td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  .step h3 { margin: 0; font-size: var(--fs-base, 16px); } .step .k { font-size: var(--fs-xs, 12px); color: var(--muted); }
+  .mt { width: 100%; font-size: var(--fs-sm, 13px); border-collapse: collapse; } .mt td { padding: 4px 0; border-bottom: 1px solid var(--line); } .mt td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
   .mt .up { color: var(--good); } .mt .down { color: var(--bad); }
   svg.chart { width: 100%; height: auto; display: block; } svg.chart text { fill: var(--muted); font: 11px var(--font); }
   svg.chart .base { fill: none; stroke: var(--muted); stroke-width: 2; stroke-dasharray: 5 4; } svg.chart .var { fill: none; stroke: var(--accent); stroke-width: 2.2; } svg.chart .axis { stroke: var(--line); }
-  .params { display: grid; gap: 10px; } .params label { display: grid; grid-template-columns: minmax(0, 1fr) 64px; gap: 4px 10px; align-items: center; font-size: 13px; }
+  .params { display: grid; gap: 10px; } .params label { display: grid; grid-template-columns: minmax(0, 1fr) 64px; gap: 4px 10px; align-items: center; font-size: var(--fs-sm, 13px); }
   .params input[type=range] { grid-column: 1 / -1; width: 100%; } .params output { text-align: right; font-variant-numeric: tabular-nums; }
-  pre.code { margin: 0; padding: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); overflow: auto; font: 12px/1.5 var(--mono); max-height: 320px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  pre.code { margin: 0; padding: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); overflow: auto; font: var(--fs-xs, 12px)/1.5 var(--mono); max-height: 320px; white-space: pre-wrap; overflow-wrap: anywhere; }
   #view .panel, #view .cols > * { min-width: 0; } .step p, .mt td { overflow-wrap: anywhere; }
   .ask { display: flex; gap: 8px; } .ask input { flex: 1; }
-  .why li { font-size: 13px; color: var(--muted); }
+  .why li { font-size: var(--fs-sm, 13px); color: var(--muted); }
 </style></head>
 <body>
 <main>
@@ -72,7 +72,7 @@ async function detail(id) {
   const d = await api(`/api/lab/examples/${encodeURIComponent(id)}`);
   const sc = d.scorecard?.totals || [];
   $("#view").innerHTML = `<p style="margin-top:20px"><a href="#/">All examples</a></p>
-    <section class="panel enter"><span class="small muted">${esc(conceptName(d.concept))} · ${d.topics.map((t) => esc(conceptName(String(t).replace(/^topic:/, "")))).join(" · ")}</span><h2 style="font-size:22px">${esc(d.title)}</h2>
+    <section class="panel enter"><span class="small muted">${esc(conceptName(d.concept))} · ${d.topics.map((t) => esc(conceptName(String(t).replace(/^topic:/, "")))).join(" · ")}</span><h2 style="font-size: var(--fs-lg, 22px)">${esc(d.title)}</h2>
     <div class="chain">
       <div class="step"><span class="k">1 · The idea, in our words</span><p style="margin:0">${esc(d.idea)}</p>${d.source ? `<p class="small muted" style="margin:0">From the paper <a href="${esc(d.source.url)}" rel="noopener">${esc(d.source.title)}</a> (found by the ${esc(d.source.via)}). Toy scale: this tests the idea's logic, not the paper's numbers.</p>` : ""}</div>
       <div class="step"><span class="k">2 · Our reproduction</span><p style="margin:0" class="small">${esc(d.expect)}</p><p class="small muted" style="margin:0">Runner <code>${esc(d.runner.id)}</code>: ${esc(d.runner.about)}. Settings: ${esc(fmtParams(d.baseline.params))}</p><p class="small" style="margin:0">${esc(d.baseline.notes[0] || "")}</p></div>
