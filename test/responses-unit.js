@@ -107,7 +107,9 @@ const V = require("../modules/responses/video"), W = require("../modules/respons
   const q = Object.fromEntries(Object.entries(QA.CHECKS).map(([id, fn]) => [id, fn(fake, os.tmpdir())]));
   ok(!q.speakable.ok && !q.situation.ok && q.sync.skip && q.edges.skip, "QA flags brackets in spoken lines and a situation that disagrees with its analysis, and skips video checks when there's no video");
   const ledger = require("../modules/responses/learnings.json").learnings;
-  const missingGuard = ledger.filter((l) => { const [kind, name] = [l.guard.split(":")[0], l.guard.slice(l.guard.indexOf(":") + 1)]; return kind === "qa" ? !QA.CHECKS[name] : kind === "unit" ? !(NAMES.includes(name) || name === "every learning has a guard that exists") : true; });
+  // Guards may live in the other unit checks of this feature (the graph flywheel's recall check, the data layer's).
+  const OTHER_TESTS = ["graph-unit.js", "data-unit.js"].map((f) => { try { return fs.readFileSync(path.join(__dirname, f), "utf8"); } catch { return ""; } }).join("\n");
+  const missingGuard = ledger.filter((l) => { const [kind, name] = [l.guard.split(":")[0], l.guard.slice(l.guard.indexOf(":") + 1)]; return kind === "qa" ? !QA.CHECKS[name] : kind === "unit" ? !(NAMES.includes(name) || name === "every learning has a guard that exists" || OTHER_TESTS.includes(name)) : true; });
   ok(!missingGuard.length && ledger.every((l) => l.symptom && l.cause && l.fix), `every learning has a guard that exists (${ledger.length} learnings${missingGuard.length ? `; missing: ${missingGuard.map((l) => `${l.id} ${l.guard}`).join(", ")}` : ""})`, "every learning has a guard that exists");
 
   console.log("REQ-059: feature flag in the CMS meta layer");

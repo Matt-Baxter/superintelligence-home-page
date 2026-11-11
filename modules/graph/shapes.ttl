@@ -1,0 +1,39 @@
+# SHACL shapes for the app graph (REQ-065, proposed). Checked by modules/graph/shacl.js (SHACL core: targetClass,
+# property paths including inverse paths, minCount, maxCount, datatype, class, in, pattern). Each shape is a
+# convention we said we'd keep; a violation means "not built the way we said", reported with its message.
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix si: <https://superintelligence-homepage.example/ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+si:ModuleShape a sh:NodeShape ; sh:targetClass si:Module ;
+  sh:property [ sh:path rdfs:label ; sh:minCount 1 ; sh:maxCount 1 ; sh:pattern "^[a-z][a-z0-9-]*$" ; sh:message "A module id is lower-case words joined by hyphens (docs/NAMING.md)." ] ;
+  sh:property [ sh:path si:requires ; sh:class si:Module ; sh:message "A module can only require another module." ] .
+
+si:RequirementShape a sh:NodeShape ; sh:targetClass si:Requirement ;
+  sh:property [ sh:path rdfs:label ; sh:minCount 1 ; sh:pattern "^REQ-[0-9]{3}$" ; sh:message "A requirement is named REQ-NNN." ] ;
+  sh:property [ sh:path si:level ; sh:minCount 1 ; sh:in ( "MUST" "SHOULD" "MAY" "MUST NOT" ) ; sh:message "A requirement states its level." ] ;
+  sh:property [ sh:path si:traced ; sh:minCount 1 ; sh:in ( true ) ; sh:message "Every requirement is traced in docs/SPEC_TRACE.md." ] ;
+  sh:property [ sh:path si:checkedBy ; sh:minCount 1 ; sh:message "Every requirement names the check that proves it." ] ;
+  sh:property [ sh:path [ sh:inversePath si:includes ] ; sh:minCount 0 ; sh:class si:Capability ] .
+
+si:LearningShape a sh:NodeShape ; sh:targetClass si:Learning ;
+  sh:property [ sh:path si:cause ; sh:minCount 1 ; sh:message "A learning records its cause." ] ;
+  sh:property [ sh:path si:fix ; sh:minCount 1 ; sh:message "A learning records its fix." ] ;
+  sh:property [ sh:path si:guardedBy ; sh:minCount 1 ; sh:maxCount 1 ; sh:class si:Check ; sh:message "A learning is guarded by exactly one check." ] ;
+  sh:property [ sh:path si:guard ; sh:pattern "^(qa|unit):" ; sh:message "A guard is a QA check (qa:) or a unit check (unit:)." ] .
+
+si:SourceShape a sh:NodeShape ; sh:targetClass si:Source ;
+  sh:property [ sh:path si:access ; sh:minCount 1 ; sh:in ( "public" "user" "admin" ) ; sh:message "A source declares who may read it." ] ;
+  sh:property [ sh:path [ sh:inversePath si:owns ] ; sh:minCount 1 ; sh:maxCount 1 ; sh:class si:Module ; sh:message "A source belongs to one module." ] .
+
+si:ActionShape a sh:NodeShape ; sh:targetClass si:Action ;
+  sh:property [ sh:path si:access ; sh:minCount 1 ; sh:in ( "user" "admin" ) ; sh:message "An action is never public." ] ;
+  sh:property [ sh:path si:about ; sh:minCount 1 ; sh:message "An action says what it does (the Studio prompt shows it)." ] ;
+  sh:property [ sh:path [ sh:inversePath si:owns ] ; sh:minCount 1 ; sh:maxCount 1 ; sh:class si:Module ] .
+
+si:CapabilityShape a sh:NodeShape ; sh:targetClass si:Capability ;
+  sh:property [ sh:path si:includes ; sh:minCount 1 ; sh:class si:Requirement ; sh:message "A capability includes at least one requirement." ] .
+
+si:StandardShape a sh:NodeShape ; sh:targetClass si:Standard ;
+  sh:property [ sh:path si:text ; sh:minCount 1 ; sh:message "A hard rule says what it binds." ] .

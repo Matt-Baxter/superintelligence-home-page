@@ -155,6 +155,17 @@ const SUITES = {
     out["production.qlearn_overclaims"] = { value: l.overclaimPerWeek, better: "lower", tol: 0, about: "full videos the learned policy gives thin or abstract-only papers per week (simulation)" };
     return out;
   },
+  graph: () => {
+    // The app graph and the flywheel (modules/graph, proposed REQ-065..REQ-067).
+    const G = require("../modules/graph/appgraph"), Sh = require("../modules/graph/shacl"), F = require("../modules/graph/flywheel");
+    const g = G.build(), shapes = Sh.loadShapes(fs.readFileSync(path.join(root, "modules", "graph", "shapes.ttl"), "utf8")), v = Sh.validate(shapes, G.triples(g)), r = F.recall();
+    const isolated = g.nodes.filter((n) => !g.edges.some((e) => e.s === n.id || e.o === n.id)).length;
+    return {
+      "graph.shacl_violations": { value: v.results.length, better: "lower", tol: 0, about: "SHACL violations of the app graph (modules/graph/shapes.ttl)" },
+      "graph.recall": { value: r.recall, better: "higher", tol: 0, about: "share of QA-guarded learnings whose guard catches a mutant reintroducing the problem and passes the corrected case" },
+      "graph.isolated_elements": { value: isolated, better: "info", tol: 0, about: "app graph elements connected to nothing (a discovery list, partly the code map's blind spots)" },
+    };
+  },
   verification: () => {
     // The Machine-checked signal (modules/verification) on its labelled set. Held-out is reported, never tuned on
     // (scripts/verification-ratchet.js tunes on train only).

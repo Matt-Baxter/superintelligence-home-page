@@ -103,6 +103,15 @@ Built on `feature/paper-responses-2026-11-11` at John's request; not in scope un
 | REQ-063 | Knowledge graph: oxilite or Oxigraph, read-only SPARQL, limit | `modules/data/kg.js`, `responses/store.js` (`triples`) | unit: data ("REQ-063: knowledge graph") |
 | REQ-064 | Response builder and Studio bindings and actions | `modules/responses/data.js`, `pages/builder.html`, `modules/data/bindings.js`, `/api/ui/resolve`, `runAction` and `refresh` in `views/actions.mjs`, `jrLive` in `public/js/api.js` | unit: data ("REQ-061, REQ-064: routes, builder actions and Studio bindings") |
 
+<!-- trace-spec: 008 -->
+## The system as a graph, and the learning flywheel (proposed, `specs/008-graph-model-and-flywheel/spec.md`, planned in `openspec/changes/add-graph-model-and-flywheel`; extended version; needs both partners)
+
+| REQ | What | Where in the code | Checked by |
+| --- | --- | --- | --- |
+| REQ-065 | App graph as typed nodes and edges, SHACL shapes | `modules/graph/appgraph.js`, `shacl.js`, `shapes.ttl`; sources `graph.summary`, `graph.validate`; action `graph.export` | unit: graph ("REQ-065: the system as a typed graph, checked by shapes") |
+| REQ-066 | DAG check, quantified path patterns, A* | `modules/graph/algorithms.js`; sources `graph.paths`, `graph.route` | unit: graph ("REQ-066: DAG, quantified path patterns, A*") |
+| REQ-067 | Learnings to rules, recall by mutation, evolution with an overtraining stop | `modules/graph/flywheel.js`, `scripts/graph.js` (`report`, `evolve`), `modules/responses/learnings.json` | unit: graph ("REQ-067: the learning flywheel"); bench: graph suite |
+
 ## Acceptance suite
 
 `test/spec-acceptance.js` runs every user-story scenario, edge case and success criterion that can be automated, against the **spec version**, with labelled synthetic sources (`test/fixtures/spec`: 9 sources across 7 kinds). Each check names its REQ. The run fails if a testable requirement (REQ-001 to REQ-018, REQ-020) has no passing check (SC-008). Preflight runs the API checks; `npm run test:spec` adds the browser checks at laptop and phone widths. REQ-019 (live two weeks before the presentation) is checked by people.

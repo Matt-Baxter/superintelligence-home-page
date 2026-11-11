@@ -81,8 +81,8 @@ const gated = S.gateTasks(gateText, [{ id: 'T000', who: 'people', done: false },
 ok(gated[0].blockedBy === null && gated[1].blockedBy === '904/T000' && gated[2].blockedBy === null, 'explicit approval gate blocks unstarted implementation while keeping people decisions actionable');
 ok(S.gateTasks('', [{ id: 'T010', who: 'agent', done: false }], '904')[0].blockedBy === null, 'no implied approval gate is invented for other task files');
 const real = S.collect(), ids = real.reqs.map((r) => r.id);
-const want = Array.from({ length: 64 }, (_, i) => `REQ-${String(i + 1).padStart(3, "0")}`);
-ok(want.every((id) => ids.includes(id)) && ids.length === 67, `repo: REQ-001..REQ-064 (${ids.length})`);
+const want = Array.from({ length: 67 }, (_, i) => `REQ-${String(i + 1).padStart(3, "0")}`);
+ok(want.every((id) => ids.includes(id)) && ids.length === 70, `repo: REQ-001..REQ-067 (${ids.length})`);
 ok(real.reqs.every((r) => r.status === (r.spec === "001" ? "approved" : "proposed")), "repo: 001 approved, 002, 003, 004, 005 and 006 proposed");
 ok(real.reqs.filter((r) => r.spec === "004").length === 12 && real.reqs.find((r) => r.id === "REQ-042").tasks.some((x) => x.id === "T011"), "repo: 004 has REQ-041..REQ-052, REQ-042 its tasks");
 ok(real.reqs.every((r) => r.trace), "repo: every REQ has a trace row");
@@ -91,6 +91,6 @@ ok(real.reqs.filter((r) => r.spec === "006").map((r) => r.id).join() === "REQ-05
 ok(real.reqs.find((r) => r.id === "REQ-019").people && real.reqs.find((r) => r.id === "REQ-037").tasks.some((x) => x.id === "T041"), "repo: REQ-019 has its people check, REQ-037 its tasks");
 // Deployments without specs/ (Vercel bundles modules/** only) read the build snapshot instead.
 S.writeSnapshot(); const empty = fs.mkdtempSync(path.join(os.tmpdir(), "si-specs-none-")), snap = S.collect({ root: empty });
-ok(snap.source === "snapshot" && snap.reqs.length === 67 && snap.reqs[0].trace, "no specs/ folder: the build snapshot answers with the same 67 spec-scoped REQs");
+ok(snap.source === "snapshot" && snap.reqs.length === 70 && snap.reqs[0].trace, "no specs/ folder: the build snapshot answers with the same 70 spec-scoped REQs");
 fs.rmSync(empty, { recursive: true, force: true });
 console.log(`\nproject specs unit: ${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

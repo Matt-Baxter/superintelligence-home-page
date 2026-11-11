@@ -9,6 +9,7 @@
 SELECT ?level (COUNT(?c) AS ?claims) WHERE { GRAPH ?g { ?c a si:Claim ; si:level ?level } } GROUP BY ?level ORDER BY DESC(?claims)</textarea>
 <div class="actions"><button class="btn primary" id="dgRun" type="button">Run</button></div>
 <div id="dgOut" aria-live="polite"></div></section>
+<section class="panel"><h2>The system as a graph</h2><p class="small muted">Modules, blocks, sources, actions, pages, tables, requirements, skills, hard rules, learnings and checks, checked against SHACL shapes; and how well the system remembers what it learned.</p><div id="dgGraph"></div></section>
 <section class="panel"><h2>Artifacts</h2><div id="dgArtifacts"></div></section>
 <section class="panel" id="dgSources"><h2>Sources and actions</h2><div id="dgDefs"></div></section>
 </main><script src="/js/api.js"></script><script>
@@ -27,5 +28,9 @@ api("/api/me", { allow401: true }).then(async ({ user }) => {
   const [s, a] = await Promise.all([api("/api/data/sources"), api("/api/data/actions")]);
   $("#dgDefs").innerHTML = table([...s.sources.map((x) => ({ type: "source", ...x })), ...a.actions.map((x) => ({ type: "action", ...x }))].map((x) => ({ type: x.type, id: x.id, module: x.module, access: x.access, about: x.about, params: Object.keys(x.params || {}).join(", ") })));
   $("#dgRun").onclick = run; run();
+  try {
+    const [g, f] = await Promise.all([source("graph.summary"), source("graph.flywheel")]);
+    $("#dgGraph").innerHTML = `<p>${g.nodes} nodes, ${g.edges} edges. Module dependencies ${g.requiresIsDag ? "form a DAG" : `have a cycle: ${esc(g.cycle.join(" → "))}`}. SHACL: ${g.conforms ? "conforms" : `${g.violations} violations`}. Recall by mutation: ${f.recall.ok} of ${f.recall.n}.</p>` + table(Object.entries(g.byType).map(([type, n]) => ({ type, n }))) + table(f.stages, ["id", "stage", "guard", "area"]);
+  } catch (e) { $("#dgGraph").innerHTML = `<p class="small muted">${esc(e.message)}</p>`; }
 }).catch((e) => { $("#dgInfo").className = "err"; $("#dgInfo").textContent = e.message; });
 </script></body></html>

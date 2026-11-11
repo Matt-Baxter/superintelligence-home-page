@@ -41,6 +41,8 @@
     "checkin": "node scripts/checkin.js",
     "respond": "node scripts/respond.js",
     "test:data": "node --no-warnings test/data-unit.js",
+    "test:graph": "node --no-warnings test/graph-unit.js",
+    "graph": "node scripts/graph.js",
     "openspec": "node scripts/openspec.js",
     "openspec:validate": "npx --yes @fission-ai/openspec@1.17.0 validate --all --no-interactive",
     "test:responses": "node --no-warnings test/responses-unit.js",

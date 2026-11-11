@@ -138,6 +138,11 @@
       "REQ-062",
       "REQ-063",
       "REQ-064"
+    ],
+    "add-graph-model-and-flywheel": [
+      "REQ-065",
+      "REQ-066",
+      "REQ-067"
     ]
   }
 }

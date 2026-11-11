@@ -4,7 +4,7 @@
 
 One page that points at every skill, spec, check, measure and pitfall in the repo. It is generated from the files it links to, so it can't drift: [scripts/hub.js](../scripts/hub.js) reads them, `npm run hub` rewrites this page, and preflight's **Hub** check fails when it is stale or a link breaks.
 
-**Contents:** [Start here](#start-here) · [Specs](#specs) · [Skills (17)](#skills) · [Subagents (3)](#subagents) · [Spec Kit (9)](#spec-kit-commands) · [Checks (26)](#checks) · [Measures (61)](#measures) · [Tips and pitfalls (43)](#tips-and-pitfalls) · [Where things live](#where-things-live) · [Open decisions](#open-decisions-for-the-humans)
+**Contents:** [Start here](#start-here) · [Specs](#specs) · [Skills (17)](#skills) · [Subagents (3)](#subagents) · [Spec Kit (9)](#spec-kit-commands) · [Checks (26)](#checks) · [Measures (64)](#measures) · [Tips and pitfalls (43)](#tips-and-pitfalls) · [Where things live](#where-things-live) · [Open decisions](#open-decisions-for-the-humans)
 
 ## Start here
 
@@ -26,6 +26,7 @@ One page that points at every skill, spec, check, measure and pitfall in the rep
 | [005-appearance-and-publishing](../specs/005-appearance-and-publishing/spec.md): Appearance, CMS delivery and content generation (extended version) | Proposed, not approved. | REQ-053..REQ-055 (3) | [spec](../specs/005-appearance-and-publishing/spec.md) · [tasks](../specs/005-appearance-and-publishing/tasks.md) | 4 / 7 (agent 2/7, people 2/0) |
 | [006-paper-responses](../specs/006-paper-responses/spec.md): Paper responses (extended version) | Proposed, not approved. | REQ-056..REQ-060 (5) | [spec](../specs/006-paper-responses/spec.md) · [tasks](../specs/006-paper-responses/tasks.md) | 7 / 10 (agent 3/9, rules 1/1, people 3/0) |
 | [007-data-and-builders](../specs/007-data-and-builders/spec.md): Data layer and builders (extended version) | Proposed, not approved. | REQ-061..REQ-064 (4) | [spec](../specs/007-data-and-builders/spec.md) | no tasks.md |
+| [008-graph-model-and-flywheel](../specs/008-graph-model-and-flywheel/spec.md): The system as a graph, and the learning flywheel (extended version) | Proposed, not approved. | REQ-065..REQ-067 (3) | [spec](../specs/008-graph-model-and-flywheel/spec.md) | no tasks.md |
 
 Tags: `[agent]` any agent, unattended; `[rules]` changes scoring, only when a person asks; `[people]` the humans. Requirement traceability: [SPEC_TRACE.md](SPEC_TRACE.md); measured status: [SPEC_STATUS.md](SPEC_STATUS.md); this build's tables and routes: [INTERFACES.md](INTERFACES.md).
 
@@ -215,6 +216,8 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | `npm run checkin` | Agent check-in: what is waiting on whom, and the next action for each, so agents keep work moving and people see what only they can decide. |
 | `npm run respond` | Paper responses from the command line (REQ-056..058, proposed). |
 | `npm run test:data` | Data layer, knowledge graph, artifacts, the response builder's actions and Studio bindings (proposed REQ-061..REQ-064,… |
+| `npm run test:graph` | App graph, SHACL shapes, DAG, quantified path patterns, A* and the learning flywheel (proposed REQ-065..REQ-067,… |
+| `npm run graph` | The app graph and the learning flywheel from the command line (REQ-065..REQ-067, proposed). |
 | `npm run openspec` | OpenSpec beside Spec Kit. |
 | `npm run openspec:validate` | `npx --yes @fission-ai/openspec@1.17.0 validate --all --no-interactive` |
 | `npm run test:responses` | Paper responses (proposed REQ-056..059, spec 006): reading, analysis, plan, video script, captions, article, posts, the feature flag and the routes… |
@@ -247,7 +250,7 @@ Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/READM
 | `review.adversary_gain_guarded` | lower (tol 0.5) | 0 | points the guarded score gains under the attack on the unguarded judge |
 | `review.whitebox_gain` | lower (tol 0.5) | 0.25 | points an adversary attacking the guarded score gains |
 | `review.adversary_gain_naive` | info | 33.875 | points the same attack gains on the unguarded judge (the attack is real) |
-| `review.ms_per_doc` | info | 13.8 | time to review one item |
+| `review.ms_per_doc` | info | 14 | time to review one item |
 | `review.fidelity_accuracy` | higher | 1 | paraphrase-fidelity checks right on bench/fidelity-cases.json (52 synthetic pairs: pass/fail and the expected check) |
 | `review.verdict_balanced_accuracy` | higher | 1 | credible vs not credible verdicts: mean recall over the classes present (immune to class imbalance) |
 | `review.verdict_mcc` | higher (tol 0.01) | 1 | credible vs not credible verdicts: Matthews correlation (0 = no better than a constant guess, 1 = perfect) |
@@ -266,7 +269,7 @@ Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/READM
 | `interp.steering_selectivity` | higher (tol 0.5) | 8.28 | target gain / collateral change when clamping one SAE latent to 4x |
 | `interp.steering_exactness` | lower | 0 | output error on unedited inputs with the SAE error added back (0 = exact) |
 | `papers.verdict_seed_stability` | higher | 0.9 | share of paper-example verdicts that hold on 3 other seed blocks (10 examples) |
-| `papers.slowest_example_ms` | info | 1412 | slowest paper example (baseline and variant); each toy must stay under 2 seconds |
+| `papers.slowest_example_ms` | info | 1375 | slowest paper example (baseline and variant); each toy must stay under 2 seconds |
 | `papers.hidden_eval_hack_drop` | higher (tol 0.02) | 0.185 | drop in the quirk share when a self-improving agent is judged on hidden evaluations (arXiv 2609.26457 toy) |
 | `papers.recompute_evasion` | lower | 0 | undetected exploits with independent recomputation (arXiv 2609.28614 toy) |
 | `papers.cosine_sae_gain` | higher (tol 1) | 8 | extra true features a cosine-scored SAE recovers when input sizes vary (arXiv 2606.15054 toy) |
@@ -283,6 +286,9 @@ Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/READM
 | `production.astar_value_gain` | higher (tol 0.1) | 5.448 | information kept by the A* plan minus the first shipped plan, strong+table+toy+mech situation (model units) |
 | `production.qlearn_vs_rule_800` | higher (tol 0.3) | 0.621 | weekly reward of the learned offering minus the hand rule at an 800 CPU-second budget (simulation) |
 | `production.qlearn_overclaims` | lower | 0 | full videos the learned policy gives thin or abstract-only papers per week (simulation) |
+| `graph.shacl_violations` | lower | 0 | SHACL violations of the app graph (modules/graph/shapes.ttl) |
+| `graph.recall` | higher | 1 | share of QA-guarded learnings whose guard catches a mutant reintroducing the problem and passes the corrected case |
+| `graph.isolated_elements` | info | 27 | app graph elements connected to nothing (a discovery list, partly the code map's blind spots) |
 | `verification.heldout_rung_accuracy` | higher | 1 | rung (none, claimed, statement checked, checked outside) on the held-out split (26 items) |
 | `verification.heldout_gap_accuracy` | higher | 1 | fidelity gap flagged or not, held-out split |
 | `verification.false_formal` | lower | 0 | share of sentences with no proof claim that get credit for one ("a lean team", "the deal was formalized"), all 47 items |
