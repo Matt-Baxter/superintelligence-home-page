@@ -23,4 +23,10 @@ assert.match(sc("Sample launch: a new AI photo-editing app (test data)").reason,
 // REQ-001: at least 8 default sources across at least 5 kinds
 const src = require("../lib/sources.json"); const list = src.sources || src;
 assert.ok(list.length >= 8 && new Set(list.map((x) => x.kind)).size >= 5, "REQ-001: 8+ sources across 5+ kinds");
-console.log("analysis unit checks: 15 passed");
+// REQ-007: a negated frontier claim earns no points; a positive one in another clause still does (test data).
+const fr = (title) => analyze({ title, summary: "" }, { kinds: ["papers"], nsources: 1 }).claims;
+assert.deepEqual(fr("Sample (test data): the model does not achieve superhuman performance"), [], "a negated frontier claim earns nothing");
+assert.deepEqual(fr("Sample (test data): no evidence of recursive self-improvement"), [], "\"no evidence of\" negates the claim");
+assert.deepEqual(fr("Sample (test data): no evidence of recursive self-improvement, but agents reach expert-level scores"), ["human-level or beyond"], "a clause break ends the negation");
+assert.deepEqual(fr("Sample (test data): not only superhuman but cheap"), ["human-level or beyond"], "\"not only\" is not a negation");
+console.log("analysis unit checks: 19 passed");
