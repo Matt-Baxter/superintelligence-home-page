@@ -41,7 +41,7 @@ description: Design and review UI so it reads as deliberate rather than AI-gener
 8. **Run the check.** `node scripts/unslop.js` (also part of preflight) scans pages, styles and blocks for the slop patterns in `references/slop-gates.md`. Errors fail preflight. Warnings are things to look at.
 9. **Look at it.** Take a screenshot at 1280 px and at 390 px in light and dark (`test/e2e.js` already shoots the main pages into `shots/`). Then ask: would a careful human designer have made each choice on purpose?
 
-Load `references/motion.md` when adding any animation, `references/slop-gates.md` when the check fails or for a full review, and `references/external-skills.md` when the humans want to install more design skills.
+Load `references/motion.md` when adding any animation, `references/slop-gates.md` when the check fails or for a full review, `references/reading-list.md` for the articles behind these rules (craft, type, themes, density, modern CSS, taste), and `references/external-skills.md` when the humans want to install more design skills.
 
 ## Project references
 

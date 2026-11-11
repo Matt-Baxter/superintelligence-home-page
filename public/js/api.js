@@ -62,7 +62,15 @@ function resolveLook(site, mine, options) {
 function applyLook(look) {
   const root = document.documentElement;
   for (const k of LOOK_KEYS) { const v = look?.[k]; if (!v || v === LOOK_PLAIN[k]) root.removeAttribute("data-" + k); else root.setAttribute("data-" + k, v); }
+  themeColor();
 }
+// The browser's own chrome (the phone's status bar, the tab strip) takes the page's background colour, in every theme.
+function themeColor() {
+  if (typeof document === "undefined" || !document.head) return;
+  let m = document.querySelector('meta[name="theme-color"]'); if (!m) { m = document.createElement("meta"); m.name = "theme-color"; document.head.append(m); }
+  m.content = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || "#f4f4f4";
+}
+if (typeof window !== "undefined" && window.matchMedia) window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", themeColor);
 if (typeof document !== "undefined") applyLook(lookStore.get("si.look.effective"));
 async function appearanceMenu(bar) {
   if (!window.SI_APPEARANCE) { lookStore.set("si.look.effective", null); applyLook(null); return; }

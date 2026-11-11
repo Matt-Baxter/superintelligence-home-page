@@ -63,3 +63,22 @@ Research wave 1 final gates: `Preflight passed.`; demo emulations `24 passed, 0 
 Connected CMS pass (2026-11-07): shared token-based breadcrumbs, a role-filtered page directory, source/evidence links and two-column content/editor workspaces. Phone layouts stack panels and bound record-list height; the feed directory reuses its results row to preserve short-viewport reading. Original-post preview and public reading share plain-text typography. Verified at 390/1280 pixels in light/dark, with a held-save regression protecting editor text. See `test/cms-e2e.js` and `shots/cms-editorial-demo.png`.
 
 Term-pointer pass (2026-11-07): dotted inline definition links preserve reading text, source links stay explicit, and notation pointers unpack formulas without introducing a new rendering dependency. Existing typography/tokens style function properties and a bounded numerical explorer. Keyboard hash navigation focuses the selected entry; search filters recover the target of related pointers. Tested at 390/1280 pixels in light/dark and against dynamically replaced content. See `test/terms-e2e.js`.
+
+## Reading list, 2026-11-11
+
+Ten articles on interface craft, typography, dark themes, density, modern CSS and taste, read and checked against this build. Sources, with our paraphrase of each one's advice: [`agent-kit/skills/ui-design/references/reading-list.md`](../agent-kit/skills/ui-design/references/reading-list.md). Serves REQ-018 (every page usable on a phone and readable) and proposed REQ-053 (themes and layouts).
+
+**Already true here** (checked in the code): balanced headings and pretty paragraphs; `tabular-nums` on changing numbers; `:focus-visible` rings; 44 px targets on phones; 16 px inputs; no `transition: all`; reduced motion honoured; loading line after 150 ms; filters and pages in the URL; `scroll-margin-top` under the sticky bar; 4.5:1 contrast in every theme (checked by `scripts/unslop.js`); status never by colour alone; system theme by default with a reader override that is remembered (REQ-053).
+
+**Changed in this pass**:
+
+| Advice | Source | Change |
+| --- | --- | --- |
+| Dark grey, not pure black | Smashing Magazine | Dark `--bg` `#0e0e0e` → `#121212`, `--surface` `#171717` → `#1a1a1a` (contrast still checked) |
+| `theme-color` matches the page | Vercel guidelines | `themeColor()` in `public/js/api.js` sets the meta from `--bg` on load, on theme change and when the system scheme flips |
+| `content-visibility` on long lists | Vercel guidelines | Feed stories off screen skip layout and paint, with an intrinsic size so the scrollbar stays steady |
+| Components adapt to their own width | CSS DNA (container queries) | Each story is a size container; in a narrow card the title steps down and the actions stack |
+| About 66 characters for long reading | Butterick; Toast Design | Journal paragraphs at 68ch |
+| Survive readers' text-spacing overrides | Toast Design (WCAG 1.4.12) | Browser test applies the WCAG spacing at 390 px on the feed, a story and the journal and checks for sideways scroll |
+
+**Left for a person to decide**: curly quotes and apostrophes in interface copy (most strings use straight ones; a sweep touches every page); a colour accent or `oklch()` palette (both partners); a reading-progress bar or cross-document view transitions (Chromium only today, so enhancement at most); writing a short "good enough" for each page before an agent builds it, and comparing two versions side by side (from the taste essays; a working habit, not code).

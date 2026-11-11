@@ -716,6 +716,13 @@ const story = (p, text) => p.locator('#feed .story', { hasText: text });
   await ph.goto(B + '/?signin=1'); await ph.fill('#username', 'john'); await ph.fill('#password', 'correct-horse-9'); await ph.click('#authBtn'); await ph.waitForSelector('#feed .story');
   for (const path of ['/', '/story?id=' + sid, '/brief', '/lists', '/sources', '/m/admin', '/m/content', '/m/editorial', '/m/journal', '/m/appearance', '/m/glossary', '/m/project', '/m/capabilities', '/m/studio', '/m/decide', '/m/view?name=capability-snapshot', '/m/codemap', '/m/project#/timeline', '/m/project#/specs', '/m/control', '/m/learn', '/m/learn#/c/attention', '/m/learn#/how', '/m/knowledge', '/m/lab', '/m/lab#/x/rsi-decision-gym']) { await ph.goto(B + path); await ph.waitForTimeout(600); ok(!(await ph.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'no sideways scroll: ' + path.split('?')[0]); }
   await ph.goto(B); await ph.waitForSelector('#feed .story'); await ph.screenshot({ path: 'shots/phone-feed.png' });
+  // WCAG 1.4.12 text spacing: a reader's own line, letter, word and paragraph spacing must not break the page.
+  for (const path of ['/', '/story?id=' + sid, '/m/journal']) {
+    await ph.goto(B + path); await ph.waitForTimeout(600);
+    await ph.addStyleTag({ content: '* { line-height: 1.5 !important; letter-spacing: .12em !important; word-spacing: .16em !important; } p { margin-bottom: 2em !important; }' });
+    await ph.waitForTimeout(200);
+    ok(!(await ph.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), 'REQ-018: text spacing overrides (WCAG 1.4.12) cause no sideways scroll: ' + path);
+  }
   await john.goto(B); await john.waitForSelector('#feed .story'); await john.screenshot({ path: 'shots/feed.png', fullPage: true });
   await john.goto(B + '/brief?week=' + FIXTURE_WEEK); await john.waitForSelector('#brief .jr-metric'); await john.screenshot({ path: 'shots/brief.png', fullPage: true });
   console.log(`\n${pass} passed, ${fail} failed`); console.log('page errors:', errs.length ? errs : 'none');
