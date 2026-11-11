@@ -162,6 +162,24 @@
    "cause": "The recall test's corrected case was itself too fast (6 words in 1.3 s), so the guard failed on both cases; the test, not the memory, was wrong.",
    "fix": "A learning counts as recalled only when its guard fails on the mutant and passes on the corrected case; the fixture uses realistic timings.",
    "guard": "unit:recall by mutation catches every QA-guarded learning and passes every corrected case"
+  },
+  {
+   "id": "L19",
+   "found": "2026-11-11",
+   "area": "process",
+   "symptom": "In the screenshot review, a line edited in the builder (v2) was gone after a re-plan (v3), with no message.",
+   "cause": "Re-planning rebuilt every beat from the paper; the edit lived only in the old version's lines.",
+   "fix": "Edits are stored against the generated line (beat, variant, line, original text) and put back when the new plan has the same line; the rest are reported as dropped.",
+   "guard": "unit:a person's line edit survives a re-plan, or the re-plan says it was dropped"
+  },
+  {
+   "id": "L20",
+   "found": "2026-11-11",
+   "area": "process",
+   "symptom": "A reader's source listing named the paper-response sources while the feature was staff-only.",
+   "cause": "The listing checked access only; feature guards ran only when a source was called.",
+   "fix": "The listing runs each guard and leaves out what it refuses.",
+   "guard": "unit:a feature hidden from a reader isn't listed to them either"
   }
  ]
 }

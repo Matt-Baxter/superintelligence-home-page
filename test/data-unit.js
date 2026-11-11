@@ -69,6 +69,8 @@ const reg = require("../modules/data/registry"), KG = require("../modules/data/k
     ok((await act(adm, "responses.edit-line", { slug, beat: 0, line: 1, text: "Bad (brackets)" })).status === 400 && (await act(adm, "responses.edit-line", { slug, beat: 99, line: 0, text: "x" })).status === 400, "lines with brackets, and beats that don't exist, are refused");
     const rp = await (await act(adm, "responses.replan", { slug, maxSeconds: 45 })).json();
     ok(rp.result.version === 3 && rp.result.seconds <= 45 + 30 && Array.isArray(rp.result.chosen), `replan under a 45 s limit saves version 3 (${rp.result.chosen.join(" → ")})`);
+    const g3 = (await (await src(adm, "responses.get", { slug })).json()).data, hook = g3.plan.beats.find((b) => b.id === "hook");
+    ok(rp.result.edits && rp.result.edits.kept + rp.result.edits.dropped.length === 1 && (!hook || hook.variant !== "question-hook" || hook.lines[1].text === "Does the gate really help?"), `a person's line edit survives a re-plan, or the re-plan says it was dropped (kept ${rp.result.edits && rp.result.edits.kept})`);
     const claims = (await (await src(adm, "responses.claims", { level: "not found in the body" })).json()).data;
     ok(claims.length >= 1 && claims.every((c) => c.level === "not found in the body" && c.paper === "https://example.test/sample-paper"), `SPARQL over the graph finds the paper's unbacked claims (${claims.length}), each claimed by the paper`);
     const dr = await (await act(adm, "responses.save-draft", { slug })).json();
@@ -93,6 +95,8 @@ const reg = require("../modules/data/registry"), KG = require("../modules/data/k
     await call(adm, "PUT", "/api/admin/features", { responses: "off" });
     ok((await src(adm, "responses.list", {})).status === 404 && (await act(adm, "responses.replan", { slug, maxSeconds: 60 })).status === 404, "with paper responses switched off, its sources and actions answer 404 even for an admin");
     await call(adm, "PUT", "/api/admin/features", { responses: "staff" });
+    const rdrList = (await (await call(rdr, "GET", "/api/data/sources")).json()).sources.map((x) => x.id);
+    ok(!rdrList.some((id) => id.startsWith("responses.")), `a feature hidden from a reader isn't listed to them either (guards apply to the listing)`);
   } finally { await new Promise((res) => server.close(res)); if (db.end) await db.end(); }
   console.log(`\ndata unit: ${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);
 })().catch((e) => { console.error(e); process.exit(1); });

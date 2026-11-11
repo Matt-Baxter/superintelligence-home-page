@@ -2,7 +2,7 @@
 // (/m/builder) and Studio views use. All of them answer 404 while the "responses" feature flag hides the feature.
 const flags = require("./flags"), reader = require("./reader"), { respond, rebuild } = require("./respond"), { check } = require("./plan");
 const { saveResponse, loadResponse, responseIri } = require("./store");
-const KG = require("../data/kg");
+const KG = require("../data/kg"), video = require("./video");
 const SLUG = { type: "string", required: true, max: 120, about: "The response's slug" };
 const guard = async (req, { db, notFound }) => { const { flags: f } = await flags.read(db); if (!flags.visible(f.responses, req.user)) notFound("That page"); };
 const site = () => (process.env.SITE_URL || "").replace(/\/$/, "");
@@ -53,7 +53,10 @@ SELECT ?paper ?title ?claim ?text ?level ?section WHERE { GRAPH ?g { ?claim a si
       if (!b || !b.lines[i.line]) c.bad(`There's no line ${i.line} in beat ${i.beat}.`);
       if (/[()[\]{}]/.test(i.text)) c.bad("Spoken lines can't contain brackets: say it as it should be heard.");
       const before = b.lines[i.line].text; b.lines[i.line].text = i.text.trim(); b.narration = b.lines.map((l) => l.text).join(" ");
-      pkg.checks = check(pkg.plan, pkg.analysis, {}); pkg.video = null; pkg.qa = null; // the old render no longer matches
+      // Remember the edit against the generated line, so a later re-plan can put it back.
+      const prev = (pkg.edits || []).find((e) => e.beat === b.id && e.variant === b.variant && e.line === i.line);
+      pkg.edits = [...(pkg.edits || []).filter((e) => e !== prev), { beat: b.id, variant: b.variant, line: i.line, original: prev ? prev.original : before, text: b.lines[i.line].text }];
+      pkg.checks = check(pkg.plan, pkg.analysis, {}); pkg.storyboard = video.playerStoryboard(pkg.plan); pkg.video = null; pkg.qa = null; // the old render no longer matches
       const v = await saveResponse(c.db, pkg, { actor: c.user.id, note: `edited beat ${i.beat + 1} line ${i.line + 1}` });
       return { ...v, before, after: b.lines[i.line].text, checks: pkg.checks };
     } });
@@ -64,7 +67,7 @@ SELECT ?paper ?title ?claim ?text ?level ?section WHERE { GRAPH ?g { ?claim a si
       if (!r.pkg.planInput) c.bad("This response was built before re-planning existed; build it again first.");
       const pkg = rebuild(r.pkg, { maxSeconds: i.maxSeconds, site: site() });
       const v = await saveResponse(c.db, pkg, { actor: c.user.id, note: `re-planned for ${i.maxSeconds} s` });
-      return { ...v, chosen: pkg.plan.search.chosen, seconds: pkg.plan.budget.targetSeconds, checks: pkg.checks };
+      return { ...v, chosen: pkg.plan.search.chosen, seconds: pkg.plan.budget.targetSeconds, checks: pkg.checks, edits: pkg.editReport };
     } });
   Ac.add("responses.queue-render", { about: "Queue a render of the current version for the Learn worker (Manim, the local voice and QA run there, not on the web server).",
     input: { slug: SLUG, learn: { type: "boolean" } }, access: "admin", guard,

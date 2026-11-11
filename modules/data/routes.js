@@ -28,9 +28,12 @@ module.exports = function mountData(app, deps) {
     return { ok: true, action: id, result, refresh: def.refresh };
   }
   app.locals.data = { runSource, runAction }; // for other modules' routes (the Studio's bindings)
-  app.get("/api/data/sources", wrap((req) => ({ sources: [...reg.sources.values()].filter((d) => reg.allowed(d, req.user)).map(reg.describe) })));
+  // A source or action whose guard refuses this request (a feature switched off for them) isn't listed either.
+  const passes = async (d, req) => { if (!d.guard) return true; try { await d.guard(req, deps); return true; } catch { return false; } };
+  const visible = async (defs, req) => { const out = []; for (const d of defs) if (reg.allowed(d, req.user) && (await passes(d, req))) out.push(reg.describe(d)); return out; };
+  app.get("/api/data/sources", wrap(async (req) => ({ sources: await visible(reg.sources.values(), req) })));
   app.get("/api/data/sources/:id", wrap(async (req) => ({ source: req.params.id, data: await runSource(req.params.id, req.query, req) })));
   app.post("/api/data/sources/:id", wrap(async (req) => ({ source: req.params.id, data: await runSource(req.params.id, (req.body || {}).params || {}, req) })));
-  app.get("/api/data/actions", wrap((req) => ({ actions: [...reg.actions.values()].filter((d) => req.user && reg.allowed(d, req.user)).map(reg.describe) })));
+  app.get("/api/data/actions", wrap(async (req) => ({ actions: req.user ? await visible(reg.actions.values(), req) : [] })));
   app.post("/api/data/actions/:id", wrap(async (req) => runAction(req.params.id, (req.body || {}).input || {}, req)));
 };

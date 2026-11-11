@@ -58,9 +58,20 @@ function offering(situation, budget = Prod.SIM.budgetCpuSecondsPerWeek) {
 function rebuild(pkg, { maxSeconds = 90, site = "" } = {}) {
   const doc = { sections: (pkg.planInput && pkg.planInput.sections) || [], tables: (pkg.planInput && pkg.planInput.tables) || [] };
   const example = labFor(pkg.url), a = pkg.analysis;
-  const p = plan(a, doc, { example, maxSeconds }), checks = check(p, a, { example });
+  const p = plan(a, doc, { example, maxSeconds }), kept = reapplyEdits(p, pkg.edits), checks = check(p, a, { example });
   const link = site ? `${site}/m/responses?r=${encodeURIComponent(p.slug)}` : "";
-  return { ...pkg, plan: p, checks, offer: offering(p.search.situation), article: write.article(a, p, { example, site }), posts: write.posts(a, p, link), storyboard: video.playerStoryboard(p), video: null, qa: null };
+  return { ...pkg, plan: p, checks, offer: offering(p.search.situation), article: write.article(a, p, { example, site }), posts: write.posts(a, p, link), storyboard: video.playerStoryboard(p), video: null, qa: null, edits: kept.edits, editReport: kept.report };
+}
+
+// A person's line edits survive a re-plan: an edit is put back when the new plan has the same beat and variant and
+// that line still reads as it did before the edit. Edits that no longer fit are reported, never silently lost.
+function reapplyEdits(p, edits = []) {
+  const keep = [], dropped = [];
+  for (const e of edits || []) {
+    const b = p.beats.find((x) => x.id === e.beat && x.variant === e.variant), l = b && b.lines[e.line];
+    if (l && l.text === e.original) { l.text = e.text; b.narration = b.lines.map((x) => x.text).join(" "); keep.push(e); } else dropped.push(`"${e.text}"`);
+  }
+  return { edits: keep, report: edits && edits.length ? { kept: keep.length, dropped } : null };
 }
 
 function planMd(p, checks, offer) {
@@ -74,3 +85,4 @@ function planMd(p, checks, offer) {
 
 module.exports = { respond, labFor, planMd, offering };
 module.exports.rebuild = rebuild;
+module.exports.reapplyEdits = reapplyEdits;

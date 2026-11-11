@@ -4,7 +4,7 @@
 .bd-list{list-style:none;margin:0;padding:0}.bd-list li{padding:.45rem 0;border-top:1px solid var(--line,#ddd)}.bd-list a[aria-current]{font-weight:600}
 .bd-beat{border-top:1px solid var(--line,#ddd);padding:.6rem 0}.bd-line{display:grid;grid-template-columns:3.2rem minmax(0,1fr) auto;gap:.5rem;align-items:start;margin:.3rem 0}
 .bd-line textarea{width:100%;min-height:2.4rem;font:inherit}.bd-tag{font-size:.78rem;border:1px solid currentColor;border-radius:.3rem;padding:0 .35rem;white-space:nowrap}
-#bdOne,#bdList{overflow-wrap:anywhere;min-width:0}.bd-table{width:100%;border-collapse:collapse;font-size:.92rem}.bd-table td,.bd-table th{border-top:1px solid var(--line,#ddd);padding:.3rem;text-align:left;vertical-align:top}
+#bdOne,#bdList{overflow-wrap:anywhere;min-width:0}#bdList{align-self:start;align-content:start}.bd-table{width:100%;border-collapse:collapse;font-size:.92rem}.bd-table td,.bd-table th{border-top:1px solid var(--line,#ddd);padding:.3rem;text-align:left;vertical-align:top}
 </style></head>
 <body><main>
 <div class="pagehead"><div><h1>Response builder</h1><p class="muted">Edit a paper response in place. Every change is a named action: checked, audited and saved as a new version, with the knowledge graph kept in step. Rendering runs on the worker, not here.</p></div></div>
@@ -39,7 +39,7 @@ async function open(s, quiet = false) {
   const btn = (label, fn, primary) => { const b = el("button", label, primary ? "btn primary" : "btn"); b.type = "button"; b.onclick = async () => { b.disabled = true; try { await fn(); } catch (e) { status(e.message, true); } finally { b.disabled = false; } }; acts.append(b); return b; };
   const secs = el("input"); secs.type = "number"; secs.min = 40; secs.max = 180; secs.value = 90; secs.setAttribute("aria-label", "Length limit in seconds"); secs.style.width = "5rem";
   acts.append(secs);
-  btn("Re-plan", async () => { const r = await action("responses.replan", { slug: s, maxSeconds: Number(secs.value) }); status(`Version ${r.result.version}: ${r.result.chosen.join(" → ")}.`); await refresh(); });
+  btn("Re-plan", async () => { const r = await action("responses.replan", { slug: s, maxSeconds: Number(secs.value) }); status(`Version ${r.result.version}: ${r.result.chosen.join(" → ")}.${r.result.edits ? ` Your edits: ${r.result.edits.kept} kept${r.result.edits.dropped.length ? `, ${r.result.edits.dropped.length} dropped (their beat is no longer in the plan): ${r.result.edits.dropped.join("; ")}` : ""}.` : ""}`); await refresh(); });
   btn("Queue a render", async () => { const r = await action("responses.queue-render", { slug: s, learn: true }); status(`Queued learn job ${r.result.job} for version ${r.result.version}. Run the Learn worker on a machine with Manim.`); });
   btn("Save article as draft", async () => { const r = await action("responses.save-draft", { slug: s }); status(`Draft ${r.result.id} saved from version ${r.result.fromVersion}.`); await refresh(); });
   head.append(acts);
@@ -63,7 +63,7 @@ async function open(s, quiet = false) {
   for (const h of p.history || []) { const tr = el("tr"); tr.append(el("td", `v${h.version}`), el("td", `${h.note || ""} · ${h.at}`), el("td", (h.files || []).map((f) => f.path).join(", ") || "–")); const td = el("td"); if (h.version !== p.current) { const b = el("button", "Restore", "btn"); b.type = "button"; b.onclick = async () => { try { const r = await action("data.restore", { kind: "response", key: s, version: h.version }); status(`Restored as version ${r.result.version}.`); await refresh(); } catch (e) { status(e.message, true); } }; td.append(b); } tr.append(td); tb.append(tr); }
   t.append(tb); ver.append(t);
   const con = sec("Connections in the knowledge graph"); if (!links.length) con.append(el("p", "No connections yet.", "small muted"));
-  else { const ul = el("ul"); for (const k of links.filter((x) => !/\/(claim|check|question|beat|qa)\//.test(x.other)).slice(0, 40)) ul.append(el("li", `${k.rel} → ${k.other}`)); ul.append(el("li", `${links.filter((x) => /\/claim\//.test(x.other)).length} claims, ${links.filter((x) => /\/beat\//.test(x.other)).length} beats, ${links.filter((x) => /\/check\//.test(x.other)).length} checks in its graph`, "small muted")); con.append(ul); }
+  else { const ul = el("ul"); for (const k of links.filter((x) => !/\/(claim|check|question|beat|qa)\//.test(x.other)).slice(0, 40)) ul.append(el("li", `${k.rel} → ${k.other}`)); ul.append(el("li", `${(p.analysis && p.analysis.contributions || []).length} claims, ${p.plan.beats.length} beats, ${(p.analysis && p.analysis.checklist || []).length} checks in its graph`, "small muted")); con.append(ul); }
   if (!quiet) status(`Opened version ${p.version}.`);
 }
 async function refresh() { await list(); if (slug) await open(slug, true); } // keeps the action's message

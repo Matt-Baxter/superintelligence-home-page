@@ -11,6 +11,16 @@ function app() {
   return (cache = { g, shapes, G, Sh, A, validation: Sh.validate(shapes, G.triples(g)) });
 }
 const ID = { type: "string", required: true, max: 200 };
+// Recall by mutation renders tiny test videos (about 2 s), so it runs once per change to the ledger or the QA checks,
+// not on every request.
+let recallMemo = null;
+function recallCached(F) {
+  const fs = require("node:fs"), path = require("node:path"), at = (f) => { try { return fs.statSync(path.join(__dirname, "..", "responses", f)).mtimeMs; } catch { return 0; } };
+  const key = `${at("learnings.json")}:${at("qa.js")}`;
+  if (!recallMemo || recallMemo.key !== key) recallMemo = { key, r: F.recall() };
+  return recallMemo.r;
+}
+
 module.exports = {
   id: "graph",
   version: "0.1.0",
@@ -28,7 +38,7 @@ module.exports = {
     S.add("graph.route", { about: "Shortest path between two elements of the app graph (A* with landmarks; the same length as BFS).", params: { from: ID, to: ID }, access: "admin",
       run: (p) => { const { g, A } = app(); return A.astar(g, p.from, p.to); } });
     S.add("graph.flywheel", { about: "Each learning's stage (recorded, ruled, validated, recalled) and recall by mutation.", params: {}, access: "admin",
-      run: () => { const F = require("./flywheel"), r = F.recall(), recalled = new Set(r.results.filter((x) => x.recalled).map((x) => x.learning)); return { stages: F.stages(undefined, { recalled }), recall: r }; } });
+      run: () => { const F = require("./flywheel"), r = recallCached(F), recalled = new Set(r.results.filter((x) => x.recalled).map((x) => x.learning)); return { stages: F.stages(undefined, { recalled }), recall: r }; } });
     Ac.add("graph.export", { about: "Write the app graph into the knowledge graph (named graph urn:si:app), replacing the previous export.", input: {}, access: "admin",
       run: async (i, c) => { cache = null; const { g, G } = app(); return c.kg.replaceGraph("urn:si:app", G.triples(g)); } });
   },

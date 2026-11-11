@@ -46,7 +46,7 @@ async function open(db, { dataDir = process.env.DATA_DIR || path.join(__dirname,
       const ox = await import("@oxilite/node");
       fs.mkdirSync(dataDir, { recursive: true });
       store = new ox.Store({ path: path.join(dataDir, "kg.sqlite") }); kind = "oxilite";
-    } catch (e) { note = `oxilite unavailable here (${String(e.message).split("\n")[0].slice(0, 140)})`; if (engine === "oxilite") throw e; }
+    } catch (e) { note = `oxilite unavailable here (${String(e.message).split("\n")[0].slice(0, 400)})`; if (engine === "oxilite") throw e; }
   }
   if (!store) { const { Store } = require("oxigraph"); store = new Store(); kind = "oxigraph"; }
   const kg = { db, kind, note, store, version: -1, persistent: kind === "oxilite" ? "sqlite file" : "snapshot in the app database" };
