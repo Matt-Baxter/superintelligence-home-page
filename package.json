@@ -39,6 +39,8 @@
     "dossier": "node scripts/dossier.js",
     "test:research": "node test/research-e2e.js",
     "checkin": "node scripts/checkin.js",
+    "respond": "node scripts/respond.js",
+    "test:responses": "node --no-warnings test/responses-unit.js",
     "quality": "node scripts/quality.js",
     "advise": "node scripts/advise.js",
     "judge:report": "node scripts/judge-report.js",

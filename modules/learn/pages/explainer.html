@@ -90,9 +90,10 @@ function show(i) {
 function finish() { done = true; window.__explainerDone = true; document.getElementById("play").textContent = "Play"; playing = false; }
 async function load() {
   // ?c=<concept> plays a concept's storyboard; ?d=<topic> plays a topic dossier's (modules/review/dossier.js).
-  const id = P.get("c") || "attention", topic = P.get("d");
+  // ?r=<slug> plays a paper response's beats (modules/responses, proposed REQ-058; 404 while its feature flag hides it).
+  const id = P.get("c") || "attention", topic = P.get("d"), resp = P.get("r");
   const stage = document.getElementById("stage"); stage.setAttribute("aria-busy", "true"); stage.innerHTML = `<p class="loading">Loading the explainer…</p>`;
-  const r = await fetch(topic ? `/api/review/dossier/${encodeURIComponent(topic)}/storyboard` : `/api/learn/explainer/${encodeURIComponent(id)}`); if (!r.ok) { stage.removeAttribute("aria-busy"); document.getElementById("stage").innerHTML = `<div class="say">${topic ? "That topic wasn't found." : "That concept wasn't found."}</div>`; return; }
+  const r = await fetch(resp ? `/api/responses/${encodeURIComponent(resp)}/storyboard` : topic ? `/api/review/dossier/${encodeURIComponent(topic)}/storyboard` : `/api/learn/explainer/${encodeURIComponent(id)}`); if (!r.ok) { stage.removeAttribute("aria-busy"); document.getElementById("stage").innerHTML = `<div class="say">${resp ? "That response wasn't found." : topic ? "That topic wasn't found." : "That concept wasn't found."}</div>`; return; }
   SB = (await r.json()).storyboard; document.title = `${SB.title} · Explainer`;
   document.getElementById("stage").innerHTML = SB.scenes.map((s) => `<section class="scene">${sceneHtml(s)}</section>`).join("");
   document.getElementById("dots").innerHTML = SB.scenes.map(() => "<i></i>").join("");

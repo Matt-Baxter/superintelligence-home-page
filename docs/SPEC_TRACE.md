@@ -80,6 +80,18 @@ Built on `feature/themes-layouts-cms-2026-11-11` at John's request; not in scope
 | REQ-054 | RSS, JSON Feed, per-post JSON and embed card for published posts | `modules/editorial/routes.js` (`/api/editorial/feed.xml`, `/api/editorial/feed.json`), `rss`/`jsonFeed` in `modules/editorial/content.js`, `?embed=1` in `modules/editorial/pages/journal.html` | unit: publishing (REQ-054 checks); e2e: "REQ-054" |
 | REQ-055 | Rule-written drafts and channel versions, no posting, no Twitter/X | `weeklyDigest`, `topicRoundup`, `storyExplainer`, `channels` in `modules/editorial/content.js`; `/api/admin/editorial/generate`, `/api/admin/editorial/posts/:id/channels`; Editorial CMS page | unit: publishing (REQ-055 checks); e2e: "REQ-055" |
 
+<!-- trace-spec: 006 -->
+## Paper responses (proposed, `specs/006-paper-responses/spec.md`; extended version; needs both partners)
+
+Built on `feature/paper-responses-2026-11-11` at John's request; not in scope until both partners approve (task T600).
+
+| REQ | What | Where in the code | Checked by |
+| --- | --- | --- | --- |
+| REQ-056 | Read a paper's full text (HTML, PDF, text), polite cached fetch | `modules/responses/reader.js` (`read`, `fromHtml`, `fromPdf`, `fromText`) | unit: responses ("REQ-056: reading the full text") |
+| REQ-057 | Claims matched to their evidence, abstract numbers in the body, full-text rigor checklist, open questions | `modules/responses/analysis.js` (`analyse`, `CHECKS`) | unit: responses ("REQ-057: analysis") |
+| REQ-058 | Plan, narrated Manim explainer with captions, article and posts; a person publishes | `modules/responses/plan.js`, `video.js`, `write.js`, `respond.js`; `scripts/respond.js`; Learn job `response`; `/m/explainer?r=` | unit: responses ("REQ-058: plan, video, article and posts") |
+| REQ-059 | Feature flag (off, staff, public) in the CMS meta layer, audited | `modules/responses/flags.js`, `routes.js` (`/api/admin/features`, gated `/api/responses*`), `pages/responses.html` | unit: responses ("REQ-059: feature flag in the CMS meta layer") |
+
 ## Acceptance suite
 
 `test/spec-acceptance.js` runs every user-story scenario, edge case and success criterion that can be automated, against the **spec version**, with labelled synthetic sources (`test/fixtures/spec`: 9 sources across 7 kinds). Each check names its REQ. The run fails if a testable requirement (REQ-001 to REQ-018, REQ-020) has no passing check (SC-008). Preflight runs the API checks; `npm run test:spec` adds the browser checks at laptop and phone widths. REQ-019 (live two weeks before the presentation) is checked by people.

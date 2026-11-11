@@ -1,0 +1,24 @@
+<!DOCTYPE html><html lang="en"><head><title>[Sample] Gated Self-Repair: Sample paper for the paper reader (test data)</title></head><body>
+<article class="ltx_document">
+<h1 class="ltx_title ltx_title_document">Gated Self-Repair: Sample paper for the paper reader (test data)</h1>
+<div class="ltx_authors"><span class="ltx_creator ltx_role_author"><span class="ltx_personname">Sample Author One</span></span><span class="ltx_creator ltx_role_author"><span class="ltx_personname">Sample Author Two</span></span></div>
+<div class="ltx_abstract"><h6 class="ltx_title ltx_title_abstract">Abstract</h6>
+<p class="ltx_p">This is a synthetic sample paper written as test data. We propose Gated Self-Repair, a method in which an agent proposes edits to its own tools and keeps an edit only when a statistical gate accepts it. We show that the gate cuts the share of harmful accepted edits from 41% to 6% on three benchmarks. We also prove a bound on the expected number of harmful edits. Finally, we introduce SampleBench, a new benchmark of 120 repair tasks, where our method reaches 72.4% success.</p></div>
+<section class="ltx_section" id="S1"><h2 class="ltx_title ltx_title_section"><span class="ltx_tag">1 </span>Introduction</h2>
+<div class="ltx_para"><p class="ltx_p">Agents that edit themselves can accept changes that only look better on a noisy validation set. Our main contribution is a gate that treats each edit as a hypothesis test. We show that this keeps most useful edits while rejecting most harmful ones.</p></div></section>
+<section class="ltx_section" id="S2"><h2 class="ltx_title ltx_title_section"><span class="ltx_tag">2 </span>Method</h2>
+<div class="ltx_para"><p class="ltx_p">Each round the agent proposes one edit. The gate computes a p-value from paired validation scores and accepts the edit when <math alttext="p&lt;\alpha_{t}" display="inline"><mi>p</mi></math>, where the level is set by an online alpha-investing rule. Theorem 1 bounds the expected share of harmful accepted edits by the target level.</p></div></section>
+<section class="ltx_section" id="S3"><h2 class="ltx_title ltx_title_section"><span class="ltx_tag">3 </span>Experiments</h2>
+<div class="ltx_para"><p class="ltx_p">We evaluate on HotpotQA, DROP and APPS, and on our SampleBench. We compare against a greedy gate and a fixed Bonferroni gate as baselines. Results are averaged over 5 seeds and we report the standard deviation.</p></div>
+<div class="ltx_para"><p class="ltx_p">The gate reduces the share of harmful accepted edits from 41% to 6% (<math alttext="\pm 2" display="inline"><mi>x</mi></math>) and improves final accuracy by 3.1 points over the greedy gate.</p></div>
+<div class="ltx_para"><p class="ltx_p">An ablation without the alpha-investing step accepts too few edits and loses 2.4 points of accuracy.</p></div>
+<figure class="ltx_table" id="T1"><figcaption class="ltx_caption"><span class="ltx_tag">Table 1: </span>Harmful accepted edits and final accuracy (sample numbers, test data).</figcaption>
+<table class="ltx_tabular"><tr><th>Gate</th><th>Harmful share</th><th>Accuracy</th></tr><tr><td>Greedy</td><td>41%</td><td>68.0</td></tr><tr><td>Bonferroni</td><td>3%</td><td>66.2</td></tr><tr><td>Ours</td><td>6%</td><td>71.1</td></tr></table></figure>
+<figure class="ltx_figure" id="F1"><figcaption class="ltx_caption"><span class="ltx_tag">Figure 1: </span>Accuracy by round for each gate.</figcaption></figure>
+</section>
+<section class="ltx_section" id="S4"><h2 class="ltx_title ltx_title_section"><span class="ltx_tag">4 </span>Limitations</h2>
+<div class="ltx_para"><p class="ltx_p">We only evaluated agents with short tool lists, and the gate may not transfer to settings where validation sets are tiny. We did not check whether benchmark items appear in pretraining data.</p></div></section>
+<section class="ltx_section" id="S5"><h2 class="ltx_title ltx_title_section"><span class="ltx_tag">5 </span>Conclusion</h2>
+<div class="ltx_para"><p class="ltx_p">A statistical gate makes self-editing agents safer at little cost. Code is available at https://github.com/example-org/sample-gated-repair.</p></div></section>
+<section class="ltx_bibliography" id="bib"><h2 class="ltx_title ltx_title_bibliography">References</h2><ul class="ltx_biblist"><li class="ltx_bibitem">Sample reference one.</li><li class="ltx_bibitem">Sample reference two.</li></ul></section>
+</article></body></html>

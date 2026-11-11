@@ -24,10 +24,11 @@ One page that points at every skill, spec, check, measure and pitfall in the rep
 | [003-judge-fidelity](../specs/003-judge-fidelity/spec.md): Judge fidelity and stability (extended version) | Proposed, not approved. | REQ-032..REQ-040 (9) | [spec](../specs/003-judge-fidelity/spec.md) · [plan](../specs/003-judge-fidelity/plan.md) · [tasks](../specs/003-judge-fidelity/tasks.md) · [research](../specs/003-judge-fidelity/research.md) | 6 / 24 (agent 2/9, rules 2/15, people 2/0) |
 | [004-parity](../specs/004-parity/spec.md): Feature parity with AI-news and research apps (extended version) | Proposed, not approved. | REQ-041..REQ-052 (12) | [spec](../specs/004-parity/spec.md) · [plan](../specs/004-parity/plan.md) · [tasks](../specs/004-parity/tasks.md) | 25 / 1 (agent 18/1, rules 3/0, people 4/0) |
 | [005-appearance-and-publishing](../specs/005-appearance-and-publishing/spec.md): Appearance, CMS delivery and content generation (extended version) | Proposed, not approved. | REQ-053..REQ-055 (3) | [spec](../specs/005-appearance-and-publishing/spec.md) · [tasks](../specs/005-appearance-and-publishing/tasks.md) | 4 / 7 (agent 2/7, people 2/0) |
+| [006-paper-responses](../specs/006-paper-responses/spec.md): Paper responses (extended version) | Proposed, not approved. | REQ-056..REQ-059 (4) | [spec](../specs/006-paper-responses/spec.md) · [tasks](../specs/006-paper-responses/tasks.md) | 5 / 7 (agent 2/6, rules 1/1, people 2/0) |
 
 Tags: `[agent]` any agent, unattended; `[rules]` changes scoring, only when a person asks; `[people]` the humans. Requirement traceability: [SPEC_TRACE.md](SPEC_TRACE.md); measured status: [SPEC_STATUS.md](SPEC_STATUS.md); this build's tables and routes: [INTERFACES.md](INTERFACES.md).
 
-**Open tasks (35)**
+**Open tasks (40)**
 
 - [003 T000](../specs/003-judge-fidelity/tasks.md) `[people]` REQ-032: Approve, change or drop REQ-032..REQ-040 (this spec).
 - [003 T007](../specs/003-judge-fidelity/tasks.md) `[people]` REQ-038: Install Lean 4 (elan, from https://lean-lang.org) on a machine you control, run `cd proofs && lake build`, and record which theorems check; agents…
@@ -64,6 +65,11 @@ Tags: `[agent]` any agent, unattended; `[rules]` changes scoring, only when a pe
 - [005 T501](../specs/005-appearance-and-publishing/tasks.md) `[people]` REQ-053: Decide whether any theme may have a colour accent (today every theme keeps the ink accent).
 - [005 T550](../specs/005-appearance-and-publishing/tasks.md) `[agent]` REQ-053: Keep a signed-in reader's look with their account so it follows them between devices (needs T500's answer on REQ-012)
 - [005 T551](../specs/005-appearance-and-publishing/tasks.md) `[agent]` REQ-054: Atom output to match REQ-045 if both partners prefer one feed format
+- [006 T600](../specs/006-paper-responses/tasks.md) `[people]` REQ-056: Approve, change or drop REQ-056..REQ-059, and confirm that reading public arXiv HTML or PDFs one at a time, cached, is acceptable automated access.
+- [006 T601](../specs/006-paper-responses/tasks.md) `[people]` REQ-059: Decide the flag's default for a deployment (today: staff only).
+- [006 T660](../specs/006-paper-responses/tasks.md) `[agent]` REQ-056: Read the daily watcher's top papers in full and attach the full-text rigor to their Review desk records
+- [006 T661](../specs/006-paper-responses/tasks.md) `[rules]` REQ-057: Benchmark the full-text checklist on a labelled synthetic set (bench/), like the Review desk's judges (REQ-029)
+- [006 T662](../specs/006-paper-responses/tasks.md) `[agent]` REQ-058: A neural local voice by default (Piper voice download step in docs), and a burned-in caption option
 
 ## Skills
 
@@ -203,6 +209,8 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | `npm run dossier` | Write a topic dossier from the command line (no server needed): out/dossier/&lt;topic>/post.md, social.md, dossier.json and storyboard.json. |
 | `npm run test:research` | Run after the full synthetic fixture suite creates the two test readers. |
 | `npm run checkin` | Agent check-in: what is waiting on whom, and the next action for each, so agents keep work moving and people see what only they can decide. |
+| `npm run respond` | Paper responses from the command line (REQ-056..058, proposed). |
+| `npm run test:responses` | Paper responses (proposed REQ-056..059, spec 006): reading, analysis, plan, video script, captions, article, posts, the feature flag and the routes… |
 | `npm run quality` | Quality report on REAL reviews (the database the watcher fills), complementing the synthetic benchmark (bench/): does the judging actually tell… |
 | `npm run advise` | The advisor's review: a bigger model reads the label-free quality checks and the cases where the efficient models disagreed, and proposes synthetic… |
 | `npm run judge:report` | Judge report (REQ-037, spec 003 T006): how many judged items sit near a verdict cutoff, where one marker more or less could change the verdict or… |
@@ -435,4 +443,4 @@ From [handoff/STATE.md](../handoff/STATE.md) (2026-11-07), "Waiting for the huma
 5. **Merge `fix/sync-with-main`** when ready, then the feature branches above; the GitHub Actions paper watch only runs from the default branch.
 6. **Agent log**: write entries in your own words for anything the agents got wrong (REQ-020). Agents never write them.
 
-Open `[people]` tasks: [003 T000](../specs/003-judge-fidelity/tasks.md), [003 T007](../specs/003-judge-fidelity/tasks.md), [004 T000](../specs/004-parity/tasks.md), [004 T001](../specs/004-parity/tasks.md), [004 T002](../specs/004-parity/tasks.md), [004 T080](../specs/004-parity/tasks.md), [005 T500](../specs/005-appearance-and-publishing/tasks.md), [005 T501](../specs/005-appearance-and-publishing/tasks.md).
+Open `[people]` tasks: [003 T000](../specs/003-judge-fidelity/tasks.md), [003 T007](../specs/003-judge-fidelity/tasks.md), [004 T000](../specs/004-parity/tasks.md), [004 T001](../specs/004-parity/tasks.md), [004 T002](../specs/004-parity/tasks.md), [004 T080](../specs/004-parity/tasks.md), [005 T500](../specs/005-appearance-and-publishing/tasks.md), [005 T501](../specs/005-appearance-and-publishing/tasks.md), [006 T600](../specs/006-paper-responses/tasks.md), [006 T601](../specs/006-paper-responses/tasks.md).

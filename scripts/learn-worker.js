@@ -87,6 +87,15 @@ async function runJob(job, opts) {
     return { status: "done", output: `${notes.join("\n")}\n\n${blog}`, files };
   }
 
+  // A paper response (modules/responses, proposed REQ-056..058): read in full, analyse, plan, narrate and render.
+  if (job.kind === "response") {
+    const paper = (String(job.note || "").match(/paper:(\S+)/) || [])[1]; if (!paper) throw new Error("A response needs paper:<arXiv id> in its note.");
+    const { respond } = require("../modules/responses/respond"), site = (process.env.SITE_URL || process.env.BASE || "").replace(/\/$/, "");
+    const p = await respond(paper, { out: dir, render: !opts.noVideo, site });
+    for (const f of ["plan.md", "article.md", "social.md", "analysis.json", ...p.video.files]) files.push(`out/learn/${job.id}/${f}`);
+    return { status: "done", output: [p.analysis.summary, ...p.checks.map((c) => `${c.ok ? "ok" : "check"} ${c.id}: ${c.why}`), ...p.video.notes, "Review the drafts, then publish them yourself: nothing is posted automatically.", "", p.article].join("\n"), files };
+  }
+
   if (job.kind === "video") {
     if (!c) throw new Error("A video needs a concept.");
     const sb = L.storyboard(c.id), scene = L.manimScene(c.id), notes = [];

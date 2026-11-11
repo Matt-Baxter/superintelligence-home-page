@@ -1,0 +1,88 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Paper responses · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css">
+<style>
+.rs-levels{list-style:none;padding:0;margin:0}.rs-levels li{padding:.6rem 0;border-top:1px solid var(--line,#ddd)}
+.rs-tag{display:inline-block;font-size:.78rem;padding:.05rem .45rem;border:1px solid currentColor;border-radius:.3rem;margin-left:.35rem;white-space:nowrap}
+.rs-ev{margin:.3rem 0 0 1rem;font-size:.9rem}
+.rs-table{width:100%;border-collapse:collapse;font-size:.92rem}.rs-table td,.rs-table th{padding:.35rem .4rem;border-top:1px solid var(--line,#ddd);text-align:left;vertical-align:top}
+.rs-post{white-space:pre-wrap;font-size:.92rem;margin:.3rem 0}
+.rs-beat{margin:.6rem 0}.rs-beat blockquote{margin:.3rem 0 0 0;padding-left:.8rem;border-left:3px solid var(--line,#ccc)}
+.rs-article{white-space:pre-wrap;max-width:68ch;overflow-wrap:anywhere}
+.rs-cmd{white-space:normal;overflow-wrap:anywhere}
+#rsAdmin .panel,#rsOne .panel,#rsList{min-width:0;max-width:100%}
+#rsOne,#rsList{overflow-wrap:anywhere}
+#rsOne .panel{overflow-x:auto}
+</style></head>
+<body><main>
+<div class="pagehead"><div><h1>Paper responses</h1><p class="muted">Each paper read in full, its claims checked against its own body, a plan for the response, and drafts of an animated explainer, an article and posts. A person checks and publishes everything; nothing is posted automatically.</p></div></div>
+<p id="rsStatus" class="small muted" role="status">Loading…</p>
+<div id="rsAdmin" hidden>
+<section class="panel"><h2>Feature switch</h2>
+<p class="small muted">Stored in the site settings next to the look (audited). Off: nobody sees it. Staff: admins only. Public: readers can read responses; building and drafting stay with admins.</p>
+<label>Paper responses <select id="rsFlag"><option value="off">Off</option><option value="staff">Staff only</option><option value="public">Public</option></select></label>
+</section>
+<section class="panel"><h2>Respond to a paper</h2>
+<form id="rsBuild">
+<label>arXiv id or link<input id="rsSource" placeholder="2611.10787" autocomplete="off"></label>
+<details><summary>Or paste the paper's text</summary>
+<label>Title<input id="rsTitle" maxlength="300"></label>
+<label>Link (https)<input id="rsUrl" placeholder="https://…"></label>
+<label>Full text (or arXiv HTML)<textarea id="rsText" rows="6"></textarea></label>
+</details>
+<div class="actions"><button class="btn primary" type="submit">Read and analyse</button></div>
+<p class="small muted">The server builds the analysis, plan, article and posts. The video is rendered on a machine with Manim: <code class="rs-cmd">npm run respond -- &lt;arXiv id&gt; --render</code>.</p>
+</form>
+</section>
+</div>
+<section class="panel" id="rsList" aria-live="polite"></section>
+<section id="rsOne" aria-live="polite"></section>
+</main><script src="/js/api.js"></script><script>
+const LEVEL = { backed: "backed by a result", described: "described in the method", "partly backed": "partly backed", "not found in the body": "not found in the body" };
+let me = null;
+const el = (tag, text, cls) => { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (cls) e.className = cls; return e; };
+async function loadFlag() {
+  const r = await api("/api/admin/features"); $("#rsFlag").value = r.flags.responses;
+  $("#rsFlag").onchange = async () => { try { await api("/api/admin/features", { method: "PUT", body: { responses: $("#rsFlag").value } }); $("#rsStatus").textContent = `Paper responses: ${$("#rsFlag").selectedOptions[0].textContent.toLowerCase()}.`; await list(); } catch (e) { showErr($("#rsStatus"), e); } };
+}
+async function list() {
+  const box = $("#rsList");
+  try {
+    const { responses, mode } = await api("/api/responses");
+    $("#rsStatus").textContent = mode === "staff" ? "Behind the curtain: only admins see this page." : mode === "public" ? "Public: readers can read these responses." : "";
+    box.innerHTML = `<h2>Responses</h2>` + (responses.length ? `<ul class="rs-levels">${responses.map((r) => `<li><a href="/m/responses?r=${encodeURIComponent(r.slug)}">${esc(r.title)}</a><span class="rs-tag">rigor ${esc(r.rigor)}/100</span><span class="rs-tag">${esc(r.strength)}</span>${r.fullText ? "" : '<span class="rs-tag">abstract only</span>'}<div class="small muted">${esc(r.thesis || "")}</div></li>`).join("")}</ul>` : `<p>No responses yet.${me && me.admin ? " Give an arXiv id above." : ""}</p>`);
+  } catch (e) { box.replaceChildren(el("p", /found|404/i.test(e.message) ? "Paper responses are switched off." : e.message)); $("#rsStatus").textContent = ""; }
+}
+async function one(slug) {
+  const box = $("#rsOne"), p = await api(`/api/responses/${encodeURIComponent(slug)}`), a = p.analysis;
+  document.title = `${a.title} · Paper responses`; setPageContext(a.title.length > 32 ? `${a.title.slice(0, 30).trim()}…` : a.title);
+  const sec = (h) => { const s = el("section"); s.className = "panel"; s.append(el("h2", h)); box.append(s); return s; };
+  box.replaceChildren();
+  const top = sec(a.title); top.append(el("p", p.plan.thesis), el("p", a.summary, "small muted"));
+  const links = el("p"); const src = el("a", "The paper"); src.href = a.url || "#"; links.append(src, document.createTextNode(" · "));
+  const play = el("a", "Play the explainer in the browser"); play.href = `/m/explainer?r=${encodeURIComponent(p.slug)}`; links.append(play); top.append(links);
+  if (me && me.admin) { const b = el("button", "Save the article as an Editorial draft", "btn"); b.onclick = async () => { try { const r = await api(`/api/admin/responses/${encodeURIComponent(p.slug)}/draft`, { method: "POST", body: {} }); $("#rsStatus").textContent = `Saved as a draft. Open it in the Editorial CMS (${r.editor}).`; } catch (e) { showErr($("#rsStatus"), e); } }; top.append(b); }
+  const c = sec("What it claims, and what backs it"); const ul = el("ul", undefined, "rs-levels");
+  for (const x of a.contributions) { const li = el("li"); li.append(el("span", x.text), el("span", LEVEL[x.level], "rs-tag"), el("div", x.section, "small muted")); for (const e of x.evidence) li.append(el("div", `${e.section}: “${e.text}”`, "rs-ev")); ul.append(li); }
+  c.append(ul);
+  const r = sec(`How careful is it: ${a.rigor}/100`); const t = el("table", undefined, "rs-table"); t.innerHTML = "<thead><tr><th>Check</th><th>Points</th><th>Where we found it</th></tr></thead>"; const tb = el("tbody");
+  for (const x of a.checklist) { const tr = el("tr"); tr.append(el("td", `${x.met ? "✓" : "✗"} ${x.label}`), el("td", `${x.earned}/${x.points}`), el("td", x.evidence || "not found")); tb.append(tr); }
+  for (const x of a.penalties) { const tr = el("tr"); tr.append(el("td", `✗ ${x.label}`), el("td", String(x.points)), el("td", x.why)); tb.append(tr); }
+  t.append(tb); r.append(t);
+  if (a.abstractNumbers.length) r.append(el("p", `Abstract numbers found again in the body or tables: ${a.abstractNumbers.filter((n) => n.inBody).length} of ${a.abstractNumbers.length}.`, "small"));
+  if (a.questions.length) { const q = sec("Still open"); const l = el("ul"); a.questions.forEach((x) => l.append(el("li", x.text))); q.append(l); }
+  const pl = sec("The plan"); pl.append(el("p", `Audience: ${p.plan.audience}`, "small muted"), el("p", `About ${Math.round(p.plan.beats.reduce((n, b) => n + b.seconds, 0))} s. ${p.plan.budget.cost}.`, "small muted"));
+  p.plan.beats.forEach((b, i) => { const d = el("div", undefined, "rs-beat"); d.append(el("strong", `${i + 1}. ${b.id} (${b.visual.kind}, ${b.seconds} s)`), el("div", b.goal, "small muted"), el("blockquote", b.narration)); pl.append(d); });
+  const ck = el("ul"); p.checks.forEach((x) => ck.append(el("li", `${x.ok ? "✓" : "✗"} ${x.id}: ${x.why}`))); pl.append(el("h3", "Acceptance checks"), ck);
+  const ps = sec("Posts (copy, check, post yourself)"); p.posts.forEach((x) => { ps.append(el("h3", `${x.channel}${x.limit ? ` · ${x.length}/${x.limit}` : ""}`), el("p", x.text, "rs-post")); });
+  const ar = sec("Article draft"); ar.append(el("div", p.article, "rs-article"));
+}
+api("/api/me", { allow401: true }).then(async ({ user }) => {
+  me = user; topbar(user);
+  if (user && user.admin) { $("#rsAdmin").hidden = false; await loadFlag(); }
+  $("#rsBuild").onsubmit = async (ev) => { ev.preventDefault(); $("#rsStatus").textContent = "Reading the paper…"; try {
+    const text = $("#rsText").value.trim(), body = text ? { title: $("#rsTitle").value, url: $("#rsUrl").value, text } : { source: $("#rsSource").value };
+    const r = await api("/api/admin/responses", { body }); $("#rsStatus").textContent = r.summary; history.replaceState(null, "", `?r=${encodeURIComponent(r.slug)}`); await list(); await one(r.slug);
+  } catch (e) { showErr($("#rsStatus"), e); } };
+  await list();
+  if (params.get("r")) await one(params.get("r"));
+}).catch((e) => showErr($("#rsStatus"), e));
+</script></body></html>
