@@ -6,7 +6,7 @@ module.exports = {
   id: "responses",
   version: "0.1.0",
   description: "Full-text paper reading and analysis, response plans, explainer videos, articles and posts, behind a feature flag.",
-  requires: ["appearance", "editorial", "review", "lab"],
+  requires: ["appearance", "editorial", "review", "lab", "data", "learn"],
   api: ["/api/admin/features"], // the site's feature flags live here, beside the look (docs/NAMING.md)
   setup(ctx) {
     ctx.point("db.schema").addSql(`
@@ -15,5 +15,8 @@ CREATE TABLE IF NOT EXISTS responses_papers (id \${ID}, slug TEXT NOT NULL UNIQU
   created_by INTEGER REFERENCES users(id) ON DELETE SET NULL);`);
     ctx.point("http.routes").add((app, deps) => require("./routes")(app, deps));
     ctx.point("ui.nav").add({ href: "/m/responses", label: "Paper responses", admin: true, order: 89 });
+    ctx.point("ui.nav").add({ href: "/m/builder", label: "Response builder", admin: true, order: 89.5 });
+    // Sources and actions for the builder and Studio views (REQ-061..REQ-064, proposed).
+    require("./data").register(ctx);
   },
 };

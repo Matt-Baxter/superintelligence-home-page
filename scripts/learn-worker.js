@@ -88,8 +88,26 @@ async function runJob(job, opts) {
   }
 
   // A paper response (modules/responses, proposed REQ-056..058): read in full, analyse, plan, narrate and render.
+  if (job.kind === "response" && /\bresponse:\S+/.test(job.note || "")) {
+    // Render a stored response (queued from the builder): its current plan, as edited, not a fresh read of the paper.
+    // The files, QA results and (with "learn") the calibration go back as a new version of the response artifact.
+    const slug = job.note.match(/\bresponse:(\S+)/)[1];
+    const { loadResponse, saveResponse } = require("../modules/responses/store"), video = require("../modules/responses/video"), qa = require("../modules/responses/qa");
+    const r = await loadResponse(db, slug); if (!r) throw new Error(`No response ${slug}.`);
+    const pkg = JSON.parse(JSON.stringify(r.pkg));
+    pkg.video = video.build(pkg.plan, dir, { render: !opts.noVideo });
+    pkg.storyboard = video.playerStoryboard(pkg.plan);
+    fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify(pkg, null, 2));
+    const results = pkg.video.files.includes("video.mp4") ? qa.run(dir) : [];
+    pkg.qa = results.map((x) => ({ id: x.id, ok: !!x.ok, skip: x.skip || null, why: x.why || x.skip || "" }));
+    if (/\blearn\b/.test(job.note) && results.length) qa.calibrate(dir);
+    const fsFiles = pkg.video.files.map((f) => { const full = path.join(dir, f), st = fs.existsSync(full) ? fs.statSync(full) : null; return { path: `out/learn/${job.id}/${f}`, bytes: st ? st.size : 0 }; });
+    const v = await saveResponse(db, pkg, { note: `rendered by learn job ${job.id}`, files: fsFiles });
+    for (const f of fsFiles) files.push(f.path);
+    return { status: "done", output: [`Rendered ${slug} as version ${v.version}.`, ...pkg.video.notes, ...results.map((x) => `${x.skip ? "-" : x.ok ? "ok" : "check"} qa ${x.id}: ${x.skip || x.why}`)].join("\n"), files };
+  }
   if (job.kind === "response") {
-    const paper = (String(job.note || "").match(/paper:(\S+)/) || [])[1]; if (!paper) throw new Error("A response needs paper:<arXiv id> in its note.");
+    const paper = (String(job.note || "").match(/paper:(\S+)/) || [])[1]; if (!paper) throw new Error("A response needs paper:<arXiv id> or response:<slug> in its note.");
     const { respond } = require("../modules/responses/respond"), site = (process.env.SITE_URL || process.env.BASE || "").replace(/\/$/, "");
     const p = await respond(paper, { out: dir, render: !opts.noVideo, site });
     for (const f of ["plan.md", "article.md", "social.md", "analysis.json", ...p.video.files]) files.push(`out/learn/${job.id}/${f}`);

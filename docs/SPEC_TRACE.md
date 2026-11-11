@@ -93,6 +93,16 @@ Built on `feature/paper-responses-2026-11-11` at John's request; not in scope un
 | REQ-060 | A* beats, Q-learned offering, render QA, learnings with guards, calibration | `modules/lab/production.js` (runners `response-astar`, `response-qlearn`), `modules/responses/qa.js`, `learnings.json`, `video.js` line alignment, `scripts/respond.js --render --learn` | unit: responses ("REQ-060: production planning, QA and what it learned"); bench: production suite |
 | REQ-059 | Feature flag (off, staff, public) in the CMS meta layer, audited | `modules/responses/flags.js`, `routes.js` (`/api/admin/features`, gated `/api/responses*`), `pages/responses.html` | unit: responses ("REQ-059: feature flag in the CMS meta layer") |
 
+<!-- trace-spec: 007 -->
+## Data layer and builders (proposed, `specs/007-data-and-builders/spec.md`, planned in `openspec/changes/add-data-layer-and-builders`; extended version; needs both partners)
+
+| REQ | What | Where in the code | Checked by |
+| --- | --- | --- | --- |
+| REQ-061 | Named sources and actions: permissions, input schemas, audit | `modules/data/` (`registry.js`, `routes.js`, points `data.sources`, `data.actions`) | unit: data ("REQ-061: input schemas"; routes section) |
+| REQ-062 | Versioned artifacts with file references; restore as a new version | `modules/data/artifacts.js`, `responses/store.js` | unit: data ("REQ-062: versioned artifacts") |
+| REQ-063 | Knowledge graph: oxilite or Oxigraph, read-only SPARQL, limit | `modules/data/kg.js`, `responses/store.js` (`triples`) | unit: data ("REQ-063: knowledge graph") |
+| REQ-064 | Response builder and Studio bindings and actions | `modules/responses/data.js`, `pages/builder.html`, `modules/data/bindings.js`, `/api/ui/resolve`, `runAction` and `refresh` in `views/actions.mjs`, `jrLive` in `public/js/api.js` | unit: data ("REQ-061, REQ-064: routes, builder actions and Studio bindings") |
+
 ## Acceptance suite
 
 `test/spec-acceptance.js` runs every user-story scenario, edge case and success criterion that can be automated, against the **spec version**, with labelled synthetic sources (`test/fixtures/spec`: 9 sources across 7 kinds). Each check names its REQ. The run fails if a testable requirement (REQ-001 to REQ-018, REQ-020) has no passing check (SC-008). Preflight runs the API checks; `npm run test:spec` adds the browser checks at laptop and phone widths. REQ-019 (live two weeks before the presentation) is checked by people.

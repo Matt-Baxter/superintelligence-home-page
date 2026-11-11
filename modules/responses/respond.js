@@ -25,7 +25,10 @@ async function respond(input, { meta = {}, out = null, render = false, site = ""
   const offer = offering(p.search.situation);
   const link = site ? `${site}/m/responses?r=${encodeURIComponent(p.slug)}` : "";
   const art = write.article(a, p, { example, site }), social = write.posts(a, p, link);
-  const pkg = { slug: p.slug, title: a.title, url: a.url, at: new Date().toISOString().slice(0, 10), analysis: a, plan: p, checks, offer, article: art, posts: social, storyboard: video.playerStoryboard(p), video: null };
+  // What re-planning needs from the paper later (the builder's replan action): the method and theory sections and
+  // the tables, not the whole text.
+  const planInput = { sections: doc.sections.filter((x) => x.kind === "method" || x.kind === "theory").map((x) => ({ heading: x.heading, kind: x.kind, text: x.text.slice(0, 20000) })), tables: doc.tables.slice(0, 6) };
+  const pkg = { slug: p.slug, title: a.title, url: a.url, at: new Date().toISOString().slice(0, 10), analysis: a, plan: p, checks, offer, article: art, posts: social, storyboard: video.playerStoryboard(p), video: null, planInput };
   if (out) {
     fs.mkdirSync(out, { recursive: true });
     const put = (f, s) => fs.writeFileSync(path.join(out, f), s);
@@ -51,6 +54,15 @@ function offering(situation, budget = Prod.SIM.budgetCpuSecondsPerWeek) {
   return { situation, class: Prod.classOf(situation), budget, ...row, situation_class: row.situation, note: "Learned by Q-learning in a synthetic channel model (modules/lab/production.js): reach x engagement - compute - a trust penalty for overselling thin papers. A suggestion for a person, not audience data." };
 }
 
+// Re-plan a stored package (a different length limit, or after edits to the analysis) without re-reading the paper.
+function rebuild(pkg, { maxSeconds = 90, site = "" } = {}) {
+  const doc = { sections: (pkg.planInput && pkg.planInput.sections) || [], tables: (pkg.planInput && pkg.planInput.tables) || [] };
+  const example = labFor(pkg.url), a = pkg.analysis;
+  const p = plan(a, doc, { example, maxSeconds }), checks = check(p, a, { example });
+  const link = site ? `${site}/m/responses?r=${encodeURIComponent(p.slug)}` : "";
+  return { ...pkg, plan: p, checks, offer: offering(p.search.situation), article: write.article(a, p, { example, site }), posts: write.posts(a, p, link), storyboard: video.playerStoryboard(p), video: null, qa: null };
+}
+
 function planMd(p, checks, offer) {
   return [`# Plan: ${p.title}`, "", `**Thesis:** ${p.thesis}`, "", `**Audience:** ${p.audience}`, "", `**Budget:** about ${Math.round(p.budget.targetSeconds)} s; ${p.budget.cost}.`, "",
     `**Situation:** ${p.search.situation}. **Beats chosen by A*:** ${p.search.chosen.join(" → ")} (${p.search.expanded} nodes; model viewers still watching at the end: ${Math.round(p.search.modelStay * 100)}%). ${p.search.note}`, "",
@@ -61,3 +73,4 @@ function planMd(p, checks, offer) {
 }
 
 module.exports = { respond, labFor, planMd, offering };
+module.exports.rebuild = rebuild;

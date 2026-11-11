@@ -1,0 +1,143 @@
+{
+  "about": "How the Spec Kit requirements (specs/001-006) group into OpenSpec capabilities. scripts/openspec.js generates openspec/specs/<capability>/spec.md from this map; Spec Kit stays the source of truth for these requirements. Keys are REQ ids, or spec:REQ where an id appears in two specs (the REQ-032..035 collision between 002 and 003 is still open).",
+  "capabilities": {
+    "feed": {
+      "title": "Feed",
+      "purpose": "The superintelligence feed itself: which stories appear, how duplicates group, how they are tagged, filtered, searched and laid out on a laptop and a phone.",
+      "reqs": [
+        "REQ-002",
+        "REQ-003",
+        "REQ-004",
+        "REQ-005",
+        "REQ-007",
+        "REQ-017",
+        "REQ-018",
+        "REQ-041",
+        "REQ-042",
+        "REQ-043",
+        "REQ-046"
+      ]
+    },
+    "sources": {
+      "title": "Sources and harvesting",
+      "purpose": "Where stories come from: scheduled harvesting from public sources, the refusal of Twitter/X, resilience to a failing source, source labels, paper metadata and the daily paper watch.",
+      "reqs": [
+        "REQ-001",
+        "REQ-006",
+        "REQ-008",
+        "REQ-028",
+        "REQ-044",
+        "REQ-047",
+        "REQ-048"
+      ]
+    },
+    "accounts": {
+      "title": "Accounts",
+      "purpose": "Signing up, signing in and out, how passwords are kept, and the limit on personal data the site collects.",
+      "reqs": [
+        "REQ-009",
+        "REQ-010",
+        "REQ-011",
+        "REQ-012"
+      ]
+    },
+    "votes-and-saves": {
+      "title": "Votes and saves",
+      "purpose": "What a signed-in reader can do with a story: vote, save, export their own data, within per-user ownership rules and vote limits.",
+      "reqs": [
+        "REQ-013",
+        "REQ-014",
+        "REQ-015",
+        "REQ-016",
+        "REQ-049",
+        "REQ-052"
+      ]
+    },
+    "delivery": {
+      "title": "Delivery",
+      "purpose": "How the site and its content reach people: the public URL, feeds, an installable app and published editorial posts.",
+      "reqs": [
+        "REQ-019",
+        "REQ-045",
+        "REQ-050",
+        "REQ-054"
+      ]
+    },
+    "governance": {
+      "title": "Governance",
+      "purpose": "How the two partners keep the project honest: the human-written agent log, the project tracker and the public change log of rules.",
+      "reqs": [
+        "REQ-020",
+        "REQ-030",
+        "REQ-051"
+      ]
+    },
+    "learn": {
+      "title": "Learn and studio",
+      "purpose": "Plain-language explanations of the ideas behind superintelligence research, the walk-through page, dependent forms and the background studio jobs that make explainers.",
+      "reqs": [
+        "REQ-021",
+        "REQ-022",
+        "REQ-023",
+        "REQ-024",
+        "REQ-025"
+      ]
+    },
+    "lab": {
+      "title": "Lab",
+      "purpose": "Worked examples with deterministic toy reproductions and hypotheses of our own, and the fixed benchmarks every judge and toy is measured on.",
+      "reqs": [
+        "REQ-026",
+        "REQ-029"
+      ]
+    },
+    "review-desk": {
+      "title": "Review desk",
+      "purpose": "Judging papers, articles and comments with explainable, guarded judges: canonical text, evidence markers, kinds, verdict bands, source grades, two-model panels, peer reviews, comment roles and topic dossiers.",
+      "reqs": [
+        "REQ-027",
+        "REQ-031",
+        "002:REQ-032",
+        "002:REQ-033",
+        "002:REQ-034",
+        "003:REQ-032",
+        "003:REQ-033",
+        "003:REQ-034",
+        "REQ-035",
+        "REQ-036",
+        "REQ-037",
+        "REQ-038",
+        "REQ-039",
+        "REQ-040"
+      ]
+    },
+    "appearance-and-publishing": {
+      "title": "Appearance and publishing",
+      "purpose": "How the extended site looks and how editors start posts from the site's own data, with channel versions that are never posted automatically.",
+      "reqs": [
+        "REQ-053",
+        "REQ-055"
+      ]
+    },
+    "paper-responses": {
+      "title": "Paper responses",
+      "purpose": "Reading a paper in full, analysing it against its own body, planning a response and drafting a narrated explainer, an article and posts, chosen and checked by stated models, behind a feature flag.",
+      "reqs": [
+        "REQ-056",
+        "REQ-057",
+        "REQ-058",
+        "REQ-059",
+        "REQ-060"
+      ]
+    }
+  },
+  "inChanges": {
+    "about": "Requirements planned in an open OpenSpec change. Their capability specs come from the change's spec deltas when it is archived (openspec archive), so they aren't generated here.",
+    "add-data-layer-and-builders": [
+      "REQ-061",
+      "REQ-062",
+      "REQ-063",
+      "REQ-064"
+    ]
+  }
+}

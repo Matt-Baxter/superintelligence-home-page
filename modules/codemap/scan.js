@@ -9,7 +9,8 @@ const read = (p) => fs.readFileSync(p, "utf8");
 const lineOf = (text, idx) => text.slice(0, idx).split("\n").length;
 const walk = (d, filter) => !fs.existsSync(d) ? [] : fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => {
   const p = path.join(d, e.name);
-  if (e.isDirectory()) return ["node_modules", ".git", "dist", "data", "shots", "m"].includes(e.name) ? [] : walk(p, filter);
+  // "data" folders hold generated data, except modules/data, which is the data module's code.
+  if (e.isDirectory()) return ["node_modules", ".git", "dist", "data", "shots", "m"].includes(e.name) && !(e.name === "data" && path.basename(d) === "modules") ? [] : walk(p, filter);
   return filter(p) ? [p] : [];
 });
 

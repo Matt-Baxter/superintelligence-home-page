@@ -1,0 +1,24 @@
+schema: spec-driven
+
+context: |
+  Superintelligence Homepage (SEIS 606 Project 2, John Affolter and Matthew Baxter): a multi-source homepage for
+  AI-progress news. Node 22, Express, plain HTML pages, json-render views, SQLite locally and Postgres (Neon) in
+  production, Vercel Hobby. Two versions from one codebase (SITE_PROFILE): `spec` is exactly the shared spec;
+  `extended` adds John's modules. Built as a modular monolith: kernel/ plus plug-in modules/ with extension points.
+  Spec Kit (specs/NNN-*/spec.md) is the source of truth for REQ-001..REQ-060; openspec/specs/ is generated from it
+  by scripts/openspec.js. New work is planned here as changes that cite their REQ ids (docs/SPEC_TRACE.md).
+  Knowledge graph store: oxilite (@oxilite/node, Oxigraph-compatible, SQLite) where its native build loads, else
+  Oxigraph (WebAssembly) persisted to the app database.
+
+rules:
+  proposal:
+    - "Start with the change's state (planned, built, gated) and the REQ ids it serves. Name what is proposed and needs both partners."
+    - "Name the hard rules the design must respect (no Twitter/X, free tiers, no claims attributed to real people, synthetic test data, nothing posted automatically) and what each binds."
+    - "Write each decision with the alternatives rejected and the reason, so it can be checked against the code."
+  tasks:
+    - "Number tasks (1.1, 1.2) under numbered groups, and tag who may do each: [agent], [rules] (only when a person asks) or [people]."
+    - "A gate (a measurement or a decision that must pass first) is its own group, before the work it gates."
+    - "Tick a task in the commit that finishes it, and name the check that proves it."
+  specs:
+    - "Each requirement says SHALL or MUST and has at least one scenario with WHEN and THEN."
+    - "Scenarios use synthetic data labelled Sample or test data."

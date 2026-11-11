@@ -48,8 +48,10 @@ async function preview() {
   let spec; try { spec = JSON.parse($("#spec").value); } catch (e) { $("#status").className = "err"; $("#status").textContent = "Not valid JSON: " + e.message; return; }
   const r = await api("/api/ui/validate", { body: { spec } });
   if (!r.ok) { $("#status").className = "err"; $("#status").textContent = `${r.issues.length} problem${r.issues.length > 1 ? "s" : ""}; nothing rendered.`; $("#issues").innerHTML = r.issues.map((i) => `<li><code>${esc(i.path || "spec")}</code> ${esc(i.message)}</li>`).join(""); return; }
-  $("#status").className = "ok"; $("#status").textContent = `Valid: ${r.elements} elements.`;
-  JR.render($("#preview"), spec, jrHandlers());
+  $("#status").className = "ok"; $("#status").textContent = `Valid: ${r.elements} elements${spec.bindings ? `, ${Object.keys(spec.bindings).length} live binding${Object.keys(spec.bindings).length > 1 ? "s" : ""}` : ""}.`;
+  // Bindings are resolved on the server as you (REQ-064, proposed); buttons can run data actions.
+  if (spec.bindings) { try { spec = (await api("/api/ui/resolve", { body: { spec } })).spec; } catch (e) { $("#status").className = "err"; $("#status").textContent = e.message; return; } }
+  await jrLive($("#preview"), spec);
 }
 $("#validate").onclick = preview;
 $("#download").onclick = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([$("#spec").value], { type: "application/json" })); a.download = "view.json"; a.click(); };
@@ -62,7 +64,8 @@ $("#viewPick").onchange = async () => {
 requireUser().then(async (u) => {
   if (!u.admin) { $("main").innerHTML = '<div class="panel"><h1>Studio</h1><p>The Studio is for admins.</p></div>'; return; }
   CAT = await api("/api/ui/catalog");
-  $("#blockNote").textContent = `${CAT.blocks.length} blocks from ${new Set(CAT.blocks.map((b) => b.module)).size} modules, ${CAT.actions.length} actions. Hover a block for what it does.`;
+  $("#blockNote").textContent = `${CAT.blocks.length} blocks from ${new Set(CAT.blocks.map((b) => b.module)).size} modules, ${CAT.actions.length} actions, ${(CAT.sources || []).length} live data sources and ${(CAT.dataActions || []).length} data actions. Hover for what each does.`;
+  $("#blocks").insertAdjacentHTML("afterend", `<p class="small muted" id="dataList">${(CAT.sources || []).map((s) => `<span class="chip" title="${esc(s.about)} (${esc(s.access)})">source ${esc(s.id)}</span>`).join("")}${(CAT.dataActions || []).map((s) => `<span class="chip" title="${esc(s.about)} (${esc(s.access)})">action ${esc(s.id)}</span>`).join("")}</p>`);
   $("#blocks").innerHTML = CAT.blocks.map((b) => `<span class="chip" title="${esc(b.description)} (module: ${esc(b.module)})">${esc(b.name)}</span>`).join("");
   const v = await api("/api/ui/views");
   $("#viewPick").insertAdjacentHTML("beforeend", v.views.map((x) => `<option value="${esc(x.name)}">${esc(x.title)} (${esc(x.module)})</option>`).join(""));

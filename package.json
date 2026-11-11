@@ -40,6 +40,9 @@
     "test:research": "node test/research-e2e.js",
     "checkin": "node scripts/checkin.js",
     "respond": "node scripts/respond.js",
+    "test:data": "node --no-warnings test/data-unit.js",
+    "openspec": "node scripts/openspec.js",
+    "openspec:validate": "npx --yes @fission-ai/openspec@1.17.0 validate --all --no-interactive",
     "test:responses": "node --no-warnings test/responses-unit.js",
     "quality": "node scripts/quality.js",
     "advise": "node scripts/advise.js",
@@ -62,6 +65,7 @@
     "@json-render/react": "0.22.0",
     "esbuild": "^0.28.2",
     "express": "4.21.2",
+    "oxigraph": "0.5.13",
     "pg": "8.16.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -72,5 +76,8 @@
   },
   "devDependencies": {
     "playwright": "^1.65.0"
+  },
+  "optionalDependencies": {
+    "@oxilite/node": "0.9.1"
   }
 }

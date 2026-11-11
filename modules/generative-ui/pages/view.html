@@ -15,7 +15,7 @@ requireUser().then(async () => {
   try {
     const r = await api(`/api/ui/views/${encodeURIComponent(name)}${location.search.replace(/^\?/, "&").replace(/&?name=[^&]*/, "").replace(/^&/, "?")}`);
     document.title = r.view.title + " · Superintelligence Homepage"; if (typeof setPageContext === "function") setPageContext(r.view.title); $("#title").textContent = r.view.title; $("#desc").textContent = r.view.description || "";
-    JR.render($("#view"), r.spec, jrHandlers());
+    await jrLive($("#view"), r.spec);
   } catch (e) { $("#view").innerHTML = `<p class="err">${esc(e.message)}</p>`; }
 });
 </script>

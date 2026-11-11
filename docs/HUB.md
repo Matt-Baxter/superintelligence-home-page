@@ -4,7 +4,7 @@
 
 One page that points at every skill, spec, check, measure and pitfall in the repo. It is generated from the files it links to, so it can't drift: [scripts/hub.js](../scripts/hub.js) reads them, `npm run hub` rewrites this page, and preflight's **Hub** check fails when it is stale or a link breaks.
 
-**Contents:** [Start here](#start-here) · [Specs](#specs) · [Skills (17)](#skills) · [Subagents (3)](#subagents) · [Spec Kit (9)](#spec-kit-commands) · [Checks (25)](#checks) · [Measures (61)](#measures) · [Tips and pitfalls (43)](#tips-and-pitfalls) · [Where things live](#where-things-live) · [Open decisions](#open-decisions-for-the-humans)
+**Contents:** [Start here](#start-here) · [Specs](#specs) · [Skills (17)](#skills) · [Subagents (3)](#subagents) · [Spec Kit (9)](#spec-kit-commands) · [Checks (26)](#checks) · [Measures (61)](#measures) · [Tips and pitfalls (43)](#tips-and-pitfalls) · [Where things live](#where-things-live) · [Open decisions](#open-decisions-for-the-humans)
 
 ## Start here
 
@@ -25,6 +25,7 @@ One page that points at every skill, spec, check, measure and pitfall in the rep
 | [004-parity](../specs/004-parity/spec.md): Feature parity with AI-news and research apps (extended version) | Proposed, not approved. | REQ-041..REQ-052 (12) | [spec](../specs/004-parity/spec.md) · [plan](../specs/004-parity/plan.md) · [tasks](../specs/004-parity/tasks.md) | 25 / 1 (agent 18/1, rules 3/0, people 4/0) |
 | [005-appearance-and-publishing](../specs/005-appearance-and-publishing/spec.md): Appearance, CMS delivery and content generation (extended version) | Proposed, not approved. | REQ-053..REQ-055 (3) | [spec](../specs/005-appearance-and-publishing/spec.md) · [tasks](../specs/005-appearance-and-publishing/tasks.md) | 4 / 7 (agent 2/7, people 2/0) |
 | [006-paper-responses](../specs/006-paper-responses/spec.md): Paper responses (extended version) | Proposed, not approved. | REQ-056..REQ-060 (5) | [spec](../specs/006-paper-responses/spec.md) · [tasks](../specs/006-paper-responses/tasks.md) | 7 / 10 (agent 3/9, rules 1/1, people 3/0) |
+| [007-data-and-builders](../specs/007-data-and-builders/spec.md): Data layer and builders (extended version) | Proposed, not approved. | REQ-061..REQ-064 (4) | [spec](../specs/007-data-and-builders/spec.md) | no tasks.md |
 
 Tags: `[agent]` any agent, unattended; `[rules]` changes scoring, only when a person asks; `[people]` the humans. Requirement traceability: [SPEC_TRACE.md](SPEC_TRACE.md); measured status: [SPEC_STATUS.md](SPEC_STATUS.md); this build's tables and routes: [INTERFACES.md](INTERFACES.md).
 
@@ -168,6 +169,7 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | Agent kit | skills, subagents, plugin manifests, symlinks, index and MCP handshake |
 | Hub | Hub (docs/HUB.md): generated from the repo by scripts/hub.js, so it fails when stale or when a relative link in it breaks (test/hub-unit.js first) |
 | Spec trace | every REQ in the shared spec(s) appears in docs/SPEC_TRACE.md, and the trace cites no unknown REQ |
+| OpenSpec | OpenSpec beside Spec Kit: generated capability specs current, every REQ mapped, open changes well-formed. |
 | Interfaces / Contract | schema or routes changed without docs/INTERFACES.md changing |
 | API smoke test | API smoke test on synthetic data (SQLite, random port) |
 | Spec acceptance | Spec acceptance (API checks) on the spec version with labelled synthetic sources: every REQ needs a passing check (SC-008). |
@@ -212,6 +214,9 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | `npm run test:research` | Run after the full synthetic fixture suite creates the two test readers. |
 | `npm run checkin` | Agent check-in: what is waiting on whom, and the next action for each, so agents keep work moving and people see what only they can decide. |
 | `npm run respond` | Paper responses from the command line (REQ-056..058, proposed). |
+| `npm run test:data` | Data layer, knowledge graph, artifacts, the response builder's actions and Studio bindings (proposed REQ-061..REQ-064,… |
+| `npm run openspec` | OpenSpec beside Spec Kit. |
+| `npm run openspec:validate` | `npx --yes @fission-ai/openspec@1.17.0 validate --all --no-interactive` |
 | `npm run test:responses` | Paper responses (proposed REQ-056..059, spec 006): reading, analysis, plan, video script, captions, article, posts, the feature flag and the routes… |
 | `npm run quality` | Quality report on REAL reviews (the database the watcher fills), complementing the synthetic benchmark (bench/): does the judging actually tell… |
 | `npm run advise` | The advisor's review: a bigger model reads the label-free quality checks and the cases where the efficient models disagreed, and proposes synthetic… |

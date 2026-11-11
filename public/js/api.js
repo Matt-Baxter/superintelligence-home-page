@@ -163,6 +163,22 @@ async function copy(text, btn) {
   try { await navigator.clipboard.writeText(text); if (btn) { const t = btn.textContent; btn.textContent = "Copied"; setTimeout(() => (btn.textContent = t), 1200); } } catch (e) {}
 }
 // Actions that json-render specs are allowed to trigger (see views/catalog.mjs).
+// Render a json-render spec with live data (REQ-064, proposed): bindings are resolved on the server, runAction posts a
+// data action and then refreshes, refresh re-resolves. Returns { refresh }.
+async function jrLive(el, spec, extra = {}) {
+  let cur = spec;
+  const draw = () => JR.render(el, cur, jrHandlers({
+    runAction: async ({ id, input }) => {
+      try { await api(`/api/data/actions/${encodeURIComponent(id)}`, { body: { input: input || {} } }); await refresh(); }
+      catch (e) { const p = document.createElement("p"); p.className = "err"; p.textContent = e.message; el.prepend(p); }
+    },
+    refresh: () => refresh(),
+    ...extra,
+  }));
+  async function refresh() { if (cur.bindings) cur = (await api("/api/ui/resolve", { body: { spec: cur } })).spec; draw(); }
+  if (cur.bindings && !cur.state) await refresh(); else draw();
+  return { refresh };
+}
 const jrHandlers = (extra = {}) => ({
   openStory: ({ id }) => { location.href = `/story?id=${id}`; },
   filterTopic: ({ topic }) => { location.href = `/?topic=${encodeURIComponent(topic)}`; },

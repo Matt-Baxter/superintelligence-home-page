@@ -9,8 +9,7 @@
 //   DELETE /api/admin/responses/:slug
 //   POST /api/admin/responses/:slug/draft    save the article as an Editorial CMS draft (action "generate")
 // The web server never renders video: that runs where Manim is installed (scripts/respond.js --render).
-const flags = require("./flags"), reader = require("./reader"), { respond } = require("./respond");
-const MAX_ROWS = 200;
+const flags = require("./flags"), reader = require("./reader"), { respond } = require("./respond"), { saveResponse } = require("./store");
 module.exports = function mountResponses(app, { db, auth, admin, wrap, bad, notFound, audit }) {
   const A = [auth, admin];
   const gate = async (req) => { const { flags: f } = await flags.read(db); if (!flags.visible(f.responses, req.user)) notFound("That page"); return f.responses; };
@@ -47,13 +46,7 @@ module.exports = function mountResponses(app, { db, auth, admin, wrap, bad, notF
     } else if (typeof b.source === "string" && /\d{4}\.\d{4,5}/.test(b.source)) input = b.source.trim();
     else bad("Give an arXiv id or link as source, or paste the paper's text with its title.");
     let pkg; try { pkg = await respond(input, { site: (process.env.SITE_URL || "").replace(/\/$/, "") }); } catch (e) { bad(`Couldn't read that paper: ${e.message}`); }
-    const value = JSON.stringify({ ...pkg, video: null }), now = db.now();
-    const have = await db.get("SELECT id FROM responses_papers WHERE slug = ?", pkg.slug);
-    if (have) await db.run("UPDATE responses_papers SET title = ?, url = ?, package = ?, updated_at = ? WHERE id = ?", pkg.title, pkg.url || "", value, now, have.id);
-    else {
-      if ((await db.get("SELECT COUNT(*) AS n FROM responses_papers")).n >= MAX_ROWS) bad(`The limit is ${MAX_ROWS} responses. Delete old ones first.`);
-      await db.run("INSERT INTO responses_papers (slug, title, url, package, created_at, updated_at, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)", pkg.slug, pkg.title, pkg.url || "", value, now, now, req.user.id);
-    }
+    try { await saveResponse(db, pkg, { actor: req.user.id, note: "built" }); } catch (e) { if (e.status === 400) bad(e.message); throw e; }
     await audit.log(req.user.id, "responses.build", `response:${pkg.slug}`, `${pkg.analysis.read.fullText ? "full text" : "abstract only"}; rigor ${pkg.analysis.rigor}`);
     return { slug: pkg.slug, summary: pkg.analysis.summary, checks: pkg.checks };
   }));

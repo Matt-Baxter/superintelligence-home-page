@@ -307,7 +307,7 @@ app.get("/api/catalog", wrap(async () => { const { catalog } = await views(); re
 /* -------------------------------------------------------------------- admin */
 // Everything modules need from the core, passed to their routes and start hooks (never imported directly).
 function moduleDeps() {
-  return { app, db, auth, admin, wrap, str, bad, forbid, notFound, bool, now, KINDS, FORMAT_IDS, harvester, audit, tagger, feeds, analysis, storyRows, views, kernel };
+  return { app, db, auth, admin, wrap, str, bad, forbid, notFound, bool, now, KINDS, FORMAT_IDS, harvester, audit, tagger, feeds, analysis, storyRows, views, kernel, HttpError };
 }
 kernel.mount(app, moduleDeps());
 app.get("/api/admin/modules", auth, admin, wrap(() => kernel.describe()));

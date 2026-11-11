@@ -1,0 +1,31 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Data and graph · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css">
+<style>#dgOut,#dgSources{overflow-wrap:anywhere;min-width:0}.dg-table{width:100%;border-collapse:collapse;font-size:.9rem}.dg-table td,.dg-table th{border-top:1px solid var(--line,#ddd);padding:.3rem;text-align:left;vertical-align:top}#dgQuery{width:100%;min-height:8rem;font-family:ui-monospace,monospace}</style></head>
+<body><main>
+<div class="pagehead"><div><h1>Data and graph</h1><p class="muted">The data layer behind the builders: named sources (reads) and actions (writes) with their permissions, versioned artifacts, and the knowledge graph you can query with read-only SPARQL.</p></div></div>
+<p id="dgInfo" class="small muted" role="status">Loading…</p>
+<section class="panel"><h2>Ask the knowledge graph</h2>
+<label for="dgQuery">SPARQL (SELECT, ASK, CONSTRUCT or DESCRIBE)</label>
+<textarea id="dgQuery">PREFIX si: &lt;https://superintelligence-homepage.example/ns#&gt;
+SELECT ?level (COUNT(?c) AS ?claims) WHERE { GRAPH ?g { ?c a si:Claim ; si:level ?level } } GROUP BY ?level ORDER BY DESC(?claims)</textarea>
+<div class="actions"><button class="btn primary" id="dgRun" type="button">Run</button></div>
+<div id="dgOut" aria-live="polite"></div></section>
+<section class="panel"><h2>Artifacts</h2><div id="dgArtifacts"></div></section>
+<section class="panel" id="dgSources"><h2>Sources and actions</h2><div id="dgDefs"></div></section>
+</main><script src="/js/api.js"></script><script>
+const source = (id, params = {}) => api(`/api/data/sources/${encodeURIComponent(id)}`, { body: { params } }).then((r) => r.data);
+function table(rows, cols) { if (!rows.length) return "<p class=\"small muted\">No rows.</p>"; cols = cols || Object.keys(rows[0]); return `<table class="dg-table"><thead><tr>${cols.map((c) => `<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>${rows.map((r) => `<tr>${cols.map((c) => `<td>${esc(typeof r[c] === "object" ? JSON.stringify(r[c]) : r[c] ?? "")}</td>`).join("")}</tr>`).join("")}</tbody></table>`; }
+async function run() {
+  try { const r = await source("data.sparql", { query: $("#dgQuery").value }); $("#dgOut").innerHTML = r.rows ? table(r.rows, r.vars) : r.boolean !== undefined ? `<p>${r.boolean}</p>` : `<pre>${esc((r.triples || []).join("\n"))}</pre>`; }
+  catch (e) { $("#dgOut").innerHTML = `<p class="err">${esc(e.message)}</p>`; }
+}
+api("/api/me", { allow401: true }).then(async ({ user }) => {
+  topbar(user);
+  if (!user || !user.admin) { $("main").innerHTML = '<div class="panel"><h1>Data and graph</h1><p>This page is for admins.</p></div>'; return; }
+  const info = await source("data.graph-info");
+  $("#dgInfo").textContent = `Graph engine: ${info.engine} (${info.persistent}); ${info.triples} triples of at most ${info.max}.${info.note ? ` ${info.note}.` : ""}`;
+  $("#dgArtifacts").innerHTML = table(await source("data.artifacts"), ["kind", "key", "title", "version", "updated_at"]);
+  const [s, a] = await Promise.all([api("/api/data/sources"), api("/api/data/actions")]);
+  $("#dgDefs").innerHTML = table([...s.sources.map((x) => ({ type: "source", ...x })), ...a.actions.map((x) => ({ type: "action", ...x }))].map((x) => ({ type: x.type, id: x.id, module: x.module, access: x.access, about: x.about, params: Object.keys(x.params || {}).join(", ") })));
+  $("#dgRun").onclick = run; run();
+}).catch((e) => { $("#dgInfo").className = "err"; $("#dgInfo").textContent = e.message; });
+</script></body></html>

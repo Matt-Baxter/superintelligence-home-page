@@ -170,6 +170,10 @@ catch (e) { fail("Hub", String(e.stderr || e.message).trim().split("\n").slice(0
   }
 }
 
+// 6b. OpenSpec beside Spec Kit: generated capability specs current, every REQ mapped, open changes well-formed.
+try { ok("OpenSpec", sh("node scripts/openspec.js check").trim().replace(/^openspec: /, "")); }
+catch (e) { fail("OpenSpec", String(e.stdout || e.stderr || e.message).trim().split("\n").slice(0, 4).join(" ")); }
+
 // 7. Interfaces reminder: schema or routes changed without docs/INTERFACES.md changing
 try {
   const base = sh("git merge-base HEAD origin/main 2>/dev/null || git rev-parse HEAD~1 2>/dev/null || echo").trim();
