@@ -1,7 +1,7 @@
 # Bake-off Contract
 
 **Project:** Superintelligence Homepage | **Partners:** Matt Baxter, John Affolter |
-**Current version:** 1.0 (draft, not yet approved by both partners)
+**Current version:** 1.1 (draft, not yet approved by both partners)
 
 **Main question:** Is our comparison of the two builds fair?
 
@@ -49,7 +49,7 @@ points (see Section 5).
 |--------------------|------------|
 | Constitution, spec version and required features (F1–F8) | Agent tool and prompts |
 | Superintelligence topic list (spec, Assumptions) | Programming language and framework |
-| Synthetic sample data in `shared/sample-data/`: sample feeds that mix superintelligence items with general AI items, plus made-up users. Every sample record is labelled "Sample" and never reaches the live site. | Architecture, API design and internal database schema |
+| The same test data for both builds: saved copies of real feeds plus a few hand-made items (including general AI items that should be filtered out), and made-up test users. Test data never reaches the live site. | Architecture, API design and internal database schema |
 | Acceptance tests in Section 4 | Visual design and page layout |
 | Hosting: Vercel with Neon Postgres; spending: $10 a month total for both builds, free tiers where possible | Which sources each build uses, as long as F1 is met |
 
@@ -106,7 +106,7 @@ Dates are set once Paul confirms our presentation date.
 
 | # | Milestone | What must be true | Decision |
 |---|-----------|-------------------|----------|
-| M1 | Contract approved | Both partners approve this contract, including the criteria and weights; shared sample data is in `shared/sample-data/` | Freeze scope and criteria; building starts |
+| M1 | Contract approved | Both partners approve this contract, including the criteria and weights | Freeze scope and criteria; building starts |
 | M2 | Both builds live | Both builds are deployed and pass AT-01 through AT-09 | Cut extras if either build is behind |
 | M3 | Both builds complete | Both builds are feature-complete; code and prompts are shared for scoring | Scoring starts; criteria and weights are locked |
 | M4 | Final version chosen and shared | Scores are final; the merged version is deployed and shared with the class at least 2 weeks before the presentation | Open to the class |
@@ -144,3 +144,4 @@ Dates are set once Paul confirms our presentation date.
 | 0.5 | Nov 7, 2026 | Matt | Agent log is a human-written file in the repo (`AGENT_LOG.md`), not an app page. |
 | 0.6 | Nov 11, 2026 | Matt | Final version chosen by a decision model (CLEF or JEV) plus both partners' sign-off; each build in its own folder. |
 | 1.0 | Nov 11, 2026 | Matt | Rewrote as a full bake-off contract following the course's Example B: the two builds, shared scope, fairness rules, acceptance tests AT-01 to AT-14, weighted comparison criteria, milestones and tiebreaker. Dropped the split-only parts of John's draft (shared API and data models), since in a bake-off each build designs its own. |
+| 1.1 | Nov 11, 2026 | Matt | Removed the `shared/sample-data/` folder requirement; described the test data in plain terms. |
