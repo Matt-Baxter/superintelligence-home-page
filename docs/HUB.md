@@ -243,6 +243,10 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | `npm run verification:ratchet` | Research loop for the Machine-checked signal (modules/verification/rules.json), a ratchet like the Lab's. |
 | `npm run research:loop` | Continuous research loop for the formal-verification work, built to run on our own machines (a Mac mini, laptops). |
 | `npm run research:merge` | Continuous research loop for the formal-verification work, built to run on our own machines (a Mac mini, laptops). |
+| `npm run train` | what each loop last produced, and when |
+| `npm run train:cycle` | research loop with merge: checks, experiments, introspection |
+| `npm run train:data` | Lab ratchet over every example, then a split fine-tuning dataset |
+| `npm run train:all` | cycle + merge + data |
 | `npm run work` | Work board for agents and people at the terminal (REQ-068..REQ-071, proposed). |
 | `npm run test:work` | Work: planning and coordination for people and agents (proposed REQ-068..REQ-071, spec 009, openspec/changes/add-coordination-and-advisor).; Properties of the work module (proposed REQ-068..REQ-071), checked on many generated cases (seeded), plus the advisor's recall by mutation and the… |
 | `npm run elements` | Element catalog at the terminal (REQ-072..REQ-075, proposed). |
@@ -446,6 +450,7 @@ Quoted from the repo's own pitfall, trap, troubleshooting and habits sections (n
 - [docs/SPEC_TRACE.md](SPEC_TRACE.md): How this build meets the shared spec…
 - [docs/START_HERE.md](START_HERE.md): The current checkout continues on `feature/si-combined`.
 - [docs/TESTING_ACCESS.md](TESTING_ACCESS.md): Run `npm run demo` from the repository and open http://localhost:3200/?signin=1.
+- [docs/TRAINING.md](TRAINING.md): Every loop that trains, tunes or self-improves something in this repo, in one place.
 - [docs/UI_REVIEW_2026-11-09.md](UI_REVIEW_2026-11-09.md): Branch `feature/ui-review-2026-11-09`, from `feature/john-combined-2026-11-10` (2b9377f).
 - [docs/V0.md](V0.md): John builds his version of the homepage experience in **v0**; Matt builds his in **Claude**.
 - [docs/VERIFICATION.md](VERIFICATION.md): 2026-11-09, feature branch only.

@@ -72,9 +72,9 @@ Each step proposes parameters, runs them (milliseconds, deterministic), and keep
 
 ```bash
 pip install mlx-lm
-# First prepare independently reviewed, disjoint data/train.jsonl and data/valid.jsonl.
-# Never copy the same export into both splits.
-mlx_lm.lora --model google/gemma-3-12b-it --train --data data --iters 200 --batch-size 1 --num-layers 8
+# npm run train:data writes family-disjoint out/train/{train,valid,test}.jsonl (see docs/TRAINING.md).
+# Review them first; never copy the same export into two splits.
+mlx_lm.lora --model google/gemma-3-12b-it --train --data out/train --iters 200 --batch-size 1 --num-layers 8
 ```
 
 Then serve the adapter (`mlx_lm.server --model google/gemma-3-12b-it --adapter-path adapters`) and point `--provider lmstudio` (or `LMSTUDIO_BASE=http://localhost:8080/v1`) at it. This is an experimental path, not evidence of improved research quality. Exports are review-only candidates. Split by source paper/publication family and experiment before tuning, retain failures, and keep a frozen test set out of prompts and training. Require rights review, human-approved examples, a recorded base-model revision and held-out comparison before any training or adapter promotion. See [research intake](../../handoff/routines/research-intake.md).

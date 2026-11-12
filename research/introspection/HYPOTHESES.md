@@ -64,3 +64,7 @@ causal direction, swapped-example tuning (H2) taught the report to follow the an
 - H7: training the self-report jointly with the network concentrates the reported concept into a single causal
   direction: with a different concept (c2 = (x4 OR x5) AND NOT x6, task c2 XOR x7), best-of-8 DAS swap success is at
   least 0.10 higher for jointly trained reporters than for post-hoc ones, over 20 seeds.
+- Result 2026-11-12 (research loop, 30 seeds 0-29, which include the original 20): gap +0.184, normal-approximation
+  95% interval 0.120 to 0.247, above the 0.10 bar. Fresh seeds 30-59 alone (none used before): gap +0.157, interval
+  0.095 to 0.218, which straddles the bar. Verdict stays undecided: the effect is consistently positive and its mean is
+  above 0.10 in both batches, but fresh seeds alone don't clear the bar. The bar was not changed. Next: seeds 60+.

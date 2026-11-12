@@ -125,10 +125,11 @@ were along the wrong direction: the report learned to follow the analyst's mista
 nothing to fix (*H2: not supported*). This is the recursive-drift lesson in a trained network: an outside reference
 only helps if it is right.
 
-**4. Joint training may concentrate the reported concept (H7, undecided).** Jointly trained reporters' networks kept c
+**4. Joint training may concentrate the reported concept (H7, still undecided).** Jointly trained reporters' networks kept c
 in a more findable single direction than post-hoc ones (+0.17 on the first concept, unregistered). Registered as H7 and
 tested on a new concept: +0.148 (interval 0.085 to 0.224), bar 0.10, so undecided. The Mac loop's `--introspection`
-option trains more seeds to settle it.
+option trains more seeds to settle it. Update 2026-11-12: seeds 0-29 (the original 20 plus 10 new) give +0.184
+(0.120 to 0.247), but fresh seeds 30-59 alone give +0.157 (0.095 to 0.218), which straddles the bar, so still undecided.
 
 Limits: 12-bit inputs, 32-unit layers, one concept at a time, 1-D causal search. Real models represent concepts in
 superposition and across layers; this toy shows the checks are necessary, not that real self-reports are faithful.
@@ -154,6 +155,8 @@ infrastructure when you can.
   per-generation leak in comparable units, so ours stays a toy result.
 
 ## Re-running on our machines
+
+All training loops, including this one, now run from one entry point: `npm run train` (status), `npm run train:all`; see [TRAINING.md](TRAINING.md).
 
 `node scripts/research-loop.js` runs one cycle (unit checks, bench, ratchet dry run, the Lean toys if Lean is
 installed, and every experiment above over many seeds; `--introspection N` also trains the introspection toy). Machines split seeds with `--shard i/n`, write to a shared
