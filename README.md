@@ -8,6 +8,7 @@ The plan we build against (working agreement, spec, versioned contract) is in ou
 
 - [Working Agreement](WORKING_AGREEMENT.md): how we'll work together
 - [Contract](CONTRACT.md): what we're building against
+- [Changelog](CHANGELOG.md): project-wide changes and the commits that made them
 - [Agent Log](AGENT_LOG.md): what the agent got wrong and how we caught it (human-written)
 - [Initial spec](specs/001-superintelligence-homepage/spec.md): written with Spec Kit, under the [constitution](.specify/memory/constitution.md) (prompts used: [docs/speckit-prompts.md](docs/speckit-prompts.md))
 
