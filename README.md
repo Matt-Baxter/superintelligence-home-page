@@ -6,7 +6,11 @@ One place to follow progress toward advanced AI, drawn from papers, lab blogs, r
 
 The plan we build against lives in `docs/` (working agreement, spec, versioned contract), mirrored from our shared Project 2 Plan doc.
 
-**Start here:** [docs/OUR_PARTS.md](docs/OUR_PARTS.md) lists who does what next, with step-by-step instructions for John and Matt.
+- [Working Agreement](WORKING_AGREEMENT.md): how we'll work together
+- [Contract](CONTRACT.md): what we're building against
+- [Changelog](CHANGELOG.md): project-wide changes and the commits that made them
+- [Agent Log](AGENT_LOG.md): what the agent got wrong and how we caught it (human-written)
+- [Initial spec](specs/001-superintelligence-homepage/spec.md): written with Spec Kit, under the [constitution](.specify/memory/constitution.md) (prompts used: [docs/speckit-prompts.md](docs/speckit-prompts.md))
 
 ## What it does
 
