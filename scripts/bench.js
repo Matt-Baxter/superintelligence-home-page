@@ -198,7 +198,16 @@ const SUITES = {
       const title = strip((m[1].match(/<title>([\s\S]*?)<\/title>/) || [])[1] || ""), summary = strip((m[1].match(/<description>([\s\S]*?)<\/description>/) || [])[1] || "");
       const a = A.analyze({ title, summary, topics: tag(title, summary).topics }); n++; if (a.scope.in === (lab === "yes")) right++; truthS.push(lab === "yes" ? "in" : "out"); predS.push(a.scope.in ? "in" : "out");
     }
-    return { "analysis.scope_accuracy": { value: n ? Math.round((right / n) * 1000) / 1000 : 1, better: "higher", tol: 0, about: `scope decisions on the labelled spec fixtures (${n} items)` }, ...honesty("analysis.scope", "in scope vs out of scope on the spec fixtures", truthS, predS) };
+    // The superintelligence rubric (lib/si-rubric.js) on its labelled synthetic set: stance per item, dev and held-out
+    // splits reported separately (held-out items were written after the rubric and are never tuned on).
+    const SR = require("../lib/si-rubric"), set = JSON.parse(fs.readFileSync(path.join(DIR, "si-rubric-set.json"), "utf8")).items;
+    const stanceOf = (x) => SR.profile({ title: x.title, text: x.text, topics: tag(x.title, x.text).topics }).stance;
+    const acc = (xs) => Math.round((xs.filter((x) => stanceOf(x) === x.stance).length / xs.length) * 1000) / 1000;
+    const dev = set.filter((x) => x.split === "dev"), held = set.filter((x) => x.split === "heldout");
+    return { "analysis.scope_accuracy": { value: n ? Math.round((right / n) * 1000) / 1000 : 1, better: "higher", tol: 0, about: `scope decisions on the labelled spec fixtures (${n} items)` }, ...honesty("analysis.scope", "in scope vs out of scope on the spec fixtures", truthS, predS),
+      "analysis.si_stance_dev": { value: acc(dev), better: "higher", tol: 0, about: `superintelligence rubric stance (capability, control, both, adjacent, none) on the dev split (${dev.length} synthetic items)` },
+      "analysis.si_stance_heldout": { value: acc(held), better: "higher", tol: 0, about: `the same on the held-out split (${held.length} synthetic items, never tuned on)` },
+      ...honesty("analysis.si_stance", "superintelligence rubric stance, all items", set.map((x) => x.stance), set.map(stanceOf)) };
   },
 };
 

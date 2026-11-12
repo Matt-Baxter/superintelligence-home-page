@@ -1114,5 +1114,262 @@
       "self-improv*",
       "recursive self improvement"
     ]
+  },
+  "si_rubric": {
+    "about": "What 'progress toward superintelligence' means here, as eight dimensions. Four say how close systems are getting (capability), three say whether people could still understand and steer them (control), one records the failure modes that matter most if they can't (risk). Each dimension is reached through ontology topics and match terms (whole-word, '*' for prefix, negated mentions don't count, same rule as frontier claims). A dimension scores 0 to 3: 1 for a tagged topic (the exact topic, found in at least one un-negated mention), 1 for a term in the text, 1 when a sentence with one of its terms also gives a measurement (a number, a percentage, a sample size). Same text, same profile: no model is asked. lib/si-rubric.js reads this; the definitions are written for readers and shown with each score.",
+    "version": "1.0.0",
+    "dimensions": [
+      {
+        "id": "generality",
+        "axis": "capability",
+        "label": "Generality",
+        "means": "One system doing well across many kinds of task, not one narrow task: the 'general' in general intelligence.",
+        "topics": [
+          "capabilities",
+          "reasoning",
+          "multimodal"
+        ],
+        "concepts": [
+          "emergence",
+          "scaling-laws"
+        ],
+        "terms": [
+          "general-purpose",
+          "generalist",
+          "generaliz*",
+          "generalis*",
+          "across domains",
+          "many domains",
+          "cross-domain",
+          "zero-shot",
+          "out-of-distribution",
+          "transfer learning",
+          "transfers to"
+        ]
+      },
+      {
+        "id": "autonomy",
+        "axis": "capability",
+        "label": "Autonomy",
+        "means": "Acting on its own for longer stretches with less human direction: the step from tool to agent.",
+        "topics": [
+          "agents",
+          "long-horizon",
+          "robotics"
+        ],
+        "concepts": [
+          "agents",
+          "instrumental-convergence"
+        ],
+        "terms": [
+          "autonomous*",
+          "autonomously",
+          "without human",
+          "long-horizon",
+          "long horizon",
+          "multi-day",
+          "multi-hour",
+          "agentic",
+          "time horizon",
+          "end-to-end",
+          "acts on its own"
+        ]
+      },
+      {
+        "id": "self-improvement",
+        "axis": "capability",
+        "label": "AI improving AI",
+        "means": "AI that speeds up AI research or improves its own code, harness or weights: the loop that could make progress run away.",
+        "topics": [
+          "recursive-self-improvement",
+          "automating-ai-research"
+        ],
+        "concepts": [
+          "recursive-self-improvement"
+        ],
+        "terms": [
+          "self-improv*",
+          "recursive self",
+          "recursively self",
+          "ai r&d",
+          "automated ai research",
+          "automating ai research",
+          "ai scientist",
+          "research agent*",
+          "improves its own",
+          "rewrites its own",
+          "its own harness",
+          "automated researcher"
+        ]
+      },
+      {
+        "id": "beyond-human",
+        "axis": "capability",
+        "label": "Beyond human level",
+        "means": "Performance at or past expert humans on hard problems, or new discoveries people had not made.",
+        "topics": [
+          "science",
+          "math",
+          "coding"
+        ],
+        "concepts": [
+          "superintelligence"
+        ],
+        "terms": [
+          "superhuman",
+          "expert-level",
+          "human-level",
+          "surpass* human*",
+          "surpass* expert*",
+          "beyond human",
+          "outperform* human*",
+          "outperform* expert*",
+          "olympiad",
+          "open problem*",
+          "novel discover*"
+        ]
+      },
+      {
+        "id": "scale",
+        "axis": "capability",
+        "label": "Scale and resources",
+        "means": "The inputs that have driven progress so far: compute, data, model size and how results scale with them.",
+        "topics": [
+          "compute",
+          "scaling"
+        ],
+        "concepts": [
+          "scaling-laws"
+        ],
+        "terms": [
+          "scaling law*",
+          "training compute",
+          "flop*",
+          "training run*",
+          "gigawatt*",
+          "data cent*",
+          "compute budget",
+          "scale up",
+          "scaled up"
+        ]
+      },
+      {
+        "id": "legibility",
+        "axis": "control",
+        "label": "Understanding internals",
+        "means": "Reading what happens inside a model, so a system smarter than us could still be checked rather than trusted.",
+        "topics": [
+          "interpretability"
+        ],
+        "concepts": [
+          "interpretability",
+          "superposition"
+        ],
+        "terms": [
+          "mechanistic interpretab*",
+          "sparse autoencoder*",
+          "sparse dictionar*",
+          "dictionary learning",
+          "transcoder*",
+          "crosscoder*",
+          "attribution graph*",
+          "circuit tracing",
+          "linear probe*",
+          "probing",
+          "activation steering",
+          "steering vector*",
+          "persona vector*",
+          "model diffing",
+          "monosemantic*",
+          "superposition",
+          "features inside"
+        ]
+      },
+      {
+        "id": "oversight",
+        "axis": "control",
+        "label": "Oversight and alignment",
+        "means": "Keeping capable systems doing what people intend: alignment training, monitoring, evaluation and oversight that still works when the system is the stronger party.",
+        "topics": [
+          "alignment",
+          "safety",
+          "evals"
+        ],
+        "concepts": [
+          "scalable-oversight",
+          "corrigibility",
+          "outer-alignment",
+          "inner-alignment",
+          "rlhf"
+        ],
+        "terms": [
+          "scalable oversight",
+          "oversight",
+          "monitor*",
+          "ai control",
+          "corrigib*",
+          "red team*",
+          "red-team*",
+          "audit*",
+          "alignment",
+          "constitutional",
+          "interpretability-based",
+          "safety case*",
+          "debate",
+          "weak-to-strong"
+        ]
+      },
+      {
+        "id": "risk",
+        "axis": "risk",
+        "label": "Failure modes",
+        "means": "Evidence of the behaviours that would matter most in a system beyond our level: deception, reward hacking, power-seeking, sabotage, dangerous capabilities.",
+        "topics": [],
+        "concepts": [
+          "deceptive-alignment",
+          "reward-hacking",
+          "instrumental-convergence"
+        ],
+        "terms": [
+          "deceptiv*",
+          "deception",
+          "scheming",
+          "alignment faking",
+          "faking alignment",
+          "reward hacking",
+          "reward hack*",
+          "reward tampering",
+          "specification gaming",
+          "sandbag*",
+          "power-seeking",
+          "power seeking",
+          "self-exfiltrat*",
+          "sabotage",
+          "situational awareness",
+          "evaluation awareness",
+          "sycophan*",
+          "misalign*",
+          "dangerous capabilit*",
+          "loss of control",
+          "sleeper agent*",
+          "backdoor*"
+        ]
+      }
+    ],
+    "destination": {
+      "label": "Names the destination",
+      "means": "Talks about AGI or superintelligence itself. That places a piece on the path but is not evidence of progress, so it scores no dimension; a piece that only does this is 'adjacent'.",
+      "topics": [
+        "superintelligence"
+      ],
+      "terms": [
+        "agi",
+        "artificial general intelligence",
+        "general intelligence",
+        "superintelligen*",
+        "artificial superintelligence",
+        "asi"
+      ]
+    }
   }
 }

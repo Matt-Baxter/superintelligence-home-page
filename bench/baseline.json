@@ -1,6 +1,6 @@
 {
   "about": "Accepted benchmark numbers (scripts/bench.js). Update only for an uplift or an explained trade-off.",
-  "updated": "2026-11-11",
+  "updated": "2026-11-12",
   "metrics": {
     "review.credibility_auc": {
       "value": 1,
@@ -9,13 +9,13 @@
       "about": "credible items out-rank doubtful ones on credibility"
     },
     "review.score_auc": {
-      "value": 0.711,
+      "value": 0.813,
       "better": "higher",
       "tol": 0.02,
       "about": "...on the guarded score"
     },
     "review.naive_score_auc": {
-      "value": 0.336,
+      "value": 0.281,
       "better": "info",
       "about": "...on the unguarded score (for comparison)"
     },
@@ -56,12 +56,12 @@
       "about": "points an adversary attacking the guarded score gains"
     },
     "review.adversary_gain_naive": {
-      "value": 33.875,
+      "value": 35.75,
       "better": "info",
       "about": "points the same attack gains on the unguarded judge (the attack is real)"
     },
     "review.ms_per_doc": {
-      "value": 14,
+      "value": 15.8,
       "better": "info",
       "about": "time to review one item"
     },
@@ -168,13 +168,13 @@
       "about": "output error on unedited inputs with the SAE error added back (0 = exact)"
     },
     "papers.verdict_seed_stability": {
-      "value": 0.9,
+      "value": 0.909,
       "better": "higher",
       "tol": 0,
-      "about": "share of paper-example verdicts that hold on 3 other seed blocks (10 examples)"
+      "about": "share of paper-example verdicts that hold on 3 other seed blocks (11 examples)"
     },
     "papers.slowest_example_ms": {
-      "value": 1375,
+      "value": 1238,
       "better": "info",
       "about": "slowest paper example (baseline and variant); each toy must stay under 2 seconds"
     },
@@ -244,6 +244,12 @@
       "tol": 0.02,
       "about": "drop in the share of accepted proofs that prove a weaker statement when a comparator checks the statement, versus rewarding compiling alone (autoformalize-gate toy; arXiv 2610.08144)"
     },
+    "papers.shared_leak_amplification": {
+      "value": 0.267,
+      "better": "higher",
+      "tol": 0.02,
+      "about": "extra rise in a widely accepted wrong answer's share when its parameter is shared across prompts rather than copied per prompt (arXiv 2611.13218 toy)"
+    },
     "production.astar_optimal_gap": {
       "value": 0,
       "better": "lower",
@@ -287,7 +293,7 @@
       "about": "share of QA-guarded learnings whose guard catches a mutant reintroducing the problem and passes the corrected case"
     },
     "graph.isolated_elements": {
-      "value": 27,
+      "value": 29,
       "better": "info",
       "tol": 0,
       "about": "app graph elements connected to nothing (a discovery list, partly the code map's blind spots)"
@@ -381,6 +387,36 @@
       "better": "higher",
       "tol": 0,
       "about": "in scope vs out of scope on the spec fixtures: 1 when it removes at least 20% of a majority guess's errors and recognises every class"
+    },
+    "analysis.si_stance_dev": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "superintelligence rubric stance (capability, control, both, adjacent, none) on the dev split (14 synthetic items)"
+    },
+    "analysis.si_stance_heldout": {
+      "value": 0.75,
+      "better": "higher",
+      "tol": 0,
+      "about": "the same on the held-out split (8 synthetic items, never tuned on)"
+    },
+    "analysis.si_stance_balanced_accuracy": {
+      "value": 0.938,
+      "better": "higher",
+      "tol": 0,
+      "about": "superintelligence rubric stance, all items: mean recall over the classes present (immune to class imbalance)"
+    },
+    "analysis.si_stance_mcc": {
+      "value": 0.891,
+      "better": "higher",
+      "tol": 0.01,
+      "about": "superintelligence rubric stance, all items: Matthews correlation (0 = no better than a constant guess, 1 = perfect)"
+    },
+    "analysis.si_stance_paradox_free": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "superintelligence rubric stance, all items: 1 when it removes at least 20% of a majority guess's errors and recognises every class"
     }
   }
 }

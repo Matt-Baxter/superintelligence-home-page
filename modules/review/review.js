@@ -481,7 +481,7 @@ function review(input) {
     ],
     guarded: { base, cap, removed, scoreRule: "min(significance on cleaned text - removed factors, 35 + 0.65 x rigor); 30 at most if it addresses the judge" },
     guards, claims: cl.slice(0, 12), claimCount: cl.length, notClaims: notClaims([title, ...sents].filter(Boolean)).slice(0, 12), dropped: cleaned.dropped.map((d) => ({ ...d, sentence: d.sentence.slice(0, 160) })),
-    scope: sig.scope, type: sig.type, evidence: sig.evidence, benchmarks: sig.benchmarks,
+    scope: sig.scope, type: sig.type, evidence: sig.evidence, benchmarks: sig.benchmarks, superintelligence: sig.si,
     tags: tags.map(({ qid: q, label, matched, method, via }) => ({ qid: q, label, matched, method, ...(via ? { via } : {}) })),
     edges, trace, ms: Number(process.hrtime.bigint() - t0) / 1e6,
   };
@@ -553,6 +553,7 @@ const CRITERIA = {
   claims: { about: "A claim is backed when its own sentence carries a number, a sample size or an uncertainty; partly backed when a neighbouring sentence does; otherwise unbacked." },
   hype: { about: "Lower is better: up to 60 for the share of unbacked claims, plus 10 per hype word up to 40 (a survey's summaries of other work aren't counted as its claims)." },
   credibility: { about: "Half rigor plus half (100 minus hype)." },
+  superintelligence: require("../../lib/si-rubric").criteria(),
   significance: { about: "How big a step the text reports (lib/analysis.js), worked out on the cleaned text, minus frontier claims with no evidence in their own sentence, and capped at 35 + 0.65 × rigor; capped at 30 if the text addresses the judge." },
   verdicts: VERDICTS.map(({ id, rule }) => ({ id, rule })),
   guards: [

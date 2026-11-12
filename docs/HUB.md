@@ -321,7 +321,7 @@ Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/READM
 | `analysis.scope_mcc` | higher (tol 0.01) | 1 | in scope vs out of scope on the spec fixtures: Matthews correlation (0 = no better than a constant guess, 1 = perfect) |
 | `analysis.scope_paradox_free` | higher | 1 | in scope vs out of scope on the spec fixtures: 1 when it removes at least 20% of a majority guess's errors and recognises every class |
 
-In scripts/bench.js but not yet in the baseline: `review.proposed_verdict_accuracy`, `papers.shared_leak_amplification`.
+In scripts/bench.js but not yet in the baseline: `review.proposed_verdict_accuracy`, `papers.shared_leak_amplification`, `analysis.si_stance_dev`, `analysis.si_stance_heldout`.
 
 **Labelled sets** (synthetic test data)
 

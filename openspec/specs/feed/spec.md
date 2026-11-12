@@ -38,10 +38,10 @@ Source: `specs/001-superintelligence-homepage/spec.md`, approved (shared spec). 
 ### Requirement: REQ-005 Tag each story with the superintelligence topics it matches
 The system MUST tag each story with the superintelligence topics it matches and MUST show the words that caused each tag, so readers can see why the story is on a superintelligence home page.
 
-Source: `specs/001-superintelligence-homepage/spec.md`, approved (shared spec). Code: `lib/tagger.js`; scope reason on the story page.
+Source: `specs/001-superintelligence-homepage/spec.md`, approved (shared spec). Code: `lib/tagger.js`; scope reason on the story page; superintelligence rubric `lib/si-rubric.js` (eight dimensions in `lib/ontology.json` `si_rubric`), shown as "Path to superintelligence" on the story page and in the score.
 
 #### Scenario: REQ-005 is checked
-- **WHEN** the checks named in docs/SPEC_TRACE.md run (e2e: "US1-5 / REQ-005", "REQ-005: the story page says why"; `test/pipeline-quality-unit.js` checks full ancestor closure and valid graph references; unit: lineage (docs/LINEAGE.md))
+- **WHEN** the checks named in docs/SPEC_TRACE.md run (e2e: "US1-5 / REQ-005", "REQ-005: the story page says why"; `test/pipeline-quality-unit.js` checks full ancestor closure and valid graph references; unit: lineage (docs/LINEAGE.md); unit: si-rubric (13 checks); bench `analysis.si_stance_*` on `bench/si-rubric-set.json` (dev and held-out))
 - **THEN** they pass, as preflight and the browser test require
 
 ### Requirement: REQ-007 Link out to the original source and MUST NOT

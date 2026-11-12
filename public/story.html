@@ -51,6 +51,9 @@ async function load() {
     <table class="why" aria-label="Significance breakdown">${(an.why || []).map((w) => `<tr><td>+${w.points}</td><td>${esc(w.factor)}</td><td>${esc(w.detail || "")}</td></tr>`).join("")}</table>
     ${(an.benchmarks || []).length ? `<p class="small">Benchmarks: ${an.benchmarks.map((b) => `<a class="tag bench" href="/?benchmark=${esc(b.id)}">${esc(b.label)}${b.score ? ` <b>${esc(fmtScore(b.score))}</b>` : ""}</a>`).join(" ")}
       <span class="muted">Scores are read from the text next to the benchmark's name; check the source before quoting them.</span></p>` : ""}
+    ${an.si && an.si.dimensions ? `<details class="si-profile"><summary class="small"><b>Path to superintelligence:</b> ${esc(an.si.summary)}</summary>
+      <table class="why" aria-label="Superintelligence dimensions">${an.si.dimensions.map((d) => `<tr><td>${d.level}/3</td><td>${esc(d.label)} <span class="muted">(${esc(d.axis)})</span></td><td>${d.why.length ? esc(d.why.map((w) => w.detail).join("; ")) : "<span class=muted>not engaged</span>"}</td></tr>`).join("")}</table>
+      <p class="small muted">Each dimension: 1 for its ontology topic, 1 for one of its terms, 1 when the same sentence gives a measurement. Negated mentions don't count. <a href="/research/criteria">The rubric</a></p></details>` : ""}
     ${(an.people || []).length ? `<p class="small">People: ${an.people.map((p) => `<a class="tag" href="/?person=${esc(p.id)}">${esc(p.label)}</a>`).join(" ")}</p>` : ""}
     <p class="small muted">The score is rule-based and explainable: stronger evidence, more linked sources, reported benchmark results and frontier claims raise it. <a href="/m/capabilities">Capability tracker</a></p>`;
   // The table above already lists every factor with its points; the feed shows the same factors as meters.

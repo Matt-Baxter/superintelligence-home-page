@@ -105,6 +105,8 @@ for (const s of [careful, hype, comment]) {
   const { CRITERIA, VERDICTS } = R, S0 = require("../modules/review/samples.json"), rv = R.review((S0.samples || S0)[0]);
   ok(CRITERIA.rigor.checks.reduce((a, c) => a + c.points, 0) === 100 && CRITERIA.survey.checks.reduce((a, c) => a + c.points, 0) === 100, "criteria: rigor and survey checks each add up to 100");
   ok(JSON.stringify(rv.guards.map((g) => [g.id, g.label])) === JSON.stringify(CRITERIA.guards.map((g) => [g.id, g.label])), "criteria: the published guards are exactly the guards the judge runs");
+  ok(JSON.stringify(rv.superintelligence.dimensions.map((d) => d.id)) === JSON.stringify(CRITERIA.superintelligence.dimensions.map((d) => d.id)), "criteria: the published superintelligence dimensions are exactly the ones the judge scores");
+  ok(rv.superintelligence.dimensions.every((d) => d.level === d.why.reduce((a, w) => a + w.points, 0) && d.level <= 3), "superintelligence: every dimension level adds up from its reasons, at most 3");
   const grid = []; for (let s2 = 0; s2 <= 100; s2 += 5) for (let c = 0; c <= 100; c += 5) grid.push([s2, c]);
   ok(grid.every(([s2, c]) => VERDICTS.filter((v) => v.when(s2, c)).length >= 1) && VERDICTS.at(-1).rule === "none of the rules above applied", "criteria: every score pair gets a verdict, and the last rule catches the rest");
   ok(rv.verdictRule === VERDICTS.find((v) => v.id === rv.verdict).rule, "criteria: each review records the verdict rule that decided it");

@@ -65,6 +65,7 @@ function criteriaPage(base) {
 <section><h2>3. Hype, out of 100</h2><p>${esc(CRITERIA.hype.about)}</p></section>
 <section><h2>4. Credibility</h2><p>${esc(CRITERIA.credibility.about)}</p></section>
 <section><h2>5. Significance</h2><p>${esc(CRITERIA.significance.about)}</p></section>
+<section><h2>Path to superintelligence</h2><p class="small muted" style="margin:0 0 8px">${esc(CRITERIA.superintelligence.about)} ${esc(CRITERIA.superintelligence.relevance)} ${esc(CRITERIA.superintelligence.stance)}</p><table class="card"><tbody>${CRITERIA.superintelligence.dimensions.map((d) => `<tr><td><b>${esc(d.label)}</b><span class="ev">${esc(d.axis)}</span></td><td>${esc(d.means)}</td></tr>`).join("")}<tr><td><b>${esc(CRITERIA.superintelligence.destination.label)}</b></td><td>${esc(CRITERIA.superintelligence.destination.means)}</td></tr></tbody></table></section>
 <section><h2>6. Verdict</h2><p class="small muted" style="margin:0 0 8px">The first rule that holds, top to bottom.</p><table class="card"><tbody>${CRITERIA.verdicts.map((v) => `<tr><td><b>${esc(v.id)}</b></td><td>${esc(v.rule)}</td></tr>`).join("")}</tbody></table></section>
 <section><h2>7. Source grade, A to E</h2><p class="small muted" style="margin:0 0 8px">${esc(CRITERIA.source.about)}</p><table class="card"><tbody>${CRITERIA.source.outlets.map((o) => `<tr><td><b>${esc(o.grade)}</b></td><td>${esc(o.label)}<span class="ev">${esc(o.why)}</span></td></tr>`).join("")}</tbody></table></section>
 <section><h2>8. Forecasts</h2><p>${esc(CRITERIA.forecasts.about)}</p></section>
