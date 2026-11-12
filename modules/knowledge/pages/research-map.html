@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Research map · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css">
+<style>
+  .rm-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
+  .rm-filters label { display: grid; gap: 2px; font-size: var(--fs-sm, 13px); min-width: 0; }
+  .rm-filters select, .rm-filters input { max-width: 100%; }
+  .rm-dims { width: 100%; border-collapse: collapse; font-size: var(--fs-sm, 13px); }
+  .rm-dims td, .rm-dims th { padding: 6px 8px 6px 0; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+  .rm-dims td.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .rm-thread { padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .rm-thread ol { margin: 6px 0 0; padding-left: 20px; display: grid; gap: 4px; font-size: var(--fs-sm, 13px); }
+  .rm-item { padding: 12px 0; border-bottom: 1px solid var(--line); display: grid; gap: 4px; min-width: 0; }
+  .rm-item h3 { margin: 0; font-size: var(--fs-md, 16px); font-weight: 600; overflow-wrap: anywhere; }
+  .rm-item .meta, .rm-item .si { font-size: var(--fs-sm, 13px); color: var(--muted); }
+  .rm-item .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .rm-item:target { outline: 2px solid var(--fg); outline-offset: 4px; }
+  .rm-org { font-size: var(--fs-xs, 12px); border: 1px solid var(--line); border-radius: var(--radius); padding: 0 6px; }
+</style></head>
+<body>
+<main>
+  <div class="pagehead"><div><h1>Research map</h1>
+    <p class="muted">Anthropic's and Goodfire's interpretability, alignment and safety research since 2023, scored by the same superintelligence rubric as the feed and linked through our ontology: topics, Learn concepts, the methods each item uses and what it builds on.</p></div></div>
+  <p class="small muted" id="stats" role="status">Loading…</p>
+  <section class="panel"><h2>Where the two programmes meet</h2>
+    <p class="small muted">Methods used by both organisations, oldest item first. Follow one idea from its first paper to the latest.</p>
+    <div id="bridges"></div></section>
+  <section class="panel" style="margin-top:22px"><h2>The rubric across the map</h2>
+    <p class="small muted">How many items engage each dimension of the path to superintelligence. Summaries carry no numbers, so no item here earns the measured point. <a href="/research/criteria">The rubric</a></p>
+    <div style="overflow-x:auto"><table class="rm-dims" aria-label="Rubric dimensions by organisation"><thead><tr><th>Dimension</th><th>Axis</th><th class="n">Anthropic</th><th class="n">Goodfire</th><th class="n">Joint</th></tr></thead><tbody id="dims"></tbody></table></div></section>
+  <section class="panel" style="margin-top:22px"><h2>Items</h2>
+    <form class="rm-filters" id="filters" role="search">
+      <label>Organisation<select id="fOrg"><option value="">Both</option><option value="anthropic">Anthropic</option><option value="goodfire">Goodfire</option></select></label>
+      <label>Stance<select id="fStance"><option value="">Any</option><option value="control">Control</option><option value="capability">Capability</option><option value="both">Both</option><option value="adjacent">Adjacent</option></select></label>
+      <label>Dimension<select id="fDim"><option value="">Any</option></select></label>
+      <label>Method<select id="fMethod"><option value="">Any</option></select></label>
+      <label>Search<input id="fQ" type="search" placeholder="e.g. sleeper agents"></label>
+    </form>
+    <p class="small muted" id="count" role="status"></p>
+    <div id="items"></div></section>
+  <p class="small muted" id="about"></p>
+</main>
+<script src="/js/api.js"></script>
+<script>
+let MAP = null, SHARED = new Set();
+const STANCE = { control: "Control", capability: "Capability", both: "Capability and control", adjacent: "Adjacent", none: "None" };
+const orgsOf = (o) => (o === "anthropic+goodfire" ? ["anthropic", "goodfire"] : [o]);
+const chip = (href, text) => `<a class="tag" href="${esc(href)}">${esc(text)}</a>`;
+function itemHtml(x, byId) {
+  const dims = x.si.dimensions.filter((d) => d.level > 0);
+  return `<article class="rm-item" id="i-${esc(x.id)}">
+    <h3><a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.title)}</a></h3>
+    <div class="meta"><span class="rm-org">${esc(x.orgLabel)}</span> · ${esc(x.published)} · ${esc(x.kind)}</div>
+    <p style="margin:0">${esc(x.summary)}</p>
+    <p class="small" style="margin:0"><b>Why it matters for superintelligence:</b> ${esc(x.si_relevance)}</p>
+    <div class="si"><b>${esc(STANCE[x.si.stance] || x.si.stance)}</b>, relevance ${x.si.relevance}/100${dims.length ? ": " + dims.map((d) => `${esc(d.label)} ${d.level}/3`).join(", ") : ""}</div>
+    <div class="chips">${x.topics.map((t) => chip(`/?topic=${encodeURIComponent(t)}`, `topic:${t}`)).join("")}${x.concepts.map((c) => chip(`/m/learn#/c/${encodeURIComponent(c)}`, `concept:${c}`)).join("")}${(x.methods || []).map((m) => SHARED.has(m) ? `<button class="tag linkish" type="button" data-method="${esc(m)}" aria-label="Show items using ${esc(m)}">${esc(m)}</button>` : `<span class="tag">${esc(m)}</span>`).join("")}</div>
+    ${(x.builds_on || []).length ? `<div class="meta">Builds on: ${x.builds_on.filter((b) => byId[b]).map((b) => `<a href="#i-${esc(b)}">${esc(byId[b].title)}</a>`).join("; ")}</div>` : ""}
+  </article>`;
+}
+function render() {
+  const byId = Object.fromEntries(MAP.items.map((x) => [x.id, x]));
+  const org = $("#fOrg").value, st = $("#fStance").value, dim = $("#fDim").value, m = $("#fMethod").value, q = $("#fQ").value.trim().toLowerCase();
+  const list = MAP.items.filter((x) => (!org || orgsOf(x.org).includes(org)) && (!st || x.si.stance === st) && (!dim || x.si.dimensions.find((d) => d.id === dim).level > 0)
+    && (!m || (x.methods || []).includes(m)) && (!q || `${x.title} ${x.summary}`.toLowerCase().includes(q))).slice().reverse();
+  $("#count").textContent = `${list.length} of ${MAP.items.length} items, newest first`;
+  $("#items").innerHTML = list.length ? list.map((x) => itemHtml(x, byId)).join("") : '<p class="muted small">Nothing matches these filters.</p>';
+}
+async function load() {
+  MAP = await api("/api/knowledge/research-map"); SHARED = new Set(MAP.threads.map((t) => t.method));
+  const s = MAP.stats, byId = Object.fromEntries(MAP.items.map((x) => [x.id, x]));
+  $("#stats").textContent = `${s.items} items (Anthropic ${s.byOrg.anthropic}, Goodfire ${s.byOrg.goodfire}, joint ${s.byOrg["anthropic+goodfire"]}) · ${s.buildsOn} builds-on links · ${s.bridges.length} methods both use · checked ${MAP.checked}`;
+  $("#bridges").innerHTML = MAP.threads.filter((t) => t.bridge).map((t) => `<div class="rm-thread"><b>${esc(t.method)}</b> <span class="small muted">${t.items.length} items, ${esc(t.from.slice(0, 7))} to ${esc(t.to.slice(0, 7))}</span>
+    <ol>${t.items.map((id) => `<li><a href="#i-${esc(id)}">${esc(byId[id].title)}</a> <span class="rm-org">${esc(byId[id].orgLabel)}</span> <span class="muted">${esc(byId[id].published.slice(0, 7))}</span></li>`).join("")}</ol></div>`).join("");
+  $("#dims").innerHTML = MAP.dimensions.map((d) => `<tr><td>${esc(d.label)}</td><td>${esc(d.axis)}</td><td class="n">${d.byOrg.anthropic}</td><td class="n">${d.byOrg.goodfire}</td><td class="n">${d.byOrg["anthropic+goodfire"]}</td></tr>`).join("");
+  $("#fDim").innerHTML += MAP.dimensions.map((d) => `<option value="${esc(d.id)}">${esc(d.label)}</option>`).join("");
+  $("#fMethod").innerHTML += MAP.threads.map((t) => `<option value="${esc(t.method)}">${esc(t.method)} (${t.items.length})</option>`).join("");
+  $("#about").textContent = MAP.about;
+  render();
+  setPageContext("Research map");
+}
+$("#filters").addEventListener("input", render);
+$("#filters").addEventListener("submit", (e) => e.preventDefault());
+document.addEventListener("click", (e) => { const m = e.target.closest("[data-method]")?.dataset.method; if (m) { $("#fMethod").value = m; render(); $("#count").focus?.(); } });
+requireUser().then(load).catch((err) => showErr($("#stats"), err));
+</script>
+</body></html>

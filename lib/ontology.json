@@ -604,6 +604,13 @@
         "axiom math",
         "axiommath"
       ]
+    },
+    {
+      "id": "goodfire",
+      "label": "Goodfire",
+      "terms": [
+        "goodfire"
+      ]
     }
   ],
   "benchmarks": [
@@ -1282,7 +1289,9 @@
           "model diffing",
           "monosemantic*",
           "superposition",
-          "features inside"
+          "features inside",
+          "interpretab*",
+          "parameter decomposition"
         ]
       },
       {
@@ -1316,7 +1325,10 @@
           "interpretability-based",
           "safety case*",
           "debate",
-          "weak-to-strong"
+          "weak-to-strong",
+          "faithful*",
+          "unfaithful*",
+          "chain-of-thought monitor*"
         ]
       },
       {

@@ -29,7 +29,7 @@ How this build meets the shared spec ([specs/001-superintelligence-homepage/spec
 | --- | --- | --- | --- |
 | REQ-021 | "How it works" teardown | `modules/learn` (teardown) | e2e: "Learn" section |
 | REQ-022 | Dependent form fields stay consistent | not built (proposed, low priority) | not automated |
-| REQ-023 | Concepts in plain words, graph | `modules/learn/data/concepts.json`, `/m/learn`, `/m/map` | e2e: "Learn" section, graph connection evidence; `test/graph-logic-unit.js`; `test/cms-e2e.js`; review demo: "Map" |
+| REQ-023 | Concepts in plain words, graph | `modules/learn/data/concepts.json`, `/m/learn`, `/m/map`, research map of Anthropic and Goodfire work `modules/knowledge/research.js`, `/m/research-map`, `/api/knowledge/research-map` | e2e: "Learn" section, graph connection evidence; `test/graph-logic-unit.js`; `test/cms-e2e.js`; review demo: "Map"; unit: research-map (12 checks) |
 | REQ-024 | Background studio jobs | `learn_jobs`, `scripts/learn-worker.js`; the watcher queues `paper-to-code` | e2e: "Learn" section; unit: watch "queued for paper-to-code" |
 | REQ-025 | Explainer video and drafts, people publish | `modules/learn` explainer, RSS of published posts | e2e: "Learn" section |
 | REQ-026 | Worked examples, refuted kept, sources, sandbox | `modules/lab` (`examples.json`, `runners.js`, `interp.js`, `papers.js`), `/m/lab`, `/m/arena` | unit: lab, papers; arena demo; e2e: "refuted hypotheses are kept" |

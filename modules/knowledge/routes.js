@@ -61,6 +61,9 @@ module.exports = function mountKnowledge(app, { db, auth, admin, wrap, str, bad,
 
   const edgeRow = (r) => { const edge = { src: r.src, rel: r.rel, dst: r.dst, weight: Number(r.weight), evidence: JSON.parse(r.evidence || "[]") }; return { ...edge, meaning: K.explainEdge(edge) }; };
   // Graph: one node's neighbourhood, or the best-connected nodes when no qid is given.
+  // The research map: Anthropic's and Goodfire's interpretability and alignment work, scored by the superintelligence
+  // rubric and linked through the ontology (modules/knowledge/research.js). Static data; nothing is fetched.
+  app.get("/api/knowledge/research-map", auth, wrap(async () => require("./research").build()));
   app.get("/api/knowledge/graph", auth, wrap(async (req) => {
     const stale = await staleIndex();
     const q = inputId(req.query.qid, "qid", true), requestedLimit = Number(req.query.limit), limit = Number.isFinite(requestedLimit) ? Math.max(1, Math.min(60, Math.trunc(requestedLimit || 25))) : 25;

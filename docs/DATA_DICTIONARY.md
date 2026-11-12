@@ -165,6 +165,7 @@ Definitions are copied from their owning registry. Empty definitions mean the re
 | `org:deepseek` | DeepSeek (org) |  | deepseek | [registry](../lib/ontology.json) |
 | `org:epoch` | Epoch AI (org) |  | epoch ai | [registry](../lib/ontology.json) |
 | `org:far-ai` | FAR.AI (org) |  | far.ai, far ai | [registry](../lib/ontology.json) |
+| `org:goodfire` | Goodfire (org) |  | goodfire | [registry](../lib/ontology.json) |
 | `org:google-deepmind` | Google DeepMind (org) |  | deepmind, gemini, google research, alphafold, alphaproof | [registry](../lib/ontology.json) |
 | `org:meta` | Meta (org) |  | meta ai, llama, fair | [registry](../lib/ontology.json) |
 | `org:metr` | METR (org) |  | metr | [registry](../lib/ontology.json) |

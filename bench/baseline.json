@@ -61,7 +61,7 @@
       "about": "points the same attack gains on the unguarded judge (the attack is real)"
     },
     "review.ms_per_doc": {
-      "value": 15.8,
+      "value": 17.2,
       "better": "info",
       "about": "time to review one item"
     },
@@ -174,7 +174,7 @@
       "about": "share of paper-example verdicts that hold on 3 other seed blocks (11 examples)"
     },
     "papers.slowest_example_ms": {
-      "value": 1238,
+      "value": 1291,
       "better": "info",
       "about": "slowest paper example (baseline and variant); each toy must stay under 2 seconds"
     },
@@ -389,25 +389,25 @@
       "about": "in scope vs out of scope on the spec fixtures: 1 when it removes at least 20% of a majority guess's errors and recognises every class"
     },
     "analysis.si_stance_dev": {
-      "value": 1,
+      "value": 0.955,
       "better": "higher",
       "tol": 0,
-      "about": "superintelligence rubric stance (capability, control, both, adjacent, none) on the dev split (14 synthetic items)"
+      "about": "superintelligence rubric stance (capability, control, both, adjacent, none) on the dev split (22 synthetic items)"
     },
     "analysis.si_stance_heldout": {
-      "value": 0.75,
+      "value": 0.875,
       "better": "higher",
       "tol": 0,
       "about": "the same on the held-out split (8 synthetic items, never tuned on)"
     },
     "analysis.si_stance_balanced_accuracy": {
-      "value": 0.938,
+      "value": 0.95,
       "better": "higher",
       "tol": 0,
       "about": "superintelligence rubric stance, all items: mean recall over the classes present (immune to class imbalance)"
     },
     "analysis.si_stance_mcc": {
-      "value": 0.891,
+      "value": 0.919,
       "better": "higher",
       "tol": 0.01,
       "about": "superintelligence rubric stance, all items: Matthews correlation (0 = no better than a constant guess, 1 = perfect)"

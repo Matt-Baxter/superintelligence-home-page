@@ -10,6 +10,7 @@ modules/codemap/data/
 modules/project/data/
 out/
 !modules/learn/data/
+!modules/knowledge/data/
 __pycache__/
 
 # Lean build output (proofs/, REQ-038)

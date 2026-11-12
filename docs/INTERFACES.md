@@ -100,6 +100,8 @@ Every interface change gets a row here. Breaking changes bump the major version 
 - **Types:** `schema/types.json` generates `schema/gen/` (JSON Schema, zod, pydantic, proto3 with gRPC `Knowledge`, Arrow, JSON-LD context, OpenRPC, Rust serde, vocabulary).
 - **Extension point:** kernel `knowledge.taggers` (`{id, about, namespace, tag(text), edges?()}`).
 - **Knowledge module tables:** `knowledge_chunks(story_id, ord, text, hash, tags, model, vector)` and `knowledge_edges(src, rel, dst, weight, evidence)`.
+- **Research map:** `GET /api/knowledge/research-map` (signed in) returns `{about, checked, items[{id, qid, org, orgLabel, title, url, published, kind, summary, topics, concepts, methods, builds_on, si_relevance, si}], edges[{src, rel: builds-on|shares-method, dst, why}], threads[{method, items, orgs, bridge, from, to}], dimensions[{id, label, axis, items, byOrg}], topics, concepts, stats}` from `modules/knowledge/data/research-map.json`; page `/m/research-map`. Static data, nothing fetched.
+- **Superintelligence rubric:** `lib/ontology.json` gains `si_rubric {about, version, dimensions[{id, axis, label, means, topics, concepts, terms}], destination}` and organisation `goodfire`; story `analysis.si` and review results' `superintelligence` carry `{relevance, stance, axes, summary, dimensions[{id, label, axis, level, why}]}`; the significance factor "Capability areas" is replaced by "Path to superintelligence".
 - **Routes for admins:** `POST /api/admin/knowledge/build {limit?}` returns `{stories, chunks_changed, chunks_kept, edges, taggers, embedder}`; `GET /api/admin/knowledge/stats`.
 - **Routes for signed-in users:**
   - `GET /api/knowledge/graph?qid=&limit=`;

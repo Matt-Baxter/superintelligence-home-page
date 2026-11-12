@@ -29,10 +29,10 @@ Source: `specs/002-research-layer/spec.md`, proposed, not approved: needs both p
 ### Requirement: REQ-023 Explain the concepts behind superintelligence research in plain language
 The system SHOULD explain the concepts behind superintelligence research in plain language, with an analogy and a self-check, and show how the concepts relate as a graph linked to the stories and reviewed papers that mention them.
 
-Source: `specs/002-research-layer/spec.md`, proposed, not approved: needs both partners. Code: `modules/learn/data/concepts.json`, `/m/learn`, `/m/map`.
+Source: `specs/002-research-layer/spec.md`, proposed, not approved: needs both partners. Code: `modules/learn/data/concepts.json`, `/m/learn`, `/m/map`, research map of Anthropic and Goodfire work `modules/knowledge/research.js`, `/m/research-map`, `/api/knowledge/research-map`.
 
 #### Scenario: REQ-023 is checked
-- **WHEN** the checks named in docs/SPEC_TRACE.md run (e2e: "Learn" section, graph connection evidence; `test/graph-logic-unit.js`; `test/cms-e2e.js`; review demo: "Map")
+- **WHEN** the checks named in docs/SPEC_TRACE.md run (e2e: "Learn" section, graph connection evidence; `test/graph-logic-unit.js`; `test/cms-e2e.js`; review demo: "Map"; unit: research-map (12 checks))
 - **THEN** they pass, as preflight and the browser test require
 
 ### Requirement: REQ-024 Queue background studio jobs

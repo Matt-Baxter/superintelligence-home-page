@@ -26,5 +26,6 @@ CREATE INDEX IF NOT EXISTS idx_knowledge_edges_dst ON knowledge_edges(dst);
     });
     ctx.point("http.routes").add((app, deps) => require("./routes")(app, deps));
     ctx.point("ui.nav").add({ href: "/m/knowledge", label: "Knowledge", admin: true, order: 86 });
+    ctx.point("ui.nav").add({ href: "/m/research-map", label: "Research map", order: 20, group: "research" });
   },
 };

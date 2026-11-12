@@ -4,7 +4,7 @@
 
 One page that points at every skill, spec, check, measure and pitfall in the repo. It is generated from the files it links to, so it can't drift: [scripts/hub.js](../scripts/hub.js) reads them, `npm run hub` rewrites this page, and preflight's **Hub** check fails when it is stale or a link breaks.
 
-**Contents:** [Start here](#start-here) · [Specs](#specs) · [Skills (17)](#skills) · [Subagents (3)](#subagents) · [Spec Kit (9)](#spec-kit-commands) · [Checks (26)](#checks) · [Measures (64)](#measures) · [Tips and pitfalls (43)](#tips-and-pitfalls) · [Where things live](#where-things-live) · [Open decisions](#open-decisions-for-the-humans)
+**Contents:** [Start here](#start-here) · [Specs](#specs) · [Skills (17)](#skills) · [Subagents (3)](#subagents) · [Spec Kit (9)](#spec-kit-commands) · [Checks (26)](#checks) · [Measures (70)](#measures) · [Tips and pitfalls (43)](#tips-and-pitfalls) · [Where things live](#where-things-live) · [Open decisions](#open-decisions-for-the-humans)
 
 ## Start here
 
@@ -252,21 +252,21 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 
 ## Measures
 
-Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/README.md](../bench/README.md)): no metric may get worse than [bench/baseline.json](../bench/baseline.json) (updated 2026-11-11) allows. "info" metrics are reported, never failed.
+Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/README.md](../bench/README.md)): no metric may get worse than [bench/baseline.json](../bench/baseline.json) (updated 2026-11-12) allows. "info" metrics are reported, never failed.
 
 | Metric | Better | Baseline | What it measures |
 | --- | --- | --- | --- |
 | `review.credibility_auc` | higher | 1 | credible items out-rank doubtful ones on credibility |
-| `review.score_auc` | higher (tol 0.02) | 0.711 | ...on the guarded score |
-| `review.naive_score_auc` | info | 0.336 | ...on the unguarded score (for comparison) |
+| `review.score_auc` | higher (tol 0.02) | 0.813 | ...on the guarded score |
+| `review.naive_score_auc` | info | 0.281 | ...on the unguarded score (for comparison) |
 | `review.verdict_accuracy` | higher | 1 | 'doubtful' or 'withdrawn' exactly when the label says not credible |
 | `review.flag_recall` | higher | 1 | share of non-credible items sent to a person |
 | `review.flag_false_rate` | lower | 0 | share of credible items sent to a person |
 | `review.invariance` | higher | 1 | padding, stuffing, checklists, name-dropping, unbacked claims and injection don't raise the score (96 edits) |
 | `review.adversary_gain_guarded` | lower (tol 0.5) | 0 | points the guarded score gains under the attack on the unguarded judge |
 | `review.whitebox_gain` | lower (tol 0.5) | 0.25 | points an adversary attacking the guarded score gains |
-| `review.adversary_gain_naive` | info | 33.875 | points the same attack gains on the unguarded judge (the attack is real) |
-| `review.ms_per_doc` | info | 14 | time to review one item |
+| `review.adversary_gain_naive` | info | 35.75 | points the same attack gains on the unguarded judge (the attack is real) |
+| `review.ms_per_doc` | info | 17.2 | time to review one item |
 | `review.fidelity_accuracy` | higher | 1 | paraphrase-fidelity checks right on bench/fidelity-cases.json (52 synthetic pairs: pass/fail and the expected check) |
 | `review.verdict_balanced_accuracy` | higher | 1 | credible vs not credible verdicts: mean recall over the classes present (immune to class imbalance) |
 | `review.verdict_mcc` | higher (tol 0.01) | 1 | credible vs not credible verdicts: Matthews correlation (0 = no better than a constant guess, 1 = perfect) |
@@ -284,8 +284,8 @@ Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/READM
 | `interp.sae_recovery` | higher (tol 0.03) | 0.778 | share of the toy's 12 true features an SAE recovers (cosine > 0.9), mean of 3 seeds |
 | `interp.steering_selectivity` | higher (tol 0.5) | 8.28 | target gain / collateral change when clamping one SAE latent to 4x |
 | `interp.steering_exactness` | lower | 0 | output error on unedited inputs with the SAE error added back (0 = exact) |
-| `papers.verdict_seed_stability` | higher | 0.9 | share of paper-example verdicts that hold on 3 other seed blocks (10 examples) |
-| `papers.slowest_example_ms` | info | 1375 | slowest paper example (baseline and variant); each toy must stay under 2 seconds |
+| `papers.verdict_seed_stability` | higher | 0.909 | share of paper-example verdicts that hold on 3 other seed blocks (11 examples) |
+| `papers.slowest_example_ms` | info | 1291 | slowest paper example (baseline and variant); each toy must stay under 2 seconds |
 | `papers.hidden_eval_hack_drop` | higher (tol 0.02) | 0.185 | drop in the quirk share when a self-improving agent is judged on hidden evaluations (arXiv 2609.26457 toy) |
 | `papers.recompute_evasion` | lower | 0 | undetected exploits with independent recomputation (arXiv 2609.28614 toy) |
 | `papers.cosine_sae_gain` | higher (tol 1) | 8 | extra true features a cosine-scored SAE recovers when input sizes vary (arXiv 2606.15054 toy) |
@@ -297,6 +297,7 @@ Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/READM
 | `papers.self_reference_leak` | higher (tol 0.01) | 0.049 | claim strength lost over 12 generations of self-improvement when each generation checks against its own output instead of the original claim, comparator above threshold (recursive-drift toy) |
 | `papers.foundations_first_gain` | higher (tol 0.01) | 0.086 | less of a formal library resting on a wrong statement when a 10% review budget checks foundations first instead of the last results (library-fidelity toy) |
 | `papers.comparator_weakening_drop` | higher (tol 0.02) | 0.999 | drop in the share of accepted proofs that prove a weaker statement when a comparator checks the statement, versus rewarding compiling alone (autoformalize-gate toy; arXiv 2610.08144) |
+| `papers.shared_leak_amplification` | higher (tol 0.02) | 0.267 | extra rise in a widely accepted wrong answer's share when its parameter is shared across prompts rather than copied per prompt (arXiv 2611.13218 toy) |
 | `production.astar_optimal_gap` | lower | 0 | largest cost gap between A* and uniform-cost search across the six named situations (0 = A* is optimal) |
 | `production.astar_nodes_saved` | higher (tol 5) | 114 | search nodes A*'s bound saves over uniform-cost search, summed over the situations |
 | `production.astar_value_gain` | higher (tol 0.1) | 5.448 | information kept by the A* plan minus the first shipped plan, strong+table+toy+mech situation (model units) |
@@ -304,7 +305,7 @@ Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/READM
 | `production.qlearn_overclaims` | lower | 0 | full videos the learned policy gives thin or abstract-only papers per week (simulation) |
 | `graph.shacl_violations` | lower | 0 | SHACL violations of the app graph (modules/graph/shapes.ttl) |
 | `graph.recall` | higher | 1 | share of QA-guarded learnings whose guard catches a mutant reintroducing the problem and passes the corrected case |
-| `graph.isolated_elements` | info | 27 | app graph elements connected to nothing (a discovery list, partly the code map's blind spots) |
+| `graph.isolated_elements` | info | 29 | app graph elements connected to nothing (a discovery list, partly the code map's blind spots) |
 | `verification.heldout_rung_accuracy` | higher | 1 | rung (none, claimed, statement checked, checked outside) on the held-out split (26 items) |
 | `verification.heldout_gap_accuracy` | higher | 1 | fidelity gap flagged or not, held-out split |
 | `verification.false_formal` | lower | 0 | share of sentences with no proof claim that get credit for one ("a lean team", "the deal was formalized"), all 47 items |
@@ -320,8 +321,13 @@ Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/READM
 | `analysis.scope_balanced_accuracy` | higher | 1 | in scope vs out of scope on the spec fixtures: mean recall over the classes present (immune to class imbalance) |
 | `analysis.scope_mcc` | higher (tol 0.01) | 1 | in scope vs out of scope on the spec fixtures: Matthews correlation (0 = no better than a constant guess, 1 = perfect) |
 | `analysis.scope_paradox_free` | higher | 1 | in scope vs out of scope on the spec fixtures: 1 when it removes at least 20% of a majority guess's errors and recognises every class |
+| `analysis.si_stance_dev` | higher | 0.955 | superintelligence rubric stance (capability, control, both, adjacent, none) on the dev split (22 synthetic items) |
+| `analysis.si_stance_heldout` | higher | 0.875 | the same on the held-out split (8 synthetic items, never tuned on) |
+| `analysis.si_stance_balanced_accuracy` | higher | 0.95 | superintelligence rubric stance, all items: mean recall over the classes present (immune to class imbalance) |
+| `analysis.si_stance_mcc` | higher (tol 0.01) | 0.919 | superintelligence rubric stance, all items: Matthews correlation (0 = no better than a constant guess, 1 = perfect) |
+| `analysis.si_stance_paradox_free` | higher | 1 | superintelligence rubric stance, all items: 1 when it removes at least 20% of a majority guess's errors and recognises every class |
 
-In scripts/bench.js but not yet in the baseline: `review.proposed_verdict_accuracy`, `papers.shared_leak_amplification`, `analysis.si_stance_dev`, `analysis.si_stance_heldout`.
+In scripts/bench.js but not yet in the baseline: `review.proposed_verdict_accuracy`.
 
 **Labelled sets** (synthetic test data)
 
