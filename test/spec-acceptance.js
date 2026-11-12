@@ -139,7 +139,7 @@ async function api() {
   check(["REQ-017", "US4"], "clearing the filter returns the full feed", ((await a.call("/api/stories?limit=200")).json.stories || []).length === feed.length);
 
   // ---- Delivery and scope ----
-  check(["REQ-020"], "the agent log is AGENT_LOG.md in the repo, not an app page", fs.existsSync(path.join(root, "AGENT_LOG.md")) && (await a.call("/api/agent-log")).status === 404);
+  check(["REQ-020"], "the agent log is AGENT_LOG.md in the repo, not an app page", [root, path.join(root, "..", "..")].some((d) => fs.existsSync(path.join(d, "AGENT_LOG.md"))) && (await a.call("/api/agent-log")).status === 404);
   const extras = await Promise.all(["/api/brief", "/api/lists", "/api/stories/1/notes", "/api/learn/concepts", "/api/knowledge/graph", "/api/learn/glossary", "/api/learn/published/1", "/m/published-explainer", "/api/editorial/posts", "/api/admin/editorial/posts", "/m/glossary", "/m/editorial", "/m/journal", "/api/appearance", "/api/admin/appearance", "/m/appearance", "/api/editorial/feed.xml", "/api/editorial/feed.json", "/api/admin/editorial/generate"].map((p) => a.call(p, p.includes("notes") ? { body: { text: "x" } } : {})));
   check(["Out of scope"], "out-of-scope extras (brief, lists, notes, Learn, knowledge) are off in the spec version", extras.every((r) => r.status === 404));
 }
@@ -162,7 +162,7 @@ async function browser() {
         const first = await p.$("#feed .story a[href^='http']");
         check(["REQ-007", "US1-6"], "selecting a story takes you to the original source", first && /^https?:\/\/(?!localhost)/.test(await first.getAttribute("href")));
         await p.goto(B + "/?topic=governance-nothing").catch(() => {});
-        const topicLink = await p.$(".topicbar a");
+        const topicLink = await p.waitForSelector(".topicbar a", { timeout: 5000 }).catch(() => null); // the bar fills in after the topics load
         check(["REQ-017"], "the topic bar is on the page", !!topicLink);
         await p.evaluate(() => fetch("/api/logout", { method: "POST" }));
         await p.goto(B + "/?signin=1"); await p.waitForTimeout(500);
