@@ -22,4 +22,16 @@ ok(P("Sample (test data): a sourdough recipe", "Rest the dough for 12 hours.").r
 const a = A.analyze({ title: t, summary: x }, { kinds: ["papers"] });
 ok(a.si && a.why.some((w) => w.factor === "Path to superintelligence") && a.significance === a.why.reduce((s, w) => s + w.points, 0), "the story analysis carries the profile and its significance still adds up from its reasons");
 ok(R.criteria().dimensions.map((d) => d.id).join() === dims.map((d) => d.id).join(), "the published criteria list exactly the dimensions the code scores");
+
+// Properties over the labelled synthetic set (bench/si-rubric-set.json): the profile depends on what the text says,
+// not on its casing, spacing, sentence order or unrelated padding; negating every mention removes it; a measurement
+// added in the same sentence never lowers a level.
+const SET = require("../bench/si-rubric-set.json").items;
+const stance = (t, x) => P(t, x).stance, levels = (t, x) => P(t, x).dimensions.map((d) => d.level).join("");
+const sentencesOf = (x) => x.split(/(?<=[.!?])\s+/);
+ok(SET.every((x) => levels(x.title, x.text) === levels(x.title, x.text.toUpperCase().toLowerCase()) && levels(x.title, x.text) === levels(x.title, x.text.replace(/ /g, "  ").replace(/\. /g, ".\n"))), "spacing and line breaks never change a profile");
+ok(SET.every((x) => { const s = sentencesOf(x.text); return s.length < 2 || stance(x.title, x.text) === stance(x.title, [...s].reverse().join(" ")); }), "reordering sentences never changes the stance");
+ok(SET.every((x) => levels(x.title, x.text) === levels(x.title, `${x.text} The weather was mild and the office reopened on Monday.`)), "an unrelated sentence never changes a profile");
+ok(SET.filter((x) => x.split === "dev").every((x) => { const p0 = P(x.title, x.text), p1 = P(x.title, `${x.text.replace(/\.\s*$/, "")}, measured on 40 tasks.`); return p1.dimensions.every((d, i) => d.level >= p0.dimensions[i].level); }), "adding a measurement never lowers a level");
+ok(P("Sample (test data): no sparse autoencoders and no reward hacking", "We did not use sparse autoencoders and found no reward hacking.").engaged === 0, "a text that negates every mention engages nothing");
 console.log(`\nsi-rubric unit: ${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

@@ -91,7 +91,7 @@ const HORIZON = [
   { re: /\bnext year\b/i, due: (m, at) => `${Number(at.slice(0, 4)) + 1}-12-31` },
   { re: /\bby the end of (?:the|this) decade\b/i, due: (m, at) => `${Math.floor(Number(at.slice(0, 4)) / 10) * 10 + 9}-12-31` },
 ];
-const FUTURE = /\b(will|would|could|going to|expect\w*|predict\w*|forecast\w*|likely|chance|probabilit\w+|odds|on track|away from|arrive|reach|achiev\w+|build\w*|plan\w*|aim\w*|possib\w+|soon|arriv\w+)\b/i;
+const FUTURE = /\b(will|would|could|going to|expect\w*|predict\w*|forecast\w*|likely|chance|probabilit\w+|odds|on track|away from|arrive|reach|achiev\w+|build\w*|plan\w*|aim\w*|possib\w+|soon|arriv\w+|target\w*|goal|intend\w*|deadline)\b/i;
 const NUM = { a: 1, one: 1, two: 2, three: 3, few: 3, five: 5, ten: 10 };
 function addMonths(at, n) { const d = new Date(`${at}T00:00:00Z`); d.setUTCMonth(d.getUTCMonth() + n); return d.toISOString().slice(0, 10); }
 // A stated probability in the forecast's own sentence ("a 60% chance", "probability of 0.3", "70 percent likely"), as

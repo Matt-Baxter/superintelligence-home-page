@@ -68,7 +68,8 @@
     "elements": "node --no-warnings scripts/elements.js",
     "test:elements": "node --no-warnings test/elements-unit.js",
     "test:coordination-proofs": "node --no-warnings test/coordination-lean.js",
-    "demo:capture": "node --no-warnings scripts/demo-capture.js"
+    "demo:capture": "node --no-warnings scripts/demo-capture.js",
+    "read": "node scripts/read.js"
   },
   "keywords": [],
   "author": "",

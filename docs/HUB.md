@@ -254,6 +254,7 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | `npm run test:elements` | Element descriptors (proposed REQ-072..REQ-075, spec 010, openspec/changes/add-element-descriptors): the portable package, the SQL provider, the… |
 | `npm run test:coordination-proofs` | Lean proofs of coordination and the element catalog (proposed REQ-069, REQ-072; proofs/CoordinationSpec.lean, Coordination.lean, FinalCheck.lean),… |
 | `npm run demo:capture` | Screenshots and short videos for the docs (REQ-068..REQ-075, proposed): the work board, two people on one response in the builder, the element… |
+| `npm run read` | Read every paper and article in a watch input in full, and set the full-text reading next to the judgement of the abstract or summary… |
 
 ## Measures
 
@@ -262,16 +263,16 @@ Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/READM
 | Metric | Better | Baseline | What it measures |
 | --- | --- | --- | --- |
 | `review.credibility_auc` | higher | 1 | credible items out-rank doubtful ones on credibility |
-| `review.score_auc` | higher (tol 0.02) | 0.813 | ...on the guarded score |
-| `review.naive_score_auc` | info | 0.281 | ...on the unguarded score (for comparison) |
+| `review.score_auc` | higher (tol 0.02) | 0.765 | ...on the guarded score |
+| `review.naive_score_auc` | info | 0.247 | ...on the unguarded score (for comparison) |
 | `review.verdict_accuracy` | higher | 1 | 'doubtful' or 'withdrawn' exactly when the label says not credible |
 | `review.flag_recall` | higher | 1 | share of non-credible items sent to a person |
 | `review.flag_false_rate` | lower | 0 | share of credible items sent to a person |
-| `review.invariance` | higher | 1 | padding, stuffing, checklists, name-dropping, unbacked claims and injection don't raise the score (96 edits) |
+| `review.invariance` | higher | 1 | padding, stuffing, checklists, name-dropping, unbacked claims and injection don't raise the score (108 edits) |
 | `review.adversary_gain_guarded` | lower (tol 0.5) | 0 | points the guarded score gains under the attack on the unguarded judge |
-| `review.whitebox_gain` | lower (tol 0.5) | 0.25 | points an adversary attacking the guarded score gains |
-| `review.adversary_gain_naive` | info | 35.75 | points the same attack gains on the unguarded judge (the attack is real) |
-| `review.ms_per_doc` | info | 17.2 | time to review one item |
+| `review.whitebox_gain` | lower (tol 0.5) | 0.222 | points an adversary attacking the guarded score gains |
+| `review.adversary_gain_naive` | info | 35.444 | points the same attack gains on the unguarded judge (the attack is real) |
+| `review.ms_per_doc` | info | 21.4 | time to review one item |
 | `review.fidelity_accuracy` | higher | 1 | paraphrase-fidelity checks right on bench/fidelity-cases.json (52 synthetic pairs: pass/fail and the expected check) |
 | `review.verdict_balanced_accuracy` | higher | 1 | credible vs not credible verdicts: mean recall over the classes present (immune to class imbalance) |
 | `review.verdict_mcc` | higher (tol 0.01) | 1 | credible vs not credible verdicts: Matthews correlation (0 = no better than a constant guess, 1 = perfect) |
@@ -290,7 +291,7 @@ Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/READM
 | `interp.steering_selectivity` | higher (tol 0.5) | 8.28 | target gain / collateral change when clamping one SAE latent to 4x |
 | `interp.steering_exactness` | lower | 0 | output error on unedited inputs with the SAE error added back (0 = exact) |
 | `papers.verdict_seed_stability` | higher | 0.909 | share of paper-example verdicts that hold on 3 other seed blocks (11 examples) |
-| `papers.slowest_example_ms` | info | 1291 | slowest paper example (baseline and variant); each toy must stay under 2 seconds |
+| `papers.slowest_example_ms` | info | 1251 | slowest paper example (baseline and variant); each toy must stay under 2 seconds |
 | `papers.hidden_eval_hack_drop` | higher (tol 0.02) | 0.185 | drop in the quirk share when a self-improving agent is judged on hidden evaluations (arXiv 2609.26457 toy) |
 | `papers.recompute_evasion` | lower | 0 | undetected exploits with independent recomputation (arXiv 2609.28614 toy) |
 | `papers.cosine_sae_gain` | higher (tol 1) | 8 | extra true features a cosine-scored SAE recovers when input sizes vary (arXiv 2606.15054 toy) |
@@ -338,7 +339,7 @@ In scripts/bench.js but not yet in the baseline: `review.proposed_verdict_accura
 
 | Set | Size | Run |
 | --- | --- | --- |
-| [Review desk benchmark set](../bench/review-set.json) | 16 items (8 credible, 8 not) | `npm run bench` |
+| [Review desk benchmark set](../bench/review-set.json) | 18 items (9 credible, 9 not) | `npm run bench` |
 | [Judge edge cases (v1.1.0)](../bench/judge-edge-cases.json) | 74 cases: 72 ok, 2 gap; stages bands 6, canonicalise 5, claims 8, clean 1, determinism 1, guards 6, hype 3, kind 4, negation 12, numbers 6, rewording 14, segment 8 | `node test/judge-edge-cases.js` |
 | [Paraphrase-fidelity set (v1.2.0, REQ-033)](../bench/fidelity-cases.json) | 5 sources, 52 paraphrases (25 faithful, 27 unfaithful); checks: numbers, units, hedges, negation, claims-added, claims-dropped, entities, limitations | `node test/fidelity-unit.js` |
 

@@ -38,7 +38,7 @@ Source: `specs/001-superintelligence-homepage/spec.md`, approved (shared spec). 
 ### Requirement: REQ-028 Watch for new papers on its research topics once
 The system SHOULD watch for new papers on its research topics once a day, judge and catalogue them, write a dated digest, and queue the most credible non-survey papers for paper-to-code, never storing or queueing a paper twice.
 
-Source: `specs/002-research-layer/spec.md`, proposed, not approved: needs both partners. Code: `scripts/watch.js`, `modules/review/watch.json`, `.github/workflows/paper-watch.yml`.
+Source: `specs/002-research-layer/spec.md`, proposed, not approved: needs both partners. Code: `scripts/watch.js`, `modules/review/watch.json`, `.github/workflows/paper-watch.yml`; `scripts/read.js` (`npm run read -- --from <input>`) reads every paper and article in full from saved texts and writes `out/read/<date>.md`.
 
 #### Scenario: REQ-028 is checked
 - **WHEN** the checks named in docs/SPEC_TRACE.md run (unit: watch (5 checks))

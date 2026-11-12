@@ -61,6 +61,8 @@ function criteriaPage(base) {
 <section><h2>1. Rigor, out of 100</h2><p class="small muted" style="margin:0 0 8px">${esc(CRITERIA.rigor.about)}</p>${tbl(CRITERIA.rigor.checks)}</section>
 <section><h2>Surveys instead</h2><p class="small muted" style="margin:0 0 8px">${esc(CRITERIA.survey.about)}</p>${tbl(CRITERIA.survey.checks)}</section>
 <section><h2>Articles instead</h2><p class="small muted" style="margin:0 0 8px">${esc(CRITERIA.reporting.about)}</p>${tbl(CRITERIA.reporting.checks)}</section>
+<section><h2>Event reports instead</h2><p class="small muted" style="margin:0 0 8px">${esc(CRITERIA.event.about)}</p>${tbl(CRITERIA.event.checks)}</section>
+<section><h2>Two readings: abstract and full text</h2><p>${esc(CRITERIA.fulltext.about)}</p><p>${esc(CRITERIA.fulltext.credibility)} ${esc(CRITERIA.fulltext.disagree)} ${esc(CRITERIA.fulltext.truncated)}</p></section>
 <section><h2>2. Claims</h2><p>${esc(CRITERIA.claims.about)}</p></section>
 <section><h2>3. Hype, out of 100</h2><p>${esc(CRITERIA.hype.about)}</p></section>
 <section><h2>4. Credibility</h2><p>${esc(CRITERIA.credibility.about)}</p></section>

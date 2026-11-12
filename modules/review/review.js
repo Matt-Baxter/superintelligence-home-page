@@ -293,6 +293,18 @@ const REPORTING = [
 // In an article, a sentence that asserts progress or the future with nothing behind it (no number, sample, citation
 // or hedge) counts as an unbacked claim, so a calm post that cites nothing can't pass as careful.
 const ASSERT = /\b(is (?:already )?here|already|will (?!not)\w+|now \w+s\b|most of|every|each generation|compounds?|inevitabl\w+|soon)\b/i;
+// An event report: an article about something that happened (a vote, an ordinance, a signed order, an announcement, a
+// hearing), not about a study, and making no research claims of its own. It is judged on how it reports the event, and
+// sentences that attribute what someone said or decided are reported speech, not the article's own assertions.
+const EVENT_TOPIC = /\b(ordinance|bill|law|legislat\w+|council|congress|senate|parliament|regulat\w+|agency|department|ministry|task force|executive order|treaty|dialogue|summit|hearing|court|lawsuit|filing|unanimously|approved|passed|signed|announced|launched)\b/i;
+// What a person said or what a document provides: "the mayor said", "the ordinance requires".
+const EVENT_ATTRIB = /\b(said|says|told|according to|stated|testified|wrote|announced|provides?|requires?|defines?|prohibits?|authori[sz]es?|allows?)\b/i;
+const EVENT = [
+  { label: "Says who did what, and when", points: 30, re: /\b(?:on|since|last|this|next) (?:mon|tues|wednes|thurs|fri|satur|sun)day\b|\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.? \d{1,2}\b|\b\d{1,2} (?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b/i },
+  { label: "Attributes what was said or decided to who said it", points: 30, re: /\b(said|says|told|according to|stated|testified|wrote in|announced)\b/i },
+  { label: "Points to the record", points: 20, re: /\b(?:ordinance|bill|resolution|order|docket|case|filing)\s+(?:no\.?\s*)?[a-z]{0,4}[- ]?\d[\w-]*|\b(transcript|press release|official statement|minutes|filing|the text of)\b/i },
+  { label: "Keeps what may follow apart from what happened", points: 20, re: /\b(whether|may|might|could|would|uncertain|unclear|not yet|if )\b/i },
+];
 const REPORT_HEDGE = /\b(whether|may|might|could|uncertain|unclear|open question|plausible|if )\b/i;
 const CITE = REPORTING[0].re;
 // Reported speech: in an article, a sentence that quotes someone's reaction ('called it "a breakthrough"') reports what
@@ -367,7 +379,8 @@ function review(input) {
   // The significance judge reads only backed claims: a claim without evidence adds no topics and no points.
   // In an article, sentences that assert or give figures with nothing behind them are unbacked too (see asserts below).
   const cites = CITE.test(cleaned.text) || (!!input.url && /arxiv\.org\/abs\/|doi\.org\//.test(String(input.url)));
-  const assertList = isArticle ? sents.filter((x) => !isClaim(unquote(x)) && ((ASSERT.test(x) && !REPORT_HEDGE.test(x) && !CITE.test(x) && !markersIn(x).length) || (!cites && FIGURE.test(x)))) : [];
+  const eventReport = isArticle && !cites && cl.length === 0 && EVENT_TOPIC.test(cleaned.text);
+  const assertList = isArticle ? sents.filter((x) => !isClaim(unquote(x)) && !(eventReport && EVENT_ATTRIB.test(x) && !analysis.analyze({ title: x }, { kinds: [source] }).claims.some((c) => c !== "talks about AGI or superintelligence")) && ((ASSERT.test(x) && !REPORT_HEDGE.test(x) && !CITE.test(x) && !markersIn(x).length) || (!cites && !eventReport && FIGURE.test(x)))) : [];
   const unbackedSet = new Set([...cl.filter((c) => c.level !== "backed").map((c) => c.sentence), ...assertList.map((x) => x.slice(0, 200))]);
   const sigText = sents.filter((s) => !unbackedSet.has(s.slice(0, 200))).join(" ");
   const sig = step("judge-significance", "Significance on the cleaned text, without unbacked claims", () => analysis.analyze({ title, summary: sigText, authors }, { kinds: [source] }));
@@ -382,6 +395,8 @@ function review(input) {
   let rubric = isSurvey ? "survey" : "paper";
   if (isArticle) { const rp = REPORTING.filter((c, i) => c.re.test(cleaned.text) && (i !== 1 || cites)), rv = rp.reduce((a, c) => a + c.points, 0);
     if (rv > rg.score) { rubric = "reporting"; rg.score = rv; rg.why = rp.map((c) => ({ factor: c.label, points: c.points, detail: (sents.find((x) => c.re.test(x)) || "").slice(0, 140) })); rg.missing = REPORTING.filter((c) => !rp.includes(c)).map((c) => c.label); } }
+  if (eventReport) { const ep = EVENT.filter((c) => c.re.test(cleaned.text)), ev = ep.reduce((a, c) => a + c.points, 0);
+    if (ev > rg.score) { rubric = "event"; rg.score = ev; rg.why = ep.map((c) => ({ factor: c.label, points: c.points, detail: (sents.find((x) => c.re.test(x)) || "").slice(0, 140) })); rg.missing = EVENT.filter((c) => !ep.includes(c)).map((c) => c.label); } }
   if (isSurvey || mixedSurvey) { const cov = COVERAGE.filter((c) => c.re.test(cleaned.text)); const sv = cov.reduce((a, c) => a + c.points, 0);
     if (sv > rg.score) { rg.score = sv; rg.why = cov.map((c) => ({ factor: c.label, points: c.points, detail: "survey coverage" })); rg.missing = COVERAGE.filter((c) => !cov.includes(c)).map((c) => c.label); } }
 
@@ -550,10 +565,12 @@ const CRITERIA = {
   rigor: { about: "What the evidence needs. Each check counts only when a sentence shows it; the points add up to 100.", checks: MARKERS.map(({ id, label, points }) => ({ id, label, points })) },
   survey: { about: "A survey is judged on coverage instead. Paper-kind detection reads the title and body; mixed survey and experiment text is sent to a person.", checks: COVERAGE.map(({ label, points }) => ({ label, points })) },
   reporting: { about: "An article is judged on how well it reports instead, when that scores higher: does it cite the study it describes, give the study's numbers or size, say what was not shown, and keep forecasts apart from findings. In an article, a sentence that asserts progress or the future with no number, sample, citation or hedge counts as an unbacked claim. An article that cites no study gets no points for numbers, and each sentence giving figures counts as an unbacked claim. Words quoted from someone's reaction ('called it \"a breakthrough\"') are reported speech: they are not counted as the article's claims or hype words.", checks: REPORTING.map(({ label, points }) => ({ label, points })) },
+  event: { about: "An article about an event (a vote, an ordinance, a signed order, an announcement, a hearing) that cites no study and makes no research claims is judged on how it reports the event instead, when that scores higher; sentences that attribute what someone said or decided are reported speech, not the article's own assertions, unless they relay a claim of progress (superhuman or human-level results, AI improving AI, a new best, dangerous capabilities), which still needs evidence; naming AGI or superintelligence as the subject is not such a claim.", checks: EVENT.map(({ label, points }) => ({ label, points })) },
   claims: { about: "A claim is backed when its own sentence carries a number, a sample size or an uncertainty; partly backed when a neighbouring sentence does; otherwise unbacked." },
   hype: { about: "Lower is better: up to 60 for the share of unbacked claims, plus 10 per hype word up to 40 (a survey's summaries of other work aren't counted as its claims)." },
   credibility: { about: "Half rigor plus half (100 minus hype)." },
   superintelligence: require("../../lib/si-rubric").criteria(),
+  fulltext: require("./fulltext").RULES,
   significance: { about: "How big a step the text reports (lib/analysis.js), worked out on the cleaned text, minus frontier claims with no evidence in their own sentence, and capped at 35 + 0.65 × rigor; capped at 30 if the text addresses the judge." },
   verdicts: VERDICTS.map(({ id, rule }) => ({ id, rule })),
   guards: [

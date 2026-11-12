@@ -54,7 +54,22 @@ function fromHtml(html, meta = {}) {
 
 // PDF text (pdftotext -layout off): headings are short lines like "3 Method", "3.2 Results" or "LIMITATIONS"; tables
 // survive only as their captions ("Table 2: ...") and loose numbers, which the extractor reads as sentences.
+// Markdown tables (a web reader's rendering of HTML tables): consecutive "| a | b |" lines, matched to the nearest
+// "Table N" caption above them, so table cells can back a paper's claims as they do from the HTML reader.
+function mdTables(t, captions) {
+  const lines = t.split("\n"), out = []; let cur = null;
+  lines.forEach((l, i) => {
+    if (/^\s*\|.*\|\s*$/.test(l)) {
+      if (!cur) { const cap = lines.slice(Math.max(0, i - 4), i).reverse().find((x) => /^\s*Table\s*\d/i.test(x)) || ""; const n = Number((cap.match(/Table\s*(\d+)/i) || [])[1]) || null; cur = { n, caption: cap.replace(/^\s*Table\s*\d+[.:]?\s*/i, "").trim(), rows: [] }; out.push(cur); }
+      if (!/^\s*\|[\s:|-]+\|\s*$/.test(l)) cur.rows.push(l.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim()));
+    } else if (l.trim()) cur = null;
+  });
+  const used = new Set(out.map((x) => x.n).filter(Boolean));
+  return [...out.filter((x) => x.rows.length > 1), ...captions.filter((c) => !used.has(c.n)).map((c) => ({ ...c, rows: [] }))];
+}
 function fromText(raw, meta = {}) {
+  // Markdown from a web reader: headings lose their #s, emphasis and link syntax go, so section detection works as on PDF text.
+  raw = String(raw).replace(/^Source: .*\n/, "").replace(/^(?:URL|Published|Author): .*\n/gm, "").replace(/^#{1,6}\s+/gm, "").replace(/\*\*([^*\n]+)\*\*/g, "$1").replace(/\[([^\]\n]{1,200})\]\((?:https?:)?[^)\s]*\)/g, "$1");
   const t = String(raw).replace(/\r/g, "").replace(/\f/g, "\n").replace(/(\w)-\n(\w)/g, "$1$2").replace(/[ \t]+/g, " ")
     // pdftotext often puts a section number on its own line: "3\n\nExperiments" -> "3 Experiments".
     .replace(/^(\d{1,2}(?:\.\d{1,2})*)\n\n?([A-Z][^\n]{2,60})$/gm, "$1 $2");
@@ -70,7 +85,7 @@ function fromText(raw, meta = {}) {
   const caps = (kind) => [...t.matchAll(new RegExp(`^${kind}\\s*(\\d+)[.:]\\s*([^\\n]+(?:\\n(?![A-Z][a-z]+ \\d)[^\\n]+){0,3})`, "gmi"))].map((m) => ({ n: Number(m[1]), caption: m[2].replace(/\s+/g, " ").trim() }));
   const refSec = secs.find((s) => s.kind === "references");
   const refs = refSec ? (refSec.text.match(/^\s*\[\d+\]|\n\s*\[\d+\]|(?:^|\n)[A-Z][a-zA-Z-]+,\s[A-Z]\./g) || []).length : 0;
-  return finish({ source: meta.source || "text", title: meta.title || (front ? front.text.split("\n")[0].slice(0, 200) : ""), authors: meta.authors || [], abstract, sections: secs.filter((s) => s.kind !== "abstract" && s.kind !== "front" || (s.kind === "front" && !abstract)), tables: caps("Table").map((x) => ({ ...x, rows: [] })), figures: caps("(?:Figure|Fig\\.)"), references: refs, links: [...new Set(t.match(LINK) || [])] }, meta);
+  return finish({ source: meta.source || "text", title: meta.title || (front ? front.text.split("\n")[0].slice(0, 200) : ""), authors: meta.authors || [], abstract, sections: secs.filter((s) => s.kind !== "abstract" && s.kind !== "front" || (s.kind === "front" && !abstract)), tables: mdTables(t, caps("Table")), figures: caps("(?:Figure|Fig\\.)"), references: refs, links: [...new Set(t.match(LINK) || [])] }, meta);
 }
 
 function fromPdf(file, meta = {}) {
@@ -107,9 +122,11 @@ async function read(input, { cacheDir = process.env.PAPER_CACHE || (process.env.
   const id = (s.match(ARXIV_ID) || [])[1]; if (!id) throw new Error(`Give a file path or an arXiv id or URL (got "${s}").`);
   const dir = path.join(cacheDir, id); fs.mkdirSync(dir, { recursive: true });
   const m = { id, url: `https://arxiv.org/abs/${id}`, ...meta };
-  const html = path.join(dir, "paper.html"), pdf = path.join(dir, "paper.pdf");
+  const html = path.join(dir, "paper.html"), pdf = path.join(dir, "paper.pdf"), txt = path.join(dir, "paper.txt");
   if (fs.existsSync(html)) return fromHtml(fs.readFileSync(html, "utf8"), m);
   if (fs.existsSync(pdf)) return fromPdf(pdf, m);
+  // Text saved by an agent's reader (the web fetch tool's markdown of the arXiv HTML page), for hosts scripts can't reach.
+  if (fs.existsSync(txt)) return fromText(fs.readFileSync(txt, "utf8"), m);
   if (offline) throw new Error(`${id} isn't cached in ${dir}; put paper.html or paper.pdf there, or run without --offline.`);
   // The HTML rendering keeps sections and tables; older papers or failed conversions only have the PDF.
   try { const page = await get(`https://arxiv.org/html/${id}`); if (/ltx_section|ltx_abstract/.test(page)) { fs.writeFileSync(html, page); return fromHtml(page, m); } } catch (e) { if (e.status && e.status !== 404) throw e; }

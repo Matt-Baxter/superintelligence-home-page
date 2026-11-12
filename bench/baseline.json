@@ -9,13 +9,13 @@
       "about": "credible items out-rank doubtful ones on credibility"
     },
     "review.score_auc": {
-      "value": 0.813,
+      "value": 0.765,
       "better": "higher",
       "tol": 0.02,
       "about": "...on the guarded score"
     },
     "review.naive_score_auc": {
-      "value": 0.281,
+      "value": 0.247,
       "better": "info",
       "about": "...on the unguarded score (for comparison)"
     },
@@ -41,7 +41,7 @@
       "value": 1,
       "better": "higher",
       "tol": 0,
-      "about": "padding, stuffing, checklists, name-dropping, unbacked claims and injection don't raise the score (96 edits)"
+      "about": "padding, stuffing, checklists, name-dropping, unbacked claims and injection don't raise the score (108 edits)"
     },
     "review.adversary_gain_guarded": {
       "value": 0,
@@ -50,18 +50,18 @@
       "about": "points the guarded score gains under the attack on the unguarded judge"
     },
     "review.whitebox_gain": {
-      "value": 0.25,
+      "value": 0.222,
       "better": "lower",
       "tol": 0.5,
       "about": "points an adversary attacking the guarded score gains"
     },
     "review.adversary_gain_naive": {
-      "value": 35.75,
+      "value": 35.444,
       "better": "info",
       "about": "points the same attack gains on the unguarded judge (the attack is real)"
     },
     "review.ms_per_doc": {
-      "value": 17.2,
+      "value": 21.4,
       "better": "info",
       "about": "time to review one item"
     },
@@ -174,7 +174,7 @@
       "about": "share of paper-example verdicts that hold on 3 other seed blocks (11 examples)"
     },
     "papers.slowest_example_ms": {
-      "value": 1291,
+      "value": 1251,
       "better": "info",
       "about": "slowest paper example (baseline and variant); each toy must stay under 2 seconds"
     },

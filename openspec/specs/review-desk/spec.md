@@ -11,10 +11,10 @@ Judging papers, articles and comments with explainable, guarded judges: canonica
 ### Requirement: REQ-027 Submit a paper
 A signed-in reader SHOULD be able to submit a paper, article or comment and get an explained judgement (significance, rigor, hype) that resists the gaming listed in User Story 1, catalogued in the knowledge graph and open to a person's agree or disagree label.
 
-Source: `specs/002-research-layer/spec.md`, proposed, not approved: needs both partners. Code: `modules/review` (`review.js`, `store.js`), `/m/review`; `superintelligence` profile on every review and in the published criteria (`/research/criteria`).
+Source: `specs/002-research-layer/spec.md`, proposed, not approved: needs both partners. Code: `modules/review` (`review.js`, `store.js`), `/m/review`; `superintelligence` profile on every review and in the published criteria (`/research/criteria`); event-report rubric (`EVENT` in `review.js`); two readings, abstract and full text (`modules/review/fulltext.js`).
 
 #### Scenario: REQ-027 is checked
-- **WHEN** the checks named in docs/SPEC_TRACE.md run (unit: review (24 checks); review demo; bench `review.*`)
+- **WHEN** the checks named in docs/SPEC_TRACE.md run (unit: review (24 checks); review demo; bench `review.*`; unit: fulltext (11 checks); bench items `b-event-report`, `b-event-relays-agi`)
 - **THEN** they pass, as preflight and the browser test require
 
 ### Requirement: REQ-031 Produce an evidence dossier

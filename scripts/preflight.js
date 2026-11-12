@@ -109,7 +109,7 @@ try {
 // 5b6. si-expr (portable rules) and the schema registry: Node vectors, builder/registry units, generated schemas current.
 try {
   sh("node test/spec-status-unit.js"); sh("node test/sync-source-unit.js"); sh("node --no-warnings test/scope-admission.js");
-  sh("node test/expr-unit.js"); sh("node test/lab-unit.js"); sh("node test/review-unit.js"); sh("node test/papers-unit.js"); sh("node test/si-rubric-unit.js"); sh("node test/research-map-unit.js"); sh("node test/agent-ui-unit.js"); sh("node test/watch-unit.js"); sh("node test/project-sync-unit.js"); sh("node test/dossier-unit.js"); sh("node test/sources-unit.js"); sh("node test/panel-unit.js"); sh("node test/quality-unit.js"); sh("node --no-warnings test/research-feed.js"); sh("node --no-warnings test/rigor-badge.js");
+  sh("node test/expr-unit.js"); sh("node test/lab-unit.js"); sh("node test/review-unit.js"); sh("node test/papers-unit.js"); sh("node test/si-rubric-unit.js"); sh("node test/fulltext-unit.js"); sh("node test/research-map-unit.js"); sh("node test/agent-ui-unit.js"); sh("node test/watch-unit.js"); sh("node test/project-sync-unit.js"); sh("node test/dossier-unit.js"); sh("node test/sources-unit.js"); sh("node test/panel-unit.js"); sh("node test/quality-unit.js"); sh("node --no-warnings test/research-feed.js"); sh("node --no-warnings test/rigor-badge.js");
   sh("node test/project-specs-unit.js");
   sh("node test/verification-unit.js");
   sh("node --no-warnings test/lineage-unit.js");

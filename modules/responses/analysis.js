@@ -80,7 +80,10 @@ function analyse(doc, { review = null, example = null } = {}) {
 
   // 4) Abstract numbers found again in the body or tables (a number only the abstract states can't be checked here).
   const absNums = [...new Set(abs.flatMap(numbersIn))];
-  const traced = absNums.map((n) => ({ number: n, inBody: bodyText.includes(n) || tableText.includes(n) || bodyText.includes(n.replace(/%$/, "")) }));
+  // Numbers are compared on their digits ("38 points" in the body traces "38points" from the abstract; "45.59" traces "45.59%").
+  const hay = `${bodyText}\n${tableText}`, digits = (n) => n.replace(/[^\d.\-]/g, "").replace(/\.$/, "");
+  const found = (n) => hay.includes(n) || (digits(n) && new RegExp(`(?<![\\d.])${digits(n).replace(/[.\-]/g, "\\$&")}(?![\\d])`).test(hay));
+  const traced = absNums.map((n) => ({ number: n, inBody: found(n) }));
 
   // 5) Rigor checklist over the full text (or the abstract when that's all there is).
   const where = doc.fullText ? `${bodyText}\n${tableText}\n${doc.links.join(" ")}` : `${doc.abstract}`;

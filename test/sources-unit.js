@@ -67,5 +67,7 @@ const quiet = D.analyse({ topic: "superintelligence", ids: ["superintelligence"]
 ok(quiet.strength === "thin" && quiet.buzz.level === "loud", "credible articles and loud buzz never lift the evidence rating: only papers and our own checks do");
 
 ok(["https://time.com/article/x", "https://www.quantamagazine.org/x", "https://www.theregister.com/x"].every((u) => S.outletKind(u) === "news"), "more newsrooms are recognised as news, not open-platform commentary");
+{ const f = S.predictions(["Sample (test data): one lab targets an automated AI researcher by March 2028."], "2026-11-10");
+  ok(f.length === 1 && f[0].due === "2028-03-31", `a stated target with a date is a forecast ("targets ... by March 2028" -> ${f[0] && f[0].due})`); }
 console.log(`\nsources unit: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
