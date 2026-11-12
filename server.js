@@ -298,6 +298,11 @@ function moduleDeps() {
 }
 kernel.mount(app, moduleDeps());
 app.get("/api/admin/modules", auth, admin, wrap(() => kernel.describe()));
+// The app describing itself: every route, what it does in plain words, its inputs and whether it changes anything (lib/meta.js).
+app.get("/api/admin/meta", auth, admin, wrap(() => {
+  const M = require("./lib/meta"), c = M.catalog(app, kernel.actions());
+  return { howToUse: M.HOW, profile: kernel.profile || process.env.SITE_PROFILE || "spec", ...kernel.describe(), nav: kernel.nav({ admin: true }), ...c };
+}));
 // Module pages live in modules/<id>/pages and are served at /m/<page> (the build copies them into public/m for Vercel).
 // Tag adapters from modules join the core taggers (lib/taggers).
 const taggers = require("./lib/taggers");

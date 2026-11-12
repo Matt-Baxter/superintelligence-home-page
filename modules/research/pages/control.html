@@ -15,12 +15,30 @@
   .links { display: flex; flex-wrap: wrap; gap: 8px; } .links a { font-size: 14px; padding: 4px 10px; border: 1px solid var(--line); border-radius: var(--radius); text-decoration: none; color: var(--fg); background: var(--surface); }
   .links a:hover { border-color: var(--fg); }
   .reqs { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-size: 14px; }
+  .via { font-size: 13px; font-weight: 400; color: var(--muted); margin-left: 8px; } .via a { color: var(--muted); }
+  .afilter { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0 4px; } .afilter input[type=search] { flex: 1 1 220px; }
+  .afilter label { font-size: 14px; display: inline-flex; gap: 4px; align-items: center; white-space: nowrap; } .afilter input[type=checkbox] { accent-color: var(--accent); }
+  .agroup h3 { font-size: 15px; font-weight: 600; margin: 16px 0 4px; }
+  details.act { border-bottom: 1px solid var(--line); } details.act[open] { padding-bottom: 12px; }
+  details.act summary { cursor: pointer; padding: 8px 0; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; list-style: none; } details.act summary::-webkit-details-marker { display: none; }
+  .m { font-family: var(--mono); font-size: 12px; font-weight: 600; min-width: 52px; } .p { font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; }
+  .eff { font-size: 12px; padding: 0 6px; border: 1px solid var(--line); border-radius: var(--radius); color: var(--muted); } .eff.w { border-color: var(--fg); color: var(--fg); }
+  .undesc { font-size: 13px; color: var(--muted); font-style: italic; }
+  .aform { display: grid; gap: 8px; max-width: 640px; margin-top: 6px; } .aform label { display: grid; gap: 2px; font-size: 14px; } .aform .hint { font-size: 13px; color: var(--muted); }
+  .aform textarea { min-height: 70px; font-family: var(--mono); font-size: 13px; }
+  pre.res { max-height: 320px; overflow: auto; font-size: 12px; background: var(--accent-soft); padding: 10px; border-radius: var(--radius); white-space: pre-wrap; overflow-wrap: anywhere; margin: 8px 0 0; }
+  .meta-line { font-size: 13px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; }
 </style></head>
 <body>
 <main>
   <div class="pagehead"><div><h1>Research control room</h1><p class="muted">Everything the research layer needs from a person, in one place: forecasts to resolve, reviews to label, requirements to approve, and how well the judging is doing on real reviews. Nothing here publishes, merges or deploys.</p></div></div>
   <p id="status" class="small muted" role="status" aria-live="polite">Loading…</p>
+  <p class="small muted">Each panel names the action behind it. Everything below this page's panels is in <a href="#actions">the full list of actions</a>, so you can do the same thing from here, a script or another agent.</p>
   <div id="out"></div>
+  <section class="panel" id="actions" style="margin-top:16px"><h2>Everything this app can do</h2>
+    <p class="small muted">Every route the server has, read from the running app, with what it does in plain words and its inputs. Open one to run it here; agents read the same list as JSON at <a href="/api/admin/meta"><code>/api/admin/meta</code></a>. Reads never change anything. Writes ask you to confirm first and say how to undo them.</p>
+    <div id="acts"><p class="small muted">Loading…</p></div>
+  </section>
 </main>
 <script src="/js/api.js"></script>
 <script>
@@ -43,12 +61,12 @@ async function load() {
       <a href="/research">Public write-ups${r.public ? "" : " (hidden: RESEARCH_PUBLIC is off)"}</a><a href="/research/criteria">How we judge</a><a href="/research/outlets">Track records</a>
       <a href="/research/feed.xml">RSS feed</a><a href="/research/data.json">Open data (JSON)</a><a href="/m/review">Review desk</a><a href="/m/dossier">Dossiers</a><a href="/m/map">Map</a><a href="/m/lab">Lab</a><a href="/m/project">Project tracker</a><a href="https://github.com/Matt-Baxter/superintelligence-home-page/blob/fix/sync-with-main/docs/PARITY.md" rel="noopener">Parity matrix</a><a href="https://github.com/Matt-Baxter/superintelligence-home-page/blob/fix/sync-with-main/docs/PRACTICES.md" rel="noopener">Practices</a></div></section>
 
-    <section class="panel" id="forecasts"><h2>Forecasts to resolve</h2>
+    <section class="panel" id="forecasts"><h2>Forecasts to resolve<span class="via">via <a href="#act-review.resolve">review.resolve</a></span></h2>
       <p class="small muted">Mark each once it's due. Unclear (reality is ambiguous) and annulled (a premise fell away) count for neither side. Forecasts carry no names.</p>
       ${r.forecasts.length ? `<div class="scroll"><table class="t"><thead><tr><th>Due</th><th>Forecast</th><th>From</th><th>Outcome</th></tr></thead><tbody>${r.forecasts.map((f) => `<tr><td class="n">${esc(f.due)}${f.overdue ? "<br><b class=\"small\">due now</b>" : ""}</td><td>${esc(f.sentence)}${f.probability != null ? ` <span class="small muted">(stated: ${Math.round(f.probability * 100)}%)</span>` : ""}${f.title ? `<br><a class="small" href="/m/review#/doc/${f.doc_id}">${esc(f.title)}</a>` : ""}</td><td>${esc(f.outlet_label)}</td>
         <td>${f.overdue ? `<div class="acts">${OUTCOMES.map(([v, l]) => `<button class="btn" type="button" data-ev="${f.id}" data-v="${v}">${l}</button>`).join("")}</div>` : `<span class="small muted">due ${esc(f.due)}</span>`}</td></tr>`).join("")}</tbody></table></div>` : '<p class="small muted">No pending forecasts.</p>'}</section>
 
-    <section class="panel" id="flagged"><h2>Reviews waiting for a person</h2>
+    <section class="panel" id="flagged"><h2>Reviews waiting for a person<span class="via">via <a href="#act-review.label">review.label</a></span></h2>
       <p class="small muted">The guards sent these to a person. Agree or disagree with the verdict; your labels are how the judges are calibrated.</p>
       ${r.flagged.length ? `<div class="scroll"><table class="t"><thead><tr><th>Piece</th><th>Verdict</th><th>Why it was flagged</th><th></th></tr></thead><tbody>${r.flagged.map((d) => `<tr><td><a href="/m/review#/doc/${d.id}">${esc(d.title)}</a></td><td class="n">${esc(d.verdict)}, ${d.credibility}</td><td class="small">${d.reasons.map(esc).join("; ")}${d.judges.length ? `<br><span class="muted">Judges: ${d.judges.map(esc).join(", ")}</span>` : ""}${d.advice ? `<br><b>Advisor:</b> ${esc(d.advice)}` : ""}</td>
         <td><div class="acts"><button class="btn" type="button" data-doc="${d.id}" data-l="agree">Agree</button><button class="btn" type="button" data-doc="${d.id}" data-l="disagree">Disagree</button></div></td></tr>`).join("")}</tbody></table></div>` : '<p class="small muted">Nothing waiting.</p>'}</section>
@@ -67,6 +85,99 @@ async function load() {
     $("#status").textContent = `As of ${r.today}.`;
   } catch (e) { showErr($("#status"), e); }
 }
-requireUser().then((u) => { if (!u.admin) { $("#status").textContent = "Only an admin can open the research control room."; return; } load(); });
+// The actions list: built entirely from /api/admin/meta, so a new route shows up here the moment it exists.
+let META = null;
+const F = { q: "", read: true, write: true, undesc: true };
+const attr = (s) => esc(String(s));
+async function loadActions() {
+  try { META = await api("/api/admin/meta"); renderActions(); openFromHash(); }
+  catch (e) { showErr($("#acts"), e); }
+}
+function shown(a) {
+  if (!a.path.startsWith("/api/") && !a.described) return false;
+  if (a.effect === "read" ? !F.read : !F.write) return false;
+  if (!a.described && !F.undesc) return false;
+  const q = F.q.trim().toLowerCase();
+  return !q || [a.id, a.title, a.about, a.path, a.area, ...(a.req || [])].some((x) => x && String(x).toLowerCase().includes(q));
+}
+function renderActions() {
+  const c = META.coverage, list = META.actions.filter(shown), groups = {};
+  for (const a of list) (groups[a.area] = groups[a.area] || []).push(a);
+  const order = Object.keys(groups).sort((x, y) => groups[y].filter((a) => a.described).length - groups[x].filter((a) => a.described).length || x.localeCompare(y));
+  $("#acts").innerHTML = `
+    <p class="small">${c.routes} API routes, ${c.described} described in plain words, ${c.writes} that change data.${META.stale.length ? ` <b>${META.stale.length} description(s) point at routes that no longer exist:</b> ${META.stale.map((s) => esc(s.id)).join(", ")}.` : ""}</p>
+    <div class="afilter"><input type="search" id="aq" placeholder="Find an action, a route or a REQ" aria-label="Find an action" value="${attr(F.q)}">
+      <label><input type="checkbox" data-f="read" ${F.read ? "checked" : ""}> Reads</label><label><input type="checkbox" data-f="write" ${F.write ? "checked" : ""}> Writes</label><label><input type="checkbox" data-f="undesc" ${F.undesc ? "checked" : ""}> Not described yet</label></div>
+    ${list.length ? order.map((g) => `<div class="agroup"><h3>${esc(g)}</h3>${groups[g].map(row).join("")}</div>`).join("") : '<p class="small muted">Nothing matches. Clear the search or tick more boxes.</p>'}`;
+  const q = $("#aq"); q.oninput = () => { F.q = q.value; const pos = q.selectionStart; renderActions(); const n = $("#aq"); n.focus(); n.setSelectionRange(pos, pos); };
+  $$("[data-f]").forEach((b) => (b.onchange = () => { F[b.dataset.f] = b.checked; renderActions(); }));
+  $$("details.act").forEach((d) => (d.ontoggle = () => { if (d.open && !d.dataset.ready) { d.dataset.ready = 1; form(d, META.actions.find((a) => a.id === d.dataset.id)); } }));
+}
+const row = (a) => `<details class="act" id="act-${attr(a.id)}" data-id="${attr(a.id)}"><summary><span class="m">${a.method}</span><span class="p">${esc(a.path)}</span>
+  ${a.described ? `<span>${esc(a.title)}</span>` : '<span class="undesc">not described yet</span>'}<span class="eff ${a.effect === "write" ? "w" : ""}">${a.effect === "write" ? "changes data" : "read only"}</span>${a.admin ? '<span class="eff">admin</span>' : ""}</summary></details>`;
+function form(d, a) {
+  const field = (p) => {
+    const id = `f-${a.id}-${p.name}`.replace(/[^\w-]/g, "_"), ph = p.example != null ? ` placeholder="${attr(p.example)}"` : "";
+    const input = p.enum ? `<select id="${id}" data-p="${attr(p.name)}" data-in="${p.in}"><option value="">${p.required ? "Choose…" : "(any)"}</option>${p.enum.map((v) => `<option>${attr(v)}</option>`).join("")}</select>`
+      : p.type === "text" ? `<textarea id="${id}" data-p="${attr(p.name)}" data-in="${p.in}"${ph}></textarea>`
+      : `<input id="${id}" data-p="${attr(p.name)}" data-in="${p.in}" data-t="${p.type || "string"}" ${p.type === "number" ? 'inputmode="numeric"' : ""}${ph}>`;
+    return `<label for="${id}">${esc(p.name)} <span class="hint">${p.in}${p.required ? ", required" : ""}${p.about ? ` · ${esc(p.about)}` : ""}</span>${input}</label>`;
+  };
+  const raw = a.effect === "write" && !a.params.some((p) => p.in === "body");
+  d.insertAdjacentHTML("beforeend", `
+    <p class="small" style="margin:0 0 6px">${a.described ? esc(a.about) : `Nobody has described this route yet. Its code is in <code>${a.module ? `modules/${esc(a.module)}` : esc(a.area === "admin" ? "server.js" : `server.js or modules/${a.area}`)}</code>; add a description to that module's <code>actions.js</code>.`}</p>
+    <div class="meta-line"><span>id <code>${esc(a.id)}</code></span>${a.module ? `<span>module ${esc(a.module)}</span>` : ""}${a.req.length ? `<span>serves ${a.req.map(esc).join(", ")}</span>` : ""}${a.page ? `<span>used on <a href="${attr(a.page)}">${esc(a.page)}</a></span>` : ""}${a.undo ? `<span>undo: ${esc(a.undo)}</span>` : ""}</div>
+    <div class="aform">${a.params.map(field).join("")}${raw ? `<label>JSON body <span class="hint">optional; read the route's code for its fields</span><textarea data-raw="1" placeholder="{}"></textarea></label>` : ""}
+      <div class="acts"><button class="btn ${a.effect === "write" ? "" : "primary"}" type="button" data-run>${a.effect === "write" ? "Run (changes data)" : "Run"}</button>
+        <button class="btn" type="button" data-curl>Copy as curl</button><button class="btn" type="button" data-agent>Copy for an agent</button></div>
+      <p class="small" data-msg role="status" aria-live="polite"></p></div>`);
+  const msg = d.querySelector("[data-msg]");
+  d.querySelector("[data-run]").onclick = (ev) => {
+    const b = ev.currentTarget;
+    if (a.effect === "write" && !b.dataset.armed) { b.dataset.armed = 1; b.textContent = "Confirm: this changes data"; b.classList.add("primary"); setTimeout(() => { delete b.dataset.armed; b.textContent = "Run (changes data)"; b.classList.remove("primary"); }, 5000); return; }
+    delete b.dataset.armed; b.textContent = a.effect === "write" ? "Run (changes data)" : "Run"; b.classList.toggle("primary", a.effect !== "write");
+    run(d, a, msg);
+  };
+  d.querySelector("[data-curl]").onclick = (ev) => { const r = build(d, a, msg); if (r) copy(curl(r, a.method), ev.currentTarget); };
+  d.querySelector("[data-agent]").onclick = (ev) => { const r = build(d, a, msg); if (r) copy(JSON.stringify({ action: a.id, effect: a.effect, method: a.method, path: r.path, query: r.query, body: r.body, about: a.about || undefined }, null, 2), ev.currentTarget); };
+}
+// Read the form into { path, query, body }; null (with a message) when something required is missing.
+function build(d, a, msg) {
+  let path = a.path; const query = {}, body = {}, miss = [];
+  for (const el of d.querySelectorAll("[data-p]")) {
+    const p = a.params.find((x) => x.name === el.dataset.p), v = el.value.trim();
+    if (!v) { if (p.required) miss.push(p.name); continue; }
+    const val = p.type === "number" ? Number(v) : v;
+    if (p.in === "path") path = path.replace(":" + p.name, encodeURIComponent(v)); else if (p.in === "query") query[p.name] = v; else body[p.name] = val;
+  }
+  const raw = d.querySelector("[data-raw]");
+  if (raw && raw.value.trim()) { try { Object.assign(body, JSON.parse(raw.value)); } catch { msg.className = "err"; msg.textContent = "The JSON body doesn't parse."; return null; } }
+  if (miss.length) { msg.className = "err"; msg.textContent = `Fill in ${miss.join(", ")} first.`; return null; }
+  const qs = new URLSearchParams(query).toString();
+  return { path, query, body: Object.keys(body).length ? body : undefined, url: path + (qs ? "?" + qs : "") };
+}
+// Sign in once with: curl -c cookies.txt -H 'Content-Type: application/json' -d '{"username":"…","password":"…"}' ORIGIN/api/login
+const curl = (r, method) => `curl -b cookies.txt${method === "GET" ? "" : ` -X ${method}`}${r.body ? ` -H 'Content-Type: application/json' -d '${JSON.stringify(r.body).replace(/'/g, "'\\''")}'` : ""} '${location.origin}${r.url}'`;
+async function run(d, a, msg) {
+  const r = build(d, a, msg); if (!r) return;
+  msg.className = "small"; msg.textContent = "Running…";
+  d.querySelector("pre.res")?.remove();
+  try {
+    const res = await fetch(r.url, { method: a.method, credentials: "same-origin", headers: r.body ? { "Content-Type": "application/json" } : {}, body: r.body ? JSON.stringify(r.body) : undefined });
+    const text = await res.text(); let shownText = text;
+    try { shownText = JSON.stringify(JSON.parse(text), null, 2); } catch {}
+    msg.className = res.ok ? "ok" : "err"; msg.textContent = `${res.status} ${res.ok ? "OK" : res.statusText || "failed"}${shownText.length > 20000 ? " (first 20,000 characters shown)" : ""}`;
+    d.querySelector(".aform").insertAdjacentHTML("beforeend", `<pre class="res">${esc(shownText.slice(0, 20000))}</pre>`);
+    if (res.ok && a.effect === "write") load();
+  } catch (e) { showErr(msg, e); }
+}
+function openFromHash() {
+  const id = decodeURIComponent(location.hash.replace(/^#act-/, "")); if (!location.hash.startsWith("#act-")) return;
+  const d = document.getElementById("act-" + id);
+  if (d) { d.open = true; d.scrollIntoView({ block: "start" }); }
+  else if (META) { F.q = ""; F.read = F.write = F.undesc = true; renderActions(); const e = document.getElementById("act-" + id); if (e) { e.open = true; e.scrollIntoView({ block: "start" }); } }
+}
+window.addEventListener("hashchange", openFromHash);
+requireUser().then((u) => { if (!u.admin) { $("#status").textContent = "Only an admin can open the research control room."; $("#actions").remove(); return; } load(); loadActions(); });
 </script>
 </body></html>
