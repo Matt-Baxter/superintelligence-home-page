@@ -46,7 +46,10 @@ function tokenSets(css) {
   return [["light", light], ["dark", { ...light, ...dark }], ...themes];
 }
 // Text pairs that must stay readable (4.5:1, WCAG AA for body text).
-const TEXT_PAIRS = [["fg", "bg"], ["fg", "surface"], ["muted", "bg"], ["muted", "surface"], ["warn", "warn-soft"], ["accent", "accent-soft"]];
+// The second row is the grey ramp the themes set (public/css/app.css): ink and muted text on every surface, and the
+// danger colour on the page and on its own wash.
+const TEXT_PAIRS = [["fg", "bg"], ["fg", "surface"], ["muted", "bg"], ["muted", "surface"], ["warn", "warn-soft"], ["accent", "accent-soft"],
+  ["ink", "paper"], ["ink", "wash"], ["ink", "tint"], ["ink-2", "paper"], ["mute", "paper"], ["mute", "wash"], ["mute", "tint"], ["danger", "paper"], ["danger", "danger-wash"]];
 const FILLER = /^\s*(new!?|beta|hot|pro|ai|ai[- ]powered|powered by ai|featured|trending|popular|smart|magic|✨)\s*$/i;
 const GENERIC_H1 = /^\s*(welcome(?: to [^<]*)?|dashboard|overview|home|get started|untitled|my page|main)\s*$/i;
 const LOADING = /loading|aria-busy|skeleton|spinner|…<\/|Fetching|Working/i;

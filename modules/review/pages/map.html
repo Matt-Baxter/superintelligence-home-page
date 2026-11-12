@@ -2,19 +2,19 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Superintelligence map · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css">
 <style>
-  .totals { display: flex; gap: 22px; flex-wrap: wrap; font-size: 14px; color: var(--muted); } .totals b { color: var(--fg); font-variant-numeric: tabular-nums; font-size: 17px; margin-right: 4px; }
+  .totals { display: flex; gap: 22px; flex-wrap: wrap; font-size: var(--fs-sm, 13px); color: var(--muted); } .totals b { color: var(--fg); font-variant-numeric: tabular-nums; font-size: var(--fs-md, 18px); margin-right: 4px; }
   .map { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
   .area { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 14px; display: grid; gap: 10px; align-content: start; min-width: 0; }
   .area header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
-  .area header h2 { font-size: 17px; margin: 0; } .area header span { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .k { font-size: 13px; color: var(--muted); }
+  .area header h2 { font-size: var(--fs-md, 18px); margin: 0; } .area header span { font-size: var(--fs-sm, 13px); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .k { font-size: var(--fs-sm, 13px); color: var(--muted); }
   .subs { display: flex; flex-wrap: wrap; gap: 6px; }
-  .sub { font-size: 13px; padding: 2px 8px; border: 1px solid var(--line); border-radius: var(--radius); text-decoration: none; color: var(--fg); background: var(--bg); }
+  .sub { font-size: var(--fs-sm, 13px); padding: 2px 8px; border: 1px solid var(--line); border-radius: var(--radius); text-decoration: none; color: var(--fg); background: var(--bg); }
   .sub b { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--accent); margin-left: 4px; } .sub.zero { color: var(--muted); } .sub.zero b { color: var(--muted); }
-  .concepts { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: 14px; }
-  .concepts li { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 6px; align-items: baseline; } .lv { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
-  .docs { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 14px; } .docs li { display: flex; justify-content: space-between; gap: 8px; } .docs a { overflow-wrap: anywhere; }
-  .docs span { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; font-size: 13px; }
+  .concepts { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: var(--fs-sm, 13px); }
+  .concepts li { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 6px; align-items: baseline; } .lv { font-size: var(--fs-xs, 12px); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .docs { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: var(--fs-sm, 13px); } .docs li { display: flex; justify-content: space-between; gap: 8px; } .docs a { overflow-wrap: anywhere; }
+  .docs span { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; font-size: var(--fs-sm, 13px); }
   .entries { display: flex; flex-wrap: wrap; gap: 6px; }
 </style></head>
 <body>

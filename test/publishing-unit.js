@@ -16,7 +16,7 @@ assert.throws(() => validate({ theme: "purple" }), /Unknown theme/); n++;
 assert.throws(() => validate({ allowReader: "yes" }), /true or false/); n++;
 const { check } = require("../scripts/unslop.js");
 ok(check("public/css/app.css", css).filter((x) => x.rule === "contrast").length === 0, "REQ-053: every theme keeps 4.5:1 text contrast");
-ok(check("public/css/app.css", css.replace("--muted: #59544b", "--muted: #c8c2b8")).some((x) => x.rule === "contrast" && /newsprint/.test(x.msg)), "REQ-053: the contrast check reads theme blocks");
+ok(check("public/css/app.css", css.replace("--mute: #59544b", "--mute: #c8c2b8")).some((x) => x.rule === "contrast" && /newsprint/.test(x.msg)), "REQ-053: the contrast check reads theme blocks");
 // The browser's resolver (public/js/api.js): site default, then the reader's concept, then the reader's own fields.
 const src = fs.readFileSync(path.join(__dirname, "../public/js/api.js"), "utf8");
 const ctx = {}; vm.runInNewContext(src.match(/const LOOK_KEYS[^\n]*\n/)[0] + src.match(/function resolveLook[\s\S]*?\n}\n/)[0] + "this.resolveLook = resolveLook;", ctx);
