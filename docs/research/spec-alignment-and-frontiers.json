@@ -3,7 +3,7 @@
   "checked_at": "2026-11-08T04:35:15.942679+00:00",
   "original_spec": {
     "path": "specs/001-superintelligence-homepage/spec.md",
-    "sha256": "f414be40143245fed2de8e2db7d180289e51252560dfdaa7df49649d665f81c0",
+    "sha256": "3d5d6fd2b202f5c338d1ba7e6b4a41fea3e18ed4396795885dd5ab221016ac1e",
     "requirement_ids": [
       "REQ-001",
       "REQ-002",

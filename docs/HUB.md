@@ -321,7 +321,7 @@ Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/READM
 | `analysis.scope_mcc` | higher (tol 0.01) | 1 | in scope vs out of scope on the spec fixtures: Matthews correlation (0 = no better than a constant guess, 1 = perfect) |
 | `analysis.scope_paradox_free` | higher | 1 | in scope vs out of scope on the spec fixtures: 1 when it removes at least 20% of a majority guess's errors and recognises every class |
 
-In scripts/bench.js but not yet in the baseline: `review.proposed_verdict_accuracy`.
+In scripts/bench.js but not yet in the baseline: `review.proposed_verdict_accuracy`, `papers.shared_leak_amplification`.
 
 **Labelled sets** (synthetic test data)
 
@@ -403,9 +403,9 @@ Quoted from the repo's own pitfall, trap, troubleshooting and habits sections (n
 
 **Shared (both humans change these)**
 
-- [specs/001-superintelligence-homepage/spec.md](../specs/001-superintelligence-homepage/spec.md): Sections: Overview; User Scenarios & Testing *(mandatory)*; Requirements *(mandatory)*; Success Criteria *(mandatory)*; Assumptions; Out of Scope.
+- [specs/001-superintelligence-homepage/spec.md](../specs/001-superintelligence-homepage/spec.md): Sections: Overview; User Scenarios & Testing *(mandatory)*; Requirements *(mandatory)*; Success Criteria *(mandatory)*; Risks & Governance;…
 - [.specify/memory/constitution.md](../.specify/memory/constitution.md): The Superintelligence Homepage is a home page for articles about superintelligence: progress toward AGI and superintelligence, and the work on…
-- [CONTRACT.md](../CONTRACT.md): _What we're building against._
+- [CONTRACT.md](../CONTRACT.md): We are done when a classmate can sign up on the live site, see a grouped, tagged feed of superintelligence stories from at least 8 sources, and vote…
 - [WORKING_AGREEMENT.md](../WORKING_AGREEMENT.md): Sections: Project choice; Roles; Tools; Communication; Repo workflow; Agent rules; …
 
 **Repo**
@@ -465,7 +465,7 @@ Quoted from the repo's own pitfall, trap, troubleshooting and habits sections (n
 - [bench/README.md](../bench/README.md): `npm run bench` measures the judges on fixed, synthetic, labelled sets and compares every metric with `baseline.json`.
 - [proofs/README.md](../proofs/README.md): REQ-038, task T005 (specs/003-judge-fidelity/tasks.md); T051 fills in the evaluator and the differential test.
 
-**Also**: [docs/snapshots/](snapshots) (3 build snapshots), [proofs/](../proofs) (`.lake`, `Coordination.lean`, `CoordinationSpec.lean`, `FinalCheck.lean`, `Judge.lean`, `formalization.yaml`, `lake-manifest.json`, `lakefile.lean`, `lean-toolchain`, `vectors.json`), [workflows](../.github/workflows) (`interop.yml`, `paper-watch.yml`, `preflight.yml`), the codebase map (`npm run codemap -- <question>`) and the [MCP server](../agent-kit/mcp/server.js).
+**Also**: [docs/snapshots/](snapshots) (3 build snapshots), [proofs/](../proofs) (`Coordination.lean`, `CoordinationSpec.lean`, `FinalCheck.lean`, `Judge.lean`, `formalization.yaml`, `lake-manifest.json`, `lakefile.lean`, `lean-toolchain`, `vectors.json`), [workflows](../.github/workflows) (`interop.yml`, `paper-watch.yml`, `preflight.yml`), the codebase map (`npm run codemap -- <question>`) and the [MCP server](../agent-kit/mcp/server.js).
 
 ## Open decisions for the humans
 
