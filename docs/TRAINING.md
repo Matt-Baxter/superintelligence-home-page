@@ -33,6 +33,13 @@ Nothing here commits or pushes. Outputs are git-ignored: `LOOP_DIR` (default `ou
   recorded base-model revision, and a held-out comparison against the base model.
 - The rows' `meta` field (example, family) is for review; strip it if a trainer rejects unknown fields.
 
+## Daily cloud run
+
+[`scripts/train-scheduled.sh`](../scripts/train-scheduled.sh) runs `train.js all` on the next of 30 seed shards (300
+seeds per experiment, 60 introspection seeds) and commits the results to the `results/training-loop` branch, so each
+day adds new seeds and `loop/report.md` there pools every run so far. A scheduled task runs it daily. Small local test
+with nothing pushed: `SHARD=4 PER_RUN=20 INTRO_PER_RUN=2 PUSH=0 sh scripts/train-scheduled.sh`.
+
 ## Running on our machines
 
 The Mac mini and laptops run the same command on different shards and write to one synced folder:

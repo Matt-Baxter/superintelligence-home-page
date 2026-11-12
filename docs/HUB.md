@@ -246,7 +246,8 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | `npm run train` | what each loop last produced, and when |
 | `npm run train:cycle` | research loop with merge: checks, experiments, introspection |
 | `npm run train:data` | Lab ratchet over every example, then a split fine-tuning dataset |
-| `npm run train:all` | cycle + merge + data |
+| `npm run train:all` | cycle + merge + data (daily cloud run: scripts/train-scheduled.sh) |
+| `npm run train:scheduled` | `sh scripts/train-scheduled.sh` |
 | `npm run work` | Work board for agents and people at the terminal (REQ-068..REQ-071, proposed). |
 | `npm run test:work` | Work: planning and coordination for people and agents (proposed REQ-068..REQ-071, spec 009, openspec/changes/add-coordination-and-advisor).; Properties of the work module (proposed REQ-068..REQ-071), checked on many generated cases (seeded), plus the advisor's recall by mutation and the… |
 | `npm run elements` | Element catalog at the terminal (REQ-072..REQ-075, proposed). |

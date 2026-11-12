@@ -6,7 +6,7 @@
 //   node scripts/train.js cycle [loop flags]     research loop with merge: checks, experiments, introspection
 //                                                (passes flags to scripts/research-loop.js)
 //   node scripts/train.js data [--budget 12]     Lab ratchet over every example, then a split fine-tuning dataset
-//   node scripts/train.js all                    cycle + merge + data
+//   node scripts/train.js all                    cycle + merge + data (daily cloud run: scripts/train-scheduled.sh)
 //
 // Outputs stay out of git: LOOP_DIR (default out/loop), out/lab, out/train.
 const fs = require("fs"), path = require("path"), crypto = require("crypto"), { spawnSync } = require("child_process");
