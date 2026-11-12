@@ -57,13 +57,14 @@ const SOURCES = [
 ];
 
 function App() {
-  const [theme, setTheme] = React.useState<"light" | "dark">("light");
+  const [theme, setTheme] = React.useState<"light" | "dark" | undefined>(undefined);
+  const dark = theme ? theme === "dark" : typeof matchMedia !== "undefined" && matchMedia("(prefers-color-scheme: dark)").matches && document.documentElement.dataset.theme !== "light";
   const [streamKey, setStreamKey] = React.useState(0);
   const stream = React.useMemo(() => fakeStream(ANSWER), [streamKey]);
   return (
     <div className="aui demo" data-theme={theme}>
       <header className="demo-head"><div><h1>agent-ui</h1><p className="aui-muted">Original React components for agent products. Every task, branch and source below is sample data.</p></div>
-        <button className="aui-btn" onClick={() => setTheme(theme === "light" ? "dark" : "light")}>{theme === "light" ? "Dark" : "Light"} theme</button></header>
+        <button className="aui-btn" type="button" onClick={() => setTheme(dark ? "light" : "dark")}>{dark ? "Light" : "Dark"} theme</button></header>
       <div className="demo-grid">
         <div><h2>AgentTrail</h2><TrailDemo /></div>
         <div><h2>AgentPlan</h2><PlanDemo /></div>

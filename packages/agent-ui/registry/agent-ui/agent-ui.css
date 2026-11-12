@@ -9,11 +9,11 @@
   --aui-ease: cubic-bezier(.2, .7, .2, 1); --aui-dur: 180ms;
   font: var(--aui-fs)/1.5 var(--aui-font); color: var(--aui-fg);
 }
-@media (prefers-color-scheme: dark) { .aui:not([data-theme="light"]) {
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .aui:not([data-theme="light"]) {
   --aui-bg: #111113; --aui-surface: #18181b; --aui-sunken: #0d0d0f; --aui-fg: #ececef; --aui-muted: #9b9ba3; --aui-line: #2a2a2f;
   --aui-accent: #7ea2ff; --aui-good: #5fc28e; --aui-warn: #e3a64a; --aui-bad: #f0827a;
   --aui-good-soft: #15291e; --aui-warn-soft: #2c2213; --aui-bad-soft: #2e1715; --aui-accent-soft: #18213a; } }
-.aui[data-theme="dark"] { --aui-bg: #111113; --aui-surface: #18181b; --aui-sunken: #0d0d0f; --aui-fg: #ececef; --aui-muted: #9b9ba3; --aui-line: #2a2a2f;
+.aui[data-theme="dark"], :root[data-theme="dark"] .aui:not([data-theme="light"]) { --aui-bg: #111113; --aui-surface: #18181b; --aui-sunken: #0d0d0f; --aui-fg: #ececef; --aui-muted: #9b9ba3; --aui-line: #2a2a2f;
   --aui-accent: #7ea2ff; --aui-good: #5fc28e; --aui-warn: #e3a64a; --aui-bad: #f0827a;
   --aui-good-soft: #15291e; --aui-warn-soft: #2c2213; --aui-bad-soft: #2e1715; --aui-accent-soft: #18213a; }
 @media (prefers-reduced-motion: reduce) { .aui, .aui * { --aui-dur: 0ms; animation: none !important; transition: none !important; } }
