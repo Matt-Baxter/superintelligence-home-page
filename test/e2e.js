@@ -1,5 +1,6 @@
 // Two-user browser test against test/serve-fixtures.js (synthetic data). Run: node test/e2e.js
 const { chromium } = require('playwright');
+require('./sample-clock'); // same clock as the sample server, so times it returns compare correctly
 const B = process.env.BASE || 'http://localhost:3200';
 let pass = 0, fail = 0; const errs = [];
 const ok = (c, m) => { c ? pass++ : fail++; console.log(c ? '  ✓' : '  ✗', m); };
