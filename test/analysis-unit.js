@@ -20,6 +20,12 @@ assert.equal(sc("Sample launch: a new AI photo-editing app (test data)").in, fal
 assert.equal(sc("Sample story: AI helps retailers forecast demand (test data)").in, false, "one weak topic is out");
 assert.equal(sc("Sample: export controls on datacenter chips (test data)").in, true, "two spec topics are in");
 assert.match(sc("Sample launch: a new AI photo-editing app (test data)").reason, /No superintelligence topic/);
+// Broad words in ordinary prose don't tag a topic (ontology v4): an RL "policy", industry "standards", "energy" use.
+{ const { tag } = require("../lib/tagger"), ids = (t, x) => tag(t, x).topics.map((y) => y.id);
+  assert.ok(!ids("Sample paper: self-improving dialogue agents (test data)", "We train the policy for building turn-level prompts.").includes("policy"), "an RL 'policy' is not Governance & policy");
+  assert.ok(ids("Sample brief: AI policy for frontier labs (test data)").includes("policy"), "'AI policy' still tags Governance & policy");
+  assert.equal(sc("Sample note: a photo app follows industry standards and energy compliance (test data)").in, false, "standards + energy + compliance in ordinary prose stay out");
+  assert.equal(sc("Sample paper: image-text features aligned across languages (test data)").in, false, "'aligned' alone is not a strong scope term"); }
 // REQ-001: at least 8 default sources across at least 5 kinds
 const src = require("../lib/sources.json"); const list = src.sources || src;
 assert.ok(list.length >= 8 && new Set(list.map((x) => x.kind)).size >= 5, "REQ-001: 8+ sources across 5+ kinds");

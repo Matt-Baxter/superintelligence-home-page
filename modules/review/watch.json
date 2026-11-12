@@ -4,10 +4,10 @@
   "maxNewPerRun": 25,
   "paperToCode": { "maxPerRun": 2, "minCredibility": 50, "topics": ["topic:interpretability", "topic:recursive-self-improvement", "topic:automating-ai-research", "topic:alignment"] },
   "queries": [
-    { "id": "interp-sae", "topic": "interpretability", "q": "all:\"sparse autoencoder\" OR all:\"sparse autoencoders\"" },
-    { "id": "interp-circuits", "topic": "interpretability", "q": "all:\"mechanistic interpretability\" OR all:\"attribution graph\" OR all:transcoder" },
-    { "id": "rsi", "topic": "recursive-self-improvement", "q": "all:\"recursive self-improvement\" OR all:\"self-improving agent\" OR all:\"self-improving\"" },
-    { "id": "auto-research", "topic": "automating-ai-research", "q": "all:\"automated AI research\" OR all:\"AI scientist\" OR all:\"automated research agent\"" },
-    { "id": "superintelligence", "topic": "superintelligence", "q": "all:superintelligence OR all:\"scalable oversight\" OR all:\"reward hacking\"" }
+    { "id": "interp-sae", "topic": "topic:interpretability", "q": "all:\"sparse autoencoder\" OR all:\"sparse autoencoders\"" },
+    { "id": "interp-circuits", "topic": "topic:interpretability", "q": "all:\"mechanistic interpretability\" OR all:\"attribution graph\" OR all:transcoder" },
+    { "id": "rsi", "topic": "topic:recursive-self-improvement", "q": "all:\"recursive self-improvement\" OR all:\"self-improving agent\" OR all:\"self-improving\"" },
+    { "id": "auto-research", "topic": "topic:automating-ai-research", "q": "all:\"automated AI research\" OR all:\"AI scientist\" OR all:\"automated research agent\"" },
+    { "id": "superintelligence", "topic": "topic:superintelligence", "q": "all:superintelligence OR all:\"scalable oversight\" OR all:\"reward hacking\"" }
   ]
 }

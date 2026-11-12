@@ -73,6 +73,16 @@ function check() {
     for (const x of c.concepts) for (const r of x.relations || []) { if (!ids.has(r.to)) add("id-ref", `concept ${x.id}: relation to unknown "${r.to}"`); if (!c.relations[r.kind]) add("id-ref", `concept ${x.id}: unknown relation kind "${r.kind}"`); }
   }
 
+  // Qualified ids used by other modules' data: the paper watcher's queries and paper-to-code topics, the Lab's examples.
+  const qref = (where, qid, ns, ok) => { const m = /^([a-z]+):(.+)$/.exec(qid || ""); if (!m || m[1] !== ns) add("id-qualified", `${where}: "${qid}" should be a "${ns}:<id>" id`); else if (!ok.has(m[2])) add("id-ref", `${where}: "${qid}" doesn't exist`); };
+  const wf = path.join(root, "modules/review/watch.json");
+  if (fs.existsSync(wf)) { const w = JSON.parse(fs.readFileSync(wf, "utf8"));
+    for (const q of w.queries || []) if (q.topic) qref(`watch query ${q.id}`, q.topic, "topic", topicIds);
+    for (const t of (w.paperToCode || {}).topics || []) qref("watch paperToCode", t, "topic", topicIds); }
+  const lf = path.join(root, "modules/lab/examples.json");
+  if (fs.existsSync(lf)) { const conceptIds = new Set(fs.existsSync(cf) ? JSON.parse(fs.readFileSync(cf, "utf8")).concepts.map((x) => x.id) : []);
+    for (const e of JSON.parse(fs.readFileSync(lf, "utf8")).examples) { for (const t of e.topics || []) qref(`lab example ${e.id}`, t, "topic", topicIds); if (e.concept && conceptIds.size) qref(`lab example ${e.id}`, e.concept, "concept", conceptIds); } }
+
   // Project labels.
   const reqs = new Set([...spec.matchAll(/\*\*(REQ-\d{3})\*\*/g)].map((m) => m[1]));
   const sf = path.join(root, "modules/project/starter.json");

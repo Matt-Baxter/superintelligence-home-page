@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "about": "Topics for tracking progress toward advanced AI. Each topic lists match terms (case-insensitive, whole-word unless a term ends in *). An item gets a topic when its title or summary matches at least one term; the matched terms are stored so every tag can explain itself. Version 2 adds superintelligence signals, finer capability areas, a benchmark registry (lib/analysis.js reads the reported score next to a benchmark name) and a watchlist of people whose names are matched in titles, summaries and author lists. Version 3 follows the shared spec (specs/001-superintelligence-homepage): the top level is exactly its nine superintelligence topics, finer topics are children, and 'scope' decides which stories make the superintelligence-only feed (REQ-003).",
+  "about": "Topics for tracking progress toward advanced AI. Each topic lists match terms (case-insensitive, whole-word unless a term ends in *). An item gets a topic when its title or summary matches at least one term; the matched terms are stored so every tag can explain itself. Version 2 adds superintelligence signals, finer capability areas, a benchmark registry (lib/analysis.js reads the reported score next to a benchmark name) and a watchlist of people whose names are matched in titles, summaries and author lists. Version 3 follows the shared spec (specs/001-superintelligence-homepage): the top level is its superintelligence topics (nine, the spec's fixed list; scripts/naming.js checks the count), finer topics are children, and 'scope' decides which stories make the superintelligence-only feed (REQ-003). Version 4 narrows broad terms that tagged ordinary prose (a bare 'policy', 'standards', 'energy', 'automation') and drops terms duplicated between a topic and its child.",
   "topics": [
     {
       "id": "capabilities",
@@ -47,8 +47,6 @@
         "chain-of-thought",
         "test-time compute",
         "inference-time",
-        "mathematical",
-        "theorem prov*",
         "planning"
       ]
     },
@@ -102,8 +100,7 @@
         "materials",
         "scientific discovery",
         "biology",
-        "chemistry",
-        "automated research"
+        "chemistry"
       ]
     },
     {
@@ -164,7 +161,8 @@
         "semiconductor*",
         "flops",
         "training run",
-        "energy",
+        "energy demand",
+        "power demand",
         "power grid"
       ]
     },
@@ -208,14 +206,24 @@
       "label": "Governance & policy",
       "terms": [
         "regulation",
-        "policy",
+        "ai policy",
+        "public policy",
+        "policy brief*",
+        "policy paper*",
+        "policy proposal*",
+        "policy analysis",
+        "policymak*",
+        "policy maker*",
+        "tech policy",
+        "science policy",
         "governance",
         "legislation",
         "executive order",
         "export control*",
         "eu ai act",
-        "compliance",
-        "standards",
+        "regulatory compliance",
+        "ai standards",
+        "safety standards",
         "liability",
         "licensing",
         "ai governance",
@@ -231,7 +239,8 @@
       "terms": [
         "labor market",
         "jobs",
-        "automation",
+        "job automation",
+        "labor automation",
         "productivity",
         "economic*",
         "investment",
@@ -248,7 +257,6 @@
         "trend*",
         "prediction",
         "takeoff",
-        "explosion",
         "agi timeline*",
         "timelines to agi",
         "ai 2027"
@@ -1077,7 +1085,6 @@
       "recursively self-improv*",
       "takeoff",
       "alignment",
-      "aligned",
       "misalign*",
       "superalignment",
       "scalable oversight",
