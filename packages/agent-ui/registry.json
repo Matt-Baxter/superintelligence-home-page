@@ -1,0 +1,113 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "agent-ui",
+  "homepage": "https://github.com/Matt-Baxter/superintelligence-home-page/tree/main/packages/agent-ui",
+  "items": [
+    {
+      "name": "agent-ui-core",
+      "type": "registry:lib",
+      "title": "agent-ui core",
+      "description": "Shared hooks (clock, announcer, scoped shortcuts), status dot and the token stylesheet every component uses.",
+      "files": [
+        {
+          "path": "registry/agent-ui/lib.tsx",
+          "type": "registry:lib"
+        },
+        {
+          "path": "registry/agent-ui/agent-ui.css",
+          "type": "registry:style"
+        }
+      ]
+    },
+    {
+      "name": "agent-trail",
+      "type": "registry:component",
+      "title": "Agent Trail",
+      "description": "The steps an agent works through as one trail: live timer on the running step, sub-steps, approval waits, retry on failure, folded history, screen-reader announcements.",
+      "registryDependencies": [
+        "agent-ui-core"
+      ],
+      "files": [
+        {
+          "path": "registry/agent-ui/agent-trail.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "agent-plan",
+      "type": "registry:component",
+      "title": "Agent Plan",
+      "description": "Review an agent's plan before it runs: rename in place, reorder by drag or Alt+Arrow keys, add and remove, then run with live status and retry from a failed step.",
+      "registryDependencies": [
+        "agent-ui-core"
+      ],
+      "files": [
+        {
+          "path": "registry/agent-ui/agent-plan.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "approval-gates",
+      "type": "registry:component",
+      "title": "Approval Gates",
+      "description": "A stack of approval requests with risk, diff and arguments; approve, reject with a reason or edit JSON arguments first; undo window; second confirmation for high risk; scoped A/R/E shortcuts.",
+      "registryDependencies": [
+        "agent-ui-core"
+      ],
+      "files": [
+        {
+          "path": "registry/agent-ui/approval-gates.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "agent-inbox",
+      "type": "registry:component",
+      "title": "Agent Inbox",
+      "description": "All background agent tasks in one list: filter tabs with counts, search, needs-you first, roving-tabindex keyboard navigation, rows that unfold to recent steps and actions.",
+      "registryDependencies": [
+        "agent-ui-core"
+      ],
+      "files": [
+        {
+          "path": "registry/agent-ui/agent-inbox.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "away-summary",
+      "type": "registry:component",
+      "title": "Away Summary",
+      "description": "While-you-were-away card: how long you were gone, what needs you, what failed and what is done, one action per row; folds to a divider that keeps the counts.",
+      "registryDependencies": [
+        "agent-ui-core"
+      ],
+      "files": [
+        {
+          "path": "registry/agent-ui/away-summary.tsx",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "ai-answer",
+      "type": "registry:component",
+      "title": "AI Answer",
+      "description": "Streamed answer from a string or async iterable, citation chips with previews on hover and keyboard focus, unresolved citations flagged, source cards, copy with sources, feedback with a note, follow-ups.",
+      "registryDependencies": [
+        "agent-ui-core"
+      ],
+      "files": [
+        {
+          "path": "registry/agent-ui/ai-answer.tsx",
+          "type": "registry:component"
+        }
+      ]
+    }
+  ]
+}

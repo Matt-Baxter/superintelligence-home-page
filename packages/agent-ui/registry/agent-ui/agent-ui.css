@@ -1,0 +1,142 @@
+/* agent-ui tokens. Override any variable on :root or a wrapper. Light by default, dark via prefers-color-scheme or
+   [data-theme="dark"]. Every component reads only these variables, so one set restyles the whole kit. */
+.aui {
+  --aui-bg: #ffffff; --aui-surface: #ffffff; --aui-sunken: #f6f6f4; --aui-fg: #18181a; --aui-muted: #66666e;
+  --aui-line: #e4e4e0; --aui-accent: #2f5bd3; --aui-good: #1f7a4d; --aui-warn: #a15c00; --aui-bad: #b3261e;
+  --aui-good-soft: #e8f3ec; --aui-warn-soft: #fbf1e2; --aui-bad-soft: #fbe9e8; --aui-accent-soft: #eaf0fc;
+  --aui-radius: 10px; --aui-radius-sm: 6px; --aui-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --aui-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace; --aui-fs: 14px; --aui-fs-sm: 13px; --aui-fs-xs: 12px;
+  --aui-ease: cubic-bezier(.2, .7, .2, 1); --aui-dur: 180ms;
+  font: var(--aui-fs)/1.5 var(--aui-font); color: var(--aui-fg);
+}
+@media (prefers-color-scheme: dark) { .aui:not([data-theme="light"]) {
+  --aui-bg: #111113; --aui-surface: #18181b; --aui-sunken: #0d0d0f; --aui-fg: #ececef; --aui-muted: #9b9ba3; --aui-line: #2a2a2f;
+  --aui-accent: #7ea2ff; --aui-good: #5fc28e; --aui-warn: #e3a64a; --aui-bad: #f0827a;
+  --aui-good-soft: #15291e; --aui-warn-soft: #2c2213; --aui-bad-soft: #2e1715; --aui-accent-soft: #18213a; } }
+.aui[data-theme="dark"] { --aui-bg: #111113; --aui-surface: #18181b; --aui-sunken: #0d0d0f; --aui-fg: #ececef; --aui-muted: #9b9ba3; --aui-line: #2a2a2f;
+  --aui-accent: #7ea2ff; --aui-good: #5fc28e; --aui-warn: #e3a64a; --aui-bad: #f0827a;
+  --aui-good-soft: #15291e; --aui-warn-soft: #2c2213; --aui-bad-soft: #2e1715; --aui-accent-soft: #18213a; }
+@media (prefers-reduced-motion: reduce) { .aui, .aui * { --aui-dur: 0ms; animation: none !important; transition: none !important; } }
+.aui *, .aui *::before, .aui *::after { box-sizing: border-box; }
+.aui :focus-visible { outline: 2px solid var(--aui-accent); outline-offset: 2px; border-radius: var(--aui-radius-sm); }
+.aui-card { background: var(--aui-surface); border: 1px solid var(--aui-line); border-radius: var(--aui-radius); padding: 14px 16px; min-width: 0; }
+.aui-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.aui-grow { flex: 1 1 auto; min-width: 0; }
+.aui-muted { color: var(--aui-muted); } .aui-sm { font-size: var(--aui-fs-sm); } .aui-xs { font-size: var(--aui-fs-xs); }
+.aui-mono { font-family: var(--aui-mono); font-variant-numeric: tabular-nums; }
+.aui-trunc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aui-btn { font: inherit; font-size: var(--aui-fs-sm); border: 1px solid var(--aui-line); background: var(--aui-surface); color: var(--aui-fg);
+  border-radius: var(--aui-radius-sm); padding: 4px 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.aui-btn:hover { border-color: var(--aui-muted); } .aui-btn:disabled { opacity: .5; cursor: not-allowed; }
+.aui-btn.primary { background: var(--aui-fg); color: var(--aui-bg); border-color: var(--aui-fg); }
+.aui-btn.danger { color: var(--aui-bad); } .aui-btn.ghost { border-color: transparent; background: transparent; }
+.aui-kbd { font: 11px var(--aui-mono); border: 1px solid var(--aui-line); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; color: var(--aui-muted); }
+.aui-badge { font-size: var(--aui-fs-xs); border-radius: 999px; padding: 1px 8px; border: 1px solid var(--aui-line); color: var(--aui-muted); white-space: nowrap; }
+.aui-badge.good { background: var(--aui-good-soft); color: var(--aui-good); border-color: transparent; }
+.aui-badge.warn { background: var(--aui-warn-soft); color: var(--aui-warn); border-color: transparent; }
+.aui-badge.bad { background: var(--aui-bad-soft); color: var(--aui-bad); border-color: transparent; }
+.aui-badge.accent { background: var(--aui-accent-soft); color: var(--aui-accent); border-color: transparent; }
+.aui-sr { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.aui-input { font: inherit; border: 1px solid var(--aui-line); background: var(--aui-surface); color: var(--aui-fg); border-radius: var(--aui-radius-sm); padding: 4px 8px; min-width: 0; }
+@keyframes aui-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+@keyframes aui-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* Status dot shared by trail, plan and inbox */
+.aui-dot { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--aui-line); display: grid; place-items: center; flex: none; background: var(--aui-surface); font-size: 11px; }
+.aui-dot[data-s="done"] { border-color: var(--aui-good); color: var(--aui-good); }
+.aui-dot[data-s="running"] { border-color: var(--aui-accent); }
+.aui-dot[data-s="running"]::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--aui-accent); animation: aui-pulse 1.2s infinite; }
+.aui-dot[data-s="waiting"] { border-style: dashed; border-color: var(--aui-warn); color: var(--aui-warn); }
+.aui-dot[data-s="failed"] { border-color: var(--aui-bad); color: var(--aui-bad); }
+.aui-dot[data-s="skipped"] { opacity: .5; }
+
+/* AgentTrail */
+.aui-trail { display: grid; gap: 10px; }
+.aui-trail-bar { height: 3px; background: var(--aui-sunken); border-radius: 2px; overflow: hidden; }
+.aui-trail-bar i { display: block; height: 100%; background: var(--aui-good); transition: width var(--aui-dur) var(--aui-ease); }
+.aui-trail-list, .aui-trail-sub { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.aui-trail-sub { margin: 4px 0 2px 8px; padding-left: 16px; border-left: 1px solid var(--aui-line); }
+.aui-trail-step { padding: 5px 0; animation: aui-in var(--aui-dur) var(--aui-ease); }
+.aui-trail-step.is-done > .aui-row > .aui-grow, .aui-trail-step.is-skipped > .aui-row > .aui-grow { color: var(--aui-muted); }
+.aui-trail-step.is-running > .aui-row > .aui-grow { font-weight: 600; }
+.aui-trail-doing { margin: 2px 0 0 26px; }
+.aui-trail-ask { margin: 6px 0 2px 26px; display: grid; gap: 6px; }
+.aui-trail-ask p { margin: 0; }
+
+/* AgentPlan */
+.aui-plan { display: grid; gap: 10px; }
+.aui-plan-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.aui-plan-step { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--aui-line); border-radius: var(--aui-radius-sm); background: var(--aui-surface); min-width: 0; }
+.aui-plan-step[draggable="true"] { cursor: grab; }
+.aui-plan-step.is-drag { opacity: .5; }
+.aui-plan-step.is-running { border-color: var(--aui-accent); }
+.aui-plan-step.is-failed { border-color: var(--aui-bad); background: var(--aui-bad-soft); }
+.aui-plan-step.is-done .aui-plan-label { color: var(--aui-muted); }
+.aui-plan-num { width: 18px; text-align: center; color: var(--aui-muted); font-size: var(--aui-fs-xs); }
+.aui-plan-label { overflow-wrap: anywhere; }
+.aui-plan-tools { display: inline-flex; gap: 2px; opacity: 0; transition: opacity var(--aui-dur); }
+.aui-plan-step:hover .aui-plan-tools, .aui-plan-step:focus-within .aui-plan-tools, .aui-plan-step:focus .aui-plan-tools { opacity: 1; }
+@media (hover: none) { .aui-plan-tools { opacity: 1; } }
+
+/* ApprovalGates / ApprovalCard */
+.aui-gates { display: grid; gap: 10px; }
+.aui-gates-stack { position: relative; }
+.aui-gates-stack[data-depth="1"] { padding-bottom: 6px; } .aui-gates-stack[data-depth="2"] { padding-bottom: 12px; }
+.aui-gates-stack[data-depth]:not([data-depth="0"])::after, .aui-gates-stack[data-depth="2"]::before { content: ""; position: absolute; left: 10px; right: 10px; bottom: 0; height: 12px;
+  border: 1px solid var(--aui-line); border-top: 0; border-radius: 0 0 var(--aui-radius) var(--aui-radius); background: var(--aui-sunken); z-index: -1; }
+.aui-gates-stack[data-depth="2"]::before { left: 20px; right: 20px; bottom: -6px; }
+.aui-gate { display: grid; gap: 8px; animation: aui-in var(--aui-dur) var(--aui-ease); }
+.aui-gate.risk-high { border-color: var(--aui-bad); }
+.aui-gate-action { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.aui-gate-why { margin: 0; }
+.aui-gate-diff, .aui-gate-args { margin: 0; padding: 8px 10px; background: var(--aui-sunken); border-radius: var(--aui-radius-sm); overflow: auto; max-height: 220px; font: 12px/1.5 var(--aui-mono); }
+.aui-gate-diff .add { color: var(--aui-good); } .aui-gate-diff .del { color: var(--aui-bad); }
+.aui-gate-edit { display: grid; gap: 4px; } .aui-gate-edit textarea { width: 100%; font-size: 12px; }
+.aui-gate-actions, .aui-gate-confirm { flex-wrap: wrap; }
+.aui-gate-confirm { background: var(--aui-bad-soft); border-radius: var(--aui-radius-sm); padding: 6px 8px; }
+.aui-gates-done { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+
+/* AgentInbox */
+.aui-inbox { display: grid; gap: 10px; }
+.aui-inbox-top { flex-wrap: wrap; justify-content: space-between; }
+.aui-inbox-tabs { display: flex; gap: 2px; flex-wrap: wrap; }
+.aui-tab { font: inherit; font-size: var(--aui-fs-sm); border: 0; background: transparent; color: var(--aui-muted); padding: 4px 8px; border-radius: var(--aui-radius-sm); cursor: pointer; }
+.aui-tab.is-on { background: var(--aui-sunken); color: var(--aui-fg); }
+.aui-inbox-q { width: 160px; max-width: 100%; }
+.aui-inbox-list { display: grid; }
+.aui-inbox-row { border-top: 1px solid var(--aui-line); }
+.aui-inbox-head { padding: 8px 4px; cursor: pointer; }
+.aui-inbox-head:hover { background: var(--aui-sunken); }
+.aui-inbox-time { min-width: 56px; text-align: right; }
+.aui-inbox-body { padding: 0 4px 10px 30px; display: grid; gap: 8px; animation: aui-in var(--aui-dur) var(--aui-ease); }
+.aui-inbox-steps { margin: 0; padding-left: 18px; }
+@media (max-width: 520px) { .aui-inbox-head .aui-badge { display: none; } }
+
+/* AwaySummary */
+.aui-away { display: grid; gap: 10px; }
+.aui-away-group h4 { margin: 0 0 4px; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; }
+.aui-away-group ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.aui-away-group.is-needs { border-left: 2px solid var(--aui-warn); padding-left: 10px; }
+.aui-away-group.is-failed { border-left: 2px solid var(--aui-bad); padding-left: 10px; }
+.aui-away-fold { display: flex; align-items: center; gap: 8px; } .aui-away-fold::before, .aui-away-fold::after { content: ""; flex: 1; border-top: 1px solid var(--aui-line); }
+
+/* AIAnswer */
+.aui-answer { display: grid; gap: 12px; }
+.aui-answer-q { margin: 0; font-size: 16px; }
+.aui-answer-body p { margin: 0 0 10px; overflow-wrap: anywhere; } .aui-answer-body p:last-child { margin: 0; }
+.aui-caret { display: inline-block; width: 7px; height: 1em; vertical-align: -2px; background: var(--aui-fg); animation: aui-pulse 1s infinite; margin-left: 2px; }
+.aui-cite-wrap { position: relative; }
+.aui-cite { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 4px; margin: 0 1px; font: 11px var(--aui-mono); color: var(--aui-accent);
+  background: var(--aui-accent-soft); border-radius: 4px; text-decoration: none; vertical-align: 2px; }
+.aui-cite.is-missing { background: var(--aui-warn-soft); color: var(--aui-warn); }
+.aui-cite-pop { position: absolute; left: 0; top: calc(100% + 6px); z-index: 10; width: min(300px, 80vw); display: none; gap: 4px; padding: 10px 12px;
+  background: var(--aui-surface); border: 1px solid var(--aui-line); border-radius: var(--aui-radius); box-shadow: 0 6px 24px rgb(0 0 0 / .12); }
+.aui-cite-pop.is-on { display: grid; animation: aui-in var(--aui-dur) var(--aui-ease); }
+.aui-sources { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px; }
+.aui-source { display: flex; gap: 8px; align-items: start; padding: 8px 10px; border: 1px solid var(--aui-line); border-radius: var(--aui-radius-sm); text-decoration: none; color: inherit; min-width: 0; font-size: var(--aui-fs-sm); }
+.aui-source:hover { border-color: var(--aui-muted); }
+.aui-answer-tools { flex-wrap: wrap; } .aui-btn.is-on { background: var(--aui-sunken); }
+.aui-followups { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* Every component's grid has one shrinkable column, so long content never pushes the page sideways. */
+.aui-trail, .aui-plan, .aui-gates, .aui-gate, .aui-inbox, .aui-inbox-list, .aui-away, .aui-answer { grid-template-columns: minmax(0, 1fr); }

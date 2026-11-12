@@ -1,0 +1,9 @@
+body { margin: 0; }
+.demo { background: var(--aui-bg); min-height: 100vh; padding: 24px 16px 64px; }
+.demo-head { max-width: 1120px; margin: 0 auto 20px; display: flex; gap: 16px; justify-content: space-between; align-items: start; }
+.demo-head h1 { margin: 0 0 4px; font-size: 26px; letter-spacing: -.01em; } .demo-head p { margin: 0; max-width: 60ch; }
+.demo-grid { max-width: 1120px; margin: 0 auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 20px; align-items: start; }
+.demo-grid .wide { grid-column: 1 / -1; }
+.demo-grid h2 { font-size: 12px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--aui-muted); margin: 0 0 8px; font-family: var(--aui-mono); }
+.demo-grid > div { min-width: 0; }
+@media (max-width: 760px) { .demo-grid { grid-template-columns: minmax(0, 1fr); } .demo-head { flex-direction: column; } }
