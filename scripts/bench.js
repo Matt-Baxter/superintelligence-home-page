@@ -78,11 +78,13 @@ const SUITES = {
     const ev = over.run({ feedback: 1, recompute: 1, rounds: 30, seed: 5 }).metrics.evasion;
     const c = (cos) => sae.run({ latents: 24, l1: 0.1, resample: 0, steps: 1200, seed: 2, cosine: cos, norm_spread: 0.8 }).metrics.recovered;
     const rp = P.runners.find((r) => r.id === "roleplay-rsi"), rq = (m) => rp.run({ meta: m, edit_bound: 3, judge_noise: 0.2, rounds: 30, turns: 200, seed: 7 }).metrics.bad_rate;
+    const sl = P.runners.find((r) => r.id === "shared-leak-rlvr"), lk = (s) => sl.run({ universality: 0.9, shared: s, lr: 0.5, steps: 60, prompts: 20, seed: 11 }).metrics.hack_gain;
     return {
       "papers.hidden_eval_hack_drop": { value: Math.round(drop * 1000) / 1000, better: "higher", tol: 0.02, about: "drop in the quirk share when a self-improving agent is judged on hidden evaluations (arXiv 2609.26457 toy)" },
       "papers.recompute_evasion": { value: ev, better: "lower", tol: 0, about: "undetected exploits with independent recomputation (arXiv 2609.28614 toy)" },
       "papers.cosine_sae_gain": { value: c(1) - c(0), better: "higher", tol: 1, about: "extra true features a cosine-scored SAE recovers when input sizes vary (arXiv 2606.15054 toy)" },
       "papers.roleplay_meta_bad_drop": { value: Math.round((rq(0) - rq(1)) * 1000) / 1000, better: "higher", tol: 0.02, about: "drop in the bad-reply rate when a role-play updater refines its own repair rules (arXiv 2611.07469 toy)" },
+      "papers.shared_leak_amplification": { value: Math.round((lk(1) - lk(0)) * 1000) / 1000, better: "higher", tol: 0.02, about: "extra rise in a widely accepted wrong answer's share when its parameter is shared across prompts rather than copied per prompt (arXiv 2611.13218 toy)" },
     };
   },
   analysis: () => {

@@ -1,6 +1,6 @@
 {
   "about": "Accepted benchmark numbers (scripts/bench.js). Update only for an uplift or an explained trade-off.",
-  "updated": "2026-11-07",
+  "updated": "2026-11-12",
   "metrics": {
     "review.credibility_auc": {
       "value": 1,
@@ -61,7 +61,7 @@
       "about": "points the same attack gains on the unguarded judge (the attack is real)"
     },
     "review.ms_per_doc": {
-      "value": 10.8,
+      "value": 9.1,
       "better": "info",
       "about": "time to review one item"
     },
@@ -130,6 +130,12 @@
       "better": "higher",
       "tol": 0.02,
       "about": "drop in the bad-reply rate when a role-play updater refines its own repair rules (arXiv 2611.07469 toy)"
+    },
+    "papers.shared_leak_amplification": {
+      "value": 0.267,
+      "better": "higher",
+      "tol": 0.02,
+      "about": "extra rise in a widely accepted wrong answer's share when its parameter is shared across prompts rather than copied per prompt (arXiv 2611.13218 toy)"
     },
     "analysis.scope_accuracy": {
       "value": 1,
