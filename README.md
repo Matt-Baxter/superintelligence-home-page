@@ -4,7 +4,7 @@ SEIS 606 Vibe Coding · Project 2 · John Affolter and Matthew Baxter
 
 One place to follow progress toward advanced AI, drawn from papers, lab blogs, research organizations, forums, newsletters and academic blogs, with no dependence on any single platform. There's no Twitter/X: as a source, as a suggestion, or as a submitted link.
 
-The plan we build against (working agreement, spec, versioned contract) is in our shared Project 2 Plan doc. Repo copies:
+The plan we build against lives in `docs/` (working agreement, spec, versioned contract), mirrored from our shared Project 2 Plan doc.
 
 - [Working Agreement](WORKING_AGREEMENT.md): how we'll work together
 - [Contract](CONTRACT.md): what we're building against
@@ -28,29 +28,40 @@ The plan we build against (working agreement, spec, versioned contract) is in ou
 
 The weekly brief and the agent log summary are [json-render](https://github.com/vercel-labs/json-render) specs (v0.22.0). The server builds each spec from the data and validates it against the catalog (`views/catalog.mjs`) before sending it. `GET /api/catalog` exposes the catalog's AI prompt and JSON Schema, so a model could generate new views from only the approved parts later.
 
-## Run
+## Plan documents
+
+> **To reconcile:** there are two sets of plan docs right now. Matt's templates sit at the repo root ([WORKING_AGREEMENT.md](WORKING_AGREEMENT.md), [CONTRACT.md](CONTRACT.md)) and choose a pure bake-off (Option B). The fuller drafts from the shared Plan doc are in `docs/` and describe a split-plus-bake-off mix. Pick one set and one option together, then delete the other.
+
+- [docs/WORKING_AGREEMENT.md](docs/WORKING_AGREEMENT.md): how we work together, including roles, tools, repo workflow, agent rules and costs.
+- [docs/SPEC.md](docs/SPEC.md): the initial spec and open questions.
+- [docs/CONTRACT.md](docs/CONTRACT.md): the versioned contract (data models, API, auth, rules, milestones) with its change log.
+- [docs/OUR_PARTS.md](docs/OUR_PARTS.md): who does what next, including the Week 9 homework checklist.
+
+## Run locally
 
 ```bash
 npm install
-npm run build        # bundle the json-render renderer
-npm start            # http://localhost:3000, fetches the real feeds
-npm run dev:sample   # http://localhost:3200, a throwaway database with SYNTHETIC sample feeds (no network needed)
-npm test             # two-user browser test; run dev:sample first (needs Playwright)
+npm run build          # bundle the json-render renderer
+npm start              # http://localhost:3000; SQLite in ./data, or Postgres if DATABASE_URL is set
+npm run dev:sample     # http://localhost:3200, a throwaway SQLite database with SYNTHETIC sample feeds
+npm test               # two-user browser test against dev:sample (needs Playwright)
 ```
 
-Environment variables:
+The same queries run on SQLite (local, tests) and Postgres (production) through `lib/db.js`. To run the test against Postgres, start `DATABASE_URL=… npm run dev:sample:pg`, then run `BASE=http://localhost:3300 npm test`.
 
-- `PORT`
-- `DATA_DIR`: where the SQLite file lives; use a persistent volume in production.
-- `FETCH_MINUTES`: default 30; `0` turns fetching off.
-- `APP_TZ`: default `America/Chicago`.
-- `NODE_ENV=production`: makes the session cookie `Secure`.
+## Working on it
 
-## Deploy (Railway or any Node 22 container host)
-
-1. Deploy from the repo; the Dockerfile is detected.
-2. Mount a volume at `/data` (the Dockerfile sets `DATA_DIR=/data`). Without it, accounts reset on every deploy.
-3. Generate a public domain. Sign up first so you're the admin, then share the URL with the class.
+- [CONTRIBUTING.md](CONTRIBUTING.md): branches, the pull request checklist, review and merge rules.
+- [docs/DEPLOY.md](docs/DEPLOY.md): Vercel + Neon setup, cron, troubleshooting and the fork fallback.
+- [docs/V0.md](docs/V0.md): John's v0 workflow for his bake-off version.
+- `npm run preflight`: about 3 seconds of checks (syntax, build, secrets, no-Twitter, contract reminder, API smoke test). It runs on `git push` and in GitHub Actions.
+- [CLAUDE.md](CLAUDE.md) / [AGENTS.md](AGENTS.md): rules for AI agents working in this repo.
+- `.claude/skills/`: Claude Code skills:
+  - `open-pull-request`
+  - `change-the-contract`
+  - `run-tests`
+  - `add-feed-source`
+  - `bakeoff-entry`
 
 ## Tests
 

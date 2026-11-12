@@ -7,7 +7,10 @@
     "build": "esbuild client/jr.jsx --bundle --minify --format=iife --jsx=automatic --define:process.env.NODE_ENV=\\\"production\\\" --outfile=public/js/jr.js",
     "start": "node --no-warnings server.js",
     "dev:sample": "node --no-warnings test/serve-fixtures.js",
-    "test": "node test/e2e.js"
+    "test": "node test/e2e.js",
+    "dev:sample:pg": "node --no-warnings test/serve-fixtures-pg.js",
+    "preflight": "node scripts/preflight.js",
+    "prepare": "node scripts/install-hooks.js"
   },
   "keywords": [],
   "author": "",
@@ -17,11 +20,12 @@
     "@json-render/react": "0.22.0",
     "esbuild": "^0.28.2",
     "express": "4.21.2",
+    "pg": "8.16.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "zod": "^4.6.7"
   },
   "engines": {
-    "node": ">=22.5"
+    "node": "22.x"
   }
 }
