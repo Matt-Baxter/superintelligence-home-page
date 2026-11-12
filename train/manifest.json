@@ -1,0 +1,46 @@
+{
+  "created": "2026-11-12T21:37:12.964Z",
+  "commit": "d4569d6",
+  "budget": 12,
+  "examples": 23,
+  "status": "unreviewed: candidates only, not approved for training (needs human review, rights review and a recorded base-model revision)",
+  "split_rule": "by example family (runner), sha256(family) mod 10: 0-6 train, 7 valid, 8-9 test; test is frozen",
+  "splits": {
+    "train": {
+      "sft": 32,
+      "dpo": 29,
+      "families": [
+        "autoformalize-gate",
+        "causal-vs-correlational",
+        "decision-gym",
+        "goodhart",
+        "moe-sae-attribution",
+        "recursive-drift",
+        "roleplay-rsi",
+        "steering",
+        "weak-to-strong"
+      ]
+    },
+    "valid": {
+      "sft": 20,
+      "dpo": 19,
+      "families": [
+        "compounding",
+        "library-fidelity",
+        "monitor-leak-rl",
+        "research-oversight",
+        "shared-leak-rlvr",
+        "superposition"
+      ]
+    },
+    "test": {
+      "sft": 13,
+      "dpo": 12,
+      "families": [
+        "scaling",
+        "self-improve-selection",
+        "sparse-autoencoder"
+      ]
+    }
+  }
+}
