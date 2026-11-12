@@ -2,71 +2,98 @@
 
 **Team:** Matt Baxter & John Affolter
 **Course:** SEIS 606: Vibe Coding (Fall 2026), Project 2
-**Last updated:** 2026-11-06
-
-> Keep this to one page. Items marked **[confirm]** we still need to settle together.
+**Last updated:** 2026-11-11
 
 ## Project choice
 
-- **Choice:** Bake-off (Option B)
-- **Why:** Each of us builds the whole site, which is a cleaner division of labor than splitting it in half and integrating two halves later. Matt builds with Claude Code, John with v0, and we compare and merge the best parts.
-- **What we build against:** the [constitution](.specify/memory/constitution.md) and the [shared spec](specs/001-superintelligence-homepage/spec.md) (REQ IDs and acceptance scenarios). How we compare and decide is in [CONTRACT.md](CONTRACT.md).
+**Bake-off (Option B).** Each of us builds a complete first version of the Superintelligence
+Homepage from the same [spec](specs/001-superintelligence-homepage/spec.md), then we compare the
+two builds and combine the best parts of both.
+
+**Why:** it's the cleanest division of labor. Each of us is fully responsible for our own build.
+Splitting the app in half (Option A) could make it hard to organize how we build on each other's
+work and fit the pieces together.
+
+**How we pick:** a decision model (CLEF or JEV) scores both versions against criteria we agree on
+before building (recorded in [`CONTRACT.md`](CONTRACT.md)). It recommends one version, or a
+merge. We both sign off or override, and the reason goes in the change log.
 
 ## Roles
 
-| Area | Owner | Final say |
-|------|-------|-----------|
-| Matt's build (Claude Code) | Matt | Matt |
-| John's build (v0) | John | John |
-| Shared spec, constitution, contract | Both | Both |
-| Repo (GitHub, on Matt's account) | Matt | Both |
-| Deployment (Vercel on John's account, Neon database) | John | Both |
-| Comparison and final merge | Both | Both (decision model recommends) |
+Each of us owns our own build. The lead has the final say in their area; the other partner
+reviews their pull requests and can step in.
+
+| Area | Lead (final say) | Backup |
+|------|------------------|--------|
+| Initial spec and constitution that drive the design | Matt | John |
+| Bringing in relevant work from past projects | John | Matt |
+| Matt's build (Claude Code) | Matt | John |
+| John's build (v0) | John | Matt |
+| Choosing the final version | Both, using the decision model (see How we pick) | |
 
 ## Tools
 
-| Partner | Agents / AI tools | Platforms / hosting |
-|---------|-------------------|---------------------|
-| Matt | Claude Code (with Spec Kit) | GitHub; Vercel + Neon (shared) |
-| John | v0 (Claude Code for shared tooling) | GitHub; Vercel + Neon (shared) |
+- **Matt:** Claude Code (with Spec Kit).
+- **John:** v0.
+- **Shared:** GitHub for code and reviews (repo on Matt's account, John as a collaborator), Vercel
+  for hosting (deployed from John's Vercel account, connected to Matt's repo), and a Neon
+  Postgres database through Vercel.
 
 ## Communication
 
-- **Channels:** **[confirm]** one chat for quick questions; GitHub pull requests and the Project page (`/m/project`) for work items
-- **Expected response time:** within 24 hours on weekdays
-- **Check-in cadence:** **[confirm days]** 30 minutes twice a week, plus a message the same day either of us is blocked
+- **Channel:** mainly text.
+- **Response time:** under 24 hours.
+- **Check-ins:** meetings 1–2 times a week on Teams or Zoom, plus a message the same day either of
+  us is blocked.
 
 ## Repo workflow
 
-- **Branching:** `main` is always deployable; work on `feature/`, `fix/`, `bakeoff/claude-matt` or `bakeoff/v0-john` branches.
-- **Spec first:** we follow the Spec Kit flow (specify → plan → tasks → build → trace); commits and pull requests name the REQ IDs they serve. Details in [CONTRIBUTING.md](CONTRIBUTING.md).
-- **Pull request review:** helpful and encouraged, not required. You may merge your own pull request once preflight is green.
-- **Before merging, all of these must be true:**
-  - [x] Preflight is green (syntax, build, secrets, no-Twitter, spec trace, API smoke test)
-  - [x] App builds and runs locally; `npm test` passes for bigger changes
-  - [x] No secrets committed
-  - [x] The PR names its REQ IDs and `docs/SPEC_TRACE.md` is current
-  - [x] Shared documents (spec, constitution, this agreement, CONTRACT.md) changed only with both of us agreeing
+- **Where the builds live:** each of us builds in our own folder: `builds/matt/` and
+  `builds/john/`. The shared constitution, spec, contract and agent log stay at the repo root.
+- `main` is always deployable.
+- **Direct push or pull request is a judgment call** based on the change. Low-risk changes, like
+  documentation or work in your own build folder, can go straight to `main`. Riskier changes,
+  like sign-in, permissions, database changes or deployments, usually go on a branch
+  (`feature/short-name`) and into a pull request the other partner reviews. We trust each other's
+  judgment, so we review what needs it without burdening each other with unnecessary reviews.
+- **Before merging a pull request:** tests pass, it works for two different signed-in users, no
+  secrets are in the diff, and any agent mistake from that work is in the agent log.
 
 ## Agent rules
 
-- **Agents may do unattended:** read code, run tests, write code on a branch, draft pull requests and docs.
-- **A human must review:** every merge to `main`, changes to shared documents, auth and security code, database schema changes, deployments, anything that spends money. Agents never merge to `main`, deploy, handle real secrets or spend money.
-- **Agent log:** [`AGENT_LOG.md`](AGENT_LOG.md) in the repo. Each of us adds our own entries within a day of a session: what the agent got wrong and how we caught it, in our own words, never AI-generated.
+- **Agents may do unattended:** read the code, run tests, write code on a feature branch, and
+  draft pull requests.
+- **A human must review:** anything touching sign-in, passwords or permissions, database
+  changes, deployments, and anything that costs money.
+- **Agents push to `main` only when one of us tells them to**, following the judgment-call rule
+  in Repo workflow.
+- **Agents never:** handle real secrets, deploy, or spend money.
+- **Agent log:** each of us writes our own entries in [`AGENT_LOG.md`](AGENT_LOG.md), in our own
+  words, within a day of the session: what the agent got wrong, how we caught it, and the fix. No
+  AI-written entries, and we don't write each other's.
 
 ## Disagreements
 
-- **Breaking ties:** inside your own build, you decide. For shared documents and the final merge, the decision model (weighted criteria, or CLEF / JEV) recommends and we both sign off or override, with the reason logged in CONTRACT.md.
-- **Cutting scope:** must-haves are the spec's REQs; everything else is cut first when behind schedule.
-- **If a partner falls behind:** say so as soon as you know; raise it at the next check-in and re-plan.
-- **When we tell the instructor:** if a deadline is at risk, or an issue isn't resolved within a week.
+- **Breaking ties:** inside an area, the lead decides. Across areas, we take the smaller option
+  and revisit once it ships. Choosing between the two builds follows How we pick.
+- **Cutting scope:** we drop could-haves first, then should-haves; must-haves change only after
+  telling Paul.
+- **Falling behind:** if either of us will miss a deadline, we say so as soon as we know. If one
+  build is still missing must-have requirements at a check-in where the other build has them, the
+  further-along build becomes the base, and the partner who's behind switches to adding features
+  and tests to it.
+- **When we tell Paul:** if a deadline slips more than a week, or if either of us goes a week
+  without responding.
 
 ## Data and costs
 
-- **Synthetic data:** made-up users and recorded sample feeds only, labelled "Sample" / "test data".
-- **Secret handling:** keys and database URLs live in Vercel's environment settings and a git-ignored `.env`; never in commits or prompts.
-- **Spending caps:** **[confirm]** $10 a month total for hosting and AI APIs (the constitution's cap), with hard limits in each provider's dashboard; going over needs both of us.
+- **Synthetic data:** tests use synthetic data, meaning made-up users and recorded sample feeds.
+  The live site reads only public feeds and stores nothing personal beyond a username.
+- **Secrets:** secrets live in the host's environment variables, never in the repo (`.env` is
+  git-ignored).
+- **Spending cap:** $10 a month total for hosting and any AI API, with hard limits set in each
+  provider's dashboard. Going over needs both of us to agree.
 
 ---
 
-**Agreed by:** Matt Baxter ______ (date) · John Affolter ______ (date)
+**Agreed by:** Matt Baxter 11/9/26 · John Affolter 11/9/26

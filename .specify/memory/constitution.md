@@ -1,4 +1,3 @@
-<!-- Sync Impact Report: 1.1.2 → 1.2.0 (MINOR, proposed, not yet in effect). Development Workflow: review is encouraged, not required (John and Matt agreed review is optional); PRs name REQ IDs and the trace in docs/SPEC_TRACE.md. Proposed by John on 2026-11-06; Matt to confirm in CONTRACT.md (v0.6 row). -->
 # Superintelligence Homepage Constitution
 
 The Superintelligence Homepage is a home page for articles about superintelligence: progress
@@ -86,19 +85,24 @@ and merge the best parts.
   internal code structure and visual styling.
 - This constitution MUST NOT choose a technology stack; each partner records theirs in their
   own `/speckit-plan`.
-- Comparison criteria and how the final version is chosen are recorded in `CONTRACT.md` before
-  either build is compared. How well each build keeps the feed on superintelligence is one of
+- Comparison criteria are recorded in `CONTRACT.md` before either partner starts building. A
+  decision model (CLEF or JEV) scores both builds against them and recommends one version or a
+  merge; both partners sign off or override, and the reason goes in the contract's change log.
+- Each build lives in its own folder (`builds/matt/`, `builds/john/`). How well each build keeps the feed on superintelligence is one of
   the criteria.
 - **Costs:** use free tiers where possible. Total spending on hosting and AI APIs MUST stay at or
   under $10 a month unless both partners agree to raise it.
 
 ## Development Workflow
 
-- Work happens on branches; `main` stays deployable.
-- **[Proposed in 1.2.0, Matt to confirm]** Review by the other partner is helpful and encouraged, not required: a partner may merge their own pull request once the automated checks (preflight) pass. Agents never merge to `main`.
-- Pull requests name the REQ IDs they serve, and `docs/SPEC_TRACE.md` maps every requirement to the code and tests that meet it.
-- Agents MAY read code, run tests, write code on a branch and draft pull requests.
-- Agents MUST NOT merge to `main`, deploy, handle real secrets or spend money.
+- `main` stays deployable.
+- Pushing straight to `main` or opening a pull request for the other partner to review is a
+  judgment call based on the change: low-risk changes (documentation, work in your own build
+  folder) MAY go straight to `main`; riskier changes (sign-in, permissions, database,
+  deployment) SHOULD go through a pull request the other partner reviews.
+- Agents MAY read code, run tests, write code on a branch and draft pull requests, and MAY push
+  to `main` only when a partner tells them to.
+- Agents MUST NOT deploy, handle real secrets or spend money.
 - Each partner keeps an agent log in their own words in `AGENT_LOG.md`: what the agent got wrong, how it was
   caught, and the fix. Partners do not write each other's entries, and entries are not
   AI-generated.
@@ -112,4 +116,4 @@ and merge the best parts.
 - Every spec, plan and pull request review checks compliance with these principles, starting
   with the superintelligence focus; any exception must be written down with its reason.
 
-**Version**: 1.1.2 ratified; 1.2.0 proposed (see the Sync Impact Report above) | **Ratified**: 2026-11-06 | **Last Amended**: 2026-11-07
+**Version**: 1.2.0 | **Ratified**: 2026-11-06 | **Last Amended**: 2026-11-11

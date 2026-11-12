@@ -1,87 +1,147 @@
-# Contract
+# Bake-off Contract
 
-_What we're building against._
+**Project:** Superintelligence Homepage | **Partners:** Matt Baxter, John Affolter |
+**Current version:** 1.1 (draft, not yet approved by both partners)
 
-**Team:** Matt Baxter & John Affolter
-**Current version:** 0.5 (0.6 proposed)
-**Date:** 2026-11-07
-**Option:** Bake-off (Option B: partners build from the same spec on different platforms, then compare and merge the best parts)
+**Main question:** Is our comparison of the two builds fair?
 
-## Change log
+We are done when a classmate can sign up on the live site, see a grouped, tagged feed of
+superintelligence stories from at least 8 sources, and vote on and save stories that are still
+there the next time they sign in.
 
-Both partners approve every change, and every change gets logged here.
+## 1. The two builds
 
-| Version | Date | Change | Approved by |
-|---------|------|--------|-------------|
-| 0.1 | _YYYY-MM-DD_ | Initial draft | _Matt, John_ |
-| 0.2 | 2026-11-05 | Chose the bake-off option; removed the split section; drafted required features from the current build | _Matt, John_ |
-| 0.3 | 2026-11-06 | Shared spec created with Spec Kit; required features now point to its REQ IDs | _Matt, John_ |
-| 0.4 | 2026-11-06 | Site focuses on superintelligence specifically, not AI in general; only superintelligence stories in the feed (new REQ-003); requirements renumbered | _Matt, John_ |
-| 0.5 | 2026-11-07 | Agent log is a human-written Markdown file in the repo (`AGENT_LOG.md`), not an app page | _Matt, John_ |
-| 0.6 (proposed) | 2026-11-06 | One set of plan documents (this file, WORKING_AGREEMENT.md, the spec and constitution); John's build interfaces moved to docs/INTERFACES.md; review is optional (constitution 1.2.0); proposed comparison criteria and how we decide (below, weights to agree) | _John (proposed), Matt ☐_ |
+| Build | Owner | Agent tool | Stack | Folder |
+|-------|-------|------------|-------|--------|
+| Build A | Matt | Claude Code, with Spec Kit | Chosen in Matt's `/speckit-plan`; hosted on Vercel with Neon Postgres | `builds/matt/` |
+| Build B | John | v0 | Chosen by John; hosted on Vercel with Neon Postgres | `builds/john/` |
 
-## Bake-off
+**Question we are testing:** Given the same superintelligence spec, which approach produces the
+better Superintelligence Homepage: Claude Code driven by a Spec Kit spec, or v0 starting from
+John's earlier work? And why?
 
-### Purpose
+## 2. Shared scope
 
-Keeps the comparison fair.
+The full requirements, with Given/When/Then scenarios, are in the shared spec,
+[`specs/001-superintelligence-homepage/spec.md`](specs/001-superintelligence-homepage/spec.md),
+governed by the [constitution](.specify/memory/constitution.md). Both builds must meet every
+requirement.
 
-- **Partner 1 platform:** Matt: Claude Code
-- **Partner 2 platform:** John: v0
+| ID | Required feature | Spec requirements |
+|----|------------------|-------------------|
+| F1 | A feed of superintelligence stories, fetched on a schedule from at least 8 public sources across at least 5 kinds. General AI news is left out. | REQ-001 to REQ-003 |
+| F2 | The same paper or announcement from several sources shows as one story listing every source. | REQ-004 |
+| F3 | Each story shows its superintelligence topics and the words that matched. | REQ-005 |
+| F4 | No Twitter/X; stories link out to the original; one failing source doesn't break the feed. | REQ-006 to REQ-008 |
+| F5 | Users can sign up, sign in and sign out, and stay signed in between visits. Passwords are never readable. | REQ-009 to REQ-012 |
+| F6 | Signed-in users can vote on and save stories. Votes and saves are kept per user, survive sign-out and redeploys, and only the owner can change them. | REQ-013 to REQ-016 |
+| F7 | Readers can filter by superintelligence topic, on a laptop or a phone. | REQ-017, REQ-018 |
+| F8 | Deployed at a public URL and shared with the class at least 2 weeks before the presentation. | REQ-019 |
 
-### Core content: One shared spec
+**Out of scope:** general AI news that isn't about superintelligence, notes, reading lists, a
+weekly brief, user-suggested sources, email digests, AI-written summaries, social media
+scraping, hosting full article text and real-time chat. Extra features are allowed but earn no
+points (see Section 5).
 
-The shared spec is [`specs/001-superintelligence-homepage/spec.md`](specs/001-superintelligence-homepage/spec.md),
-governed by the [constitution](.specify/memory/constitution.md). It is the source of truth; the
-list below is a summary. Both builds must meet every REQ in the spec.
+## 3. Fairness rules
 
-#### Required features
+| Must stay the same | May differ |
+|--------------------|------------|
+| Constitution, spec version and required features (F1–F8) | Agent tool and prompts |
+| Superintelligence topic list (spec, Assumptions) | Programming language and framework |
+| The same test data for both builds: saved copies of real feeds plus a few hand-made items (including general AI items that should be filtered out), and made-up test users. Test data never reaches the live site. | Architecture, API design and internal database schema |
+| Acceptance tests in Section 4 | Visual design and page layout |
+| Hosting: Vercel with Neon Postgres; spending: $10 a month total for both builds, free tiers where possible | Which sources each build uses, as long as F1 is met |
 
-| Area | Requirements |
-|------|--------------|
-| Superintelligence feed: 8+ superintelligence sources across 5+ kinds, only superintelligence stories, grouping, topics with reasons, no Twitter/X | REQ-001 to REQ-008 |
-| Accounts: sign up, sign in/out, stay signed in, passwords never readable | REQ-009 to REQ-012 |
-| Votes and saves, kept per user, enforced by the system | REQ-013 to REQ-016 |
-| Filter by superintelligence topic; works on laptop and phone | REQ-017, REQ-018 |
-| Live at a public URL 2+ weeks before the presentation | REQ-019 |
-| Agent log: human-written `AGENT_LOG.md` in the repo | REQ-020 |
+- **Starting points differ, and we say so:** John starts from his earlier build (json-render views
+  and ontology tagging); Matt starts from the spec. The comparison reports this, and human effort
+  is scored on time spent after this contract is approved.
+- **Independent work:** we don't copy code or prompts from each other's build until scoring
+  starts (milestone M3).
+- **Shared questions:** if the spec is unclear, we settle it here, and both builds follow the
+  answer.
+- **Effort tracking:** each partner logs hours spent, and every time they had to correct or
+  redirect an agent goes in [`AGENT_LOG.md`](AGENT_LOG.md).
+- **Errors:** every failure the user sees is a sentence a person can act on, and never shows
+  internal details.
 
-#### Acceptance tests
+## 4. Acceptance tests
 
-The acceptance scenarios (Given / When / Then) are in the spec, grouped by user story. Each
-build tracks its results here:
+Each test runs against the deployed app using the shared sample data.
 
-| User story | Requirements | Matt's build | John's build |
-|------------|--------------|--------------|--------------|
-| 1. Read a superintelligence feed | REQ-001 to REQ-008 | ☐ | ☐ |
-| 2. Create an account and stay signed in | REQ-009 to REQ-012 | ☐ | ☐ |
-| 3. Vote on and save superintelligence stories | REQ-013 to REQ-016 | ☐ | ☐ |
-| 4. Filter by superintelligence topic | REQ-017, REQ-018 | ☐ | ☐ |
+| ID | Feature | Starting point and action | Expected result |
+|----|---------|---------------------------|-----------------|
+| AT-01 | F1 | Sample data from 8 sources across 5 kinds has been fetched; a visitor opens the feed. | Stories from all 8 sources appear, newest first. |
+| AT-02 | F1 | The sample data includes an item about a new AI photo-editing app. | That item does not appear in the feed. |
+| AT-03 | F2 | The same sample paper appears in three sources. | It appears once, listing all three sources. |
+| AT-04 | F3 | A sample story mentions "AGI timelines". | It shows the Forecasting & timelines topic and the matched words "AGI timelines". |
+| AT-05 | F4 | A sample source includes a link to Twitter/X. | That item does not appear. |
+| AT-06 | F4 | One sample source is unreachable. | The rest of the feed still loads. |
+| AT-07 | F5 | A new user signs up with an unused username. | The account is created and the user is signed in. |
+| AT-08 | F5 | A user signs up with a username already in use. | Sign-up fails with a clear message, and no duplicate account is created. |
+| AT-09 | F5 | A signed-in user closes the browser and returns the next day. | They are still signed in. |
+| AT-10 | F6 | User A votes on a story, signs out and signs back in. | The vote is still counted and shown as A's. |
+| AT-11 | F6 | Users A and B each save different stories. | Each sees only their own saved stories. |
+| AT-12 | F6 | User A sends a request to remove user B's vote, directly to the server. | The request is refused, and B's vote does not change. |
+| AT-13 | F7 | A reader filters by Alignment, then opens the site on a phone. | Only Alignment stories appear, with no sideways scrolling. |
+| AT-14 | F8 | A classmate opens the public URL and signs up. | They can sign up and see the feed in under 2 minutes, with no help. |
 
-### Rules
+## 5. Comparison criteria
 
-- **Can differ between builds:** platform, AI tools, language, framework, database, hosting, internal code structure, visual styling
-- **Stays fixed:** the constitution, the shared spec and its REQ IDs, the acceptance scenarios, the synthetic test data, the deadline
+We agree on these criteria and weights before either of us starts building (milestone M1).
 
-### Decision point
+| Criterion | Weight | How we measure it |
+|-----------|--------|-------------------|
+| Acceptance tests | 30 | Percentage of AT-01 through AT-14 passed on the deployed app |
+| Superintelligence relevance | 20 | Both partners judge a sample of 20 stories from the live feed; score is the share judged to be about superintelligence (spec SC-004 asks for at least 9 in 10) |
+| Security | 15 | Each partner tests the other's build for sign-in, password and ownership issues (REQ-011, REQ-016); score based on the number and severity of issues |
+| Maintainability | 15 | Each partner reviews the other's code and adds one small agreed change; score based on time needed and how clean the change was |
+| Human effort | 10 | Hours spent and number of agent corrections, from each partner's log |
+| Usability | 10 | Three classmates complete the same task on each build; score based on success rate and feedback |
+| **Total** | **100** | |
 
-#### Comparison criteria
+## 6. Choosing the final version
 
-_Proposed by John; agree the weights together before comparing (constitution: criteria are recorded here first)._
+Dates are set once Paul confirms our presentation date.
 
-| Criterion | Weight | Matt's build | John's build |
-|-----------|--------|--------------|--------------|
-| Acceptance scenarios passed (spec, all user stories) | _..._ | | |
-| Stays on superintelligence (SC-003 on test data, SC-004 on a live sample of 20) | _..._ | | |
-| Ease of deployment and running on free tiers | _..._ | | |
-| Code quality / maintainability (simplicity, constitution II) | _..._ | | |
-| Cost | _..._ | | |
-| UX (SC-001: a classmate signs up and reads the feed in under 2 minutes) | _..._ | | |
+| # | Milestone | What must be true | Decision |
+|---|-----------|-------------------|----------|
+| M1 | Contract approved | Both partners approve this contract, including the criteria and weights | Freeze scope and criteria; building starts |
+| M2 | Both builds live | Both builds are deployed and pass AT-01 through AT-09 | Cut extras if either build is behind |
+| M3 | Both builds complete | Both builds are feature-complete; code and prompts are shared for scoring | Scoring starts; criteria and weights are locked |
+| M4 | Final version chosen and shared | Scores are final; the merged version is deployed and shared with the class at least 2 weeks before the presentation | Open to the class |
 
-#### How we'll choose or merge the final version
+- **How we pick:** a decision model (CLEF or JEV) scores both builds against Section 5 and
+  recommends one build as the base, or a merge. We both sign off or override, and the decision,
+  its scores and our reason go in the changelog as a new version.
+- **Tiebreaker:** if the totals are within 5 points, the higher Superintelligence relevance score
+  decides.
+- **Merging:** we may move up to two features or fixes from the other build into the base, then
+  rerun all acceptance tests.
+- **Falling behind:** if one build is still missing required features at a milestone where the
+  other build has them, the further-along build becomes the base, and the partner who's behind
+  switches to adding features and tests to it.
+- The final report includes both sets of scores and explains what the comparison did and did not
+  show.
 
-Score both builds 0–10 per criterion with evidence (test output, timings, links) on the Decide page (`/m/decide`). The weighted-criteria judge computes the totals; if we also run CLEF or JEV, we enter their result there and it is cross-checked against the totals. The leader becomes the base; within 3 points we merge the best parts. We both sign off or override, and log the decision and reason as a row in the change log.
+## 7. How this contract changes
 
-### Changes
+- Either partner proposes a change; the other must approve it, including any change drafted by an
+  agent. Each change gets a row in the changelog.
+- Any change to the scope or tests applies to both builds, with an agreed date for updating them.
+- Criteria and weights cannot change after scoring begins at M3.
+- Major changes, which remove or redefine a required feature or test, increase the first version
+  number (1.0 to 2.0). Smaller additions or clarifications increase the second (1.0 to 1.1).
 
-Both partners approve and log them (see [Change log](#change-log)).
+## 8. Changelog
+
+| Version | Date | Person | Change(s) |
+|---------|------|--------|-----------|
+| 0.1 | Nov 4, 2026 | John | First draft in our shared plan doc: data models, API, auth, rules and milestones. Project choice was a mix of split and bake-off. |
+| 0.2 | Nov 5, 2026 | Matt | Chose a pure bake-off; drafted required features from John's first build. |
+| 0.3 | Nov 6, 2026 | Matt | Shared spec written with Spec Kit; required features point to its requirement IDs. |
+| 0.4 | Nov 6, 2026 | Matt | Site focuses on superintelligence specifically, not AI in general; only superintelligence stories appear in the feed. |
+| 0.5 | Nov 7, 2026 | Matt | Agent log is a human-written file in the repo (`AGENT_LOG.md`), not an app page. |
+| 0.6 | Nov 11, 2026 | Matt | Final version chosen by a decision model (CLEF or JEV) plus both partners' sign-off; each build in its own folder. |
+| 1.0 | Nov 11, 2026 | Matt | Rewrote as a full bake-off contract following the course's Example B: the two builds, shared scope, fairness rules, acceptance tests AT-01 to AT-14, weighted comparison criteria, milestones and tiebreaker. Dropped the split-only parts of John's draft (shared API and data models), since in a bake-off each build designs its own. |
+| 1.1 | Nov 11, 2026 | Matt | Removed the `shared/sample-data/` folder requirement; described the test data in plain terms. |
