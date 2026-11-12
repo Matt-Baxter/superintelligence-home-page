@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!-- macOS launch agent: runs one research-loop cycle every hour and merges. Install on the Mac mini:
+<!-- macOS launch agent: runs every training loop once an hour (scripts/train.js all: research loop, merge, Lab ratchet, fine-tuning data). Install on the Mac mini:
      1. Replace REPO with the repo's absolute path, SHARED with the shared results folder, and SHARD (e.g. 0/3 for the
         Mac mini, 1/3 and 2/3 for the laptops; each machine its own number).
      2. cp scripts/launchd/ai.superintelligence.research-loop.plist ~/Library/LaunchAgents/
@@ -13,7 +13,7 @@
   <key>ProgramArguments</key>
   <array>
     <string>/bin/sh</string><string>-lc</string>
-    <string>node scripts/research-loop.js --shard SHARD --seeds 300 --introspection 60 --and-merge</string>
+    <string>node scripts/train.js all --shard SHARD --seeds 300 --introspection 60</string>
   </array>
   <key>EnvironmentVariables</key><dict><key>LOOP_DIR</key><string>SHARED</string></dict>
   <key>StartInterval</key><integer>3600</integer>
