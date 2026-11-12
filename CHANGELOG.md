@@ -10,6 +10,7 @@ made the change. The contract also keeps its own version history in
 
 | Date | Person | Change | Commit(s) |
 |------|--------|--------|-----------|
+| 2026-11-12 | Matt (with Claude Code) | Risks & Governance updates from class discussion: row-level security (RLS) added as a mitigation for R3; R5 rewritten around superintelligence being a subjective domain with ambiguous definitions; new risks R10 (fearmongering) and R11 (not investment advice). | `68402e5` |
 | 2026-11-12 | Matt (with Claude Code) | Added a **Risks & Governance** section to the spec: 9 risks across Data, People, Decisions, Code, Agents, Security and Failure, each with likelihood, impact, mitigation, owner and status. Added this changelog. | `9b32204` |
 | 2026-11-11 | Matt (with Claude Code) | Contract v1.1: removed the `shared/sample-data/` folder requirement and described the test data in plain terms. | `3b59b8b` |
 | 2026-11-11 | Matt | Working agreement signed by John. | `be957e9` |
