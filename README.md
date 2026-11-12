@@ -26,6 +26,22 @@ The plan both builds follow:
 | **Sources page** | Every feed, its kind, and whether its last fetch worked. Users suggest feeds; the admin (the first account) approves them. |
 | **Agent log** | Each partner writes their own entries: what the agent got wrong, how they caught it, what they did. The editor keeps a writing record (active minutes, autosaves, typed vs pasted characters) shown on every entry and in the Markdown export. That record is evidence of how an entry was written, not proof. |
 
+## Extended version: coordination, elements and proofs
+
+Proposed (specs 009 and 010, not yet approved; extended version only). People and agents plan from the same task
+lists, claim work before starting and are refused when they'd collide; every table, type and operation is described
+the same way (keys, grain, relationships, lifecycle, series, aliases, tags, a SHACL shape); and the coordination
+rules are proved in Lean and checked against the running code. Walkthrough with videos: [docs/DEMO.md](docs/DEMO.md).
+
+| Work board | Element catalog |
+| --- | --- |
+| ![Work board](docs/demo/work-board.gif) | ![Elements](docs/demo/elements.gif) |
+| Ranked tasks, claims as leases, a refused collision ([MP4](docs/demo/work-board.mp4)) | Search by alias, read the description, check the data ([MP4](docs/demo/elements.mp4)) |
+
+![Two people on one paper response](docs/demo/builder-two-editors.gif)
+
+Two people on one paper response: presence, a stale save refused naming who saved in between, then saved on top ([MP4](docs/demo/builder-two-editors.mp4)).
+
 ## json-render
 
 The weekly brief is a [json-render](https://github.com/vercel-labs/json-render) specs (v0.22.0). The server builds each spec from the data and validates it against the catalog (`views/catalog.mjs`) before sending it. `GET /api/catalog` exposes the catalog's AI prompt and JSON Schema, so a model could generate new views from only the approved parts later.

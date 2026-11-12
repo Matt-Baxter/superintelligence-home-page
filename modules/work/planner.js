@@ -25,7 +25,7 @@ function next(items, { actor = "", kind = "agent", askedBy = null, claims = [], 
     if (c.hard.some((h) => h.type === "files")) add(W.overlapClaim, `files held by someone else: ${c.hard.filter((h) => h.type === "files").map((h) => h.actor).join(", ")}`);
     if (c.warn.some((w) => w.type === "branch")) add(W.overlapBranch, `an open branch changes the same files (${c.warn.find((w) => w.type === "branch").branches.length + " of them"})`);
     const twins = open.filter((o) => o !== i && O.overlapOf(o.files, i.files).length).length;
-    add(twins ? W.overlapTask : 0, twins ? `${twins} other open task${twins > 1 ? "s" : ""} touch the same files` : "");
+    add(twins ? W.overlapTask : 0, twins ? `${twins} other open task${twins > 1 ? "s touch" : " touches"} the same files` : "");
     out.push({ key: i.key, id: i.id, who: i.who, reqs: i.reqs, text: i.text, files: i.files, score: reasons.reduce((s, r) => s + r.pts, 0), reasons });
   }
   out.sort((a, b) => b.score - a.score || a.key.localeCompare(b.key));
