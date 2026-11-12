@@ -240,6 +240,24 @@ filter and check the full feed returns.
 - **SC-008**: Every requirement above has at least one passing acceptance test in each
   partner's build.
 
+## Risks & Governance
+
+Areas follow the course's risk map: Data, People, Decisions, Code, Agents, Security and Failure.
+Status is one of: **Open** (no mitigation yet), **Planned** (mitigation is a requirement or rule,
+not yet built), **In place** (already done).
+
+| # | Area | Risk | Likelihood | Impact | Mitigation | Owner | Status |
+|---|------|------|------------|--------|------------|-------|--------|
+| R1 | Data | Account data leaks. The only personal data is a username and password, stored in the app's database and seen only by the account owner. A leak would expose passwords people may reuse elsewhere. | Low | High | Passwords are never stored or shown in readable form (REQ-011); nothing beyond a username and password is collected (REQ-012); database credentials live only in the host's settings, never in the repo. | Each build's owner | Planned |
+| R2 | Security | Someone abuses sign-in, for example guessing passwords or creating many fake accounts to inflate votes. | Medium | Medium | Sign-in errors don't reveal whether a username exists; repeated failed sign-ins are slowed down; one vote per user per story (REQ-013). | Each build's owner | Open |
+| R3 | Security | A user changes or removes another user's votes or saves by sending requests directly to the server. | Medium | Medium | Ownership is enforced by the system, not just hidden in the interface (REQ-016), and checked by acceptance test AT-12 in the contract. | Each build's owner | Planned |
+| R4 | Security | Harmful input: a fetched feed item contains scripts or misleading links that run or show in readers' browsers. The app has no uploads, so input comes from feeds and sign-up forms. | Medium | High | Feed text is shown as plain text, never as active page content; only links to the original source are shown; Twitter/X links are dropped (REQ-006). | Each build's owner | Open |
+| R5 | Decisions | The app decides which stories count as superintelligence. Wrong calls could hide important work or fill the feed with off-topic or one-sided stories. | Medium | Medium | Every story shows the words that made it relevant (REQ-005); the topic list is fixed and reviewed by both partners; both partners spot-check 20 live stories (SC-004). | Both | Planned |
+| R6 | People | Readers with disabilities can't use the site, for example people using a screen reader or a keyboard instead of a mouse. | Medium | Medium | All controls work with a keyboard, text has enough contrast, and both builds are checked with a screen reader before milestone M2. | Each build's owner | Open |
+| R7 | Code | Agent-written or reused code carries a license we can't use, or copies someone else's work. Article text from sources is also copyrighted. | Medium | Low | Use only dependencies with permissive licenses and check them before M3; note where reused code came from (John's earlier projects); link out instead of hosting article text (REQ-007). | Both | Open |
+| R8 | Agents | An agent pushes, deploys or spends money without a human noticing. | Low | High | Agents push to `main` only when a partner says so, never deploy, never handle real secrets and never spend money; a $10/month cap with hard limits in each provider's dashboard (working agreement, Agent rules and Data and costs). | Both | In place |
+| R9 | Failure | A source or the whole site goes down, or the feed silently stops updating. | Medium | Medium | One failing source doesn't break the feed (REQ-008); each source's last successful fetch is recorded; the hosting platform emails John when a deploy fails, and he tells Matt by text the same day; recovery is to roll back to the last working deploy within 24 hours. | John (hosting), both builds' owners | Open |
+
 ## Assumptions
 
 - **Superintelligence topics** (fixed list both builds use; can grow later with both partners'
