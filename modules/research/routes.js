@@ -39,8 +39,11 @@ module.exports = function mountResearch(app, { db, wrap, auth, admin }) {
       WHERE e.status = 'pending' ORDER BY e.due ASC LIMIT 50`).catch(() => []);
     const flagged = (await db.all("SELECT id, title, verdict, credibility, result FROM review_docs WHERE needs_person = 1 AND label IS NULL ORDER BY id DESC LIMIT 50"))
       .map((d) => { const r = JSON.parse(d.result || "{}"); return { id: d.id, title: d.title, verdict: d.verdict, credibility: d.credibility, reasons: [...(r.reasons || []), ...(r.panel && r.panel.needsPerson && r.panel.status === "disagreed" ? ["the models disagreed"] : [])], advice: r.panel && r.panel.advice ? r.panel.advice.advice : null, judges: r.panel ? r.panel.judges.map((j) => `${j.id === "rules" ? "rules" : j.model} ${j.credibility}`) : [] }; });
+    // Studio jobs for the control room's agent inbox (newest 30; learn_jobs, REQ-024).
+    const jobs = (await db.all("SELECT id, kind, status, note, error, concept_id, created_at, updated_at FROM learn_jobs ORDER BY id DESC LIMIT 30").catch(() => []))
+      .map((j) => ({ id: j.id, kind: j.kind, status: j.status, note: j.note || "", concept: j.concept_id || null, error: j.error || null, created_at: j.created_at, updated_at: j.updated_at }));
     const models = (process.env.PANEL_MODELS || "").split(",").map((x) => x.trim()).filter(Boolean);
-    return { today, waiting: W, proposals: proposals().reqs, specStatus: proposals().status, people: CFG.people, forecasts: due.map((e) => ({ ...e, overdue: e.due <= today })), flagged,
+    return { today, waiting: W, jobs, proposals: proposals().reqs, specStatus: proposals().status, people: CFG.people, forecasts: due.map((e) => ({ ...e, overdue: e.due <= today })), flagged,
       quality: rows.length ? Q.analyse(rows).checks.map(({ id, label, value, ok, why, fix }) => ({ id, label, value, ok, why, fix })) : [],
       // Person-labelled verdicts through the accuracy paradox guard (lib/metrics.js).
       honesty: await (async () => { const lab = await db.all("SELECT verdict, label FROM review_docs WHERE label IS NOT NULL ORDER BY id DESC LIMIT 1000").catch(() => []); return M.agreementBy(lab, (r) => r.verdict); })(),

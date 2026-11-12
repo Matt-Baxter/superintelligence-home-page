@@ -698,3 +698,10 @@ body.embed main { padding: 0; max-width: none; } body.embed #journal { margin: 0
 .honesty .metrics { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; } .honesty .metrics div { display: grid; gap: 2px; }
 .honesty .metrics b { font-size: 20px; font-variant-numeric: tabular-nums; } .honesty ul { margin: 0; padding-left: 18px; }
 .honesty .tag.good { background: var(--fg); color: var(--surface); } .honesty .tag.warn { background: var(--warn-soft); color: var(--fg); border: 1px dashed var(--line-strong); }
+
+/* agent-ui components (packages/agent-ui, public/js/agent-ui.js) follow the site's themes through its tokens. */
+.aui.aui-inherit { --aui-bg: var(--bg); --aui-surface: var(--surface); --aui-sunken: var(--wash); --aui-fg: var(--fg); --aui-muted: var(--muted);
+  --aui-line: var(--line); --aui-accent: var(--fg); --aui-accent-soft: var(--accent-soft); --aui-good: var(--good); --aui-good-soft: var(--good-soft);
+  --aui-warn: var(--warn); --aui-warn-soft: var(--warn-soft); --aui-bad: var(--bad); --aui-bad-soft: var(--bad-soft);
+  --aui-radius: var(--r-surface); --aui-radius-sm: var(--r-ctl); --aui-font: var(--font); --aui-mono: var(--mono);
+  --aui-fs: var(--fs-base, 16px); --aui-fs-sm: var(--fs-sm, 13px); --aui-fs-xs: var(--fs-xs, 12px); }

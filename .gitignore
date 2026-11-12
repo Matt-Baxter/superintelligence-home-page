@@ -17,3 +17,5 @@ __pycache__/
 proofs/.lake/
 public/js/jr.js
 .env.*
+public/js/agent-ui.js
+public/css/agent-ui.css

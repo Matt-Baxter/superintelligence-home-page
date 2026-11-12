@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Research control room · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css">
+<title>Research control room · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css"><link rel="stylesheet" href="/css/agent-ui.css">
 <style>
   .control-head { align-items: start; } .control-head p { max-width: 62ch; } .control-head .actions { padding-top: 4px; }
   .research-shell { display: grid; grid-template-columns: 204px minmax(0, 1fr); gap: 40px; align-items: start; }
@@ -39,6 +39,7 @@
   <div id="out"></div>
 </main>
 <script src="/js/api.js"></script>
+<script src="/js/agent-ui.js"></script>
 <script>
 const OUTCOMES = [["happened", "Happened"], ["did-not", "Did not"], ["unclear", "Unclear"], ["annulled", "Annulled"]];
 function markSection() {
@@ -60,6 +61,7 @@ async function load(message = "") {
       <nav aria-label="Research sections">
         <a href="#forecasts"><span>Forecasts</span><span class="nav-count">${due.length}</span></a>
         <a href="#flagged"><span>Review queue</span><span class="nav-count">${r.flagged.length}</span></a>
+        <a href="#jobs"><span>Studio jobs</span><span class="nav-count">${r.jobs.length}</span></a>
         <a href="#quality"><span>Judging quality</span><span class="nav-count">${r.quality.length ? `${r.quality.filter((q) => q.ok).length}/${r.quality.length}` : "—"}</span></a>
         <a href="#approvals"><span>Approvals</span><span class="nav-count">${r.proposals.length}</span></a>
         <a href="#setup"><span>Setup & resources</span></a>
@@ -79,8 +81,11 @@ async function load(message = "") {
 
     <section class="panel" id="flagged"><h2>Reviews waiting for a person</h2>
       <p class="small muted">The guards sent these to a person. Agree or disagree with the verdict; your labels are how the judges are calibrated.</p>
-      ${r.flagged.length ? `<div class="scroll" tabindex="0" role="region" aria-label="Flagged reviews table"><table class="t"><thead><tr><th>Piece</th><th>Verdict</th><th>Why it was flagged</th><th></th></tr></thead><tbody>${r.flagged.map((d) => `<tr><td><a href="/m/review#/doc/${d.id}">${esc(d.title)}</a></td><td class="n">${esc(d.verdict)}, ${d.credibility}</td><td class="small">${d.reasons.map(esc).join("; ")}${d.judges.length ? `<br><span class="muted">Judges: ${d.judges.map(esc).join(", ")}</span>` : ""}${d.advice ? `<br><b>Advisor:</b> ${esc(d.advice)}` : ""}</td>
-        <td><div class="acts"><button class="btn" type="button" data-doc="${d.id}" data-l="agree">Agree</button><button class="btn" type="button" data-doc="${d.id}" data-l="disagree">Disagree</button></div></td></tr>`).join("")}</tbody></table></div>` : '<p class="quiet-state">The review queue is clear. <a href="/m/review">Review a paper or article</a></p>'}</section>
+      ${r.flagged.length ? '<div id="flaggedGates"></div>' : '<p class="quiet-state">The review queue is clear. <a href="/m/review">Review a paper or article</a></p>'}</section>
+
+    <section class="panel" id="jobs"><div class="section-title"><h2>Studio jobs</h2><span class="small muted">${W.jobsQueued} queued${W.jobsFailed ? ` · ${W.jobsFailed} failed` : ""}</span></div>
+      <p class="small muted">Explainers, paper-to-code toys, proofs and drafts the local worker runs outside the web server. Retry puts a failed job back in the queue.</p>
+      ${r.jobs.length ? '<div id="jobsInbox"></div>' : '<p class="quiet-state">No studio jobs yet. <a href="/m/learn">Queue one from Learn</a></p>'}</section>
 
     <section class="panel" id="quality"><h2>Judging quality on real reviews</h2>
       <p class="small muted">Label-free checks: does the judging tell pieces apart, and do its parts agree? A failed check becomes a synthetic benchmark item before any rule changes.</p>
@@ -104,9 +109,36 @@ async function load(message = "") {
     }));
     markSection();
     $$("[data-ev]").forEach((b) => (b.onclick = () => act(b, `/api/admin/review/events/${b.dataset.ev}`, { status: b.dataset.v }, `Forecast marked ${b.dataset.v}.`)));
-    $$("[data-doc]").forEach((b) => (b.onclick = () => act(b, `/api/admin/review/docs/${b.dataset.doc}/label`, { label: b.dataset.l }, `Labelled: ${b.dataset.l}.`)));
+    mountAgentUi(r);
     $("#status").textContent = message || `As of ${r.today}.`;
   } catch (e) { showErr($("#status"), e); }
+}
+// The review queue and the studio jobs use agent-ui components (packages/agent-ui), themed by the site's tokens.
+const JOB_STATUS = { queued: "pending", running: "running", "needs-agent": "pending", done: "done", failed: "failed", published: "done" };
+function mountAgentUi(r) {
+  if (!window.AgentUI) return;
+  AgentUI.mount($("#flaggedGates"), "ApprovalGates", {
+    requests: r.flagged.map((d) => ({ id: String(d.id), agent: "Review desk", action: d.title, href: `/m/review#/doc/${d.id}`, why: d.reasons.join("; "), risk: "medium", tag: `${d.verdict}, credibility ${d.credibility}`, tagTone: "" })),
+    labels: { title: "Agree or disagree with each verdict", approve: "Agree", reject: "Disagree", reason: "What the judge got wrong (optional)", empty: "The review queue is clear." },
+    undoMs: 0,
+    onDecide: async (d) => {
+      const label = d.decision === "approved" ? "agree" : "disagree";
+      $("#status").textContent = "Saving…";
+      try { await api(`/api/admin/review/docs/${d.id}/label`, { body: { label, note: d.reason || "" } }); $("#status").textContent = `Labelled: ${label}.`; }
+      catch (e) { showErr($("#status"), e); }
+    },
+  });
+  AgentUI.mount($("#jobsInbox"), "AgentInbox", {
+    tasks: r.jobs.map((j) => ({ id: String(j.id), title: `${j.kind}${j.concept ? `: ${j.concept}` : ""}`, agent: `job #${j.id}`, status: JOB_STATUS[j.status] || "pending",
+      startedAt: j.status === "running" ? Date.parse(j.updated_at) : undefined, updatedAt: Date.parse(j.updated_at || j.created_at) || Date.now(),
+      lastSteps: [j.status === "needs-agent" ? "Waiting for the local worker (npm run learn:worker)" : "", j.note].filter(Boolean), error: j.error || undefined, href: "/m/learn" })),
+    onAction: async (t, a) => {
+      if (a !== "retry") return;
+      $("#status").textContent = "Saving…";
+      try { await api(`/api/admin/learn/jobs/${t.id}`, { method: "PUT", body: { status: "queued" } }); await load(`Job #${t.id} queued again.`); }
+      catch (e) { showErr($("#status"), e); }
+    },
+  });
 }
 async function act(button, url, body, message) {
   const buttons = [...button.closest(".acts").querySelectorAll("button")];

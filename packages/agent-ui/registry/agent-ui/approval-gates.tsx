@@ -15,19 +15,26 @@ export type ApprovalRequest = {
   args?: Record<string, unknown>;
   /** How many later steps wait on this decision. */
   blocks?: number;
+  /** Replace the risk badge with your own tag (for example a verdict), and link the action to its source. */
+  tag?: string; tagTone?: "good" | "warn" | "bad" | "accent" | "";
+  href?: string;
 };
+export type GateLabels = { approve?: string; reject?: string; reason?: string; title?: string; empty?: string };
 export type Decision = { id: string; decision: "approved" | "rejected"; args?: Record<string, unknown>; reason?: string; at: number };
 export type ApprovalGatesProps = {
   requests: ApprovalRequest[];
   onDecide: (d: Decision) => void;
   onUndo?: (d: Decision) => void;
+  /** How long a decision can be undone. 0 when the server can't take a decision back. */
   undoMs?: number;
+  labels?: GateLabels;
   className?: string;
 };
 
 const RISK: Record<Risk, string> = { low: "good", medium: "warn", high: "bad" };
 
-export function ApprovalCard({ req, onDecide, active = true }: { req: ApprovalRequest; onDecide: (d: Omit<Decision, "at">) => void; active?: boolean }) {
+export function ApprovalCard({ req, onDecide, active = true, labels = {} }: { req: ApprovalRequest; onDecide: (d: Omit<Decision, "at">) => void; active?: boolean; labels?: GateLabels }) {
+  const L = { approve: "Approve", reject: "Reject", reason: "Reason for the agent (optional)", ...labels };
   const [mode, setMode] = React.useState<"view" | "edit" | "reject" | "confirm">("view");
   const [text, setText] = React.useState(() => JSON.stringify(req.args ?? {}, null, 2));
   const [reason, setReason] = React.useState("");
@@ -40,13 +47,13 @@ export function ApprovalCard({ req, onDecide, active = true }: { req: ApprovalRe
   };
   useScopedKeys(ref, { a: approve, r: () => setMode("reject"), e: () => req.args && setMode("edit"), escape: () => setMode("view") }, active);
   return (
-    <div ref={ref} className={cx("aui-card aui-gate", `risk-${req.risk}`)} role="group" aria-label={`Approval request from ${req.agent}: ${req.action}`}>
+    <div ref={ref} className={cx("aui-card aui-gate", `risk-${req.risk}`)} role="group" aria-label={`Request from ${req.agent}: ${req.action}`}>
       <div className="aui-row">
-        <span className={cx("aui-badge", RISK[req.risk])}>{req.risk} risk</span>
+        <span className={cx("aui-badge", req.tag ? req.tagTone ?? "" : RISK[req.risk])}>{req.tag || `${req.risk} risk`}</span>
         <span className="aui-sm aui-muted aui-grow aui-trunc">{req.agent}{req.at ? ` · ${ago(req.at)}` : ""}</span>
         {req.blocks ? <span className="aui-xs aui-muted">holds {req.blocks} step{req.blocks > 1 ? "s" : ""}</span> : null}
       </div>
-      <p className="aui-gate-action">{req.action}</p>
+      <p className="aui-gate-action">{req.href ? <a href={req.href}>{req.action}</a> : req.action}</p>
       {req.why ? <p className="aui-sm aui-muted aui-gate-why">Why: {req.why}</p> : null}
       {req.diff?.length ? (
         <pre className="aui-gate-diff" aria-label="Proposed change">{req.diff.map((l, i) => <span key={i} className={l.startsWith("+") ? "add" : l.startsWith("-") ? "del" : ""}>{l}{"\n"}</span>)}</pre>
@@ -61,20 +68,20 @@ export function ApprovalCard({ req, onDecide, active = true }: { req: ApprovalRe
       ) : null}
       {mode === "reject" ? (
         <form className="aui-row" onSubmit={(e) => { e.preventDefault(); onDecide({ id: req.id, decision: "rejected", reason: reason.trim() || undefined }); }}>
-          <input className="aui-input aui-grow" autoFocus value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason for the agent (optional)" aria-label="Reason" />
-          <button className="aui-btn danger" type="submit">Reject</button>
+          <input className="aui-input aui-grow" autoFocus value={reason} onChange={(e) => setReason(e.target.value)} placeholder={L.reason} aria-label="Reason" />
+          <button className="aui-btn danger" type="submit" data-decision="rejected">{L.reject}</button>
           <button className="aui-btn ghost" type="button" onClick={() => setMode("view")}>Cancel</button>
         </form>
       ) : mode === "confirm" ? (
         <div className="aui-row aui-gate-confirm" role="alert">
-          <span className="aui-sm aui-grow">High risk. Approve this exactly as shown?</span>
-          <button className="aui-btn primary" type="button" autoFocus onClick={approve}>Yes, approve</button>
+          <span className="aui-sm aui-grow">High risk. {L.approve} this exactly as shown?</span>
+          <button className="aui-btn primary" type="button" autoFocus onClick={approve}>Yes, {L.approve.toLowerCase()}</button>
           <button className="aui-btn ghost" type="button" onClick={() => setMode("view")}>Back</button>
         </div>
       ) : (
         <div className="aui-row aui-gate-actions">
-          <button className="aui-btn primary" type="button" onClick={approve} disabled={mode === "edit" && !parsed.ok}>{mode === "edit" ? "Approve edited" : "Approve"} <kbd className="aui-kbd">A</kbd></button>
-          <button className="aui-btn" type="button" onClick={() => setMode("reject")}>Reject <kbd className="aui-kbd">R</kbd></button>
+          <button className="aui-btn primary" type="button" data-decision="approved" onClick={approve} disabled={mode === "edit" && !parsed.ok}>{mode === "edit" ? `${L.approve} edited` : L.approve} <kbd className="aui-kbd">A</kbd></button>
+          <button className="aui-btn" type="button" data-decision="reject" onClick={() => setMode("reject")}>{L.reject} <kbd className="aui-kbd">R</kbd></button>
           {req.args && mode !== "edit" ? <button className="aui-btn ghost" type="button" onClick={() => setMode("edit")}>Edit first <kbd className="aui-kbd">E</kbd></button> : null}
           {mode === "edit" ? <button className="aui-btn ghost" type="button" onClick={() => { setMode("view"); setText(JSON.stringify(req.args ?? {}, null, 2)); }}>Discard edits</button> : null}
         </div>
@@ -83,7 +90,7 @@ export function ApprovalCard({ req, onDecide, active = true }: { req: ApprovalRe
   );
 }
 
-export function ApprovalGates({ requests, onDecide, onUndo, undoMs = 6000, className }: ApprovalGatesProps) {
+export function ApprovalGates({ requests, onDecide, onUndo, undoMs = 6000, labels = {}, className }: ApprovalGatesProps) {
   const [decided, setDecided] = React.useState<Array<Decision & { req: ApprovalRequest }>>([]);
   const [region, announce] = useAnnouncer();
   const top = requests.find((r) => !decided.some((d) => d.id === r.id));
@@ -95,22 +102,22 @@ export function ApprovalGates({ requests, onDecide, onUndo, undoMs = 6000, class
   const decide = (d: Omit<Decision, "at">) => {
     const req = requests.find((r) => r.id === d.id)!; const full = { ...d, at: Date.now() };
     setDecided((x) => [{ ...full, req }, ...x]); setNowTick(Date.now()); onDecide(full);
-    announce(`${d.decision === "approved" ? "Approved" : "Rejected"}: ${req.action}. ${waiting.length ? `${waiting.length} more waiting.` : "Nothing else waiting."}`);
+    announce(`${d.decision === "approved" ? labels.approve || "Approved" : labels.reject || "Rejected"}: ${req.action}. ${waiting.length ? `${waiting.length} more waiting.` : "Nothing else waiting."}`);
     requestAnimationFrame(() => (stackRef.current?.querySelector(".aui-gate button") as HTMLElement | null)?.focus());
   };
   const undo = (d: Decision & { req: ApprovalRequest }) => { setDecided((x) => x.filter((y) => y.id !== d.id)); onUndo?.(d); announce(`Undone: ${d.req.action} is waiting again`); };
   return (
     <section className={cx("aui aui-gates", className)} aria-label="Approvals">
-      <header className="aui-row"><strong className="aui-grow">Approvals</strong><span className="aui-sm aui-muted">{top ? `${waiting.length + 1} waiting` : "All decided"}</span></header>
+      <header className="aui-row"><strong className="aui-grow">{labels.title || "Approvals"}</strong><span className="aui-sm aui-muted">{top ? `${waiting.length + 1} waiting` : "All decided"}</span></header>
       <div className="aui-gates-stack" ref={stackRef} data-depth={Math.min(2, waiting.length)}>
-        {top ? <ApprovalCard key={top.id} req={top} onDecide={decide} /> : <p className="aui-sm aui-muted aui-card">Nothing waits on you.</p>}
+        {top ? <ApprovalCard key={top.id} req={top} onDecide={decide} labels={labels} /> : <p className="aui-sm aui-muted aui-card">{labels.empty || "Nothing waits on you."}</p>}
       </div>
       {waiting.length ? <p className="aui-xs aui-muted">Next: {waiting.slice(0, 3).map((w) => w.action).join(" · ")}{waiting.length > 3 ? ` · and ${waiting.length - 3} more` : ""}</p> : null}
       {decided.length ? (
         <ul className="aui-gates-done" aria-label="Decided">
           {decided.map((d) => (
             <li key={d.id} className="aui-row aui-sm">
-              <span className={cx("aui-badge", d.decision === "approved" ? "good" : "bad")}>{d.decision}</span>
+              <span className={cx("aui-badge", d.decision === "approved" ? "good" : "bad")}>{d.decision === "approved" ? labels.approve || "approved" : labels.reject || "rejected"}</span>
               <span className="aui-grow aui-trunc">{d.req.action}{d.reason ? <span className="aui-muted"> · {d.reason}</span> : null}</span>
               {undoable.includes(d) ? <button className="aui-btn ghost aui-xs" type="button" onClick={() => undo(d)}>Undo</button> : null}
             </li>

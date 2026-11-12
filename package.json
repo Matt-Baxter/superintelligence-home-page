@@ -4,7 +4,7 @@
   "description": "Superintelligence Homepage: a multi-source, ontology-tagged homepage for advanced AI progress (SEIS 606 Project 2).",
   "main": "server.js",
   "scripts": {
-    "build": "node scripts/modules.js gen && node scripts/codemap.js build && node scripts/spec-index.js && esbuild client/jr.jsx --bundle --minify --format=iife --jsx=automatic --define:process.env.NODE_ENV=\\\"production\\\" --outfile=public/js/jr.js",
+    "build": "node scripts/modules.js gen && node scripts/codemap.js build && node scripts/spec-index.js && esbuild client/jr.jsx --bundle --minify --format=iife --jsx=automatic --define:process.env.NODE_ENV=\\\"production\\\" --outfile=public/js/jr.js && esbuild packages/agent-ui/site.tsx --bundle --minify --format=iife --jsx=automatic --define:process.env.NODE_ENV=\\\"production\\\" --outfile=public/js/agent-ui.js && esbuild packages/agent-ui/registry/agent-ui/agent-ui.css --bundle --minify --outfile=public/css/agent-ui.css",
     "start": "node --no-warnings server.js",
     "test:demo": "node test/demo-e2e.js",
     "demo": "node --no-warnings test/serve-demo.js",

@@ -189,7 +189,7 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 
 | Script | Purpose |
 | --- | --- |
-| `npm run build` | write client/blocks.gen.jsx (browser block registry) and copy module pages to public/m/; write modules/codemap/data/codemap.json (npm run build does this); Snapshot of the specs for the Project page's Specs view (REQ-030, proposed), written by `npm run build`.; esbuild: bundle client/jr.jsx into public/js/jr.js |
+| `npm run build` | write client/blocks.gen.jsx (browser block registry) and copy module pages to public/m/; write modules/codemap/data/codemap.json (npm run build does this); Snapshot of the specs for the Project page's Specs view (REQ-030, proposed), written by `npm run build`.; esbuild: bundle client/jr.jsx into public/js/jr.js; esbuild: bundle packages/agent-ui/site.tsx into public/js/agent-ui.js; esbuild: bundle packages/agent-ui/registry/agent-ui/agent-ui.css into public/css/agent-ui.css |
 | `npm run start` | Superintelligence Homepage: multi-source AI-progress feed with accounts, curation, and a weekly brief (the agent log is AGENT_LOG.md in the repo,… |
 | `npm run test:demo` | Run against a disposable npm run demo server. |
 | `npm run demo` | Disposable, loopback-only demonstration. |
