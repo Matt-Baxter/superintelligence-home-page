@@ -1,21 +1,28 @@
-// Starts the server on a throwaway database preloaded with SYNTHETIC sample feeds (test/fixtures).
+// Starts the server on a throwaway SQLite database preloaded with SYNTHETIC sample feeds (test/fixtures).
 // Used by the browser test and for local demos while live feeds are unreachable. Never point this at production data.
 const fs = require("node:fs"), path = require("node:path"), os = require("node:os");
+delete process.env.DATABASE_URL; delete process.env.POSTGRES_URL;
 process.env.DATA_DIR = process.env.DATA_DIR || fs.mkdtempSync(path.join(os.tmpdir(), "si-test-"));
 process.env.FETCH_MINUTES = "0";
-const { app, db, ingestItems, seedSources } = require("../server");
+const { app, db, ingestItems, boot } = require("../server");
 const feeds = require("../lib/feeds");
-seedSources();
-const add = (name, kind, format, file) => {
-  const id = Number(db.prepare("INSERT INTO sources (name, kind, format, url, home, status) VALUES (?, ?, ?, ?, '', 'active')").run(name, kind, format, "fixture://" + file).lastInsertRowid);
-  const items = feeds.parse(format, fs.readFileSync(path.join(__dirname, "fixtures", file), "utf8"));
-  ingestItems(id, items);
-  db.prepare("UPDATE sources SET last_ok = ?, last_count = ? WHERE id = ?").run(new Date().toISOString(), items.length, id);
-};
-add("Sample arXiv feed (test data)", "papers", "arxiv", "sample-atom.xml");
-add("Sample lab blog (test data)", "lab", "rss", "sample-rss.xml");
-add("Sample daily papers (test data)", "papers", "hf-daily", "sample-hf.json");
-// Real default sources stay listed but paused here, since this sandbox can't reach them.
-db.prepare("UPDATE sources SET status = 'paused' WHERE url NOT LIKE 'fixture://%'").run();
-const port = Number(process.env.PORT || 3200);
-app.listen(port, () => console.log(`Test server with sample data on http://localhost:${port} (data in ${process.env.DATA_DIR})`));
+// The sample items carry fixed dates. Move them all by the same amount so the newest is a day old;
+// otherwise they fall out of the feed's default "Last week" window and the test sees an empty feed.
+const NEWEST = Date.parse("2026-11-04T12:00:00Z"), SHIFT = Date.now() - 864e5 - NEWEST;
+const shift = (items) => items.map((it) => (it.published ? { ...it, published: new Date(Date.parse(it.published) + SHIFT).toISOString() } : it));
+(async () => {
+  await boot();
+  const add = async (name, kind, format, file) => {
+    const id = await db.insert("INSERT INTO sources (name, kind, format, url, home, status) VALUES (?, ?, ?, ?, '', 'active')", name, kind, format, "fixture://" + file);
+    const items = shift(feeds.parse(format, fs.readFileSync(path.join(__dirname, "fixtures", file), "utf8")));
+    await ingestItems(id, items);
+    await db.run("UPDATE sources SET last_ok = ?, last_count = ? WHERE id = ?", db.now(), items.length, id);
+  };
+  await add("Sample arXiv feed (test data)", "papers", "arxiv", "sample-atom.xml");
+  await add("Sample lab blog (test data)", "lab", "rss", "sample-rss.xml");
+  await add("Sample daily papers (test data)", "papers", "hf-daily", "sample-hf.json");
+  // Real default sources stay listed but paused here, since the test machine may not reach them.
+  await db.run("UPDATE sources SET status = 'paused' WHERE url NOT LIKE 'fixture://%'");
+  const port = Number(process.env.PORT || 3200);
+  app.listen(port, () => console.log(`Test server with sample data on http://localhost:${port} (${db.engine}, data in ${process.env.DATA_DIR})`));
+})();
