@@ -1048,6 +1048,57 @@
      "weight": 20
     }
    ]
+  },
+  {
+   "id": "rlvr-shared-leak",
+   "title": "Reward hacking with a shared wrong answer: sharing suppresses or amplifies the leak",
+   "concept": "concept:reward-hacking",
+   "topics": [
+    "topic:alignment"
+   ],
+   "source": {
+    "title": "Wrong the Same Way: Cross-Prompt Sharing Both Suppresses and Amplifies Reward Hacking in RLVR",
+    "url": "https://arxiv.org/abs/2611.13218",
+    "via": "daily paper watcher, Nov 12, 2026"
+   },
+   "idea": "When a model is trained on answers a checker accepts, a checker that wrongly accepts some wrong answer invites reward hacking. If training only reweighted the answers each prompt accepts, the model would keep the wrong answer exactly as often as it started (it is inherited). But a model shares its parameters across prompts, and a wrong answer that is the same on many prompts gets one combined push: up from every prompt that accepts it, down from every prompt that rejects it. A leak most prompts accept gets amplified; a leak few prompts accept gets suppressed below where it started.",
+   "reproduce": {
+    "runner": "shared-leak-rlvr",
+    "params": {
+     "universality": 0.9,
+     "shared": 1,
+     "lr": 0.5,
+     "steps": 60,
+     "prompts": 20,
+     "seed": 11
+    },
+    "expect": "With a shared parameter and 9 in 10 prompts accepting the common wrong answer, its share of accepted answers rises from about 0.36 to about 0.63. With independent copies per prompt (shared 0) it stays at its starting share, and when only 2 in 10 prompts accept it (universality 0.2) the shared model drives it to zero. At universality 0.7 the outcome depends on the step size: lr 0.5 suppresses it, lr 2 amplifies it."
+   },
+   "hypothesis": {
+    "statement": "Ours: with more prompts that accept the same wrong answer (40 instead of 20, same universality), the combined push is larger, so the rise in its share of accepted answers grows by at least 0.05.",
+    "params": {
+     "prompts": 40
+    },
+    "predict": {
+     "metric": "hack_gain",
+     "direction": "up",
+     "delta": 0.05
+    }
+   },
+   "criteria": [
+    {
+     "metric": "hack_gain",
+     "weight": 50
+    },
+    {
+     "metric": "hack_share",
+     "weight": 30
+    },
+    {
+     "metric": "hack_rate",
+     "weight": 20
+    }
+   ]
   }
  ]
 }

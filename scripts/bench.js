@@ -114,6 +114,7 @@ const SUITES = {
     // Seed stability: each paper example's hypothesis verdict re-run on 3 other seed blocks; the share that agree with
     // the published verdict. A verdict that flips with the seed shouldn't be reported as a finding. And the slowest
     // example run, since every toy must stay well under 2 seconds.
+    const sl = P.runners.find((r) => r.id === "shared-leak-rlvr"), lk = (s) => sl.run({ universality: 0.9, shared: s, lr: 0.5, steps: 60, prompts: 20, seed: 11 }).metrics.hack_gain;
     const L = require("../modules/lab/lab"), paperEx = L.EX.examples.filter((e) => /arxiv\.org\/abs\//.test(e.source?.url || ""));
     let agree = 0, tries = 0, slowest = 0;
     for (const e of paperEx) {
@@ -138,6 +139,7 @@ const SUITES = {
       "papers.self_reference_leak": { value: Math.round((keep(1) - keep(0)) * 1000) / 1000, better: "higher", tol: 0.01, about: "claim strength lost over 12 generations of self-improvement when each generation checks against its own output instead of the original claim, comparator above threshold (recursive-drift toy)" },
       "papers.foundations_first_gain": { value: Math.round((lib(0) - lib(2)) * 1000) / 1000, better: "higher", tol: 0.01, about: "less of a formal library resting on a wrong statement when a 10% review budget checks foundations first instead of the last results (library-fidelity toy)" },
       "papers.comparator_weakening_drop": { value: Math.round((af(0) - af(1)) * 1000) / 1000, better: "higher", tol: 0.02, about: "drop in the share of accepted proofs that prove a weaker statement when a comparator checks the statement, versus rewarding compiling alone (autoformalize-gate toy; arXiv 2610.08144)" },
+      "papers.shared_leak_amplification": { value: Math.round((lk(1) - lk(0)) * 1000) / 1000, better: "higher", tol: 0.02, about: "extra rise in a widely accepted wrong answer's share when its parameter is shared across prompts rather than copied per prompt (arXiv 2611.13218 toy)" },
     };
   },
   production: () => {

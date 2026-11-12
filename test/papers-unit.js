@@ -41,7 +41,14 @@ ok(JSON.stringify(mlq({})) === JSON.stringify(full), "monitor-leak toy is determ
 ok(full.hack_rate < none.hack_rate - 0.3, `feeding the monitor's verdict into the reward suppresses hacking (${none.hack_rate} -> ${full.hack_rate})`);
 ok(full.evaded > none.evaded + 0.2, `...but teaches the policy to evade the monitor (missed hacks ${none.evaded} -> ${full.evaded})`);
 ok(easy.hack_rate < full.hack_rate - 0.3, `easier training problems make honest solving pay and cut hacking (${full.hack_rate} -> ${easy.hack_rate})`);
-const ex = ["rsi-hidden-evals", "rrsi-edit-budget", "oversight-recompute", "cosine-sae", "roleplay-bounded-rsi", "moe-sae-expert-split", "interp-causal-check", "reward-hack-monitor-leak"].map((id) => [id, L.runExample(id)]);
+const sl = P.runners.find((r) => r.id === "shared-leak-rlvr"), lk = (o) => sl.run({ universality: 0.9, shared: 1, lr: 0.5, steps: 60, prompts: 20, seed: 11, ...o }).metrics;
+const copies = lk({ shared: 0 }), wide = lk({}), narrow = lk({ universality: 0.2 });
+ok(JSON.stringify(lk({})) === JSON.stringify(wide), "shared-leak toy is deterministic");
+ok(Math.abs(copies.hack_gain) < 0.005, `independent copies per prompt inherit the wrong answer's share exactly (change ${copies.hack_gain})`);
+ok(wide.hack_gain > 0.1, `sharing amplifies a wrong answer most prompts accept (${wide.base_share} -> ${wide.hack_share})`);
+ok(narrow.hack_gain < -0.1, `...and suppresses one few prompts accept, below where it started (${narrow.base_share} -> ${narrow.hack_share})`);
+ok(lk({ universality: 0.7, lr: 0.5 }).hack_gain < 0 && lk({ universality: 0.7, lr: 2 }).hack_gain > 0, "in between, whether the leak crosses its starting share depends on the step size");
+const ex = ["rsi-hidden-evals", "rrsi-edit-budget", "oversight-recompute", "cosine-sae", "roleplay-bounded-rsi", "moe-sae-expert-split", "interp-causal-check", "reward-hack-monitor-leak", "rlvr-shared-leak"].map((id) => [id, L.runExample(id)]);
 ok(ex.every(([, r]) => r.example.source && /^https:\/\/arxiv\.org\/abs\/\d{4}\.\d{4,5}$/.test(r.example.source.url)), "every paper example links its arXiv source");
 ok(ex.filter(([, r]) => !r.verdict.supported).map(([id]) => id).join() === "rrsi-edit-budget,roleplay-bounded-rsi,moe-sae-expert-split", "the edit-budget, looser-bound and noisy-encoder hypotheses are kept as refuted at toy scale");
 // Every paper toy runs its defaults (10 seeds averaged) in under 2 seconds, so the Lab and the daily task stay fast.

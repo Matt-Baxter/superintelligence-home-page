@@ -32,6 +32,9 @@
 //   library-fidelity         "The Stacks Project, formalized in Lean" (Axiom, Nov 2026): a library is a dependency graph
 //                            whose definitions everything else builds on. With a fixed budget of declarations a
 //                            person can check against the source text, which ones should they check?
+//   shared-leak-rlvr         "Wrong the Same Way: Cross-Prompt Sharing Both Suppresses and Amplifies Reward Hacking in
+//                            RLVR" (arXiv 2611.13218): one wrong answer is the same on every prompt and some prompts'
+//                            verifiers accept it; with a shared parameter the pushes from all prompts add up.
 function rng(seed = 1) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 const gauss = (r) => { const u = Math.max(1e-12, r()), v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
 const round = (x, d = 3) => Math.round(x * 10 ** d) / 10 ** d;
@@ -351,6 +354,41 @@ function libraryFidelity({ nodes = 400, def_share = 0.25, mistranslate = 0.05, b
       `Unchecked, ${Math.round(before * 100)}% of the library rests on a wrong statement; after checking, ${Math.round(share * 100)}%.`] };
 }
 
+// ---------- a leak shared across prompts, trained with verifiable rewards ----------
+// Each prompt has its own correct answer, two of its own wrong answers, and one wrong answer that is the same on every
+// prompt. A share of the prompts (universality) have a verifier that wrongly accepts that common wrong answer. Training
+// raises each answer's logit by lr * (reward - the prompt's mean reward). With independent copies every prompt moves its
+// own logits, so on accepting prompts the correct and the common wrong answer rise together and the wrong share of
+// accepted answers stays at its starting level (a filter: inherited). With a shared parameter, the common wrong answer
+// has one logit for every prompt, pushed up by prompts that accept it and down by prompts that reject it, each weighted
+// by how likely the model is to give it there; the sum can suppress it below its start or amplify it above.
+function sharedLeak({ universality = 0.9, shared = 1, lr = 0.5, steps = 60, prompts = 20, seed = 11 }) {
+  const r = rng(seed), P = Math.round(prompts), D = 2;
+  const accepts = Array.from({ length: P }, (_, p) => p < Math.round(universality * P));
+  const base = Array.from({ length: P }, () => [0.5 * (r() - 0.5), -0.6 + 0.6 * (r() - 0.5), ...Array.from({ length: D }, () => 0.4 * (r() - 0.5))]);
+  const own = base.map((b) => b.slice()); let sW = 0;
+  const probs = (p) => { const l = own[p].slice(); if (shared) l[1] = base[p][1] + sW; const m = Math.max(...l), e = l.map((x) => Math.exp(x - m)), z = e.reduce((s, x) => s + x, 0); return e.map((x) => x / z); };
+  const reward = (p, k) => (k === 0 || (k === 1 && accepts[p]) ? 1 : 0);
+  const acc = [...Array(P).keys()].filter((p) => accepts[p]);
+  const share = () => (acc.length ? mean(acc.map((p) => { const q = probs(p); return q[1] / (q[0] + q[1]); })) : 0);
+  const hackRate = () => mean([...Array(P).keys()].map((p) => (accepts[p] ? probs(p)[1] : 0)));
+  const start = share(), startRate = hackRate(), pts = [[0, round(start)]];
+  for (let t = 1; t <= steps; t++) {
+    const qs = [...Array(P).keys()].map(probs), bs = qs.map((q, p) => q.reduce((s, x, k) => s + x * reward(p, k), 0));
+    const qW = Math.max(1e-12, mean(qs.map((q) => q[1]))); let gW = 0;
+    for (let p = 0; p < P; p++) {
+      for (let k = 0; k < 2 + D; k++) { if (k === 1 && shared) continue; own[p][k] += lr * (reward(p, k) - bs[p]); }
+      if (shared) gW += (qs[p][1] / qW) * (reward(p, 1) - bs[p]);
+    }
+    if (shared) sW = Math.max(-50, Math.min(50, sW + lr * gW));
+    pts.push([t, round(share())]);
+  }
+  const end = share();
+  return { metrics: { hack_gain: round(end - start), hack_share: round(end), base_share: round(start), hack_rate: round(hackRate()), base_rate: round(startRate) },
+    series: [{ name: "common wrong answer's share of accepted answers, by step", points: pts }],
+    notes: [`${shared ? "One shared parameter for the common wrong answer" : "Independent copies per prompt"}; ${acc.length} of ${P} prompts accept it.`, `Its share of accepted answers went from ${round(start * 100, 1)}% to ${round(end * 100, 1)}% (${end > start + 0.005 ? "amplified" : end < start - 0.005 ? "suppressed" : "inherited"}).`] };
+}
+
 const runnersList = [
   { id: "self-improve-selection", about: "An agent edits itself and keeps the best version, judged on visible tests or hidden evaluations (with an edit budget)",
     params: {
@@ -452,6 +490,17 @@ const runnersList = [
     },
     metrics: [{ id: "contaminated", label: "Share of the library resting on a wrong statement after checking", better: "lower" }, { id: "contaminated_unchecked", label: "Same, before any checking", better: "info" }, { id: "caught", label: "Share of the wrong translations caught", better: "higher" }],
     run: (p) => libraryFidelity(p) },
+  { id: "shared-leak-rlvr", about: "Verifiable-reward training with a wrong answer shared across prompts: parameter sharing suppresses or amplifies the leak",
+    params: {
+      universality: { default: 0.9, min: 0, max: 1, step: 0.1, about: "Share of prompts whose verifier accepts the common wrong answer" },
+      shared: { default: 1, min: 0, max: 1, step: 1, about: "1 = one shared parameter for the common wrong answer, 0 = independent copies per prompt" },
+      lr: { default: 0.5, min: 0.05, max: 3, step: 0.05, about: "Step size" },
+      steps: { default: 60, min: 10, max: 200, step: 10, about: "Training steps" },
+      prompts: { default: 20, min: 5, max: 60, step: 5, about: "Prompts" },
+      seed: { default: 11, min: 1, max: 999, step: 1, about: "Random seed" },
+    },
+    metrics: [{ id: "hack_gain", label: "Change in the wrong answer's share of accepted answers", better: "lower" }, { id: "hack_share", label: "Wrong share of accepted answers (end)", better: "lower" }, { id: "hack_rate", label: "Accepted wrong answers per prompt (end)", better: "lower" }],
+    run: (p) => sharedLeak(p) },
 ];
 // Averaging over seeds, so a verdict doesn't hang on one lucky draw (the Lab's examples pass seeds via "seeds").
 function averaged(fn, p, seeds = 10) {
@@ -461,4 +510,4 @@ function averaged(fn, p, seeds = 10) {
 }
 for (const r of runnersList) { const raw = r.run; r.run = (p) => averaged(raw, p, 10); }
 
-module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI, moeAttribution, causalVsCorrelational, monitorLeak, autoformalize, recursiveDrift, comparatorThreshold, libraryFidelity };
+module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI, moeAttribution, causalVsCorrelational, monitorLeak, autoformalize, recursiveDrift, comparatorThreshold, libraryFidelity, sharedLeak };
