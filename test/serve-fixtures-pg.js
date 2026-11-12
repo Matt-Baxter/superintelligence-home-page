@@ -3,6 +3,7 @@ if (!process.env.DATABASE_URL) { console.error("Set DATABASE_URL to a throwaway 
 process.env.SITE_PROFILE = process.env.SITE_PROFILE || "extended"; // the browser test covers every feature; preflight checks the spec version
 process.env.FETCH_MINUTES = "0";
 process.env.ALLOW_FIXTURE_FEEDS = "1";
+process.env.FIXTURE_DATES = "shift"; // keep the sample dates inside the feed's last-week window (test/fixture-dates.js)
 process.env.SOURCE_CATALOG = require("node:path").join(__dirname, "fixtures", "sample-catalog.json");
 const fs = require("node:fs"), path = require("node:path");
 const { app, db, ingestItems, boot } = require("../server");
@@ -12,7 +13,7 @@ const feeds = require("../lib/feeds");
   await boot();
   const add = async (name, kind, format, file) => {
     const id = await db.insert("INSERT INTO sources (name, kind, format, url, home, status) VALUES (?, ?, ?, ?, '', 'active')", name, kind, format, "fixture://" + file);
-    const items = feeds.parse(format, fs.readFileSync(path.join(__dirname, "fixtures", file), "utf8"));
+    const items = feeds.parse(format, require("./fixture-dates").shiftText(fs.readFileSync(path.join(__dirname, "fixtures", file), "utf8")));
     await ingestItems(id, items);
     await db.run("UPDATE sources SET last_ok = ?, last_count = ? WHERE id = ?", db.now(), items.length, id);
   };

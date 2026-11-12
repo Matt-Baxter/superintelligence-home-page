@@ -6,6 +6,7 @@ process.env.DATA_DIR = process.env.DATA_DIR || fs.mkdtempSync(path.join(os.tmpdi
 process.env.SITE_PROFILE = process.env.SITE_PROFILE || "extended"; // the browser test covers every feature; preflight checks the spec version
 process.env.FETCH_MINUTES = "0";
 process.env.ALLOW_FIXTURE_FEEDS = "1";
+process.env.FIXTURE_DATES = "shift"; // keep the sample dates inside the feed's last-week window (test/fixture-dates.js)
 process.env.SOURCE_CATALOG = require("node:path").join(__dirname, "fixtures", "sample-catalog.json");
 const { app, db, ingestItems, boot } = require("../server");
 const feeds = require("../lib/feeds");
@@ -15,7 +16,7 @@ const feeds = require("../lib/feeds");
     // Re-runnable on an existing DATA_DIR: reuse the fixture source if this database already has it.
     const have = await db.get("SELECT id FROM sources WHERE url = ?", "fixture://" + file);
     const id = have ? have.id : await db.insert("INSERT INTO sources (name, kind, format, url, home, status) VALUES (?, ?, ?, ?, '', 'active')", name, kind, format, "fixture://" + file);
-    const items = feeds.parse(format, fs.readFileSync(path.join(__dirname, "fixtures", file), "utf8"));
+    const items = feeds.parse(format, require("./fixture-dates").shiftText(fs.readFileSync(path.join(__dirname, "fixtures", file), "utf8")));
     await ingestItems(id, items);
     await db.run("UPDATE sources SET last_ok = ?, last_count = ? WHERE id = ?", db.now(), items.length, id);
   };
