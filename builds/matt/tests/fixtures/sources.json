@@ -1,0 +1,11 @@
+[
+  { "id": "sample-arxiv", "name": "Sample arXiv", "kind": "papers", "feedUrl": "http://localhost:4100/feeds/arxiv.xml" },
+  { "id": "sample-lab", "name": "Sample Frontier Lab", "kind": "frontier-lab", "feedUrl": "http://localhost:4100/feeds/lab.xml" },
+  { "id": "sample-safety", "name": "Sample Safety Group", "kind": "safety-group", "feedUrl": "http://localhost:4100/feeds/safety.xml" },
+  { "id": "sample-research", "name": "Sample Research Org", "kind": "research-org", "feedUrl": "http://localhost:4100/feeds/research.xml" },
+  { "id": "sample-forum-a", "name": "Sample Forum A", "kind": "forum", "feedUrl": "http://localhost:4100/feeds/forum-a.xml" },
+  { "id": "sample-forum-b", "name": "Sample Forum B", "kind": "forum", "feedUrl": "http://localhost:4100/feeds/forum-b.xml" },
+  { "id": "sample-newsletter-a", "name": "Sample Newsletter A", "kind": "newsletter", "feedUrl": "http://localhost:4100/feeds/newsletter-a.xml" },
+  { "id": "sample-newsletter-b", "name": "Sample Newsletter B", "kind": "newsletter", "feedUrl": "http://localhost:4100/feeds/newsletter-b.xml" },
+  { "id": "sample-down", "name": "Sample Unreachable Source", "kind": "forum", "feedUrl": "http://localhost:4199/feeds/down.xml" }
+]

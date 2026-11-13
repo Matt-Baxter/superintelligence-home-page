@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Sample data for tests only. -->
+<rss version="2.0"><channel>
+  <title>Sample Newsletter B</title>
+  <item>
+    <title>Sample: Existential Risk Roundup</title>
+    <link>https://newsletter-b.example.com/p/existential-risk-roundup</link>
+    <description>A roundup of writing on existential risk this month. Sample test data.</description>
+    <pubDate>Sun, 01 Nov 2026 07:00:00 GMT</pubDate>
+  </item>
+</channel></rss>

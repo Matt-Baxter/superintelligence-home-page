@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Sample data for tests only. -->
+<rss version="2.0"><channel>
+  <title>Sample Forum A</title>
+  <item>
+    <title>Sample: Discussion of the New Scalable Oversight Paper</title>
+    <link>https://arxiv.org/pdf/2611.00001v2</link>
+    <description>Forum discussion of a new scalable oversight paper. Sample test data.</description>
+    <pubDate>Tue, 10 Nov 2026 20:00:00 GMT</pubDate>
+  </item>
+  <item>
+    <title>Sample: Is an Intelligence Explosion Likely?</title>
+    <link>https://forum-a.example.org/posts/intelligence-explosion</link>
+    <description>A debate about recursive self-improvement. Sample test data.</description>
+    <pubDate>Thu, 05 Nov 2026 20:00:00 GMT</pubDate>
+  </item>
+</channel></rss>

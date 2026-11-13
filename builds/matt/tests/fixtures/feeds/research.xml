@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Sample data for tests only. -->
+<rss version="2.0"><channel>
+  <title>Sample Research Org</title>
+  <item>
+    <title>Sample: Training Compute Keeps Growing</title>
+    <link>https://research.example.org/reports/training-compute</link>
+    <description>New estimates of training compute and scaling laws for the largest models. Sample test data.</description>
+    <pubDate>Fri, 06 Nov 2026 10:00:00 GMT</pubDate>
+  </item>
+  <item>
+    <title>Sample: Scalable Oversight for Superhuman Models (paper summary)</title>
+    <link>https://arxiv.org/abs/2611.00001</link>
+    <description>Our summary of a new paper on scalable oversight. Sample test data.</description>
+    <pubDate>Tue, 10 Nov 2026 18:00:00 GMT</pubDate>
+  </item>
+</channel></rss>

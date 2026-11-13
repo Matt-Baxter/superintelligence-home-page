@@ -1,0 +1,65 @@
+/* Build A styles: plain CSS, mobile-first, no UI framework (REQ-018). */
+
+:root {
+  --text: #1a1a1a;
+  --muted: #555555;
+  --bg: #ffffff;
+  --surface: #f5f4f7;
+  --border: #d9d6df;
+  --accent: #4b2a7b;
+  --max-width: 46rem;
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+a {
+  color: var(--accent);
+}
+
+.site-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.site-title {
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: var(--text);
+  text-decoration: none;
+}
+
+main {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+@media (min-width: 40rem) {
+  .site-header,
+  main {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}

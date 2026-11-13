@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Sample data for tests only. Atom, like arXiv's search feed. -->
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Sample arXiv</title>
+  <entry>
+    <id>http://arxiv.org/abs/2611.00001v1</id>
+    <title>Sample: Scalable Oversight for Superhuman Models</title>
+    <summary>We study scalable oversight methods for supervising models more capable than their overseers. Sample test data.</summary>
+    <published>2026-11-10T09:00:00Z</published>
+    <link href="http://arxiv.org/abs/2611.00001v1" rel="alternate" type="text/html"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2611.00002v1</id>
+    <title>Sample: Sparse Autoencoder Features in Large Models</title>
+    <summary>A study of interpretability using a sparse autoencoder on a frontier model. Sample test data.</summary>
+    <published>2026-11-04T09:00:00Z</published>
+    <link href="http://arxiv.org/abs/2611.00002v1" rel="alternate" type="text/html"/>
+  </entry>
+</feed>

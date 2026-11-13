@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Sample data for tests only. Atom. -->
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Sample Forum B</title>
+  <entry>
+    <id>https://forum-b.example.org/posts/mech-interp</id>
+    <title>Sample: A Mechanistic Interpretability Reading List</title>
+    <summary type="html">&lt;p&gt;Where to start with mechanistic interpretability.&lt;/p&gt; Sample test data.</summary>
+    <updated>2026-11-03T08:00:00Z</updated>
+    <link href="https://forum-b.example.org/posts/mech-interp"/>
+  </entry>
+</feed>
