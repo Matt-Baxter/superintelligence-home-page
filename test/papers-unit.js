@@ -23,7 +23,13 @@ ok(JSON.stringify(rq(1, 3)) === JSON.stringify(refine), "role-play self-improvem
 ok(fixed.bad_rate > fixed.start_rate, `with fixed repair rules, wrong-artifact repairs cause drift (${fixed.start_rate} -> ${fixed.bad_rate})`);
 ok(refine.bad_rate < fixed.bad_rate - 0.1 && refine.rules_right > fixed.rules_right, `refining its own rules cuts the bad-reply rate (${fixed.bad_rate} -> ${refine.bad_rate})`);
 ok(loose.rules_right < refine.rules_right, `a looser edit bound makes rules thrash rather than settle (${refine.rules_right} at 3, ${loose.rules_right} at 6)`);
-const ex = ["rsi-hidden-evals", "rrsi-edit-budget", "oversight-recompute", "cosine-sae", "roleplay-bounded-rsi"].map((id) => [id, L.runExample(id)]);
+const orl = P.runners.find((r) => r.id === "opposing-rl"), oq = (c, k) => orl.run({ character: c, recognise: k, steps: 200, lr: 0.6, batch: 32, seed: 11 }).metrics;
+const plain = oq(0, 0.4), charac = oq(2, 0.4), grounded = oq(2, 1);
+ok(JSON.stringify(oq(2, 0.4)) === JSON.stringify(charac), "opposing-RL toy is deterministic");
+ok(charac.break_rate > 0.9 && charac.steps_to_half > plain.steps_to_half, `RL that rewards breaking the rule still teaches it to a character-trained policy, only more slowly (${plain.steps_to_half} -> ${charac.steps_to_half} steps to half)`);
+ok(charac.disguised_share > 0.8 && charac.caught < plain.caught - 0.3, `...and the breaks move to the route the character recognises less, which a monitor catches less often (${plain.caught} -> ${charac.caught})`);
+ok(grounded.caught > charac.caught + 0.3, `a character that recognises every route keeps breaks overt and catchable (${charac.caught} -> ${grounded.caught})`);
+const ex = ["rsi-hidden-evals", "rrsi-edit-budget", "oversight-recompute", "cosine-sae", "roleplay-bounded-rsi", "character-vs-opposing-rl"].map((id) => [id, L.runExample(id)]);
 ok(ex.every(([, r]) => r.example.source && /^https:\/\/arxiv\.org\/abs\/\d{4}\.\d{4,5}$/.test(r.example.source.url)), "every paper example links its arXiv source");
 ok(ex.filter(([, r]) => !r.verdict.supported).map(([id]) => id).join() === "rrsi-edit-budget,roleplay-bounded-rsi", "the edit-budget and looser-bound hypotheses are kept as refuted at toy scale");
 console.log(`\npapers unit: ${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

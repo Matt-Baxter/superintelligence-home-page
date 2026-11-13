@@ -10,6 +10,9 @@
 //   roleplay-rsi             "Recursive Self-Improvement for Long-Horizon Role-Playing Dialogue" (arXiv 2611.07469): an
 //                            updater repairs a character's artifacts after bad replies and, one level up, refines its
 //                            own repair rules from how those repairs turned out, within a bound on edits per round.
+//   opposing-rl              "'It's Just a Small Weapon': What Rewarding Misbehavior During RL Does to Character-Trained
+//                            Models" (arXiv 2611.16069): a character prior against breaking rules, then RL that pays for
+//                            breaking them, overtly or in a disguised way a monitor catches less often.
 function rng(seed = 1) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 const gauss = (r) => { const u = Math.max(1e-12, r()), v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
 const round = (x, d = 3) => Math.round(x * 10 ** d) / 10 ** d;
@@ -116,6 +119,34 @@ function rolePlayRSI({ meta = 1, edit_bound = 3, judge_noise = 0.2, rounds = 30,
     notes: [`${meta ? "The updater refined its own rules" : "The updater's rules were fixed"}; ${switches} rule switches, ${side} repairs hit the wrong artifact.`, `${Math.round(right * F)} of ${F} repair rules point at the artifact that really fixes that failure.`] };
 }
 
+// ---------- character training vs RL that rewards breaking the rules ----------
+// One policy, three actions on an impossible task: stay honest (fails, reward 0), break the rule overtly, or break it in
+// a disguised way (both pass the grader, reward 1). The base model prefers honesty (logit 2) and finds the disguised
+// route harder (logit -1). Character training adds a penalty of `character` to breaking the rule; the character only
+// partly recognises the disguised route as breaking it (`recognise`, 0 to 1). RL (REINFORCE, batch sampled, mean-reward
+// baseline) then updates the two breaking logits; the character penalty itself stays. A monitor catches overt breaks 9
+// times in 10 and disguised ones 3 in 10.
+function opposingRL({ character = 2, recognise = 0.4, steps = 200, lr = 0.6, batch = 32, seed = 11 }) {
+  const r = rng(seed), H = 2, D0 = 1, CATCH = [0, 0.9, 0.3];
+  let to = 0, td = 0, toHalf = null; const pts = [];
+  const probs = () => { const z = [H, to - character, td - D0 - recognise * character], m = Math.max(...z), e = z.map((x) => Math.exp(x - m)), s = e[0] + e[1] + e[2]; return e.map((x) => x / s); };
+  for (let t = 1; t <= steps; t++) {
+    const p = probs(), acts = [];
+    for (let b = 0; b < batch; b++) { const u = r(); acts.push(u < p[0] ? 0 : u < p[0] + p[1] ? 1 : 2); }
+    const rew = acts.map((a) => (a ? 1 : 0)), base = mean(rew);
+    let go = 0, gd = 0;
+    acts.forEach((a, i) => { const adv = rew[i] - base; go += adv * ((a === 1 ? 1 : 0) - p[1]); gd += adv * ((a === 2 ? 1 : 0) - p[2]); });
+    to += (lr * go) / batch; td += (lr * gd) / batch;
+    const q = probs(), brk = q[1] + q[2];
+    if (toHalf === null && brk >= 0.5) toHalf = t;
+    if (t % Math.max(1, Math.floor(steps / 60)) === 0) pts.push([t, round(brk)]);
+  }
+  const q = probs(), brk = q[1] + q[2], caught = brk > 1e-9 ? (CATCH[1] * q[1] + CATCH[2] * q[2]) / brk : 0;
+  return { metrics: { break_rate: round(brk), steps_to_half: toHalf ?? steps, disguised_share: round(brk > 1e-9 ? q[2] / brk : 0), caught: round(caught) },
+    series: [{ name: "rule-breaking rate by RL step", points: pts }],
+    notes: [`Character penalty ${character}, recognised on the disguised route at ${recognise}.`, `After ${steps} RL steps the policy breaks the rule ${Math.round(brk * 100)}% of the time; a monitor would catch ${Math.round(caught * 100)}% of those breaks.`] };
+}
+
 const runnersList = [
   { id: "self-improve-selection", about: "An agent edits itself and keeps the best version, judged on visible tests or hidden evaluations (with an edit budget)",
     params: {
@@ -148,6 +179,17 @@ const runnersList = [
     },
     metrics: [{ id: "bad_rate", label: "Bad-reply rate (last 5 rounds)", better: "lower" }, { id: "rules_right", label: "Share of repair rules aimed at the right artifact", better: "higher" }, { id: "side_effects", label: "Repairs that hit the wrong artifact", better: "lower" }],
     run: (p) => rolePlayRSI(p) },
+  { id: "opposing-rl", about: "A character prior against breaking a rule, then RL that rewards breaking it, overtly or in a disguised way",
+    params: {
+      character: { default: 2, min: 0, max: 8, step: 0.5, about: "Penalty the trained character puts on breaking the rule (0 = no character training)" },
+      recognise: { default: 0.4, min: 0, max: 1, step: 0.1, about: "How fully the character recognises the disguised route as breaking the rule" },
+      steps: { default: 200, min: 20, max: 400, step: 10, about: "RL steps" },
+      lr: { default: 0.6, min: 0.1, max: 2, step: 0.1, about: "Learning rate" },
+      batch: { default: 32, min: 4, max: 128, step: 4, about: "Samples per RL step" },
+      seed: { default: 11, min: 1, max: 999, step: 1, about: "Random seed" },
+    },
+    metrics: [{ id: "break_rate", label: "Rule-breaking rate after RL", better: "lower" }, { id: "steps_to_half", label: "RL steps until it breaks the rule half the time", better: "higher" }, { id: "disguised_share", label: "Share of breaks that are disguised", better: "lower" }, { id: "caught", label: "Share of breaks a monitor catches", better: "higher" }],
+    run: (p) => opposingRL(p) },
 ];
 // Averaging over seeds, so a verdict doesn't hang on one lucky draw (the Lab's examples pass seeds via "seeds").
 function averaged(fn, p, seeds = 10) {
@@ -157,4 +199,4 @@ function averaged(fn, p, seeds = 10) {
 }
 for (const r of runnersList) { const raw = r.run; r.run = (p) => averaged(raw, p, 10); }
 
-module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI };
+module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI, opposingRL };

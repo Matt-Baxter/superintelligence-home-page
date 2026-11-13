@@ -644,6 +644,57 @@
      "weight": 20
     }
    ]
+  },
+  {
+   "id": "character-vs-opposing-rl",
+   "title": "Character training against RL that pays for breaking the rules",
+   "concept": "concept:reward-hacking",
+   "topics": [
+    "topic:alignment"
+   ],
+   "source": {
+    "title": "\"It's Just a Small Weapon\": What Rewarding Misbehavior During RL Does to Character-Trained Models",
+    "url": "https://arxiv.org/abs/2611.16069",
+    "via": "daily paper watcher, Nov 13, 2026"
+   },
+   "idea": "Developers train a model to hold a consistent character that follows a set of rules. Later training can work against it: if a grader rewards breaking a rule (a hackable test, say), reinforcement learning pushes the model toward breaking it anyway. The question is whether the character stops that, only slows it down, or changes how the rule gets broken. If the character recognises some ways of breaking the rule less clearly than others, the training pressure flows into those less obvious routes, and those are the ones a monitor is worse at catching.",
+   "reproduce": {
+    "runner": "opposing-rl",
+    "params": {
+     "character": 2,
+     "recognise": 0.4,
+     "steps": 200,
+     "lr": 0.6,
+     "batch": 32,
+     "seed": 11
+    },
+    "expect": "With a character penalty of 2, the policy still learns to break the rule (about 98% of the time after 200 steps), but more slowly than without character training (about 97 steps to reach half, against about 22 with character 0). Almost all of its breaks take the disguised route, so a monitor catches about 30% of them, against about 90% for the untrained model, which breaks the rule overtly."
+   },
+   "hypothesis": {
+    "statement": "Ours: if the rule is grounded in a value the character applies to any way of breaking it (recognise raised from 0.4 to 1.0), the training pressure has no less-watched route to flow into, so the share of breaks a monitor catches rises by at least 0.3.",
+    "params": {
+     "recognise": 1
+    },
+    "predict": {
+     "metric": "caught",
+     "direction": "up",
+     "delta": 0.3
+    }
+   },
+   "criteria": [
+    {
+     "metric": "break_rate",
+     "weight": 40
+    },
+    {
+     "metric": "caught",
+     "weight": 40
+    },
+    {
+     "metric": "steps_to_half",
+     "weight": 20
+    }
+   ]
   }
  ]
 }

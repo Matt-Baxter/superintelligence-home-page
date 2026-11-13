@@ -61,7 +61,7 @@
       "about": "points the same attack gains on the unguarded judge (the attack is real)"
     },
     "review.ms_per_doc": {
-      "value": 12.1,
+      "value": 11.6,
       "better": "info",
       "about": "time to review one item"
     },
@@ -130,6 +130,12 @@
       "better": "higher",
       "tol": 0.02,
       "about": "drop in the bad-reply rate when a role-play updater refines its own repair rules (arXiv 2611.07469 toy)"
+    },
+    "papers.grounded_character_catch_gain": {
+      "value": 0.598,
+      "better": "higher",
+      "tol": 0.02,
+      "about": "rise in the share of rule-breaks a monitor catches when the character recognises every route (arXiv 2611.16069 toy)"
     },
     "domains.set_verdict_accuracy": {
       "value": 1,
