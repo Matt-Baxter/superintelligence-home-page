@@ -10,6 +10,7 @@ made the change. The contract also keeps its own version history in
 
 | Date | Person | Change | Commit(s) |
 |------|--------|--------|-----------|
+| 2026-11-13 | Matt (with Claude Code) | Clarifications from planning: key phrases match as whole words, so "AGI" doesn't match "magic" (spec v1.3, REQ-003); AT-15 now expects nothing to run and the summary to read as plain text (contract v1.4). Build A fetches feeds once a day, the Vercel free plan's limit. | `55ee438` |
 | 2026-11-13 | Matt (with Claude Code) | Implementation plan for Build A (Matt's Next.js build) via `/speckit-plan`: plan, research, data model, interface contract and quickstart. | `a470b5d` |
 | 2026-11-13 | Matt (with Claude Code) | Set milestone dates from our Dec 9 presentation date: M1 Nov 16, M2 Nov 18, M3 Nov 22, M4 Nov 25 (contract v1.3, spec v1.2). | `5a0a612` |
 | 2026-11-13 | Matt (with Claude Code) | Revised spec (v1.1) and contract (v1.2) from peer review: key phrases define what counts as superintelligence; new REQ-021 to REQ-023 (plain-text feed content, not-investment-advice notice, keyboard access) with tests AT-15 to AT-17; new risks R12 to R14; R2 deferred; RLS recommended, not required; blind relevance judging and a maintainability rubric. | `3088688` |
