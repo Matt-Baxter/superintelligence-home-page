@@ -6,6 +6,8 @@
 
 **Status**: Draft (shared bake-off spec; both partners build against it)
 
+**Spec version**: 1.2 (changes are listed in [`CHANGELOG.md`](../../CHANGELOG.md))
+
 **Input**: User description: see `docs/speckit-prompts.md`, sections 2 and 3 (`/speckit-specify`
 and the superintelligence amendment).
 
@@ -138,8 +140,9 @@ filter and check the full feed returns.
   out of the feed.
 - An item from a superintelligence-focused source is about something off-topic (for example, a
   hiring announcement): it is left out if it matches no superintelligence topic.
-- A borderline item matches only very weakly: when in doubt it is left out (constitution,
-  principle I).
+- An item's text contains a word close to a key phrase but not the phrase itself (for example
+  "align" instead of "alignment"): it does not match. Only the exact key phrases count, so both
+  builds make the same call.
 - A source is unreachable or returns bad data: the rest of the feed still loads, and that
   source's stories are simply missing until the next successful fetch.
 - A source publishes a link to Twitter/X: the item is not shown.
@@ -163,6 +166,8 @@ filter and check the full feed returns.
   the original.
 - **REQ-003**: The system MUST include only items relevant to superintelligence, meaning items
   that match at least one superintelligence topic, and MUST leave all other items out of the feed.
+  An item matches a topic when its title or summary contains at least one of that topic's key
+  phrases (see Superintelligence topics and key phrases, below), ignoring capital letters.
 - **REQ-004**: The system MUST show the same paper or announcement from several sources as one
   story listing every source.
 - **REQ-005**: The system MUST tag each story with the superintelligence topics it matches and
@@ -195,10 +200,19 @@ filter and check the full feed returns.
 - **REQ-017**: Readers MUST be able to filter the feed by superintelligence topic.
 - **REQ-018**: The feed MUST be usable on a laptop and a phone without sideways scrolling.
 
+**Safety and access**
+
+- **REQ-021**: The system MUST show text from fetched items as plain text, so nothing in a feed
+  can run as code or change the page in a reader's browser. *(Risk R4)*
+- **REQ-022**: Every page MUST show a short notice that the content is for information only and
+  is not investment advice. *(Risk R11)*
+- **REQ-023**: Every action (reading, filtering, signing in, voting, saving) MUST be possible
+  with a keyboard alone. *(Risk R6)*
+
 **Delivery**
 
 - **REQ-019**: The Superintelligence Homepage MUST be live at a public URL and shared with the
-  class at least 2 weeks before our presentation.
+  class at least 2 weeks before our presentation (presentation Dec 9, 2026, so by Nov 25).
 - **REQ-020**: Each partner MUST keep a human-written agent log in the repository
   (`AGENT_LOG.md`) answering "What did the agent get wrong & how did you catch it?". The agent log
   is not a feature of the app.
@@ -208,6 +222,23 @@ filter and check the full feed returns.
 - 2026-11-07: Q: Should the agent log be a page inside the app or a Markdown file in the repo?
   A: A Markdown file in the repo (`AGENT_LOG.md`), written by the partners, not by AI.
 
+### Superintelligence topics and key phrases
+
+Fixed for both builds (constitution, Bake-off Rules). Changes need both partners' approval and a
+changelog entry.
+
+| Topic | Key phrases |
+|-------|-------------|
+| Capabilities & AGI progress | AGI, artificial general intelligence, superintelligence, superintelligent, frontier model, human-level AI |
+| Automating AI research | automated AI research, AI scientist, automating AI research, AI research agent |
+| Recursive self improvement | recursive self-improvement, self-improving AI, intelligence explosion |
+| Alignment | alignment, aligned AI, misalignment, reward hacking, scalable oversight, superalignment |
+| Interpretability | interpretability, mechanistic interpretability, sparse autoencoder |
+| Safety & risk | AI safety, existential risk, x-risk, catastrophic risk, loss of control, deceptive alignment |
+| Forecasting & timelines | AGI timelines, forecasting AI, AI forecast, transformative AI |
+| Compute & scaling | scaling laws, compute scaling, training compute, scaling hypothesis |
+| Governance & policy | AI governance, frontier AI regulation, compute governance, AI policy, frontier AI safety |
+
 ### Key Entities
 
 - **User**: someone with an account; has a unique username and a password (stored unreadably).
@@ -216,8 +247,8 @@ filter and check the full feed returns.
   its last fetch worked.
 - **Story**: one superintelligence paper, post or announcement; has a title, a link to the
   original, a publish date, the sources that covered it and its superintelligence topics.
-- **Superintelligence topic**: one subject from the fixed topic list (see Assumptions), attached
-  to a story with the words that matched.
+- **Superintelligence topic**: one subject from the fixed topic list (see Superintelligence topics
+  and key phrases), attached to a story with the key phrases that matched.
 - **Vote**: one user's vote on one story.
 - **Save**: one user's saved story.
 
@@ -244,41 +275,36 @@ filter and check the full feed returns.
 
 Areas follow the course's risk map: Data, People, Decisions, Code, Agents, Security and Failure.
 Status is one of: **Open** (no mitigation yet), **Planned** (mitigation is a requirement or rule,
-not yet built), **In place** (already done).
+not yet built), **In place** (already done), **Deferred** (accepted risk for now, revisited at a
+named milestone).
 
 | # | Area | Risk | Likelihood | Impact | Mitigation | Owner | Status |
 |---|------|------|------------|--------|------------|-------|--------|
 | R1 | Data | Account data leaks. The only personal data is a username and password, stored in the app's database and seen only by the account owner. A leak would expose passwords people may reuse elsewhere. | Low | High | Passwords are never stored or shown in readable form (REQ-011); nothing beyond a username and password is collected (REQ-012); database credentials live only in the host's settings, never in the repo. | Each build's owner | Planned |
-| R2 | Security | Someone abuses sign-in, for example guessing passwords or creating many fake accounts to inflate votes. | Medium | Medium | Sign-in errors don't reveal whether a username exists; repeated failed sign-ins are slowed down; one vote per user per story (REQ-013). | Each build's owner | Open |
-| R3 | Security | A user changes or removes another user's votes or saves by sending requests directly to the server. | Medium | Medium | Ownership is enforced by the system, not just hidden in the interface (REQ-016): the database uses row-level security (RLS) so a user can only change their own vote and save rows. Checked by acceptance test AT-12 in the contract. | Each build's owner | Planned |
-| R4 | Security | Harmful input: a fetched feed item contains scripts or misleading links that run or show in readers' browsers. The app has no uploads, so input comes from feeds and sign-up forms. | Medium | High | Feed text is shown as plain text, never as active page content; only links to the original source are shown; Twitter/X links are dropped (REQ-006). | Each build's owner | Open |
+| R2 | Security | Someone abuses sign-in, for example guessing passwords or creating many fake accounts to inflate votes. | Medium | Medium | Sign-in errors don't reveal whether a username exists (User Story 2, scenario 4); one vote per user per story (REQ-013). Slowing down repeated failed sign-ins is deferred to after milestone M2: the site holds no sensitive data and the class is small. | Each build's owner | Deferred |
+| R3 | Security | A user changes or removes another user's votes or saves by sending requests directly to the server. | Medium | Medium | Ownership is enforced by the system, not just hidden in the interface (REQ-016): where a build's database supports it, row-level security (RLS) stops a user from changing other users' vote and save rows. RLS is recommended, not required, because each build designs its own database. Checked by acceptance test AT-12 in the contract. | Each build's owner | Planned |
+| R4 | Security | Harmful input: a fetched feed item contains scripts or misleading links that run or show in readers' browsers. The app has no uploads, so input comes from feeds and sign-up forms. | Medium | High | Feed text is shown as plain text, never as active page content (REQ-021); only links to the original source are shown; Twitter/X links are dropped (REQ-006). | Each build's owner | Planned |
 | R5 | Decisions | Superintelligence is a subjective domain with ambiguous definitions. It's unclear which articles or developments actually move the path to superintelligence forward and which don't, so the app's decisions about what counts could hide important work or fill the feed with off-topic or one-sided stories. | High | Medium | A fixed, written topic list defines what's in scope (spec Assumptions; constitution principle I), reviewed by both partners; every story shows the words that made it relevant (REQ-005), so readers can judge for themselves; tags say a story is *related to* a topic, not that it advances superintelligence; when in doubt, a story is left out; both partners spot-check 20 live stories (SC-004). | Both | Planned |
 | R10 | People | Fearmongering: alarming headlines about superintelligence risk, shown without context, could scare or mislead readers, or make the site look like it's pushing one view. | Medium | Medium | Show each story's own title and source without adding labels like "breaking" or "dangerous"; include sources from different viewpoints (safety research, capabilities, forecasting, policy); link to the original so readers get the full context. | Both | Open |
-| R11 | People | Readers treat stories about AI labs, compute or chips as investment advice. | Medium | Medium | A notice on the site says the content is for information only and is not investment advice; no stock tickers, price data or buy/sell language. | Both | Open |
-| R6 | People | Readers with disabilities can't use the site, for example people using a screen reader or a keyboard instead of a mouse. | Medium | Medium | All controls work with a keyboard, text has enough contrast, and both builds are checked with a screen reader before milestone M2. | Each build's owner | Open |
+| R11 | People | Readers treat stories about AI labs, compute or chips as investment advice. | Medium | Medium | A notice on every page says the content is for information only and is not investment advice (REQ-022); no stock tickers, price data or buy/sell language. | Both | Planned |
+| R6 | People | Readers with disabilities can't use the site, for example people using a screen reader or a keyboard instead of a mouse. | Medium | Medium | Every action works with a keyboard alone (REQ-023); text has enough contrast; both builds are checked with a screen reader before milestone M2. | Each build's owner | Planned |
 | R7 | Code | Agent-written or reused code carries a license we can't use, or copies someone else's work. Article text from sources is also copyrighted. | Medium | Low | Use only dependencies with permissive licenses and check them before M3; note where reused code came from (John's earlier projects); link out instead of hosting article text (REQ-007). | Both | Open |
 | R8 | Agents | An agent pushes, deploys or spends money without a human noticing. | Low | High | Agents push to `main` only when a partner says so, never deploy, never handle real secrets and never spend money; a $10/month cap with hard limits in each provider's dashboard (working agreement, Agent rules and Data and costs). | Both | In place |
+| R12 | Failure | Schedule: two complete builds in under two weeks (M1 Nov 16 to M4 Nov 25, presentation Dec 9), with a running app expected by Nov 18. One or both builds may not be ready. | High | High | Milestone dates are set in the contract (Section 6); required features only until M2; the falling-behind rule (contract, Section 6) makes the further-along build the base. | Both | Open |
+| R13 | Failure | Shared infrastructure: both builds run on John's Vercel account and one $10 budget. If they also shared a database, one build could break the other's data, and one account problem would take down both. | Medium | High | Each build gets its own database (contract, Section 3); spending limits set in each provider's dashboard; Matt has access to the Vercel project as a backup. | John | Open |
+| R14 | Failure | Sources change their feed format, rate-limit us or block us, so stories quietly stop arriving. | Medium | Medium | Each source's last successful fetch is recorded and visible; at least 8 sources so one loss doesn't break REQ-001; fetch no more often than every 30 minutes. | Each build's owner | Open |
 | R9 | Failure | A source or the whole site goes down, or the feed silently stops updating. | Medium | Medium | One failing source doesn't break the feed (REQ-008); each source's last successful fetch is recorded; the hosting platform emails John when a deploy fails, and he tells Matt by text the same day; recovery is to roll back to the last working deploy within 24 hours. | John (hosting), both builds' owners | Open |
 
 ## Assumptions
 
-- **Superintelligence topics** (fixed list both builds use; can grow later with both partners'
-  approval):
-  - Capabilities & AGI progress
-  - Automating AI research
-  - Recursive self improvement
-  - Alignment
-  - Interpretability
-  - Safety & risk
-  - Forecasting & timelines
-  - Compute & scaling
-  - Governance & policy (of frontier AI)
+- **Superintelligence topics**: the fixed list in Superintelligence topics and key phrases, under
+  Requirements. It can grow later with both partners' approval.
 - Example sources that regularly cover superintelligence: arXiv (AI safety and frontier
   capability papers), the Alignment Forum, LessWrong (AI tag), frontier lab research and safety
   blogs, Epoch AI, AI Impacts, MIRI and Import AI. Each partner may pick the exact list, as long
   as it meets REQ-001.
-- Deciding whether an item is about superintelligence is based on the words in its title and
-  summary, matched against the topic list; no paid service is needed.
+- Deciding whether an item is about superintelligence is based on the key phrases in its title and
+  summary (REQ-003); no paid service is needed.
 - Users have a modern web browser and an internet connection.
 - The chosen sources offer public feeds that don't need paid access.
 - A username and password is enough for sign-in; email verification and password reset are not
