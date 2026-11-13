@@ -4,11 +4,10 @@
 // and noindex. That public RSS URL is what another site's feed adds as a source; a person sets that up.
 const V = require("./render");
 const { ontology } = require("../../lib/tagger");
-const D = require("../review/dossier");
+const DEPS = require("./deps");
 
 module.exports = function mountResearch(app, { db, wrap, auth, admin }) {
-  const CONCEPTS = (() => { try { return require("../learn/data/concepts.json").concepts; } catch { return []; } })();
-  const labExamples = () => { try { const L = require("../lab/lab"), pre = require("../lab/results.json").results; return L.EX.examples.filter((e) => pre[e.id]).map((e) => ({ ...e, verdict: pre[e.id].verdict })); } catch { return []; } };
+  const D = DEPS.judge.dossier, CONCEPTS = DEPS.concepts(), labExamples = DEPS.labExamples;
   const base = (req) => (process.env.SITE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/$/, "");
   const gate = (req, res, next) => {
     res.set("X-Robots-Tag", "noindex, nofollow");
@@ -31,7 +30,7 @@ module.exports = function mountResearch(app, { db, wrap, auth, admin }) {
   // Research control room (admins): everything waiting on a person, the judging quality on real reviews, the panel's
   // set-up and links to every research page, in one call, so the layer is run from the web app rather than scripts.
   app.get("/api/admin/research/status", auth, admin, wrap(async () => {
-    const { waiting, proposals } = require("../../scripts/checkin"), Q = require("../../scripts/quality"), CFG = require("../project/sync.json");
+    const { waiting, proposals } = require("../../scripts/checkin"), Q = require("../../scripts/quality"), CFG = DEPS.projectSync();
     const today = new Date().toISOString().slice(0, 10), W = await waiting(db, today);
     const rows = await db.all("SELECT kind, title, credibility, verdict, result FROM review_docs ORDER BY id DESC LIMIT 500");
     const due = await db.all(`SELECT e.id, e.sentence, e.due, e.status, e.probability, e.outlet_label, d.id AS doc_id, d.title FROM review_events e LEFT JOIN review_docs d ON d.qid = e.doc_qid
@@ -46,7 +45,7 @@ module.exports = function mountResearch(app, { db, wrap, auth, admin }) {
 
   app.get("/research", gate, page(async (req) => V.indexPage({ papers: await papers(), topics: await topics() }, base(req))));
   app.get("/research/outlets", gate, page(async (req) => {
-    const S = require("../review/sources");
+    const S = DEPS.judge.sources;
     const docs = (await db.all("SELECT kind, credibility, verdict, needs_person, label, result FROM review_docs ORDER BY id DESC LIMIT 1000")).filter(V.publishable);
     const events = await db.all("SELECT outlet, status, probability FROM review_events").catch(() => []);
     return V.outletsPage(S.trackRecords(docs, events), S.MIN_RESOLVED, base(req));

@@ -50,7 +50,14 @@ try { const out = sh("node test/analysis-unit.js").trim(); ok("Analysis rules", 
 catch (e) { fail("Analysis rules", String(e.stderr || e.message).split("\n").find((l) => /Assertion|Error/.test(l)) || "failed"); }
 
 // 5b2. Modules: kernel boots, boundaries hold, blocks, views and judges are valid
-try { sh("node test/kernel-unit.js"); ok("Modules", sh("node scripts/modules.js check").trim() + "; kernel unit checks passed"); }
+// Every profile, not just the one this shell runs: a module that only loads in extended or research is checked too
+// (a cross-module import in the research layer once passed here and failed only in CI's extended run).
+try {
+  sh("node test/kernel-unit.js");
+  const profiles = Object.keys(require("../modules/profiles.json").profiles || require("../modules/profiles.json"));
+  const res = profiles.map((p) => `${p}: ` + execSync("node scripts/modules.js check", { cwd: root, env: { ...process.env, SITE_PROFILE: p, MODULES_SKIP_GEN: p === (process.env.SITE_PROFILE || "spec") ? "" : "1" }, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim().split("\n").pop());
+  ok("Modules", res.join("; ") + "; kernel unit checks passed");
+}
 catch (e) { fail("Modules", String(e.stderr || e.message).trim().split("\n").slice(0, 4).join(" ")); }
 
 // 5b3. Codebase map: every API call a page makes has a route

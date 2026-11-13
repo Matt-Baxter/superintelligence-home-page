@@ -136,6 +136,11 @@ Every interface change gets a row here. Breaking changes bump the major version 
 - **Table:** `review_blind (id, doc_id → review_docs ON DELETE CASCADE, user_id → users ON DELETE CASCADE, credible 'yes'|'no'|'unsure', unmasked 0/1, note, created_at, UNIQUE (doc_id, user_id))`; pruned with `review_docs`.
 - **Routes (admins):** `GET /api/admin/review/blind/next?skip=` → `{doc: {id, kind, title, excerpt} | null, left, mine}` with names, organisations and links masked and no verdict; `GET /api/admin/review/blind/:id/source` → `{title, authors, url, excerpt}`; `POST /api/admin/review/blind/:id {credible, note?, unmasked?}` → `{verdict, credibility, judge, agree}`, 400 on a second label; `GET /api/admin/review/blind/stats` → `{pieces, shared, people[], pairs[{a, b, n, agree, kappa, low, high, reading}], judge[...], majority{...}, notes[], unmasked}`.
 - **Page:** `/m/labels` (nav item "Label", admins). **Nav:** a link is current only on its own path or below it (`/m/lab` no longer lights up on `/m/labels`). | logged by John |
+| 2.6 | Nov 12, 2026 | Modules talk only through extension points (REQ-030; all versions). Found by the new daily check, which runs preflight in the extended profile.
+- **Kernel:** `ctx.optional(id)` returns a point's API, or null when the module that owns it is off in this profile.
+- **Points:** `review.judge` (review: the judge, `CRITERIA`, `VERDICTS`, `sources`, `dossier`), `lab.examples` (lab: `list()` of examples with precomputed verdicts), `learn.concepts` (learn: `list()` of concepts), `project.sync` (project: `config()`). The research module reads them through `modules/research/deps.js`; the review routes get lab examples and concepts injected.
+- **Docs:** `modules/review/README.md`, `modules/research/README.md`.
+- **Preflight:** the module check runs in every profile (spec, extended, research), skipping only the generated block list for profiles other than the current one. | logged by John |
 
 **Done means:** a classmate can sign up on the live site, see a grouped, tagged feed from at least 8 sources, and vote on and save stories that are still there the next time they sign in.
 

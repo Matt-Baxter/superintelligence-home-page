@@ -7,6 +7,11 @@ module.exports = {
   version: "0.1.0",
   description: "Ingest and judge papers, articles and comments (significance, rigor, hype, anti-Goodhart guards, adversarial stress test), a superintelligence map, and a catalog in the knowledge graph.",
   requires: ["knowledge"],
+  // What other modules may use from the review desk, without importing its files: the judge and its published
+  // criteria, outlet grades and track records, and topic dossiers (the research layer reads these).
+  register(env) {
+    env.registerExtensionPoint("review.judge", () => ({ ...require("./review"), sources: require("./sources"), dossier: require("./dossier") }));
+  },
   setup(ctx) {
     ctx.point("db.schema").addSql(`
 CREATE TABLE IF NOT EXISTS review_docs (id \${ID}, qid TEXT NOT NULL UNIQUE, kind TEXT NOT NULL, title TEXT NOT NULL, authors TEXT DEFAULT '',
@@ -33,7 +38,9 @@ CREATE INDEX IF NOT EXISTS idx_review_blind_user ON review_blind(user_id);
       await db.run("DELETE FROM review_blind WHERE doc_id NOT IN (SELECT id FROM review_docs)");
       await db.run("DELETE FROM knowledge_edges WHERE src LIKE 'event:%' AND src NOT IN (SELECT qid FROM review_events)");
     });
-    ctx.point("http.routes").add((app, deps) => require("./routes")(app, deps));
+    // Lab examples and Learn concepts enrich the dossiers and the map when those modules are on; null when they're off.
+    const lab = ctx.optional("lab.examples"), learn = ctx.optional("learn.concepts");
+    ctx.point("http.routes").add((app, deps) => require("./routes")(app, { ...deps, labExamples: () => (lab ? lab.list() : []), concepts: () => (learn ? learn.list() : []) }));
     ctx.point("meta.actions").add(require("./actions"));
     ctx.point("ui.nav").add({ href: "/m/review", label: "Review", order: 21 });
     ctx.point("ui.nav").add({ href: "/m/labels", label: "Label", order: 22, admin: true });

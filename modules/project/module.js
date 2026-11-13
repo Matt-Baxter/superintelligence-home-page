@@ -3,6 +3,10 @@ module.exports = {
   id: "project",
   version: "1.1.0",
   description: "Linear-style project workspace for admins: issues, board, timeline with dependencies, milestones, activity, command menu.",
+  // The tracker's sync settings (repository, labels), for other modules that link to it (the research control room).
+  register(env) {
+    env.registerExtensionPoint("project.sync", () => ({ config: () => require("./sync.json") }));
+  },
   setup(ctx) {
     // Tables owned by this module. ${ID} and ${T} become the engine's id and timestamp types.
     ctx.point("db.schema").addSql(`

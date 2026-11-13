@@ -85,6 +85,8 @@ function createKernel({ enabled, modulesDir = MODULES_DIR, extraPoints = {} } = 
     const ctx = {
       module: m.id, dir: m.dir, root: ROOT,
       point: (id) => { const p = points.get(id); if (!p) throw new Error(`Module "${m.id}" uses unknown extension point "${id}"`); return p.forModule(m.id); },
+      // For a point owned by a module that may be switched off in this profile: null instead of an error.
+      optional: (id) => { const p = points.get(id); return p ? p.forModule(m.id) : null; },
       onStart: (fn) => store.starts.push({ module: m.id, fn }),
     };
     try { m.setup?.(ctx); } catch (e) { e.message = `Module "${m.id}" failed in setup: ${e.message}`; throw e; }

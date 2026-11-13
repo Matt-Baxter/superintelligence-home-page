@@ -30,11 +30,13 @@ function plain(row, r) {
 }
 
 const LEVEL = { backed: "backed in the same sentence", "partly backed": "backed by a neighbouring sentence", unbacked: "nothing backing it" };
-const { CRITERIA, VERDICTS } = require("../review/review");
+// The review desk's criteria and judge, through the review.judge point (deps.js), read when a page is built.
+const DEPS = require("./deps");
 
 // The scorecard: every published criterion, whether this text met it and the points it earned, then the arithmetic
 // from rigor and hype to credibility and the verdict rule that applied. Nothing on it is hidden or extra.
 function scorecard(row, r) {
+  const { CRITERIA, VERDICTS } = DEPS.judge;
   const J = Object.fromEntries((r.judges || []).map((j) => [j.id, j]));
   const rig = J.rigor || { score: 0, why: [] }, hp = J.hype || { score: 0, why: [] };
   const list = r.rubric === "reporting" ? CRITERIA.reporting.checks : r.survey ? CRITERIA.survey.checks : CRITERIA.rigor.checks;
@@ -55,6 +57,7 @@ ${r.panel ? `<dt>Panel</dt><dd>${esc(r.panel.status)}: ${r.panel.judges.map((j) 
 }
 
 function criteriaPage(base) {
+  const { CRITERIA, VERDICTS } = DEPS.judge;
   const tbl = (checks) => `<table class="card"><tbody>${checks.map((c) => `<tr><td>${esc(c.label)}</td><td class="n">${c.points}</td></tr>`).join("")}</tbody></table>`;
   const body = `<h1>How we judge a paper</h1>
 <p class="lede">Every write-up is scored by the same published rules, from the abstract, with no model and no hidden weights. Two separate questions: how big a step it reports (significance) and how far to believe it (credibility).</p>
@@ -84,7 +87,7 @@ const TRANSFER_SETS = [
   { id: "overreach", label: "Overreach check, written after the second fixes", note: "First run: 18 of 18. Credible pieces full of the words the new rules watch for (cured, doubled, overnight, should be offered to all, a survey of adults) stay credible; six new bad patterns are caught." },
 ];
 function transferPage(base) {
-  const fs = require("node:fs"), path = require("node:path"), R = require("../review/review");
+  const fs = require("node:fs"), path = require("node:path"), R = DEPS.judge;
   const bad = (v) => ["doubtful", "withdrawn"].includes(v);
   const nFields = new Set(TRANSFER_SETS.flatMap((t) => JSON.parse(fs.readFileSync(path.join(__dirname, "..", "..", "bench", `domains-${t.id}.json`), "utf8")).items.map((i) => i.domain))).size;
   const sections = TRANSFER_SETS.map((t) => {

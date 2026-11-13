@@ -1,14 +1,13 @@
 // Review routes (docs/NAMING.md: /api/review/* for signed-in users, /api/admin/review/* for admins).
-const fs = require("fs"), path = require("path");
 const R = require("./review");
 const { saveReview } = require("./store");
 const SAMPLES = require("./samples.json");
 const { ontology } = require("../../lib/tagger");
 const feeds = require("../../lib/feeds");
 
-const CONCEPTS = (() => { try { return JSON.parse(fs.readFileSync(path.join(__dirname, "..", "learn", "data", "concepts.json"), "utf8")).concepts; } catch { return []; } })();
-
-module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, notFound }) {
+module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, notFound, labExamples = () => [], concepts = () => [] }) {
+  // Learn's concept graph, when that module is on (module.js passes it through the learn.concepts point).
+  const CONCEPTS = concepts();
   const input = (b = {}) => {
     const x = { kind: str(b.kind, 20), title: str(b.title, 300), text: String(b.text || "").slice(0, 20000), authors: str(b.authors, 600), url: str(b.url, 500) };
     if (!x.title && !x.text.trim()) bad("Give a title or paste some text.");
@@ -132,7 +131,6 @@ module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, no
 
   // Topic dossiers: a traced analysis of everything on one topic, with a blog draft, short posts and a video storyboard.
   const D = require("./dossier");
-  const labExamples = () => { try { const L = require("../lab/lab"), pre = require("../lab/results.json").results; return L.EX.examples.filter((e) => pre[e.id]).map((e) => ({ ...e, verdict: pre[e.id].verdict })); } catch { return []; } };
   const dossierFor = async (topic) => { if (!ontology.topics.some((t) => t.id === topic)) notFound("That topic"); return D.analyse(await D.gather(db, topic), { examples: labExamples(), concepts: CONCEPTS }); };
   const site = (req) => (process.env.SITE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/$/, "");
   app.get("/api/review/dossier/:topic", auth, wrap(async (req) => {
