@@ -33,7 +33,7 @@ No email or other personal data (REQ-012).
 | name | text | display name |
 | kind | text | one of: `papers`, `frontier-lab`, `safety-group`, `research-org`, `forum`, `newsletter` |
 | feed_url | text | unique |
-| last_ok_at | timestamptz, nullable | last successful fetch |
+| last_ok_at | timestamptz, nullable | last successful fetch (shown so a stalled source is noticed; R14) |
 | last_error | text, nullable | short message from the last failed fetch |
 
 Seeded from `lib/sources.ts`.
@@ -92,14 +92,6 @@ or deletes the row for the signed-in user only.
 ### saves — REQ-014, REQ-015, REQ-016
 
 Same shape as `votes`.
-
-### fetch_runs — refresh lock (research §2)
-
-| Field | Type | Rules |
-|-------|------|-------|
-| id | int | single row, always 1 |
-| started_at | timestamptz, nullable | set when a fetch starts; a fetch only starts if this is empty or older than 5 minutes |
-| finished_at | timestamptz, nullable | last completed fetch; the feed page refreshes in the background when this is more than 30 minutes old |
 
 ## Relationships
 

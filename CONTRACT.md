@@ -1,7 +1,7 @@
 # Bake-off Contract
 
 **Project:** Superintelligence Homepage | **Partners:** Matt Baxter, John Affolter |
-**Current version:** 1.3 (draft: both partners approve it at our next check-in, which completes milestone M1)
+**Current version:** 1.4 (draft: both partners approve it at our next check-in, which completes milestone M1)
 
 **Main question:** Is our comparison of the two builds fair?
 
@@ -87,7 +87,7 @@ change is planned for after the Nov 18 class on CI/CD.
 | AT-11 | F6 | Users A and B each save different stories. | Each sees only their own saved stories. |
 | AT-12 | F6 | User A sends a request to remove user B's vote, directly to the server. | The request is refused, and B's vote does not change. |
 | AT-13 | F7 | A reader filters by Alignment, then opens the site on a phone. | Only Alignment stories appear, with no sideways scrolling. |
-| AT-15 | F9 | A sample item's summary contains a script tag and an image tag. | The tags appear as plain text, and nothing runs or loads. |
+| AT-15 | F9 | A sample item's summary contains a script tag and an image tag. | Nothing runs or loads, and the summary shows as readable text. |
 | AT-16 | F9 | A visitor opens any page. | The page shows the "for information only, not investment advice" notice. |
 | AT-17 | F9 | A reader uses only the keyboard to filter by topic, sign in, vote and save. | Every action works, and the reader can always see where they are on the page. |
 | AT-14 | F8 | A classmate opens the public URL and signs up. | They can sign up and see the feed in under 2 minutes, with no help. |
@@ -154,3 +154,4 @@ M4 is the latest date that still shares the app with the class 2 weeks before th
 | 1.1 | Nov 11, 2026 | Matt | Removed the `shared/sample-data/` folder requirement; described the test data in plain terms. |
 | 1.2 | Nov 13, 2026 | Matt | Changes from peer review: key phrases now decide what counts as superintelligence and are fixed for both builds; new feature F9 (plain-text feed content, not-investment-advice notice, keyboard access) with tests AT-15 to AT-17; a separate database per build; relevance judged by three classmates who don't know which build is which; a points rubric for maintainability; note that tests are run by hand until after the CI/CD class. |
 | 1.3 | Nov 13, 2026 | Matt | Set milestone dates from our Dec 9 presentation date: M1 Nov 16, M2 Nov 18, M3 Nov 22, M4 Nov 25. |
+| 1.4 | Nov 13, 2026 | Matt | Clarified AT-15's expected result: nothing runs or loads, and the summary shows as readable text (builds may strip HTML from summaries instead of showing raw tags). Clarification, not a change in direction. |

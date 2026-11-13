@@ -18,14 +18,10 @@ Technical Context. Versions were checked against the npm registry on 2026-11-13.
 - **Finding:** Vercel's free Hobby plan only allows cron jobs that run **once per day**. A
   30-minute schedule (`*/30 * * * *`) fails at deploy time ("Hobby accounts are limited to daily
   cron jobs"). Source: Vercel docs, Cron Jobs → Usage & Pricing.
-- **Decision:** Two triggers, one fetch routine:
-  1. A **daily** Vercel Cron Job calls `GET /api/cron/fetch` (meets REQ-001's "on a schedule").
-  2. **Refresh on visit:** when the feed page loads and the last successful fetch is more than
-     30 minutes old, the page starts a fetch in the background after the response is sent
-     (Next.js `after()`), so readers see fresh stories without waiting.
-- **Rationale:** keeps the 30-minute freshness Matt asked for while staying on the free tier
-  (constitution, Bake-off Rules: $10 cap, free tiers). A simple lock (a `fetch_runs` row) stops
-  two visits from fetching at once.
+- **Decision:** A **daily** Vercel Cron Job calls `GET /api/cron/fetch` (meets REQ-001's "on a
+  schedule"). Matt approved once a day as fresh enough on 2026-11-13.
+- **Rationale:** stays on the free tier (constitution, Bake-off Rules: $10 cap, free tiers) with
+  no extra moving parts. A refresh-on-visit trigger was considered and dropped for simplicity.
 - **Alternatives considered:** Vercel Pro ($20/month, breaks the $10 cap); an outside cron
   service such as GitHub Actions (another moving part and a secret to manage).
 
@@ -75,21 +71,17 @@ Technical Context. Versions were checked against the npm registry on 2026-11-13.
   (`lib/topics.ts`). An item's title and summary are lowercased, and a key phrase matches only as
   **whole words** (for example, "AGI" matches "AGI timelines" but not "magic"). Items that match
   no topic are dropped before they're stored.
-- **Open point for the spec:** REQ-003 says an item "contains" a key phrase. Plain substring
-  matching would let "AGI" match "magic" and "Imagine", flooding the feed. Whole-word matching
-  is the sensible reading, but both builds must make the same call, so this should be written
-  into the spec (a clarification both partners approve).
+- **Spec clarified (v1.3):** REQ-003 now says key phrases match as whole words. Plain substring
+  matching would have let "AGI" match "magic" and "Imagine", flooding the feed.
 
 ## 8. Plain-text feed content (REQ-021) and article text (REQ-007)
 
 - **Decision:** At ingest, summaries are converted from HTML to plain text (tags removed,
   entities decoded) and cut to 300 characters. Pages render all feed text through React's
   default text escaping; `dangerouslySetInnerHTML` is never used.
-- **Open point for the contract:** AT-15 expects script and image tags to "appear as plain
-  text." Stripping tags at ingest means they don't appear at all, though nothing runs or loads.
-  Showing raw tags would make every real summary (most contain HTML) unreadable. Suggest
-  rewording AT-15's expected result to: "Nothing runs or loads, and the summary shows as
-  readable text."
+- **Contract clarified (v1.4):** AT-15 now expects that nothing runs or loads and the summary
+  shows as readable text. Showing raw tags would have made every real summary (most contain
+  HTML) unreadable.
 
 ## 9. Grouping duplicates (REQ-004)
 

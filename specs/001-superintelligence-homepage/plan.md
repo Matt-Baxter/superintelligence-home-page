@@ -1,6 +1,6 @@
 # Implementation Plan: Superintelligence Homepage — Build A (Matt)
 
-**Branch**: `claude/youthful-fermat-iyku15` | **Date**: 2026-11-13 | **Spec**: [spec.md](spec.md) (v1.2)
+**Branch**: `claude/youthful-fermat-iyku15` | **Date**: 2026-11-13 | **Spec**: [spec.md](spec.md) (v1.3)
 
 **Input**: Feature specification from `specs/001-superintelligence-homepage/spec.md`
 
@@ -16,9 +16,8 @@ A small Next.js app on Vercel that pulls items from about 10 public superintelli
 keeps only items whose title or summary contains one of the spec's key phrases, groups
 duplicates into one story, and shows a newest-first feed with each story's topics and matched
 words. Users sign up with a username and password, then vote on and save stories, which are
-stored per user in Neon Postgres. Feeds are fetched by a daily Vercel Cron Job plus a background
-refresh whenever a visitor arrives more than 30 minutes after the last fetch, because Vercel's
-free plan only allows daily cron jobs ([research §2](research.md#2-scheduled-fetching-on-the-free-plan)).
+stored per user in Neon Postgres. Feeds are fetched once a day by a Vercel Cron Job, the most often
+Vercel's free plan allows ([research §2](research.md#2-scheduled-fetching-on-the-free-plan)).
 
 ## Technical Context
 
@@ -62,24 +61,17 @@ Hobby; no third-party auth; no UI framework; feed text shown as plain text only 
 | Bake-off Rules | Build A's own folder, Vercel project and Neon database; stack recorded here, not in the constitution; free tiers only. | Pass |
 
 **Re-check after Phase 1 design**: Pass. The design adds no services or dependencies beyond those
-above. Two spec and contract wording questions came up during research (see Open points); neither
-blocks the plan.
+above. Two wording clarifications came up during research and have been made (see Decisions made during planning).
 
-## Open points for both partners
+## Decisions made during planning
 
-These came up while planning. Both affect what the two builds share, so they need both
-partners' approval and a changelog entry before M1 (Nov 16):
-
-1. **Whole-word matching (spec, REQ-003).** "Contains a key phrase" could mean a plain substring,
-   which would let "AGI" match "magic" and "imagine." Build A matches whole words only. Suggest
-   adding "as whole words" to REQ-003 so Build B makes the same call. ([research §7](research.md#7-deciding-what-counts-as-superintelligence-req-003-req-005))
-2. **AT-15 wording (contract).** Build A strips HTML from summaries, so script and image tags
-   don't appear at all rather than "appearing as plain text." Suggest changing AT-15's expected
-   result to "Nothing runs or loads, and the summary shows as readable text."
+1. **Whole-word matching.** REQ-003 now says key phrases match as whole words, so "AGI" doesn't
+   match "magic" (spec v1.3). ([research §7](research.md#7-deciding-what-counts-as-superintelligence-req-003-req-005))
+2. **AT-15 wording.** Build A strips HTML from summaries, so AT-15 now expects that nothing runs
+   or loads and the summary shows as readable text (contract v1.4).
    ([research §8](research.md#8-plain-text-feed-content-req-021-and-article-text-req-007))
-3. **Fetch timing.** The 30-minute schedule isn't possible on Vercel's free plan; Build A uses a
-   daily cron job plus refresh-on-visit. This is inside Build A, so it needs no shared change,
-   but John's build will hit the same limit.
+3. **Fetch timing.** Vercel's free plan only allows a daily cron job, so Build A fetches once a
+   day, which Matt approved. John's build will hit the same limit.
 
 ## Project Structure
 
@@ -105,7 +97,7 @@ specs/001-superintelligence-homepage/
 builds/matt/
 ├── app/
 │   ├── layout.tsx                 # Header, sign-in state, investment notice (REQ-022)
-│   ├── page.tsx                   # Feed and topic filter (REQ-002, REQ-017); triggers background refresh
+│   ├── page.tsx                   # Feed and topic filter (REQ-002, REQ-017)
 │   ├── saved/page.tsx             # Saved stories (REQ-014)
 │   ├── signin/page.tsx
 │   ├── signup/page.tsx
@@ -143,9 +135,4 @@ nothing outside that folder is deployed for Build A.
 
 ## Complexity Tracking
 
-No constitution violations. One design choice adds a moving part and is recorded here for
-review:
-
-| Choice | Why needed | Simpler alternative rejected because |
-|--------|------------|--------------------------------------|
-| Refresh-on-visit in addition to the cron job | Keeps stories about 30 minutes fresh on Vercel's free plan, which only allows daily cron jobs | A 30-minute cron job fails to deploy on the free plan; upgrading to Pro breaks the $10/month cap |
+No constitution violations and no extra moving parts to justify.

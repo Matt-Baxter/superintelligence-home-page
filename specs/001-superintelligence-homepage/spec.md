@@ -6,7 +6,7 @@
 
 **Status**: Draft (shared bake-off spec; both partners build against it)
 
-**Spec version**: 1.2 (changes are listed in [`CHANGELOG.md`](../../CHANGELOG.md))
+**Spec version**: 1.3 (changes are listed in [`CHANGELOG.md`](../../CHANGELOG.md))
 
 **Input**: User description: see `docs/speckit-prompts.md`, sections 2 and 3 (`/speckit-specify`
 and the superintelligence amendment).
@@ -167,7 +167,8 @@ filter and check the full feed returns.
 - **REQ-003**: The system MUST include only items relevant to superintelligence, meaning items
   that match at least one superintelligence topic, and MUST leave all other items out of the feed.
   An item matches a topic when its title or summary contains at least one of that topic's key
-  phrases (see Superintelligence topics and key phrases, below), ignoring capital letters.
+  phrases as whole words (see Superintelligence topics and key phrases, below), ignoring capital
+  letters. For example, "AGI" matches "AGI timelines" but not "magic".
 - **REQ-004**: The system MUST show the same paper or announcement from several sources as one
   story listing every source.
 - **REQ-005**: The system MUST tag each story with the superintelligence topics it matches and

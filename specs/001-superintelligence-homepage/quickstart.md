@@ -67,5 +67,6 @@ BASE_URL=https://<build-a-url> npm run test:acceptance
 1. In Vercel, create a project from this repo with Root Directory `builds/matt`.
 2. Add `DATABASE_URL` (the live Neon database) and `CRON_SECRET` in the project's settings.
 3. Deploy, then run `npm run db:migrate` once against the live database.
-4. Open `/api/cron/fetch` with the secret, or just visit `/`, to start the first fetch.
+4. Call `/api/cron/fetch` once with the secret to load stories right away (after that the daily
+   cron job takes over).
 5. Run the acceptance tests against the deployed URL (AT-14 is checked by a classmate).

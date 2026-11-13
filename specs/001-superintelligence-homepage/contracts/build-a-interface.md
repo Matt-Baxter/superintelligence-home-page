@@ -36,7 +36,7 @@ is met: a request can only ever change the sender's own vote or save.
 
 | Method and path | Caller | Behavior |
 |-----------------|--------|----------|
-| `GET /api/cron/fetch` | Vercel Cron, daily | Requires header `Authorization: Bearer <CRON_SECRET>`; otherwise 401. Runs one fetch of all sources (skips if one is already running) and returns `{ "fetched": n, "failed": n, "stories": n }`. |
+| `GET /api/cron/fetch` | Vercel Cron, daily | Requires header `Authorization: Bearer <CRON_SECRET>`; otherwise 401. Runs one fetch of all sources and returns `{ "fetched": n, "failed": n, "stories": n }`. |
 
 ## Error messages
 
