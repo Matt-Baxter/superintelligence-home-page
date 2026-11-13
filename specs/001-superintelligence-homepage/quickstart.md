@@ -6,8 +6,9 @@ from `builds/matt/`.
 ## Prerequisites
 
 - Node.js 22 or newer
-- Two Neon Postgres databases for Build A: one for development and tests, one for the live site
-  (separate from John's; contract, Section 3)
+- A local Postgres 16 database for development and tests (fake data only)
+- For the live site: a Neon database for Build A, separate from John's (contract, Section 3), added
+  from the Vercel project's **Storage** tab, which sets `DATABASE_URL` automatically
 - A Vercel project for Build A with **Root Directory** set to `builds/matt`
 
 ## Environment variables
@@ -16,7 +17,7 @@ Copy `.env.example` to `.env.local` (git-ignored) and fill in:
 
 | Variable | Purpose |
 |----------|---------|
-| `DATABASE_URL` | Neon connection string |
+| `DATABASE_URL` | Local test database locally; on Vercel it's set by the Neon integration |
 | `CRON_SECRET` | Random string; Vercel sends it to `/api/cron/fetch` |
 | `SOURCES` | Optional. `fixtures` makes the app read the saved sample feeds instead of the real ones (tests only) |
 
@@ -65,8 +66,9 @@ BASE_URL=https://<build-a-url> npm run test:acceptance
 ## Deploy
 
 1. In Vercel, create a project from this repo with Root Directory `builds/matt`.
-2. Add `DATABASE_URL` (the live Neon database) and `CRON_SECRET` in the project's settings.
-3. Deploy, then run `npm run db:migrate` once against the live database.
+2. In the project's **Storage** tab, add a Neon database (this sets `DATABASE_URL`), and add
+   `CRON_SECRET` in the project's environment settings.
+3. Deploy. The build runs `npm run db:migrate` against the live database automatically.
 4. Call `/api/cron/fetch` once with the secret to load stories right away (after that the daily
    cron job takes over).
 5. Run the acceptance tests against the deployed URL (AT-14 is checked by a classmate).

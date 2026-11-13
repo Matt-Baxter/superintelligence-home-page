@@ -35,12 +35,12 @@ AT numbers. Write them, confirm they fail, then write the code that makes them p
 
 **Purpose**: An empty Next.js project in `builds/matt/` that builds and runs.
 
-- [ ] T001 Create `builds/matt/package.json` with name `si-home-build-a`, `"private": true`, `"engines": { "node": ">=22" }`, dependencies `next@16.4.6`, `react@19.3.1`, `react-dom@19.3.1`, `@neondatabase/serverless@1.2.0`, `fast-xml-parser@5.12.0`, dev dependencies `typescript@5.9.3`, `@types/node`, `@types/react`, `@playwright/test@1.65.0`, and scripts `dev`, `build`, `start`, `db:migrate` (`node db/migrate.mjs`), `test:acceptance` (`playwright test`) (plan, Technical Context)
+- [ ] T001 Create `builds/matt/package.json` with name `si-home-build-a`, `"private": true`, `"engines": { "node": ">=22" }`, dependencies `next@16.4.6`, `react@19.3.1`, `react-dom@19.3.1`, `postgres@4.1.1`, `fast-xml-parser@5.12.0`, dev dependencies `typescript@5.9.3`, `@types/node`, `@types/react`, `@playwright/test@1.65.0`, and scripts `dev`, `build` (`node db/migrate.mjs && next build`, so each Vercel deploy applies the schema), `start`, `db:migrate` (`node db/migrate.mjs`), `test:acceptance` (`playwright test`) (plan, Technical Context)
 - [ ] T002 [P] Create `builds/matt/tsconfig.json` (strict mode, `@/*` path alias to the project root) and `builds/matt/next.config.ts` with no extra options
 - [ ] T003 [P] Create `builds/matt/.env.example` listing `DATABASE_URL`, `CRON_SECRET` and `SOURCES` with one-line comments and no values; confirm the repo's `.gitignore` already ignores `.env` and `.env.*` but not `.env.example` (constitution V)
 - [ ] T004 [P] Create `builds/matt/.gitignore` for `node_modules/`, `.next/`, `test-results/`, `playwright-report/`
 - [ ] T005 Run `npm install` in `builds/matt/` and commit the resulting `package-lock.json`
-- [ ] T006 **MANUAL (Matt)**: In Neon, create two databases for Build A, separate from John's: `build-a-dev` (development and tests) and `build-a-live`. Put the dev connection string in `builds/matt/.env.local` as `DATABASE_URL`, and a random `CRON_SECRET`. Do not share either value in chat or commits. (R13; contract, Section 3)
+- [ ] T006 Set up a throwaway local Postgres 16 test database (fake data only) and put its local connection string in `builds/matt/.env.local` as `DATABASE_URL`, with `CRON_SECRET=test-secret`. The live Neon database is created later by Matt (T036). (research §3)
 
 ---
 
@@ -50,7 +50,7 @@ AT numbers. Write them, confirm they fail, then write the code that makes them p
 
 - [ ] T007 Create `builds/matt/db/schema.sql` with every table in `data-model.md`, using `CREATE TABLE IF NOT EXISTS`. Quote the rules exactly: `users.username` "3–30 characters: letters, numbers, `_`, `-`; unique ignoring case" (a unique index on `lower(username)`); `sessions.token_hash` "SHA-256 of the cookie's random token"; `sources.kind` "one of: `papers`, `frontier-lab`, `safety-group`, `research-org`, `forum`, `newsletter`" (a CHECK constraint); `stories.summary` "plain text, at most 300 characters"; `votes` and `saves` primary key `(user_id, story_id)`; `story_topics` primary key `(story_id, topic_id)` with `matched text[]`; `story_sources` primary key `(story_id, source_id)`; `story_keys.key` primary key; all foreign keys `ON DELETE CASCADE` (REQ-004, REQ-009, REQ-011 to REQ-016)
 - [ ] T008 Create `builds/matt/db/migrate.mjs`: reads `DATABASE_URL`, applies `db/schema.sql`, then upserts every source from `lib/sources.ts` (via a small exported JSON or by importing the compiled list) into `sources`; safe to run more than once
-- [ ] T009 [P] Create `builds/matt/lib/db.ts` exporting a Neon `sql` tagged-template client from `@neondatabase/serverless` using `process.env.DATABASE_URL`; queries must use parameters, never string concatenation
+- [ ] T009 [P] Create `builds/matt/lib/db.ts` exporting a `sql` tagged-template client from the `postgres` package using `process.env.DATABASE_URL` (SSL required when the URL is not local; at most 5 connections); queries must use parameters, never string concatenation
 - [ ] T010 [P] Create `builds/matt/lib/topics.ts` with the 9 topics and their key phrases copied exactly from the spec table "Superintelligence topics and key phrases", each with an `id` (e.g. `capabilities-agi`, `automating-ai-research`, `recursive-self-improvement`, `alignment`, `interpretability`, `safety-risk`, `forecasting-timelines`, `compute-scaling`, `governance-policy`) and `label`; export `matchTopics(text): { id, label, matched: string[] }[]` that matches key phrases case-insensitively **as whole words** (so "AGI" matches "AGI timelines" but not "magic"; "align" does not match "alignment") (REQ-003, REQ-005)
 - [ ] T011 [P] Create `builds/matt/lib/text.ts` exporting `htmlToText(html)` (remove tags, decode entities, collapse whitespace), `truncate(text, 300)`, `normalizeUrl(url)` (lowercase host, drop `www.`, drop `utm_*` and other tracking parameters, drop trailing slash), `normalizeTitle(title)` (lowercase, remove punctuation, collapse spaces), `arxivId(url)` (returns e.g. `2411.01234` from abs/pdf links, without version suffix), and `isTwitterUrl(url)` (host is `twitter.com`, `x.com` or `t.co`, including subdomains) (REQ-004, REQ-006, REQ-007, REQ-021)
 - [ ] T012 [P] Create `builds/matt/lib/sources.ts` with about 10 sources across the 6 kinds in `data-model.md` (`id`, `name`, `kind`, `feedUrl`): arXiv (papers), at least one frontier lab research or safety blog, at least one alignment/safety group (e.g. MIRI), at least one forecasting/research org (e.g. Epoch AI, AI Impacts), the Alignment Forum and LessWrong (forums), and at least one newsletter (e.g. Import AI). When `process.env.SOURCES === 'fixtures'`, export the list from `tests/fixtures/sources.json` instead (REQ-001)
@@ -121,8 +121,8 @@ username is refused; a wrong password gives the same message whether or not the 
 
 ## M2 deploy checkpoint (Nov 18) — MANUAL (Matt)
 
-- [ ] T036 **MANUAL (Matt)**: In Vercel, create a project for Build A from this repo with **Root Directory** `builds/matt`; add `DATABASE_URL` (the `build-a-live` database) and `CRON_SECRET` in the project's environment settings (quickstart, Deploy; REQ-019)
-- [ ] T037 **MANUAL (Matt)**: Deploy; run `DATABASE_URL=<live> npm run db:migrate` once from your machine; call `/api/cron/fetch` once with the secret to load stories (REQ-019)
+- [ ] T036 **MANUAL (Matt)**: In Vercel, create a project for Build A from this repo with **Root Directory** `builds/matt`; in its **Storage** tab add a Neon database (separate from John's; this sets `DATABASE_URL`), and add a random `CRON_SECRET` in the environment settings (quickstart, Deploy; REQ-019)
+- [ ] T037 **MANUAL (Matt)**: Deploy (the build applies the schema automatically); call `/api/cron/fetch` once with the secret to load stories (REQ-019)
 - [ ] T038 **MANUAL (Matt)**: Run `BASE_URL=<live URL> npm run test:acceptance -- us1-feed us2-accounts` (the fixture-dependent checks AT-02 to AT-06 and AT-15 stay local-only); record the results for the contract's AT table and note the live URL in `builds/matt/README.md`
 
 ---
@@ -198,7 +198,7 @@ filter; the full feed returns; at phone width nothing scrolls sideways.
 
 ## Dependencies and execution order
 
-- **Phase 1 → Phase 2 → user stories.** T006 (Neon database) must be done before T008 runs.
+- **Phase 1 → Phase 2 → user stories.** T006 (local test database) must be done before T008 runs.
 - **US1 (Phase 3)** and **US2 (Phase 4)** depend only on Phase 2 and could be built in either
   order; US1 comes first because it's the product.
 - **M2 deploy checkpoint** needs Phases 3 and 4.

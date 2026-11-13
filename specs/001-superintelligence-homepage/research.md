@@ -27,13 +27,17 @@ Technical Context. Versions were checked against the npm registry on 2026-11-13.
 
 ## 3. Database access
 
-- **Decision:** Neon Postgres via `@neondatabase/serverless` 1.2 (HTTP driver), with plain SQL
-  queries. Schema lives in one `schema.sql` file applied by a small `npm run db:migrate` script.
-  Build A gets its own Neon database (contract, Section 3; risk R13).
-- **Rationale:** one dependency, no ORM, works in Vercel Functions without connection pooling
-  setup (constitution II).
-- **Alternatives considered:** Prisma or Drizzle (extra tooling and a generate step); `pg`
-  (needs connection pooling in serverless).
+- **Decision:** The `postgres` package 4.1 (a standard Postgres client), with plain SQL queries.
+  The live site connects to Build A's own Neon database (contract, Section 3; risk R13), added
+  through Vercel's Storage tab so Vercel sets `DATABASE_URL` itself. Development and tests use a
+  throwaway local Postgres 16 database holding only fake data, so no agent ever handles the live
+  connection string (working agreement, Agent rules). Schema lives in one `schema.sql` file
+  applied by a small `npm run db:migrate` script.
+- **Rationale:** one dependency, no ORM (constitution II), and the same code talks to both Neon
+  and the local test database. Traffic is class-sized, so a small connection limit per function
+  is enough without extra pooling.
+- **Alternatives considered:** `@neondatabase/serverless` (only talks to Neon, so local tests
+  would need Neon too; replaced 2026-11-13); Prisma or Drizzle (extra tooling and a generate step).
 
 ## 4. Ownership and row-level security (R3)
 

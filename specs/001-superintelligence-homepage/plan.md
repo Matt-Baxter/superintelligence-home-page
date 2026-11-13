@@ -23,11 +23,12 @@ Vercel's free plan allows ([research §2](research.md#2-scheduled-fetching-on-th
 
 **Language/Version**: TypeScript 5.9, Node.js 22 (Vercel runtime)
 
-**Primary Dependencies**: Next.js 16 (App Router), React 19, `@neondatabase/serverless` 1.2,
+**Primary Dependencies**: Next.js 16 (App Router), React 19, `postgres` 4.1,
 `fast-xml-parser` 5.12. Dev only: `@playwright/test` 1.65, `typescript`, `@types/node`,
 `@types/react`. Password hashing and session tokens use Node's built-in `crypto`.
 
-**Storage**: Neon Postgres, a separate database for Build A ([data-model.md](data-model.md))
+**Storage**: Neon Postgres for the live site, a separate database for Build A; a throwaway local
+Postgres 16 database for development and tests ([data-model.md](data-model.md), [research §3](research.md#3-database-access))
 
 **Testing**: Playwright acceptance tests organized by requirement ID, against saved sample feeds
 served locally ([research §12](research.md#12-testing))
@@ -110,7 +111,7 @@ builds/matt/
 │       ├── stories/[id]/save/route.ts
 │       └── cron/fetch/route.ts
 ├── lib/
-│   ├── db.ts                      # Neon client
+│   ├── db.ts                      # Postgres client (Neon live, local for tests)
 │   ├── auth.ts                    # scrypt hashing, sessions, current user
 │   ├── sources.ts                 # Source list (REQ-001)
 │   ├── topics.ts                  # Topics and key phrases from the spec (REQ-003, REQ-005)
