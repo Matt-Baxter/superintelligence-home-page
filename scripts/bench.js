@@ -187,6 +187,35 @@ const SUITES = {
         return { ...honesty("verification.heldout_rung", "rung on the held-out split", ho.map((x) => x.rung), got.map((c) => c.rung.id)), ...honesty("verification.heldout_gap", "fidelity gap on the held-out split", ho.map((x) => String(Boolean(x.gap))), got.map((c) => String(Boolean(c.gap)))) }; })(),
     };
   },
+  // Transfer beyond AI: the same judge on synthetic pieces from other fields (bench/domains-*.json). "set" was used to
+  // fix the judge; "holdout" was written after the first fixes and run once (27/30 before the second fixes); "overreach"
+  // was written after the second fixes and run once, to catch false alarms on credible work using watched words.
+  // Module boundaries outside the profile preflight checks strictly: every cross-module import and missing README in
+  // the extended and research profiles. Known debt from the combined line; the ratchet lets it shrink, never grow.
+  modules: () => {
+    const { execSync } = require("node:child_process"), seen = new Set();
+    for (const p of ["extended", "research"]) {
+      let out = "";
+      try { out = execSync("node scripts/modules.js check", { cwd: root, env: { ...process.env, SITE_PROFILE: p, MODULES_SKIP_GEN: "1" }, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }); }
+      catch (e) { out = String(e.stdout || "") + String(e.stderr || ""); }
+      for (const l of out.split("\n")) if (/^\s*- module /.test(l)) seen.add(l.trim());
+    }
+    return { "modules.boundary_violations_other_profiles": { value: seen.size, better: "lower", tol: 0, about: "cross-module imports and missing READMEs in the extended and research profiles (npm run modules -- check with SITE_PROFILE set lists them)" } };
+  },
+  domains: () => {
+    const R = require("../modules/review/review"), out = {};
+    for (const set of ["set", "holdout", "overreach"]) {
+      const items = JSON.parse(fs.readFileSync(path.join(DIR, `domains-${set}.json`), "utf8")).items;
+      const rs = items.map((it) => ({ it, r: R.review(it) })), good = rs.filter((x) => x.it.credible), bad = rs.filter((x) => !x.it.credible);
+      let a = 0; for (const g of good) for (const b of bad) a += g.r.credibility > b.r.credibility ? 1 : g.r.credibility === b.r.credibility ? 0.5 : 0;
+      const acc = rs.filter((x) => ["doubtful", "withdrawn"].includes(x.r.verdict) === !x.it.credible).length / rs.length;
+      const fields = new Set(items.map((i) => i.domain)).size, r3 = (x) => Math.round(x * 1000) / 1000;
+      out[`domains.${set}_verdict_accuracy`] = { value: r3(acc), better: "higher", tol: 0, about: `${set}: verdict right on ${items.length} pieces from ${fields} fields` };
+      out[`domains.${set}_credibility_auc`] = { value: r3(a / (good.length * bad.length)), better: "higher", tol: 0, about: `${set}: credible pieces out-rank the rest on credibility` };
+      out[`domains.${set}_false_alarms`] = { value: r3(good.filter((x) => ["doubtful", "withdrawn"].includes(x.r.verdict)).length / good.length), better: "lower", tol: 0, about: `${set}: credible pieces called doubtful` };
+    }
+    return out;
+  },
   analysis: () => {
     // Scope and tagging on the labelled spec fixtures: in-scope titles vs off-topic ones (REQ-003).
     const A = require("../lib/analysis"), { tag } = require("../lib/tagger");

@@ -30,11 +30,13 @@ function plain(row, r) {
 }
 
 const LEVEL = { backed: "backed in the same sentence", "partly backed": "backed by a neighbouring sentence", unbacked: "nothing backing it" };
-const { CRITERIA, VERDICTS } = require("../review/review");
+// The review desk's criteria and judge, through the review.judge point (deps.js), read when a page is built.
+const DEPS = require("./deps");
 
 // The scorecard: every published criterion, whether this text met it and the points it earned, then the arithmetic
 // from rigor and hype to credibility and the verdict rule that applied. Nothing on it is hidden or extra.
 function scorecard(row, r) {
+  const { CRITERIA, VERDICTS } = DEPS.judge;
   const J = Object.fromEntries((r.judges || []).map((j) => [j.id, j]));
   const rig = J.rigor || { score: 0, why: [] }, hp = J.hype || { score: 0, why: [] };
   const list = r.rubric === "reporting" ? CRITERIA.reporting.checks : r.survey ? CRITERIA.survey.checks : CRITERIA.rigor.checks;
@@ -55,6 +57,7 @@ ${r.panel ? `<dt>Panel</dt><dd>${esc(r.panel.status)}: ${r.panel.judges.map((j) 
 }
 
 function criteriaPage(base) {
+  const { CRITERIA, VERDICTS } = DEPS.judge;
   const tbl = (checks) => `<table class="card"><tbody>${checks.map((c) => `<tr><td>${esc(c.label)}</td><td class="n">${c.points}</td></tr>`).join("")}</tbody></table>`;
   const body = `<h1>How we judge a paper</h1>
 <p class="lede">Every write-up is scored by the same published rules, from the abstract, with no model and no hidden weights. Two separate questions: how big a step it reports (significance) and how far to believe it (credibility).</p>
@@ -74,8 +77,39 @@ function criteriaPage(base) {
 <section><h2>9. Buzz</h2><p>${esc(CRITERIA.buzz.about)}</p></section>
 <section><h2>10. Two-model panel and bias masking</h2><p>${esc(CRITERIA.panel.about)}</p></section>
 <section><h2>Guards against gaming</h2><ul>${CRITERIA.guards.map((g) => `<li>${esc(g.label)}</li>`).join("")}</ul></section>
+<section><h2>Outside AI</h2><p>The credibility rules were tested on synthetic pieces from other fields, held-out sets included: <a href="/research/transfer">see every verdict</a>.</p></section>
 <section><h2>When a person looks</h2><p>${esc(CRITERIA.person.about)} Doubtful items and anything a person disagreed with are never published here.</p></section>`;
   return shell({ title: "How we judge", base, body, desc: "The published criteria behind every research write-up." });
+}
+
+// Does the judge work outside AI? Re-runs the judge on the synthetic cross-field sets at request time (milliseconds),
+// so the table can't go stale: if a rule change breaks transfer, this page shows it before the benchmark ratchet does.
+const TRANSFER_SETS = [
+  { id: "set", label: "Used to fix the judge", note: "First run before any fix: 27 of 42 right. The misses showed a bug (press releases and blogs were judged as comments) and AI-only vocabulary; both were fixed in field-neutral terms." },
+  { id: "holdout", label: "Held out, written after the first fixes", note: "First run: 27 of 30 right. All three misses let weak work through: a bare number treated as backing, a before-and-after with no control group, and a questionnaire mistaken for a literature survey. Fixed in principle, then checked on the next set." },
+  { id: "overreach", label: "Overreach check, written after the second fixes", note: "First run: 18 of 18. Credible pieces full of the words the new rules watch for (cured, doubled, overnight, should be offered to all, a survey of adults) stay credible; six new bad patterns are caught." },
+];
+function transferPage(base) {
+  const fs = require("node:fs"), path = require("node:path"), R = DEPS.judge;
+  const bad = (v) => ["doubtful", "withdrawn"].includes(v);
+  const nFields = new Set(TRANSFER_SETS.flatMap((t) => JSON.parse(fs.readFileSync(path.join(__dirname, "..", "..", "bench", `domains-${t.id}.json`), "utf8")).items.map((i) => i.domain))).size;
+  const sections = TRANSFER_SETS.map((t) => {
+    const items = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "..", "bench", `domains-${t.id}.json`), "utf8")).items;
+    const rows = items.map((it) => { const r = R.review(it); return { it, r, ok: bad(r.verdict) === !it.credible }; });
+    const fields = [...new Set(items.map((i) => i.domain))];
+    const right = rows.filter((x) => x.ok).length;
+    const byField = fields.map((f) => { const xs = rows.filter((x) => x.it.domain === f); return `<tr><td>${esc(f)}</td><td class="n">${xs.filter((x) => x.ok).length} of ${xs.length}</td></tr>`; }).join("");
+    const detail = rows.map(({ it, r, ok }) => `<tr><td>${ok ? "" : "<b>Wrong:</b> "}${esc(it.title.replace(/^Sample: /, "").replace(/ \(test data\)$/, ""))}<span class="ev">${esc(it.domain)} · ${esc(it.kind)} · labelled ${it.credible ? "credible" : "not credible"}</span></td><td>${esc(r.verdict)}<span class="ev">credibility ${r.credibility}</span></td></tr>`).join("");
+    return `<section><h2>${esc(t.label)}: ${right} of ${rows.length} right</h2><p class="small muted" style="margin:0 0 8px">${esc(t.note)}</p>
+<table class="card"><tbody>${byField}</tbody></table>
+<details><summary class="small">Every piece and its verdict</summary><table class="card"><tbody>${detail}</tbody></table></details></section>`;
+  }).join("\n");
+  const body = `<h1>Does the judge work outside AI?</h1>
+<p class="lede">The credibility half of the judge asks what any field asks of a claim: numbers, a comparison, an interval, controls or held-out tests, stated limits, open data, and whether each claim has its own evidence. So we ran the same rules on pieces from ${nFields} other fields. The significance half (how big a step toward superintelligence) and the topic tags stay AI-specific; another field would bring its own.</p>
+<p class="small muted">All pieces are synthetic test data written by the same person who wrote the rules, so this shows the vocabulary transfers, not that the judge agrees with experts. Verdicts are re-computed every time this page loads. "Right" means doubtful or withdrawn exactly when the piece is labelled not credible.</p>
+${sections}
+<section><h2>What would make it undeniable</h2><p>People labelling real pieces from these fields without seeing the verdict, and the judge's agreement with them measured against how often the people agree with each other.</p></section>`;
+  return shell({ title: "Does the judge work outside AI?", base, body, desc: `The same judging rules run on pieces from ${nFields} fields outside AI.` });
 }
 
 function shell({ title, base, body, desc = "" }) {
@@ -112,7 +146,7 @@ ${desc ? `<meta name="description" content="${esc(desc)}">` : ""}<link rel="styl
 </style></head><body><main class="rx">
 <span class="flag">Research preview</span>
 ${body}
-<footer>Judged by rules from the abstract, not by a person and not by a model: a draft to read alongside the paper, not instead of it. Real people appear only as mention counts. <a href="${esc(base)}/research/criteria">How we judge</a> · <a href="${esc(base)}/research/outlets">Track records</a> · <a href="${esc(base)}/research/data.json">Open data</a> · <a href="${esc(base)}/research">All write-ups</a> · <a href="${esc(base)}/research/feed.xml">RSS</a></footer>
+<footer>Judged by rules from the abstract, not by a person and not by a model: a draft to read alongside the paper, not instead of it. Real people appear only as mention counts. <a href="${esc(base)}/research/criteria">How we judge</a> · <a href="${esc(base)}/research/transfer">Outside AI</a> · <a href="${esc(base)}/research/outlets">Track records</a> · <a href="${esc(base)}/research/data.json">Open data</a> · <a href="${esc(base)}/research">All write-ups</a> · <a href="${esc(base)}/research/feed.xml">RSS</a></footer>
 </main></body></html>`;
 }
 
@@ -204,4 +238,4 @@ function dataJson({ papers, topics }, base) {
     topics: topics.map((t) => ({ id: t.topic, label: t.label, evidence: t.strength, why: t.why, page: `${base}/research/topic/${t.topic}` })) };
 }
 
-module.exports = { dataJson, outletsPage, scorecard, criteriaPage, publishable, plain, paperPage, topicPage, indexPage, feedXml, md };
+module.exports = { dataJson, outletsPage, scorecard, criteriaPage, transferPage, publishable, plain, paperPage, topicPage, indexPage, feedXml, md };

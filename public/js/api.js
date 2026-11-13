@@ -123,7 +123,7 @@ function topbar(user) {
   const bar = document.createElement("header"); bar.className = user ? "topbar" : "topbar guest";
   // Module links from "ui.nav": reader-facing ones sit in the bar; admin tools go in one Admin menu.
   window.SI_USER = user || null;
-  const nav = user?.nav || [], isHere = (h) => { const destination = new URL(h, location.origin); return destination.pathname === "/" ? here === "/" && ((destination.searchParams.get("saved") === "1") === (new URLSearchParams(location.search).get("saved") === "1")) : here.startsWith(destination.pathname); };
+  const nav = user?.nav || [], isHere = (h) => { const destination = new URL(h, location.origin); return destination.pathname === "/" ? here === "/" && ((destination.searchParams.get("saved") === "1") === (new URLSearchParams(location.search).get("saved") === "1")) : here === destination.pathname || here.startsWith(destination.pathname.replace(/\/$/, "") + "/"); }; // /m/lab is not here on /m/labels
   const mod = nav.filter((n) => !n.admin && n.group !== "research"), tools = nav.filter((n) => n.admin);
   const research = nav.filter((n) => !n.admin && n.group === "research"); if (research.length && nav.some((n) => n.href === "/m/review")) research.push({ href: "/m/dossier", label: "Topic dossiers" });
   const core = (user ? NAV : [["/", "Feed"], ...(window.SI_PUBLIC_NAV || []).map(n=>[n.href,n.label]), ["/welcome", "About"]]).filter(([, , f]) => !f || (user?.features || []).includes(f));

@@ -14,7 +14,7 @@ A signed-in reader SHOULD be able to submit a paper, article or comment and get 
 Source: `specs/002-research-layer/spec.md`, proposed, not approved: needs both partners. Code: `modules/review` (`review.js`, `store.js`), `/m/review`; `superintelligence` profile on every review and in the published criteria (`/research/criteria`); event-report rubric (`EVENT` in `review.js`); two readings, abstract and full text (`modules/review/fulltext.js`).
 
 #### Scenario: REQ-027 is checked
-- **WHEN** the checks named in docs/SPEC_TRACE.md run (unit: review (24 checks); review demo; bench `review.*`; unit: fulltext (11 checks); bench items `b-event-report`, `b-event-relays-agi`)
+- **WHEN** the checks named in docs/SPEC_TRACE.md run (unit: review (24 checks); review demo; bench `review.*`; unit: fulltext (11 checks); bench items `b-event-report`, `b-event-relays-agi`; transfer beyond AI: `/research/transfer`, [TRANSFER.md](TRANSFER.md), bench `domains.*` (90 synthetic pieces, 16 fields; held-out first run 27/30))
 - **THEN** they pass, as preflight and the browser test require
 
 ### Requirement: REQ-031 Produce an evidence dossier
@@ -50,7 +50,7 @@ Every judgement made in the background SHOULD be made by at least two different 
 Source: `specs/002-research-layer/spec.md`, proposed, not approved: needs both partners. Code: `modules/review/panel.js`, `scripts/watch.js`, `PANEL_MODELS`, `CRITERIA.panel`.
 
 #### Scenario: REQ-034 is checked
-- **WHEN** the checks named in docs/SPEC_TRACE.md run (unit: panel (22 checks, stand-in models, including the advisor); `scripts/advise.js`)
+- **WHEN** the checks named in docs/SPEC_TRACE.md run (unit: panel (22 checks, stand-in models, including the advisor); `scripts/advise.js`; evidence harness `scripts/panel-evidence.js` (`npm run evidence:panel`, 104 labelled pieces, stand-in check: biased model set aside 96/104, fair 0))
 - **THEN** they pass, as preflight and the browser test require
 
 ### Requirement: REQ-032 (spec 003) Put the text in a canonical form
@@ -80,7 +80,16 @@ Source: `specs/003-judge-fidelity/spec.md`, proposed, not approved: needs both p
 - **WHEN** the checks named in docs/SPEC_TRACE.md run (preflight: judge edge cases (known gaps reported; `ok` cases must pass), judge properties (`test/judge-properties.js`), fidelity set, near-cutoff report, bands (`test/bands-unit.js`) and Lean vectors units)
 - **THEN** they pass, as preflight and the browser test require
 
-### Requirement: REQ-035 Earn nothing
+### Requirement: REQ-035 (spec 002) Show that write-up's verdict
+When a story includes a write-up from the research feed, the main app SHOULD show that write-up's verdict, credibility and source grade as a small badge on the story card and beside the source on the story page, linking to the write-up, read from the feed's `si:` categories; plain feeds and the spec version's behaviour stay unchanged until both partners approve.
+
+Source: `specs/002-research-layer/spec.md`, proposed, not approved: needs both partners. Code: `lib/feeds.js`, `lib/harvest.js`, `story_links.rigor`, `sources[].rigor`, `public/js/api.js`, feature `rigor-badges`.
+
+#### Scenario: REQ-035 is checked
+- **WHEN** the checks named in docs/SPEC_TRACE.md run (test: rigor badge (6 checks, end to end, in preflight))
+- **THEN** they pass, as preflight and the browser test require
+
+### Requirement: REQ-035 (spec 003) Earn nothing
 Negated markers, hype words inside negations or names, and text that describes attacks rather than addressing the judge SHOULD earn nothing and trigger nothing; text that addresses the judge in other words or with hidden characters SHOULD still be flagged.
 
 Source: `specs/003-judge-fidelity/spec.md`, proposed, not approved: needs both partners. Code: REQ-037 bands built (`modules/review/bands.js`; review result `bands`/`verdictNote`, dossier counts High only, digest Band column; T041, T042); canonical text, negation, type detection and abstract-first fidelity are built in `review.js`, `fidelity.js` and `scripts/watch.js`; measured by `bench/judge-edge-cases.json`, `bench/fidelity-cases.json`, `scripts/judge-report.js`, Lean model in `proofs/` (unchecked).

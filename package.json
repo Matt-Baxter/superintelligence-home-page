@@ -32,6 +32,7 @@
     "test:lineage": "LINEAGE_FULL=1 node --no-warnings test/lineage-unit.js",
     "lab": "node scripts/lab.js",
     "spec:status": "node scripts/spec-status.js",
+    "evidence:panel": "node scripts/panel-evidence.js",
     "bench": "node scripts/bench.js --record",
     "watch": "node scripts/watch.js",
     "project:sync": "node scripts/project-sync.js",

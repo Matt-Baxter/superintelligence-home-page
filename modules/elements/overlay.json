@@ -891,6 +891,23 @@
       "grain": {
         "statement": "one per rule evaluation result"
       }
+    },
+    "table:review_blind": {
+      "description": "Blind labels: whether a person would rely on a reviewed piece, given before seeing the judge's verdict (one per person per piece; the first answer stands).",
+      "aliases": [
+        "blind label",
+        "human label",
+        "ground truth"
+      ],
+      "tags": [
+        "domain:review",
+        "profile:extended"
+      ],
+      "series": {
+        "time": "created_at",
+        "cadence": "as people label",
+        "order": "asc"
+      }
     }
   }
 }

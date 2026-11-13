@@ -55,8 +55,12 @@ const hash = (s) => crypto.createHash("sha1").update(s).digest("hex").slice(0, 1
 
 // ---------- 1. normalise ----------
 const ARXIV = /\b(?:arxiv[:\s/]*)?(\d{4}\.\d{4,5})(?:v\d+)?\b/i;
+// Other names a source or a person may use. Press releases, blog posts and newsletters are prose for readers, so they
+// are judged as articles (reporting rubric, unbacked assertions counted); before this they fell through to "comment".
+const KIND_ALIAS = { press: "article", "press release": "article", blog: "article", post: "article", news: "article", newsletter: "article", preprint: "paper", study: "paper" };
 function detectKind({ kind, title = "", text = "", url = "" }) {
   if (KINDS[kind]) return { kind, why: "chosen by the person submitting it" };
+  if (KIND_ALIAS[kind]) return { kind: KIND_ALIAS[kind], why: `a ${kind} is judged as ${KIND_ALIAS[kind] === "article" ? "an article" : "a paper"}` };
   const all = `${title}\n${text}\n${url}`;
   if (ARXIV.test(all) || /doi\.org|\babstract\b|\bwe (propose|present|introduce)\b/i.test(all)) return { kind: "paper", why: "has an arXiv id, a DOI or paper wording" };
   if (words(text).length < 80) return { kind: "comment", why: "under 80 words" };
@@ -74,21 +78,21 @@ const COUNT = `(?:\\d[\\d,]*|${NUMW})(?: (?!(?:of|the|a|an|in|on|for|to|and|or|f
 // skip the Border band). Capping every weight at 10 can't sum to 100 over 8 families, and a 12/13 split still has a
 // largest weight of 13 (7 points per flip), so rebalancing would change every score for no gain in the bound.
 const MARKERS = [
-  { id: "numbers", label: "Reports numbers", points: 10, re: new RegExp(`\\b(?:\\d+(?:\\.\\d+)?\\s?(?:%|x\\b|×|points?\\b|pp\\b|percent(?:age points?)?\\b|per cent\\b)|\\d+(?:\\.\\d+)?-points?\\b|${NUMW} (?:percent(?:age points?)?|per cent)\\b)`, "i") },
-  { id: "baseline", label: "Compares with a baseline", points: 14, re: /\b(compared (?:to|with)|baselines?|versus|vs\.?|relative to|than (?:the |a )?(?:previous|prior|best|existing|strong|human)|over the prior|match(?:es)? or exceed|outperform\w*|(?:beat(?:s|ing)?|improv(?:es|ed|ing)? (?:on|over|upon)) (?:the |a |an )?(?:previous|prior|best|existing|strong|earlier|original))\b/i },
+  { id: "numbers", label: "Reports numbers", points: 10, re: new RegExp(`\\b(?:\\d+(?:\\.\\d+)?\\s?(?:%|x\\b|×|points?\\b|pp\\b|percent(?:age points?)?\\b|per cent\\b)|\\d+(?:\\.\\d+)?-points?\\b|${NUMW} (?:percent(?:age points?)?|per cent)\\b|\\d+(?:\\.\\d+)?\\s?(?:mmhg|kcal|kg|mmol\\/l|w per|k|°c|hours? per)\\b|\\b(?:hazard|odds|risk) ratio\\b|\\b[dr]\\s?=\\s?-?0?\\.\\d+)`, "i") },
+  { id: "baseline", label: "Compares with a baseline", points: 14, re: /\b(compared (?:to|with)|baselines?|versus|vs\.?|relative to|than (?:the |a )?(?:previous|prior|best|existing|strong|human)|over the prior|match(?:es)? or exceed|outperform\w*|(?:beat(?:s|ing)?|improv(?:es|ed|ing)? (?:on|over|upon)) (?:the |a |an )?(?:previous|prior|best|existing|strong|earlier|original)|placebo|control (?:group|session|condition)|comparison (?:group|households?|counties|firms)|(?:neighbou?ring|matched) \w+ (?:that|which|who) did not)\b/i },
   // Passive voice counts ("a model is trained", "a model evaluated on"), except "is compared with": that phrase is the
   // baseline marker's, and counting it twice would give one phrase two families.
-  { id: "method", label: "Describes the method", points: 12, re: /\b((?:we|the authors) (?:train|trained|fine-tune|fine-tuned|evaluate|evaluated|measure|measured|test|tested|ablate|sample|sampled|collect|collected|run|ran|present|propose|introduce|build|built|design|benchmark|survey|classify)|(?:is|are|was|were|been|being) (?:then |first |each )?(?:trained|fine-tuned|evaluated|tested|measured|benchmarked|ablated|presented|proposed|introduced)|(?:trained|fine-tuned|evaluated|tested|benchmarked) (?:on|against)|ablations?|experimental setup|our method)\b/i },
-  { id: "sample", label: "Says how much was tested", points: 12, re: new RegExp(`\\b(n\\s?=\\s?\\d+|${COUNT} (?:tasks|problems|samples|runs|seeds|participants|models|prompts|episodes|questions|papers|studies|benchmarks|rounds|language models))\\b`, "i") },
-  { id: "uncertainty", label: "Gives uncertainty", points: 14, re: new RegExp(`(confidence intervals?|\\bCIs?\\b|±|\\+\\/-|standard (?:error|deviation)|error bars?|\\bp\\s?[<=≤]\\s?0?\\.\\d+|\\b(?:across|over) (?:\\d+(?:\\s?[–-]\\s?\\d+)?|${NUMW}) (?:random |different )?seeds)`, "i") },
-  { id: "held-out", label: "Uses held-out or unseen tests", points: 14, re: /\b(held[- ]out|out[- ]of[- ]distribution|unseen|private test|test set|contaminat\w*|leakage)\b/i },
-  { id: "limitations", label: "States limitations", points: 14, re: /\b(limitations?|caveats?|we do not (?:claim|show)|does not (?:show|imply)|fails? (?:on|to|when)|only (?:on|in|for)|may not generali[sz]e)\b/i },
-  { id: "artifacts", label: "Shares code, data or weights", points: 10, re: /(github\.com|huggingface\.co|\b(?:code|weights|data(?:set)?) (?:is|are) (?:available|released|open)|\bopen[- ]sourced?\b|\b(?:release|publish|share)(?:s|d)? (?:our |the |all )?(?:source )?(?:code|weights|data(?:sets?)?|checkpoints)\b)/i },
+  { id: "method", label: "Describes the method", points: 12, re: /\b((?:we|the authors) (?:randomi[sz]ed|randomly assigned|analy[sz]ed|estimated?|follow(?:ed)?|synthesi[sz]ed|prepared|train|trained|fine-tune|fine-tuned|evaluate|evaluated|measure|measured|test|tested|ablate|sample|sampled|collect|collected|run|ran|present|propose|introduce|build|built|design|benchmark|survey|classify)|(?:is|are|was|were|been|being) (?:then |first |each )?(?:trained|fine-tuned|evaluated|tested|measured|benchmarked|ablated|presented|proposed|introduced)|(?:trained|fine-tuned|evaluated|tested|benchmarked) (?:on|against)|ablations?|experimental setup|our method)\b/i },
+  { id: "sample", label: "Says how much was tested", points: 12, re: new RegExp(`\\b(n\\s?=\\s?\\d+|${COUNT} (?:tasks|problems|samples|runs|seeds|participants|models|prompts|episodes|questions|papers|studies|benchmarks|rounds|language models|patients|adults|students|schools|households|counties|firms|funds|stocks|stations|sites|laboratories|labs|volunteers|respondents|subjects|floats|hospitals|countries))\\b`, "i") },
+  { id: "uncertainty", label: "Gives uncertainty", points: 14, re: new RegExp(`(confidence intervals?|\\bCIs?\\b|±|\\+\\/-|standard (?:error|deviation)|error bars?|\\bp\\s?[<=≤]\\s?0?\\.\\d+|\\bt\\s?=\\s?-?\\d|credible intervals?|\\b(?:across|over) (?:\\d+(?:\\s?[–-]\\s?\\d+)?|${NUMW}) (?:random |different )?seeds)`, "i") },
+  { id: "held-out", label: "Guards against fooling itself (held-out tests, controls, randomization, replication)", points: 14, re: /\b(held[- ]out|out[- ]of[- ]distribution|unseen|private test|test set|contaminat\w*|leakage|randomi[sz]\w+|randomly assigned|double[- ]blind\w*|blinded|pre-?registered|out[- ]of[- ]sample|reproduced|replicat(?:ion|ed)|independent (?:group|laborator\w+|labs?)|pre-?trends)\b/i },
+  { id: "limitations", label: "States limitations", points: 14, re: /\b(limitations?|caveats?|we do not (?:claim|show)|does not (?:show|imply)|fails? (?:on|to|when)|only (?:on|in|for)|may not generali[sz]e|may not apply|may differ|not powered|cannot rule out|less certain|(?:is|was|were) (?:short|small|sparse)|were excluded|imprecise)\b/i },
+  { id: "artifacts", label: "Shares code, data or weights", points: 10, re: /(github\.com|huggingface\.co|\b(?:code|weights|data(?:set)?) (?:is|are) (?:available|released|open)|\bopen[- ]sourced?\b|\b(?:release|publish|share)(?:s|d)? (?:our |the |all )?(?:source )?(?:code|weights|data(?:sets?)?|checkpoints)\b|\b(?:publicly|openly) available|\bpublic (?:archive|repository)|\breplication (?:code|package)|\bsupplementary data)/i },
 ];
-const CLAIM = /\b(we (?:show|find|found|demonstrate|prove)|demonstrat\w+|achiev\w+|outperform\w*|surpass\w*|state[- ]of[- ]the[- ]art|sota|first (?:ai|model|system|time)|breakthrough|solv(?:es|ed)|superhuman|human[- ]level|will (?:soon|replace|surpass)|(?:superintelligen\w*|agi|recursive(?:ly)? self[- ]improv\w*) (?:is|are|has|have|will|was)\b|(?:reach|achiev|buil|creat)\w* (?:agi|superintelligen\w*))\b/i;
+const CLAIM = /\b(we (?:show|find|found|demonstrate|prove)|demonstrat\w+|(?:this|these (?:results|findings|numbers|data))\s+(?:shows?|confirms?|establish\w*)\b|(?:should|must) (?:be \w+ (?:in|by|for|at) )?(?:every|all)\b|(?<!-)achiev\w+|prov(?:e|es|ed)\b|cur(?:e|es|ed)\b|doubl(?:e|es)\b|guarantee[sd]?\b|revers(?:e|es|ed)\b|(?:is|are) (?:now |officially )?solved|end\w* (?:\w+ ){0,2}(?:forever|for good)|outperform\w*|surpass\w*|state[- ]of[- ]the[- ]art|sota|first (?:ai|model|system|time)|breakthrough|solv(?:es|ed)|superhuman|human[- ]level|will (?:soon|replace|surpass)|(?:superintelligen\w*|agi|recursive(?:ly)? self[- ]improv\w*) (?:is|are|has|have|will|was)\b|(?:reach|achiev|buil|creat)\w* (?:agi|superintelligen\w*))\b/i;
 // A title or sentence that only names a topic ("Recursive self-improvement of research agents") is a subject, not a claim:
 // topic words count as a claim only with an asserting verb ("AGI is here", "achieved superintelligence").
-const HYPE = /\b(revolutionary|unprecedented|breakthrough|game[- ]chang\w+|incredible|massive|insane|mind[- ]blowing|world[- ]changing|definitely|guaranteed|inevitabl\w+|imminent|everything chang(?:es|ing)|no one is talking about|holy grail|doomsday|explosive|closing fast|palpable|utterly transformative|no longer sci-fi|existential threats?|kill us all|most consequential|no longer (?:theoretical|hypothetical|speculation|science fiction)|decoupl\w+ from (?:linear )?human)\b/gi;
+const HYPE = /\b(revolutionary|unprecedented|breakthrough|game[- ]chang\w+|incredible|massive|insane|mind[- ]blowing|world[- ]changing|definitely|guaranteed|inevitabl\w+|imminent|everything chang(?:es|ing)|no one is talking about|holy grail|doomsday|explosive|closing fast|palpable|utterly transformative|no longer sci-fi|existential threats?|kill us all|most consequential|no longer (?:theoretical|hypothetical|speculation|science fiction)|decoupl\w+ from (?:linear )?human|miracle\w*|life[- ]changing|once[- ]in[- ]a[- ]lifetime|forever|overnight|(?:\w+ )?don't want you to know)\b/gi;
 // Text written to the judge rather than the reader: a reward hack against model judges, flagged and capped here too.
 // Two kinds (REQ-035, task T032), matched on the canonical text with confusables folded (so hidden characters and
 // look-alike letters don't hide them):
@@ -239,7 +243,11 @@ function claims(sents, article = false) {
     // Backed needs every clause that makes a claim to carry its own evidence (clauses split at semicolons).
     const own = clauses(s).filter(isClaim), near = [...new Set([s, sents[i - 1], sents[i + 1]].filter(Boolean).flatMap(markersIn))];
     const backed = (own.length ? own : [s]).every((c) => backedBy(markersIn(c)));
-    out.push({ sentence: s.slice(0, 200), support: near, level: backed ? "backed" : near.length ? "partly backed" : "unbacked" });
+    // Describing what was done (method, sample size), saying where the code is, or quoting a bare number doesn't back a
+    // result: a neighbour only partly backs a claim when it compares, bounds or controls something ("we gave it to 9
+    // patients; this proves it cures migraine" and "scores rose 47%; these numbers prove it works" stay unbacked).
+    const backs = near.filter((m) => !["method", "sample", "artifacts", "numbers"].includes(m));
+    out.push({ sentence: s.slice(0, 200), support: near, level: backed ? "backed" : backs.length ? "partly backed" : "unbacked" });
   });
   return out;
 }
@@ -256,7 +264,10 @@ const notClaims = (sents) => sents.map((s) => ({ sentence: s.slice(0, 200), why:
 //     are judged by the same markers (a dataset paper earns "Says how much was tested", "Uses held-out tests" and
 //     "Shares code, data or weights" the usual way); only a survey changes the arithmetic (coverage).
 const SURVEY_TITLE = /(?::\s*an? (?:survey|review|overview)\b|^\s*an? (?:survey|review|overview) (?:of|on)\b|\bsurvey (?:of|on)\b|\b(?:systematic|literature|scoping) review\b)/i;
-const SURVEY_SELF = /\b((?:we|the authors) (?:survey|review)|this (?:survey|review)|a survey of|survey of \d|systematic review|literature review)\b/i;
+// "A survey of residents" or "we surveyed 2,000 adults" is a questionnaire, not a literature survey: "survey" followed
+// by people (optionally a count) doesn't make a paper a survey. "We survey self-improving agents" still does.
+const PEOPLE_SURVEYED = "(?:\\d[\\d,]* )?(?:[a-z-]+ )?(?:residents|adults|people|households|respondents|participants|workers|employees|users|patients|students|voters|customers|parents|teachers|doctors|nurses|farmers|managers|consumers|citizens|children|teenagers|members|volunteers)\\b";
+const SURVEY_SELF = new RegExp(`\\b((?:we|the authors) (?:survey|review)(?!ed)(?! ${PEOPLE_SURVEYED})|this (?:survey|review)|a survey of (?!${PEOPLE_SURVEYED})|survey of \\d(?![\\d,]* (?:[a-z-]+ )?(?:residents|adults|people|households|respondents|participants|patients|students|voters))|systematic review|literature review)\\b`, "i");
 const OWN_EXPERIMENT = /\b(?:we|the authors) (?:train|trained|fine-tune|fine-tuned|propose|proposed|introduce|introduced|ablate|ablated|build|built|design|designed)\b/i;
 const PAPER_KINDS = [
   { id: "survey", label: "Survey", canShow: "how many works it covers, how it organises them, how it compares their findings and which gaps it names (its coverage is its evidence)",
@@ -305,6 +316,7 @@ const EVENT = [
   { label: "Points to the record", points: 20, re: /\b(?:ordinance|bill|resolution|order|docket|case|filing)\s+(?:no\.?\s*)?[a-z]{0,4}[- ]?\d[\w-]*|\b(transcript|press release|official statement|minutes|filing|the text of)\b/i },
   { label: "Keeps what may follow apart from what happened", points: 20, re: /\b(whether|may|might|could|would|uncertain|unclear|not yet|if )\b/i },
 ];
+const SOURCED = /\baccording to (?!(?:our|my|us|me|internal)\b)(?:the |a |an )?[\w'’ -]{2,60}?(?:release|report|data|dashboard|statistics|figures|filing|survey|census|registry|records)\b|\b(?:the )?(?:[A-Z][\w'’-]+ ){1,4}(?:public )?(?:dashboard|release|census|registry) (?:shows?|showed|reports?|reported)\b/;
 const REPORT_HEDGE = /\b(whether|may|might|could|uncertain|unclear|open question|plausible|if )\b/i;
 const CITE = REPORTING[0].re;
 // Reported speech: in an article, a sentence that quotes someone's reaction ('called it "a breakthrough"') reports what
@@ -378,7 +390,9 @@ function review(input) {
   const cl = step("claims", "Find claims and what backs each one", () => claims([title, ...sents].filter(Boolean), isArticle));
   // The significance judge reads only backed claims: a claim without evidence adds no topics and no points.
   // In an article, sentences that assert or give figures with nothing behind them are unbacked too (see asserts below).
-  const cites = CITE.test(cleaned.text) || (!!input.url && /arxiv\.org\/abs\/|doi\.org\//.test(String(input.url)));
+  // Attributing figures to a named outside source ("according to the statistics office's release", "the county's public
+  // dashboard") is citing it, for reporting; first-person sources ("according to our data") are not.
+  const cites = CITE.test(cleaned.text) || SOURCED.test(cleaned.text) || (!!input.url && /arxiv\.org\/abs\/|doi\.org\//.test(String(input.url)));
   const eventReport = isArticle && !cites && cl.length === 0 && EVENT_TOPIC.test(cleaned.text);
   const assertList = isArticle ? sents.filter((x) => !isClaim(unquote(x)) && !(eventReport && EVENT_ATTRIB.test(x) && !analysis.analyze({ title: x }, { kinds: [source] }).claims.some((c) => c !== "talks about AGI or superintelligence")) && ((ASSERT.test(x) && !REPORT_HEDGE.test(x) && !CITE.test(x) && !markersIn(x).length) || (!cites && !eventReport && FIGURE.test(x)))) : [];
   const unbackedSet = new Set([...cl.filter((c) => c.level !== "backed").map((c) => c.sentence), ...assertList.map((x) => x.slice(0, 200))]);

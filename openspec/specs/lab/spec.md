@@ -23,5 +23,5 @@ The judges, the decision policy and the toy experiments SHOULD be measured on fi
 Source: `specs/002-research-layer/spec.md`, proposed, not approved: needs both partners. Code: `scripts/bench.js`, `bench/`; `lib/metrics.js` (balanced accuracy, MCC, kappa, Wilson interval, majority baseline) on every labelled classifier in the bench, the verification ratchet's held-out gate (`heldoutGate`), person-labelled verdicts on the Review desk and the control room (`honestyBlock`).
 
 #### Scenario: REQ-029 is checked
-- **WHEN** the checks named in docs/SPEC_TRACE.md run (preflight "Benchmarks", "Accuracy paradox guard" (`test/metrics-property-unit.js`, 800 generated sets); e2e "REQ-029" in the control room; real-data quality report `scripts/quality.js` (unit: quality, 3 checks))
+- **WHEN** the checks named in docs/SPEC_TRACE.md run (preflight "Benchmarks", "Accuracy paradox guard" (`test/metrics-property-unit.js`, 800 generated sets); e2e "REQ-029" in the control room; real-data quality report `scripts/quality.js` (unit: quality, 3 checks); human ground truth: blind labels `/m/labels`, `modules/review/agreement.js` (unit: agreement, 12 checks))
 - **THEN** they pass, as preflight and the browser test require

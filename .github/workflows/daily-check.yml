@@ -1,0 +1,50 @@
+# The full check once a day, even when nobody pushes: preflight, the benchmark ratchet and the two-user browser test on
+# synthetic data, on SQLite and on Postgres. Catches what rots without a commit (sample dates ageing out of the feed's
+# window, a dependency or a free API changing). Once a day keeps to the free-tier rule (no cron more often than daily).
+# GitHub runs scheduled workflows only from the default branch, so the schedule starts once this file is on main; until
+# then it runs on pushes to feature/fix branches and by hand (Actions → Daily check → Run workflow).
+name: Daily check
+on:
+  schedule:
+    - cron: "43 12 * * *"
+  workflow_dispatch:
+  push:
+    branches: ["feature/**", "fix/**"]
+jobs:
+  full:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_PASSWORD: pg, POSTGRES_DB: si_check }
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm install --no-save playwright && npx playwright install --with-deps chromium
+      - run: npm run preflight
+      - run: npm run bench
+      # Preflight and the bench run in the default profile (module debt in the other profiles is a bench ratchet);
+      # the browser tests run the extended version, which has every feature on.
+      - name: Browser test on SQLite
+        env: { SITE_PROFILE: extended }
+        run: |
+          SITE_PROFILE=extended npm run build
+          npm run dev:sample > /tmp/sqlite.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf localhost:3200 >/dev/null && break; sleep 1; done
+          npm test
+      - name: Browser test on Postgres
+        # The password comes from PGPASSWORD (node-postgres reads it), so no credential sits in a URL.
+        env: { SITE_PROFILE: extended, DATABASE_URL: "postgres://postgres@localhost:5432/si_check", PGPASSWORD: pg }
+        run: |
+          npm run dev:sample:pg > /tmp/pg.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf localhost:3300 >/dev/null && break; sleep 1; done
+          BASE=http://localhost:3300 npm test
+      - name: Server logs on failure
+        if: failure()
+        run: tail -50 /tmp/sqlite.log /tmp/pg.log || true

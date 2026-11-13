@@ -4,7 +4,7 @@
 
 One page that points at every skill, spec, check, measure and pitfall in the repo. It is generated from the files it links to, so it can't drift: [scripts/hub.js](../scripts/hub.js) reads them, `npm run hub` rewrites this page, and preflight's **Hub** check fails when it is stale or a link breaks.
 
-**Contents:** [Start here](#start-here) · [Specs](#specs) · [Skills (17)](#skills) · [Subagents (3)](#subagents) · [Spec Kit (9)](#spec-kit-commands) · [Checks (26)](#checks) · [Measures (70)](#measures) · [Tips and pitfalls (43)](#tips-and-pitfalls) · [Where things live](#where-things-live) · [Open decisions](#open-decisions-for-the-humans)
+**Contents:** [Start here](#start-here) · [Specs](#specs) · [Skills (17)](#skills) · [Subagents (3)](#subagents) · [Spec Kit (9)](#spec-kit-commands) · [Checks (26)](#checks) · [Measures (80)](#measures) · [Tips and pitfalls (43)](#tips-and-pitfalls) · [Where things live](#where-things-live) · [Open decisions](#open-decisions-for-the-humans)
 
 ## Start here
 
@@ -20,7 +20,7 @@ One page that points at every skill, spec, check, measure and pitfall in the rep
 | Spec | Status | Requirements | Files | Tasks (open / done) |
 | --- | --- | --- | --- | --- |
 | [001-superintelligence-homepage](../specs/001-superintelligence-homepage/spec.md): Superintelligence Homepage | Draft (shared bake-off spec; both partners build against it) | REQ-001..REQ-020 (20) | [spec](../specs/001-superintelligence-homepage/spec.md) · [checklist: requirements](../specs/001-superintelligence-homepage/checklists/requirements.md) | no tasks.md |
-| [002-research-layer](../specs/002-research-layer/spec.md): Research layer (extended version) | Proposed, not approved. | REQ-021..REQ-034 (14) | [spec](../specs/002-research-layer/spec.md) | no tasks.md |
+| [002-research-layer](../specs/002-research-layer/spec.md): Research layer (extended version) | Proposed, not approved. | REQ-021..REQ-035 (15) | [spec](../specs/002-research-layer/spec.md) | no tasks.md |
 | [003-judge-fidelity](../specs/003-judge-fidelity/spec.md): Judge fidelity and stability (extended version) | Proposed, not approved. | REQ-032..REQ-040 (9) | [spec](../specs/003-judge-fidelity/spec.md) · [plan](../specs/003-judge-fidelity/plan.md) · [tasks](../specs/003-judge-fidelity/tasks.md) · [research](../specs/003-judge-fidelity/research.md) | 6 / 24 (agent 2/9, rules 2/15, people 2/0) |
 | [004-parity](../specs/004-parity/spec.md): Feature parity with AI-news and research apps (extended version) | Proposed, not approved. | REQ-041..REQ-052 (12) | [spec](../specs/004-parity/spec.md) · [plan](../specs/004-parity/plan.md) · [tasks](../specs/004-parity/tasks.md) | 25 / 1 (agent 18/1, rules 3/0, people 4/0) |
 | [005-appearance-and-publishing](../specs/005-appearance-and-publishing/spec.md): Appearance, CMS delivery and content generation (extended version) | Proposed, not approved. | REQ-053..REQ-055 (3) | [spec](../specs/005-appearance-and-publishing/spec.md) · [tasks](../specs/005-appearance-and-publishing/tasks.md) | 4 / 7 (agent 2/7, people 2/0) |
@@ -164,7 +164,7 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | No secrets | No secrets in tracked files |
 | No Twitter/X sources | No Twitter/X sources |
 | No Twitter/X in catalog / Content desk / Editorial publishing / Appearance and publishing / Content management / Research foundations / Vocabulary contracts / Entity resolution / Entity grouping / Entity resolution/grouping / Product planning / Term properties / Graph logic / Pipeline quality / Story paging / Pipeline quality / paging / Accuracy paradox guard / Type mappings / Measurement and types / UI dates / Analysis rules | No Twitter/X in the source catalog either; analysis rules behave |
-| Modules | kernel boots, boundaries hold, blocks, views and judges are valid |
+| Modules | kernel boots, boundaries hold, blocks, views and judges are valid Strict for the profile this shell runs (as before). |
 | Codebase map | every API call a page makes has a route |
 | Unslop | UI patterns that read as AI-generated (agent-kit/skills/ui-design) |
 | No ignored source files | Nothing the code needs is git-ignored (a fresh clone in CI must have every module file). |
@@ -217,6 +217,7 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | `npm run test:lineage` | `LINEAGE_FULL=1 node --no-warnings test/lineage-unit.js` |
 | `npm run lab` | Lab worker: runs the examples and the autoresearch ratchet off the web server (laptop, Mac mini, CI, a sandbox). |
 | `npm run spec:status` | Measure the shared spec from acceptance evidence. |
+| `npm run evidence:panel` | Evidence for the two-model panel (REQ-034 proposed, REQ-029): run each model in PANEL_MODELS on every labelled synthetic piece… |
 | `npm run bench` | Benchmarks with a ratchet: every metric is measured on fixed synthetic sets, compared with bench/baseline.json, and reported as uplift. |
 | `npm run watch` | Daily paper watcher: find new superintelligence, interpretability and self-improvement papers on arXiv, judge each with the Review desk (guarded… |
 | `npm run project:sync` | Keep the Project tracker in step with the plan and the agents (REQ-030, proposed): one issue each for |
@@ -259,7 +260,7 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 
 ## Measures
 
-Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/README.md](../bench/README.md)): no metric may get worse than [bench/baseline.json](../bench/baseline.json) (updated 2026-11-12) allows. "info" metrics are reported, never failed.
+Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/README.md](../bench/README.md)): no metric may get worse than [bench/baseline.json](../bench/baseline.json) (updated 2026-11-13) allows. "info" metrics are reported, never failed.
 
 | Metric | Better | Baseline | What it measures |
 | --- | --- | --- | --- |
@@ -273,7 +274,7 @@ Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/READM
 | `review.adversary_gain_guarded` | lower (tol 0.5) | 0 | points the guarded score gains under the attack on the unguarded judge |
 | `review.whitebox_gain` | lower (tol 0.5) | 0.222 | points an adversary attacking the guarded score gains |
 | `review.adversary_gain_naive` | info | 35.444 | points the same attack gains on the unguarded judge (the attack is real) |
-| `review.ms_per_doc` | info | 21.4 | time to review one item |
+| `review.ms_per_doc` | info | 23.7 | time to review one item |
 | `review.fidelity_accuracy` | higher | 1 | paraphrase-fidelity checks right on bench/fidelity-cases.json (52 synthetic pairs: pass/fail and the expected check) |
 | `review.verdict_balanced_accuracy` | higher | 1 | credible vs not credible verdicts: mean recall over the classes present (immune to class imbalance) |
 | `review.verdict_mcc` | higher (tol 0.01) | 1 | credible vs not credible verdicts: Matthews correlation (0 = no better than a constant guess, 1 = perfect) |
@@ -292,7 +293,7 @@ Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/READM
 | `interp.steering_selectivity` | higher (tol 0.5) | 8.28 | target gain / collateral change when clamping one SAE latent to 4x |
 | `interp.steering_exactness` | lower | 0 | output error on unedited inputs with the SAE error added back (0 = exact) |
 | `papers.verdict_seed_stability` | higher | 0.909 | share of paper-example verdicts that hold on 3 other seed blocks (11 examples) |
-| `papers.slowest_example_ms` | info | 1251 | slowest paper example (baseline and variant); each toy must stay under 2 seconds |
+| `papers.slowest_example_ms` | info | 1301 | slowest paper example (baseline and variant); each toy must stay under 2 seconds |
 | `papers.hidden_eval_hack_drop` | higher (tol 0.02) | 0.185 | drop in the quirk share when a self-improving agent is judged on hidden evaluations (arXiv 2609.26457 toy) |
 | `papers.recompute_evasion` | lower | 0 | undetected exploits with independent recomputation (arXiv 2609.28614 toy) |
 | `papers.cosine_sae_gain` | higher (tol 1) | 8 | extra true features a cosine-scored SAE recovers when input sizes vary (arXiv 2606.15054 toy) |
@@ -324,6 +325,16 @@ Benchmarks with a ratchet ([scripts/bench.js](../scripts/bench.js), [bench/READM
 | `verification.heldout_gap_balanced_accuracy` | higher | 1 | fidelity gap on the held-out split: mean recall over the classes present (immune to class imbalance) |
 | `verification.heldout_gap_mcc` | higher (tol 0.01) | 1 | fidelity gap on the held-out split: Matthews correlation (0 = no better than a constant guess, 1 = perfect) |
 | `verification.heldout_gap_paradox_free` | higher | 1 | fidelity gap on the held-out split: 1 when it removes at least 20% of a majority guess's errors and recognises every class |
+| `modules.boundary_violations_other_profiles` | lower | 34 | cross-module imports and missing READMEs in the extended and research profiles (npm run modules -- check with SITE_PROFILE set lists them) |
+| `domains.set_verdict_accuracy` | higher | 1 | set: verdict right on 42 pieces from 7 fields |
+| `domains.set_credibility_auc` | higher | 1 | set: credible pieces out-rank the rest on credibility |
+| `domains.set_false_alarms` | lower | 0 | set: credible pieces called doubtful |
+| `domains.holdout_verdict_accuracy` | higher | 1 | holdout: verdict right on 30 pieces from 5 fields |
+| `domains.holdout_credibility_auc` | higher | 1 | holdout: credible pieces out-rank the rest on credibility |
+| `domains.holdout_false_alarms` | lower | 0 | holdout: credible pieces called doubtful |
+| `domains.overreach_verdict_accuracy` | higher | 1 | overreach: verdict right on 18 pieces from 14 fields |
+| `domains.overreach_credibility_auc` | higher | 1 | overreach: credible pieces out-rank the rest on credibility |
+| `domains.overreach_false_alarms` | lower | 0 | overreach: credible pieces called doubtful |
 | `analysis.scope_accuracy` | higher | 1 | scope decisions on the labelled spec fixtures (10 items) |
 | `analysis.scope_balanced_accuracy` | higher | 1 | in scope vs out of scope on the spec fixtures: mean recall over the classes present (immune to class imbalance) |
 | `analysis.scope_mcc` | higher (tol 0.01) | 1 | in scope vs out of scope on the spec fixtures: Matthews correlation (0 = no better than a constant guess, 1 = perfect) |
@@ -455,6 +466,7 @@ Quoted from the repo's own pitfall, trap, troubleshooting and habits sections (n
 - [docs/START_HERE.md](START_HERE.md): The current checkout continues on `feature/si-combined`.
 - [docs/TESTING_ACCESS.md](TESTING_ACCESS.md): Run `npm run demo` from the repository and open http://localhost:3200/?signin=1.
 - [docs/TRAINING.md](TRAINING.md): Every loop that trains, tunes or self-improves something in this repo, in one place.
+- [docs/TRANSFER.md](TRANSFER.md): A study of how far the research layer's judge (`modules/review/review.js`) transfers beyond AI news, what broke, what was fixed and what is still…
 - [docs/UI_REVIEW_2026-11-09.md](UI_REVIEW_2026-11-09.md): Branch `feature/ui-review-2026-11-09`, from `feature/john-combined-2026-11-10` (2b9377f).
 - [docs/V0.md](V0.md): John builds his version of the homepage experience in **v0**; Matt builds his in **Claude**.
 - [docs/VERIFICATION.md](VERIFICATION.md): 2026-11-09, feature branch only.
@@ -480,7 +492,7 @@ Quoted from the repo's own pitfall, trap, troubleshooting and habits sections (n
 - [bench/README.md](../bench/README.md): `npm run bench` measures the judges on fixed, synthetic, labelled sets and compares every metric with `baseline.json`.
 - [proofs/README.md](../proofs/README.md): REQ-038, task T005 (specs/003-judge-fidelity/tasks.md); T051 fills in the evaluator and the differential test.
 
-**Also**: [docs/snapshots/](snapshots) (3 build snapshots), [proofs/](../proofs) (`Coordination.lean`, `CoordinationSpec.lean`, `FinalCheck.lean`, `Judge.lean`, `formalization.yaml`, `lake-manifest.json`, `lakefile.lean`, `lean-toolchain`, `vectors.json`), [workflows](../.github/workflows) (`interop.yml`, `paper-watch.yml`, `preflight.yml`), the codebase map (`npm run codemap -- <question>`) and the [MCP server](../agent-kit/mcp/server.js).
+**Also**: [docs/snapshots/](snapshots) (3 build snapshots), [proofs/](../proofs) (`Coordination.lean`, `CoordinationSpec.lean`, `FinalCheck.lean`, `Judge.lean`, `formalization.yaml`, `lake-manifest.json`, `lakefile.lean`, `lean-toolchain`, `vectors.json`), [workflows](../.github/workflows) (`daily-check.yml`, `interop.yml`, `paper-watch.yml`, `preflight.yml`), the codebase map (`npm run codemap -- <question>`) and the [MCP server](../agent-kit/mcp/server.js).
 
 ## Open decisions for the humans
 

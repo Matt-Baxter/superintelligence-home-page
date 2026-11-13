@@ -1,15 +1,14 @@
 // Review routes (docs/NAMING.md: /api/review/* for signed-in users, /api/admin/review/* for admins).
-const fs = require("fs"), path = require("path");
 const R = require("./review");
 const { saveReview } = require("./store");
 const SAMPLES = require("./samples.json");
 const { ontology } = require("../../lib/tagger");
 const feeds = require("../../lib/feeds");
 
-const CONCEPTS = (() => { try { return JSON.parse(fs.readFileSync(path.join(__dirname, "..", "learn", "data", "concepts.json"), "utf8")).concepts; } catch { return []; } })();
-
 const M = require("../../lib/metrics");
-module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, notFound }) {
+module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, notFound, labExamples = () => [], concepts = () => [] }) {
+  // Learn's concept graph, when that module is on (module.js passes it through the learn.concepts point).
+  const CONCEPTS = concepts();
   const input = (b = {}) => {
     const x = { kind: str(b.kind, 20), title: str(b.title, 300), text: String(b.text || "").slice(0, 20000), authors: str(b.authors, 600), url: str(b.url, 500) };
     if (!x.title && !x.text.trim()) bad("Give a title or paste some text.");
@@ -53,6 +52,41 @@ module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, no
     const edges = await db.all("SELECT rel, dst FROM knowledge_edges WHERE src = ? ORDER BY rel, dst", r.qid);
     return { doc: { ...brief(r), authors: r.authors, url: r.url, excerpt: r.excerpt, label_note: r.label_note }, review: JSON.parse(r.result), edges };
   }));
+  // ---------- blind labels (REQ-027, REQ-029) ----------
+  // A person says whether they'd rely on a piece without seeing the judge's verdict, its credibility or its source
+  // (authors, links and organisation names are masked the way the model panel masks them). The first answer stands;
+  // only then is the verdict shown. Agreement between people, and between the judge and people, is on /stats.
+  const { mask } = require("./panel"), A = require("./agreement");
+  app.get("/api/admin/review/blind/next", auth, admin, wrap(async (req) => {
+    const skip = String(req.query.skip || "").split(",").map(Number).filter(Number.isInteger).slice(0, 50);
+    const not = `id NOT IN (SELECT doc_id FROM review_blind WHERE user_id = ?)${skip.length ? ` AND id NOT IN (${skip.map(() => "?").join(",")})` : ""}`;
+    // Pieces someone else has labelled come first, so labels overlap and agreement can be measured.
+    const r = await db.get(`SELECT id, kind, title, excerpt FROM review_docs WHERE ${not} AND id IN (SELECT doc_id FROM review_blind) ORDER BY id DESC LIMIT 1`, req.user.id, ...skip)
+      || await db.get(`SELECT id, kind, title, excerpt FROM review_docs WHERE ${not} ORDER BY id DESC LIMIT 1`, req.user.id, ...skip);
+    const left = await db.get("SELECT COUNT(*) AS n FROM review_docs WHERE id NOT IN (SELECT doc_id FROM review_blind WHERE user_id = ?)", req.user.id);
+    const mine = await db.get("SELECT COUNT(*) AS n FROM review_blind WHERE user_id = ?", req.user.id);
+    return { doc: r ? { id: r.id, kind: r.kind, title: mask(r.title), excerpt: mask(r.excerpt) } : null, left: Number(left.n), mine: Number(mine.n) };
+  }));
+  // The unmasked source, for a person who needs it to decide; the label then records that the source was seen.
+  app.get("/api/admin/review/blind/:id/source", auth, admin, wrap(async (req) => {
+    const r = await db.get("SELECT title, authors, url, excerpt FROM review_docs WHERE id = ?", Number(req.params.id)); if (!r) notFound("That piece");
+    return { title: r.title, authors: r.authors, url: r.url, excerpt: r.excerpt };
+  }));
+  app.post("/api/admin/review/blind/:id", auth, admin, wrap(async (req) => {
+    const credible = str(req.body?.credible, 10); if (!["yes", "no", "unsure"].includes(credible)) bad("credible is yes, no or unsure.");
+    const id = Number(req.params.id), r = await db.get("SELECT id, verdict, credibility FROM review_docs WHERE id = ?", id); if (!r) notFound("That piece");
+    if (await db.get("SELECT id FROM review_blind WHERE doc_id = ? AND user_id = ?", id, req.user.id)) bad("You've already labelled this piece. First answers stand, so the labels stay blind.");
+    await db.run("INSERT INTO review_blind (doc_id, user_id, credible, unmasked, note, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+      id, req.user.id, credible, req.body?.unmasked ? 1 : 0, str(req.body?.note || "", 300), db.now());
+    const judge = A.judgeLabel(r.verdict);
+    return { verdict: r.verdict, credibility: r.credibility, judge, agree: credible === "unsure" ? null : credible === judge };
+  }));
+  app.get("/api/admin/review/blind/stats", auth, admin, wrap(async () => {
+    const rows = await db.all("SELECT b.doc_id AS doc, b.user_id AS user, u.display_name AS name, b.credible, d.verdict FROM review_blind b JOIN review_docs d ON d.id = b.doc_id JOIN users u ON u.id = b.user_id ORDER BY b.id");
+    const unmasked = await db.get("SELECT COUNT(*) AS n FROM review_blind WHERE unmasked = 1");
+    return { ...A.stats(rows), unmasked: Number(unmasked.n) };
+  }));
+
   // A person agrees or disagrees with the verdict. Labels are the calibration data for the judges (see /metrics).
   app.post("/api/admin/review/docs/:id/label", auth, admin, wrap(async (req) => {
     const label = str(req.body?.label, 20); if (!["agree", "disagree"].includes(label)) bad("label is agree or disagree.");
@@ -102,7 +136,6 @@ module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, no
 
   // Topic dossiers: a traced analysis of everything on one topic, with a blog draft, short posts and a video storyboard.
   const D = require("./dossier");
-  const labExamples = () => { try { const L = require("../lab/lab"), pre = require("../lab/results.json").results; return L.EX.examples.filter((e) => pre[e.id]).map((e) => ({ ...e, verdict: pre[e.id].verdict })); } catch { return []; } };
   const dossierFor = async (topic) => { if (!ontology.topics.some((t) => t.id === topic)) notFound("That topic"); return D.analyse(await D.gather(db, topic), { examples: labExamples(), concepts: CONCEPTS }); };
   const site = (req) => (process.env.SITE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/$/, "");
   app.get("/api/review/dossier/:topic", auth, wrap(async (req) => {

@@ -77,6 +77,29 @@ const serve = (port, env) => new Promise((resolve, reject) => {
     const cpg = await fetch("http://localhost:3291/m/control", { headers: { cookie: adminC } });
     ok(cpg.ok && /Research control room/.test(await cpg.text()), "the control room page is served at /m/control");
 
+    console.log("Blind labels");
+    const get = async (path, cookie) => { const x = await fetch(`http://localhost:3291${path}`, { headers: { cookie } }); return { status: x.status, body: await x.json().catch(() => ({})) }; };
+    const nx = await get("/api/admin/review/blind/next", adminC);
+    ok(nx.body.doc && nx.body.doc.title && !("verdict" in nx.body.doc) && !("credibility" in nx.body.doc) && !("url" in nx.body.doc) && !("authors" in nx.body.doc), "the next piece comes without its verdict, credibility, link or authors");
+    const lab = await (await post(`/api/admin/review/blind/${nx.body.doc.id}`, { credible: "yes", note: "sample note (test data)" }, adminC)).json();
+    ok(lab.verdict && typeof lab.credibility === "number" && ["yes", "no"].includes(lab.judge) && typeof lab.agree === "boolean", "answering reveals the judge's verdict and whether you agree");
+    ok((await post(`/api/admin/review/blind/${nx.body.doc.id}`, { credible: "no" }, adminC)).status === 400, "a second answer on the same piece is refused: first answers stand");
+    ok((await get("/api/admin/review/blind/next", adminC)).body.doc?.id !== nx.body.doc.id, "a labelled piece isn't offered again");
+    const bs = await get("/api/admin/review/blind/stats", adminC);
+    ok(bs.body.pieces === 1 && bs.body.people.length === 1 && bs.body.judge[0].n === 1 && bs.body.notes.length, "stats count the label and say how few shared pieces there are");
+    ok((await get("/api/admin/review/blind/next", readerC)).status === 403, "a reader who isn't an admin can't label");
+    const lpg = await fetch("http://localhost:3291/m/labels", { headers: { cookie: adminC } });
+    ok(lpg.ok && /Blind labels/.test(await lpg.text()), "the labels page is served at /m/labels");
+
+    console.log("Hidden research site, signed in (RESEARCH_PUBLIC unset)");
+    const signAt = async (port, u) => { const x = await fetch(`http://localhost:${port}/api/signup`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ username: u, password: "correct-horse-9" }) }); return (x.headers.get("set-cookie") || "").split(";")[0]; };
+    const hAdmin = await signAt(3292, "hidden-admin"), hReader = await signAt(3292, "hidden-reader");
+    const hcrit = await fetch("http://localhost:3292/research/criteria", { headers: { cookie: hAdmin } });
+    ok(hcrit.ok && /How we judge/.test(await hcrit.text()) && /noindex/.test(hcrit.headers.get("x-robots-tag") || ""), "an admin sees the hidden research pages (the session is read on /research), still noindex");
+    ok((await fetch("http://localhost:3292/research/criteria", { headers: { cookie: hReader } })).status === 404, "a signed-in reader who isn't an admin still gets 404");
+    const trp = await (await fetch("http://localhost:3292/research/transfer", { headers: { cookie: hAdmin } })).text();
+    ok(/Does the judge work outside AI/.test(trp) && /42 of 42 right/.test(trp) && /30 of 30 right/.test(trp) && /18 of 18 right/.test(trp) && !/<b>Wrong:<\/b>/.test(trp), "the transfer page re-runs the judge on all three cross-field sets: every verdict right");
+
     console.log("Spec version takes the research feed as a source (SITE_PROFILE=spec)");
     delete process.env.DATABASE_URL; delete process.env.POSTGRES_URL;
     process.env.DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "si-spec-")); process.env.SITE_PROFILE = "spec"; process.env.FETCH_MINUTES = "0";

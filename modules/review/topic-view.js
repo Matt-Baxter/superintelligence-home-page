@@ -11,11 +11,9 @@ const SUPPORT_RULE = { "si.let": [{ need: { "-": [2, { min: [2, { var: "credible
     { "==": [{ var: "need" }, 0] }, "Needs a toy check of a credible paper that held up to reach 'some support'.",
     { cat: ["Needs ", { var: "need" }, { if: [{ "==": [{ var: "need" }, 1] }, " more credible paper", " more credible papers"] }, " and a toy check that held up to reach 'some support'."] }] }] };
 
-const fs = require("fs"), path = require("path");
-const labExamples = () => { try { const L = require("../lab/lab"), pre = require("../lab/results.json").results; return L.EX.examples.filter((e) => pre[e.id]).map((e) => ({ ...e, verdict: pre[e.id].verdict })); } catch { return []; } };
-const concepts = () => { try { return JSON.parse(fs.readFileSync(path.join(__dirname, "..", "learn", "data", "concepts.json"), "utf8")).concepts; } catch { return []; } };
 
-async function build({ db }, topic, { examples = labExamples(), concepts: cs = concepts() } = {}) {
+// Lab examples and Learn concepts come from module.js through the lab.examples and learn.concepts points (empty when off).
+async function build({ db, labExamples = () => [], concepts = () => [] }, topic, { examples = labExamples(), concepts: cs = concepts() } = {}) {
   const d = D.analyse(await D.gather(db, topic), { examples, concepts: cs });
   const papers = d.papers.filter((p) => p.kind === "paper"), pieces = d.papers.filter((p) => p.kind !== "paper");
   const line = (p) => [p.verdict, `credibility ${p.credibility}/100`, p.grade ? `source grade ${p.grade}` : "", p.survey ? "a survey" : ""].filter(Boolean).join(" · ");

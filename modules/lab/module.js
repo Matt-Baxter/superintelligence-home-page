@@ -6,6 +6,12 @@ module.exports = {
   version: "0.1.0",
   description: "Idea -> reproduction -> hypothesis experiments (recursive self-improvement, Goodhart, weak-to-strong, scaling), a self-improving decision gym, intent routing and an autoresearch ratchet.",
   requires: ["decision"],
+  // Lab examples that have a precomputed result, with their verdict, for other modules' dossiers.
+  register(env) {
+    env.registerExtensionPoint("lab.examples", () => ({
+      list: () => { try { const L = require("./lab"), pre = require("./results.json").results; return L.EX.examples.filter((e) => pre[e.id]).map((e) => ({ ...e, verdict: pre[e.id].verdict })); } catch { return []; } },
+    }));
+  },
   setup(ctx) {
     ctx.point("db.schema").addSql(`
 CREATE TABLE IF NOT EXISTS lab_runs (id \${ID}, example_id TEXT NOT NULL, kind TEXT NOT NULL, proposer TEXT DEFAULT 'deterministic', metric TEXT DEFAULT '',

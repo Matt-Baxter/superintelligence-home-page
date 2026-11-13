@@ -72,12 +72,15 @@ async function judgeWith(model, text) {
   const main = await run(masked, base);
   const high = await run(masked, rev, PRESTIGE.high), low = await run(masked, mid, PRESTIGE.low);
   const calm = await run(neutralise(masked), rev);
-  const prestige = Math.abs(high.credibility - low.credibility), wording = Math.abs(main.credibility - calm.credibility);
+  // Wording sensitivity compares the evidence found (rigor), not credibility: swapping "breakthrough" for "notable"
+  // legitimately lowers hype, but it mustn't change which checks a model says the text meets. (Measured on
+  // credibility, a model applying the published rules exactly was set aside on hype-heavy pieces.)
+  const prestige = Math.abs(high.credibility - low.credibility), wording = Math.abs(main.rigor - calm.rigor);
   const biased = [prestige > LIMITS.prestige && `prestige sensitivity ${prestige} (limit ${LIMITS.prestige})`, wording > LIMITS.wording && `wording sensitivity ${wording} (limit ${LIMITS.wording})`].filter(Boolean);
   return { id: model.id, model: model.model, kept: main.kept, credibility: main.credibility, rigor: main.rigor, hype: main.hype, quotesDropped: main.dropped.length, reason: main.reason, sensitivity: { prestige, wording }, biased };
 }
 
-const verdictFor = (score, credibility, flags) => VERDICTS.find((v) => v.when(score, credibility, flags));
+const verdictFor = (score, credibility, flags = {}) => VERDICTS.find((v) => v.when(score, credibility, flags));
 
 // ---------- the advisor (a bigger model that guides, never scores) ----------
 // When the efficient models disagree, a bigger model reads the same masked text and each judge's verified checks and
@@ -116,15 +119,22 @@ async function panel({ text, rules, models, advisor = null }) {
     if (spread <= LIMITS.agree && same) { status = "agreed"; credibility = Math.round([...cs, rules.credibility].reduce((a, b) => a + b, 0) / (cs.length + 1)); rule = `models agree (spread ${spread}, same verdict): mean of the models and the rules judge`; }
     else { status = "disagreed"; credibility = Math.min(...cs, rules.credibility); needsPerson = true; rule = `models disagree (spread ${spread}${same ? "" : ", different verdicts"}): the most conservative credibility, sent to a person`; }
   }
-  if (rules.withdrawn) { credibility = Math.min(10, credibility); needsPerson = true; }
-  const v = verdictFor(rules.score, credibility, rules);
+  // The rules judge's hard stops are floors the models can't lift: a piece that says it was withdrawn or retracted,
+  // or that addresses the judge, keeps the rules judge's (capped) credibility and verdict, whatever the models say.
+  const hardStop = rules.withdrawn || (rules.guards || []).some((g) => g.id === "prompt-injection" && g.fired);
+  if (hardStop) { needsPerson = true; if (credibility > rules.credibility) { credibility = rules.credibility; rule += "; capped at the rules judge's credibility because the text says it was withdrawn or addresses the judge"; } }
   // Escalate to the advisor when the models disagree, or agree with each other but sit far from the rules judge.
   let advice = null;
   const far = status === "agreed" && Math.abs(usable.reduce((a, j) => a + j.credibility, 0) / usable.length - rules.credibility) > LIMITS.escalate;
+  // Models agreeing with each other far from the rules judge always go to a person, with or without an advisor, and
+  // until a person decides the stored credibility is the more conservative one, as when the models disagree. (Averaged
+  // in, two models that lack the rules judge's rubrics turned 13 of 104 labelled pieces' verdicts wrong.)
+  if (far) { needsPerson = true; credibility = Math.min(credibility, rules.credibility, ...usable.map((j) => j.credibility)); rule += `; far from the rules judge (more than ${LIMITS.escalate}): the more conservative credibility until a person decides`; }
   if (advisor && (status === "disagreed" || far)) {
-    try { advice = await advise(advisor, text, judges); if (far) needsPerson = true; }
+    try { advice = await advise(advisor, text, judges); }
     catch (e) { errors.push({ id: advisor.id, error: `advisor: ${String(e.message).slice(0, 180)}` }); }
   }
+  const v = verdictFor(rules.score, credibility, { withdrawn: !!rules.withdrawn });
   return { status, credibility, verdict: v.id, verdictRule: v.rule, rule, needsPerson, judges, setAside, errors, advice, limits: LIMITS, at: new Date().toISOString() };
 }
 

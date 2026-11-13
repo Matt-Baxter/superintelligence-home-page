@@ -68,6 +68,8 @@ try { const out = sh("node test/analysis-unit.js").trim(); ok("Analysis rules", 
 catch (e) { fail("Analysis rules", String(e.stderr || e.message).split("\n").find((l) => /Assertion|Error/.test(l)) || "failed"); }
 
 // 5b2. Modules: kernel boots, boundaries hold, blocks, views and judges are valid
+// Strict for the profile this shell runs (as before). Module boundaries in the other profiles are a ratchet in the
+// benchmark ("modules.boundary_violations_other_profiles", may not grow), so known debt is visible and can only shrink.
 try { sh("node test/kernel-unit.js"); ok("Modules", sh("node scripts/modules.js check").trim() + "; kernel unit checks passed"); }
 catch (e) { fail("Modules", String(e.stderr || e.message).trim().split("\n").slice(0, 4).join(" ")); }
 
@@ -110,7 +112,7 @@ try {
 try {
   sh("node test/spec-status-unit.js"); sh("node test/sync-source-unit.js"); sh("node --no-warnings test/scope-admission.js");
   sh("node test/expr-unit.js"); sh("node test/lab-unit.js"); sh("node test/review-unit.js"); sh("node test/papers-unit.js"); sh("node test/si-rubric-unit.js"); sh("node test/fulltext-unit.js"); sh("node test/research-map-unit.js"); sh("node test/agent-ui-unit.js"); sh("node test/watch-unit.js"); sh("node test/project-sync-unit.js"); sh("node test/dossier-unit.js"); sh("node test/sources-unit.js"); sh("node test/panel-unit.js"); sh("node test/quality-unit.js"); sh("node --no-warnings test/research-feed.js"); sh("node --no-warnings test/rigor-badge.js");
-  sh("node test/project-specs-unit.js");
+  sh("node test/project-specs-unit.js"); sh("node test/meta-unit.js"); sh("node test/agreement-unit.js");
   sh("node test/verification-unit.js");
   sh("node --no-warnings test/lineage-unit.js");
   const ex = sh("node scripts/expr-check.js --only=node").trim().split("\n")[0].replace(/^✓ node\s+/, "");

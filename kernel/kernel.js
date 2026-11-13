@@ -63,7 +63,7 @@ function createKernel({ enabled, modulesDir = MODULES_DIR, extraPoints = {} } = 
   };
 
   // Kernel-owned extension points. Each keeps its contributions in a list the kernel (or core code) reads.
-  const store = { routes: [], nav: [], views: new Map(), schema: [], columns: [], prune: [], formats: [], signals: [], taggers: [], starts: [] };
+  const store = { routes: [], nav: [], views: new Map(), schema: [], columns: [], prune: [], formats: [], signals: [], taggers: [], starts: [], actions: [] };
   declare("kernel", "http.routes", (mod) => ({ add: (mount) => store.routes.push({ module: mod, mount }) }));
   declare("kernel", "ui.nav", (mod) => ({ add: (item) => store.nav.push({ order: 50, ...item, module: mod }) }));
   declare("kernel", "ui.views", (mod) => ({ add: (name, view) => { if (store.views.has(name)) throw new Error(`View "${name}" registered twice`); store.views.set(name, { title: name, admin: false, ...view, name, module: mod }); } }));
@@ -72,6 +72,9 @@ function createKernel({ enabled, modulesDir = MODULES_DIR, extraPoints = {} } = 
   declare("kernel", "analysis.signals", (mod) => ({ add: (signal) => store.signals.push({ ...signal, module: mod }) }));
   // Tag adapters ({ id, about, namespace, tag(text) -> Tag[] }) added to lib/taggers' registry when the server starts.
   declare("kernel", "knowledge.taggers", (mod) => ({ add: (adapter) => store.taggers.push({ ...adapter, module: mod }) }));
+  // Plain-words descriptions of a module's routes ({ id, title, about, method, path, params, effect, undo, req, page }),
+  // merged with the live route table by lib/meta.js into the catalog at /api/admin/meta.
+  declare("kernel", "meta.actions", (mod) => ({ add: (...acts) => store.actions.push(...acts.flat().map((a) => ({ ...a, module: mod }))) }));
   for (const [id, make] of Object.entries(extraPoints)) declare("kernel", id, make);
 
   // 1. register: modules declare the extension points they own.
@@ -82,6 +85,8 @@ function createKernel({ enabled, modulesDir = MODULES_DIR, extraPoints = {} } = 
     const ctx = {
       module: m.id, dir: m.dir, root: ROOT,
       point: (id) => { const p = points.get(id); if (!p) throw new Error(`Module "${m.id}" uses unknown extension point "${id}"`); return p.forModule(m.id); },
+      // For a point owned by a module that may be switched off in this profile: null instead of an error.
+      optional: (id) => { const p = points.get(id); return p ? p.forModule(m.id) : null; },
       onStart: (fn) => store.starts.push({ module: m.id, fn }),
     };
     try { m.setup?.(ctx); } catch (e) { e.message = `Module "${m.id}" failed in setup: ${e.message}`; throw e; }
@@ -94,6 +99,7 @@ function createKernel({ enabled, modulesDir = MODULES_DIR, extraPoints = {} } = 
     // 3b. start: async hooks (after the database is ready), e.g. seeding a module's data.
     async start(deps) { for (const s of store.starts) await s.fn(deps); },
     nav: (user) => store.nav.filter((n) => !n.admin || user?.admin).sort((a, b) => a.order - b.order).map(({ href, label, admin, order, group }) => ({ href, label, admin: !!admin, order, group: admin ? "admin" : group || "reading" })),
+    actions: () => store.actions,
     describe: () => ({
       modules: modules.map((m) => ({ id: m.id, version: m.version, description: m.description, requires: m.requires,
         contributes: [...points.entries()].map(([id, p]) => ({ point: id, n: p.contributions.filter((c) => c.module === m.id).length })).filter((x) => x.n) })),

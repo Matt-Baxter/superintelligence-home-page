@@ -82,7 +82,7 @@ ok(gated[0].blockedBy === null && gated[1].blockedBy === '904/T000' && gated[2].
 ok(S.gateTasks('', [{ id: 'T010', who: 'agent', done: false }], '904')[0].blockedBy === null, 'no implied approval gate is invented for other task files');
 const real = S.collect(), ids = real.reqs.map((r) => r.id);
 const want = Array.from({ length: 75 }, (_, i) => `REQ-${String(i + 1).padStart(3, "0")}`);
-ok(want.every((id) => ids.includes(id)) && ids.length === 78, `repo: REQ-001..REQ-075 (${ids.length})`);
+ok(want.every((id) => ids.includes(id)) && ids.length === 79, `repo: REQ-001..REQ-075, with REQ-032..REQ-035 in both specs 002 and 003 (${ids.length})`);
 ok(real.reqs.every((r) => r.status === (r.spec === "001" ? "approved" : "proposed")), "repo: 001 approved, 002, 003, 004, 005 and 006 proposed");
 ok(real.reqs.filter((r) => r.spec === "004").length === 12 && real.reqs.find((r) => r.id === "REQ-042").tasks.some((x) => x.id === "T011"), "repo: 004 has REQ-041..REQ-052, REQ-042 its tasks");
 ok(real.reqs.every((r) => r.trace), "repo: every REQ has a trace row");
@@ -91,6 +91,6 @@ ok(real.reqs.filter((r) => r.spec === "006").map((r) => r.id).join() === "REQ-05
 ok(real.reqs.find((r) => r.id === "REQ-019").people && real.reqs.find((r) => r.id === "REQ-037").tasks.some((x) => x.id === "T041"), "repo: REQ-019 has its people check, REQ-037 its tasks");
 // Deployments without specs/ (Vercel bundles modules/** only) read the build snapshot instead.
 S.writeSnapshot(); const empty = fs.mkdtempSync(path.join(os.tmpdir(), "si-specs-none-")), snap = S.collect({ root: empty });
-ok(snap.source === "snapshot" && snap.reqs.length === 78 && snap.reqs[0].trace, "no specs/ folder: the build snapshot answers with the same 78 spec-scoped REQs");
+ok(snap.source === "snapshot" && snap.reqs.length === 79 && snap.reqs[0].trace, "no specs/ folder: the build snapshot answers with the same 79 spec-scoped REQs");
 fs.rmSync(empty, { recursive: true, force: true });
 console.log(`\nproject specs unit: ${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

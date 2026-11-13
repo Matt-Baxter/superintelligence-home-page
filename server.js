@@ -60,9 +60,12 @@ const boot = () => (bootP ||= db.ready().then(seedSources).then(() => harvester.
 const app = express();
 app.set("trust proxy", 1);
 app.use(express.json({ limit: "256kb" }));
-app.use((req, res, next) => (req.path.startsWith("/api/") ? boot().then(() => next(), next) : next()));
+// Sessions are read for the API and for the server-built research pages (/research is hidden unless you're an admin, so
+// it needs to know who you are; before this only RESEARCH_PUBLIC=1 opened it).
+const withSession = (p) => p.startsWith("/api/") || p === "/research" || p.startsWith("/research/");
+app.use((req, res, next) => (withSession(req.path) ? boot().then(() => next(), next) : next()));
 app.use(async (req, res, next) => {
-  const t = req.path.startsWith("/api/") && cookie(req, "sid");
+  const t = withSession(req.path) && cookie(req, "sid");
   if (!t) return next();
   try {
     const r = await db.get("SELECT u.id, u.username, u.display_name, u.is_admin, u.disabled, s.expires_at FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token = ?", t);
@@ -311,6 +314,11 @@ function moduleDeps() {
 }
 kernel.mount(app, moduleDeps());
 app.get("/api/admin/modules", auth, admin, wrap(() => kernel.describe()));
+// The app describing itself: every route, what it does in plain words, its inputs and whether it changes anything (lib/meta.js).
+app.get("/api/admin/meta", auth, admin, wrap(() => {
+  const M = require("./lib/meta"), c = M.catalog(app, [...require("./lib/core-actions"), ...kernel.actions()]);
+  return { howToUse: M.HOW, profile: kernel.profile || process.env.SITE_PROFILE || "spec", ...kernel.describe(), nav: kernel.nav({ admin: true }), ...c };
+}));
 // Module pages live in modules/<id>/pages and are served at /m/<page> (the build copies them into public/m for Vercel).
 // Tag adapters from modules join the core taggers (lib/taggers).
 const taggers = require("./lib/taggers");

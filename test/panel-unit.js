@@ -8,14 +8,14 @@ let pass = 0, fail = 0; const ok = (c, m) => { c ? pass++ : fail++; console.log(
 const TEXT = "Sample abstract (test data) by Jane Sample of OpenAI, posted at https://sample.substack.com/p/x. We evaluated 3 agent variants on 500 tasks drawn from a held-out test set. Compared with the baseline, the agent solved 41.2% of tasks versus 35.0% (95% confidence interval 3.9 to 8.5, across 5 seeds). Limitations: the tasks are short. This is a breakthrough.";
 const S = { numbers: "Compared with the baseline, the agent solved 41.2% of tasks versus 35.0% (95% confidence interval 3.9 to 8.5, across 5 seeds).", method: "We evaluated 3 agent variants on 500 tasks drawn from a held-out test set." };
 // A stand-in model: decides which checks are met from the text it is shown and the context line, and records what it saw.
-function model(id, { meet = ["numbers", "baseline", "uncertainty", "method", "sample", "held-out", "limitations"], hype = 10, prestigeBoost = 0, hypeSwing = 0, fakeQuotes = false } = {}) {
+function model(id, { meet = ["numbers", "baseline", "uncertainty", "method", "sample", "held-out", "limitations"], hype = 10, prestigeBoost = 0, hypeSwing = 0, evidenceSwing = false, fakeQuotes = false } = {}) {
   const seen = [];
   return { id, model: `${id}-stub`, seen, async chat(msgs) {
     const u = msgs[1].content; seen.push(u);
     const text = (u.match(/"""\n([\s\S]*?)\n"""/) || [])[1] || "";
     const top = /top peer-reviewed journal/.test(u), calm = !/breakthrough/i.test(text);
     const blog = /anonymous personal blog/.test(u);
-    let ids = [...meet]; if (prestigeBoost && top) ids = ids.concat(["artifacts"]); if (prestigeBoost && blog) ids = ["numbers"];
+    let ids = [...meet]; if (prestigeBoost && top) ids = ids.concat(["artifacts"]); if (evidenceSwing && calm) ids = ["numbers"]; if (prestigeBoost && blog) ids = ["numbers"];
     const quoteFor = (c) => fakeQuotes ? "A sentence that does not appear anywhere in the text at all." : (["numbers", "baseline", "uncertainty"].includes(c) ? S.numbers : c === "limitations" ? "Limitations: the tasks are short." : S.method);
     const checks = Object.fromEntries(ids.map((c) => [c, { met: true, quote: quoteFor(c) }]));
     return JSON.stringify({ checks, hype: (calm ? hype : hype + hypeSwing) + (top ? -prestigeBoost * 3 : 0), credibility: 50, reason: "stub" });
@@ -41,8 +41,10 @@ const rules = R.review({ kind: "paper", title: "Sample (test data)", text: TEXT 
   console.log("Bias set aside");
   const swayed = await P.judgeWith(model("swayed", { prestigeBoost: 20 }), TEXT);
   ok(swayed.biased.some((b) => /prestige/.test(b)) && swayed.sensitivity.prestige > P.LIMITS.prestige, `a model that scores the same text higher when told it's from a top journal is flagged (sensitivity ${swayed.sensitivity.prestige})`);
-  const worded = await P.judgeWith(model("worded", { hypeSwing: 40 }), TEXT);
-  ok(worded.biased.some((b) => /wording/.test(b)), `a model swayed by wording alone is flagged (sensitivity ${worded.sensitivity.wording})`);
+  const worded = await P.judgeWith(model("worded", { evidenceSwing: true }), TEXT);
+  ok(worded.biased.some((b) => /wording/.test(b)), `a model that finds evidence only when the text says "breakthrough" is flagged (evidence shift ${worded.sensitivity.wording})`);
+  const faithful = await P.judgeWith(model("faithful", { hypeSwing: 40 }), TEXT);
+  ok(!faithful.biased.length && faithful.sensitivity.wording === 0, "a model whose hype score drops when hype words are removed is not flagged: that's the published rubric, not bias");
 
   console.log("Compare and choose");
   const agreed = await P.panel({ text: TEXT, rules, models: [model("model-a"), model("model-b", { hype: 20 })] });
@@ -52,6 +54,13 @@ const rules = R.review({ kind: "paper", title: "Sample (test data)", text: TEXT 
   ok(split.status === "disagreed" && split.needsPerson && split.credibility === Math.min(...lows), `disagreeing models give the most conservative credibility (${split.credibility}) and send it to a person`);
   const withBias = await P.panel({ text: TEXT, rules, models: [model("model-a"), model("swayed", { prestigeBoost: 20 })] });
   ok(withBias.status === "incomplete" && withBias.setAside.some((s) => s.id === "swayed") && withBias.credibility === rules.credibility, "a set-aside model leaves fewer than two usable, so the panel is incomplete and the rules judge stands");
+  console.log("Hard stops and escalation");
+  const retracted = R.review({ kind: "paper", title: "Sample (test data)", text: TEXT + " This paper has been withdrawn by the authors." });
+  const rp = await P.panel({ text: TEXT, rules: retracted, models: [model("model-a"), model("model-b", { hype: 12 })] });
+  ok(rp.status === "agreed" && rp.verdict === "withdrawn" && rp.credibility <= retracted.credibility && rp.needsPerson, `two models agreeing a retracted paper is credible can't lift it: verdict ${rp.verdict}, credibility ${rp.credibility} (rules ${retracted.credibility})`);
+  const weak = R.review({ kind: "article", title: "Sample (test data)", text: "This is already here and every lab knows it. It will soon change everything. Each year compounds the trend. It is inevitable." });
+  const farAgree = await P.panel({ text: TEXT, rules: weak, models: [model("model-a"), model("model-b", { hype: 12 })] });
+  ok(farAgree.status === "agreed" && Math.abs(farAgree.judges[1].credibility - weak.credibility) > P.LIMITS.escalate && farAgree.needsPerson && !farAgree.advice, "models that agree with each other far from the rules judge go to a person even with no advisor configured");
   const one = await P.panel({ text: TEXT, rules, models: [model("model-a")] });
   ok(one.status === "incomplete", "one model is never enough: at least two different models are compared");
   const broken = await P.panel({ text: TEXT, rules, models: [model("model-a"), { id: "down", model: "x", chat: async () => { throw new Error("connection refused"); } }] });

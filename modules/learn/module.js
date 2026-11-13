@@ -6,6 +6,10 @@ module.exports = {
   id: "learn",
   version: "0.1.0",
   description: "Concept graph with plain-language explanations and analogies, pipeline teardown, explainer player and an admin job queue.",
+  // The concept graph, for other modules (the map and dossiers link stories and papers to concepts).
+  register(env) {
+    env.registerExtensionPoint("learn.concepts", () => ({ list: () => require("./data/concepts.json").concepts || [] }));
+  },
   setup(ctx) {
     ctx.point("db.schema").addSql(`
 CREATE TABLE IF NOT EXISTS learn_jobs (id \${ID}, kind TEXT NOT NULL, concept_id TEXT, story_id INTEGER REFERENCES stories(id) ON DELETE SET NULL,

@@ -34,6 +34,8 @@ Report the exact pass/fail lines; never claim something works that you didn't ru
 
 **Picking this up?** Read [handoff/SI-HANDOFF-2026-11-07.md](handoff/SI-HANDOFF-2026-11-07.md), [handoff/README.md](handoff/README.md) and [docs/HUB.md](docs/HUB.md) first. The combined build status is in [handoff/COMBINED.md](handoff/COMBINED.md). Then [docs/HANDOFF.md](docs/HANDOFF.md): the branch state, what's built, how to run it, what's waiting on people, and the daily task as a prompt. [docs/PRACTICES.md](docs/PRACTICES.md) lists the practices to keep and the ones still to do.
 
+**Learning the running app?** Sign in as an admin and read `GET /api/admin/meta`: every route the server has, what each does in plain words, its inputs, whether it changes data, how to undo it and which REQ it serves. People see the same list, runnable, at `/m/control#actions`. When you add a route, describe it in your module's `actions.js` (`meta.actions` point); `test/meta-unit.js` fails if a description points at a route that doesn't exist.
+
 Skills are plain Markdown and work in any tool: open the one that fits the task in `agent-kit/skills/<name>/SKILL.md`, and its `references/` only when it says to. MCP clients can load them on demand from `agent-kit/mcp/server.js`; see [agent-kit/README.md](agent-kit/README.md) for every runtime.
 
 **Picking up work?** Start with [handoff/README.md](handoff/README.md) (state, open decisions, per-tool prompts) and the open tasks in `specs/<nnn>/tasks.md`; the tag on each task says whether an agent may do it unattended (`[agent]`), only when a person asks (`[rules]`), or only the humans (`[people]`). Tick the checkbox in the commit that finishes it.

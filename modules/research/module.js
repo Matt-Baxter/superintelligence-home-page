@@ -7,7 +7,9 @@ module.exports = {
   description: "Plain-language research write-ups and their RSS feed, built from the review desk and topic dossiers; hidden unless RESEARCH_PUBLIC=1.",
   requires: ["review"],
   setup(ctx) {
+    require("./deps").set({ judge: ctx.point("review.judge"), lab: ctx.optional("lab.examples"), learn: ctx.optional("learn.concepts"), project: ctx.optional("project.sync") });
     ctx.point("http.routes").add((app, deps) => require("./routes")(app, deps));
+    ctx.point("meta.actions").add(require("./actions"));
     ctx.point("ui.nav").add({ href: "/m/control", label: "Control room", admin: true, order: 79 });
     // The research version measures buzz from what it harvests, so it switches on the catalog's checked buzz feeds
     // (entries marked "(buzz)": Medium tags, Hacker News) once, if they aren't there yet. Only in SITE_PROFILE=research;

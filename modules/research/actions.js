@@ -1,0 +1,20 @@
+// Plain-words descriptions of the research layer's routes, for the catalog at /api/admin/meta (REQ-030, REQ-032).
+module.exports = [
+  { id: "meta.catalog", method: "GET", path: "/api/admin/meta", title: "Everything this app can do", effect: "read",
+    about: "This catalog: every route the server has, what each does in plain words, its inputs, whether it changes anything and which requirement it serves. Start here.",
+    req: ["REQ-030"], page: "/m/control#actions" },
+  { id: "research.status", method: "GET", path: "/api/admin/research/status", title: "What's waiting on a person", effect: "read",
+    about: "One call behind the control room: forecasts due, reviews the guards flagged, proposed requirements, judging-quality checks and whether the two-model panel is set up.",
+    req: ["REQ-030", "REQ-033", "REQ-034"], page: "/m/control" },
+  { id: "research.data", method: "GET", path: "/research/data.json", title: "Research write-ups as open data", effect: "read",
+    about: "The published write-ups and topic dossiers as JSON. Doubtful reviews are left out. Hidden unless RESEARCH_PUBLIC=1 or you're an admin.",
+    req: ["REQ-032"], page: "/research" },
+  { id: "research.feed", method: "GET", path: "/research/feed.xml", title: "Research RSS feed", effect: "read",
+    about: "The write-ups as RSS. Each item keeps the paper's own title, so a news feed that adds this as a source groups it with the paper's story.",
+    req: ["REQ-032"], page: "/research" },
+  { id: "research.transfer", method: "GET", path: "/research/transfer", title: "Does the judge work outside AI?", effect: "read",
+    about: "Re-runs the judge on synthetic pieces from 16 fields outside AI (used to fix it, held out, and an overreach check) and shows every verdict.",
+    req: ["REQ-027", "REQ-032"], page: "/research/transfer" },
+  { id: "modules.list", method: "GET", path: "/api/admin/modules", title: "Modules and extension points", effect: "read",
+    about: "Which plug-in modules are on, what each contributes and which extension points exist.", req: ["REQ-030"] },
+];

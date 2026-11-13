@@ -83,7 +83,8 @@ async function check() {
     } catch (e) { p(`block ${b.name}: ${e.message}`); }
   }
   const gen = path.join(root, "client", "blocks.gen.jsx");
-  if (!fs.existsSync(gen) || blockDirs().some((b) => !fs.readFileSync(gen, "utf8").includes(`/${b.module}/blocks/${b.name}/block.mjs`))) p("client/blocks.gen.jsx is stale; run npm run build");
+  // The generated block list belongs to the profile last built; preflight's checks of the other profiles skip it.
+  if (process.env.MODULES_SKIP_GEN !== "1" && (!fs.existsSync(gen) || blockDirs().some((b) => !fs.readFileSync(gen, "utf8").includes(`/${b.module}/blocks/${b.name}/block.mjs`)))) p("client/blocks.gen.jsx is stale; run npm run build");
   // Views must build and validate (builders that need live data are checked in the browser test instead).
   const { catalog } = await import(require("node:url").pathToFileURL(path.join(root, "views", "catalog.mjs")).href);
   for (const v of k.store.views.values()) {
