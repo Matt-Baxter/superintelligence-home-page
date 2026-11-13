@@ -134,3 +134,20 @@ hashed passwords and a session cookie; no third-party auth service. Plain CSS, n
 Playwright for acceptance tests, organized by requirement ID, using saved sample feeds. Keep it as
 simple as possible: as few dependencies and moving parts as possible. Stay within free tiers.
 ```
+
+## 5. `/speckit-tasks` (Build A, Matt) — 2026-11-13
+
+```text
+Break Build A (Matt's build) into small tasks, each naming the REQ IDs it satisfies. All code goes
+in builds/matt/. Order the work so the app is running by milestone M2 on Nov 18: first project
+setup, the database and the sample feeds; then User Story 1 (the superintelligence feed) and User
+Story 2 (accounts), plus REQ-021 (plain-text feed content), since M2 requires contract tests AT-01
+to AT-09 and AT-15. After that: User Story 3 (votes and saves), User Story 4 (topic filter), then
+REQ-022 and REQ-023 (investment notice and keyboard access). For each user story, write its
+Playwright acceptance tests first, grouped by REQ ID and mapped to the contract's AT numbers, then
+the code that makes them pass. Include a task to check every source's feed URL and swap out any
+that don't work, keeping at least 8 working sources across 5 kinds. Mark the steps only a human
+can do (creating the Neon databases, setting up the Vercel project, adding secrets, deploying) as
+manual tasks for Matt; agents never handle secrets or deploy. Keep tasks small enough to review
+one at a time. Don't add anything the spec doesn't ask for.
+```
