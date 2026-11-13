@@ -141,6 +141,10 @@ Every interface change gets a row here. Breaking changes bump the major version 
 - **Points:** `review.judge` (review: the judge, `CRITERIA`, `VERDICTS`, `sources`, `dossier`), `lab.examples` (lab: `list()` of examples with precomputed verdicts), `learn.concepts` (learn: `list()` of concepts), `project.sync` (project: `config()`). The research module reads them through `modules/research/deps.js`; the review routes get lab examples and concepts injected.
 - **Docs:** `modules/review/README.md`, `modules/research/README.md`.
 - **Preflight:** the module check runs in every profile (spec, extended, research), skipping only the generated block list for profiles other than the current one. | logged by John |
+| 2.7 | Nov 12, 2026 | The panel's safety holes, found by an evidence harness (REQ-055 proposed, REQ-029; extended and research versions).
+- **Panel rules:** a piece the rules judge marks withdrawn, or that addresses the judge, keeps the rules judge's capped credibility and verdict whatever the models say (two agreeing models had lifted a retracted paper to "plausible, worth checking"); models that agree with each other far from the rules judge always go to a person, advisor or not, and the stored credibility is the more conservative until a person decides; wording sensitivity compares the evidence a model finds (rigor) under the hype-word swap, not its credibility.
+- **Paper watch:** a piece waiting on a person isn't queued for paper-to-code.
+- **Script:** `npm run evidence:panel` (`scripts/panel-evidence.js`) runs `PANEL_MODELS` on the 104 labelled synthetic pieces and writes `out/evidence/panel-<date>.{json,md}`: per-model verdict accuracy, credibility AUC, prestige and wording shifts, set-asides, kappa between models and with the rules judge, and the panel's final-decision accuracy. `--stand-in` uses two deterministic stand-ins (fair, prestige-biased) to show the harness tells them apart. | logged by John |
 
 **Done means:** a classmate can sign up on the live site, see a grouped, tagged feed from at least 8 sources, and vote on and save stories that are still there the next time they sign in.
 

@@ -72,7 +72,7 @@ async function main() {
       const pr = await Panel.panel({ text: `${x.title}\n${x.text}`, rules: out.review, models: panelModels, advisor });
       const res = { ...out.review, panel: pr };
       await db.run("UPDATE review_docs SET credibility = ?, verdict = ?, needs_person = ?, result = ? WHERE id = ?", pr.credibility, pr.verdict, pr.needsPerson || out.review.needsPerson ? 1 : 0, JSON.stringify(res), out.row.id);
-      out.review = res; out.review.credibility = pr.credibility; out.review.verdict = pr.verdict;
+      out.review = res; out.review.credibility = pr.credibility; out.review.verdict = pr.verdict; out.review.needsPerson = !!(pr.needsPerson || out.review.needsPerson);
       panels[pr.status] = (panels[pr.status] || 0) + 1;
     }
     rows.push({ e, r: out.review, isNew: !out.existing, docId: out.row.id });
@@ -80,7 +80,8 @@ async function main() {
   // Paper-to-code: the most credible new papers on the watched topics become Learn studio jobs (an agent does them).
   const P = CFG.paperToCode, queued = [];
   // Surveys and position papers have no single method to implement, so they are catalogued but not queued.
-  const cands = rows.filter((x) => x.isNew && !x.r.survey && x.r.kind === "paper" && !/^position\b/i.test(x.e.title) && x.r.credibility >= P.minCredibility && x.r.edges.some((ed) => P.topics.includes(ed.dst)))
+  // A piece waiting on a person (guards fired, or the panel and the rules judge are far apart) isn't queued until decided.
+  const cands = rows.filter((x) => x.isNew && !x.r.needsPerson && !x.r.survey && x.r.kind === "paper" && !/^position\b/i.test(x.e.title) && x.r.credibility >= P.minCredibility && x.r.edges.some((ed) => P.topics.includes(ed.dst)))
     .sort((a, b) => b.r.credibility + b.r.score - (a.r.credibility + a.r.score)).slice(0, P.maxPerRun);
   for (const c of cands) {
     if (!dry) {

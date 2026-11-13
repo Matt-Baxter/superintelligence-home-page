@@ -24,6 +24,7 @@
     "test:spec": "node test/spec-acceptance.js --browser",
     "lab": "node scripts/lab.js",
     "spec:status": "node scripts/spec-status.js",
+    "evidence:panel": "node scripts/panel-evidence.js",
     "bench": "node scripts/bench.js --record",
     "watch": "node scripts/watch.js",
     "project:sync": "node scripts/project-sync.js",
