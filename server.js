@@ -128,7 +128,7 @@ async function storyRows(where, args, uid, { sort = "top", limit = 40, offset = 
     : sort === "signal" ? (a, b) => (b.significance || 0) - (a.significance || 0) || (a.t < b.t ? 1 : -1) : (a, b) => b.rank - a.rank);
   const page = rows.slice(offset, offset + limit);
   if (!page.length) return [];
-  const links = await db.all(`SELECT l.story_id, l.url, l.title, src.name AS source, src.kind FROM story_links l LEFT JOIN sources src ON src.id = l.source_id
+  const links = await db.all(`SELECT l.story_id, l.url, l.title, l.rigor, src.name AS source, src.kind FROM story_links l LEFT JOIN sources src ON src.id = l.source_id
     WHERE l.story_id IN (${page.map(() => "?").join(",")}) ORDER BY l.id`, ...page.map((r) => r.id));
   return page.map((r) => shapeStory(r, links.filter((l) => l.story_id === r.id)));
 }
@@ -136,7 +136,8 @@ function shapeStory(r, links) {
   return {
     id: r.id, title: r.title, url: r.url, summary: r.summary, authors: r.authors, published_at: r.published_at, first_seen: r.first_seen,
     topics: JSON.parse(r.topics || "[]"), orgs: JSON.parse(r.orgs || "[]"), votes: r.votes, voted: bool(r.voted), saved: bool(r.saved), notes: r.nnotes,
-    sources: links.map((l) => ({ name: l.source || "Submitted by a reader", kind: l.kind || "submitted", url: l.url, title: l.title })),
+    sources: links.map((l) => ({ name: l.source || "Submitted by a reader", kind: l.kind || "submitted", url: l.url, title: l.title,
+      ...(profile.has("rigor-badges") && l.rigor ? { rigor: (() => { try { return JSON.parse(l.rigor); } catch { return undefined; } })() } : {}) })),
     nsources: r.nsources, significance: r.significance || 0, analysis: JSON.parse(r.analysis || "{}"),
   };
 }
