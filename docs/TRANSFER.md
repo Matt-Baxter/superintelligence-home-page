@@ -1,6 +1,6 @@
 # Does the judge work outside AI?
 
-A study of how far the research layer's judge (`modules/review/review.js`) transfers beyond AI news, what broke, what was fixed and what is still unproven. Live results: `/research/transfer` (admins, or anyone when `RESEARCH_PUBLIC=1`); it re-runs the judge every time it loads. Locked in by the benchmark ratchet: `npm run bench`, suite `domains` (REQ-027, REQ-029, REQ-032).
+A study of how far the research layer's judge (`modules/review/review.js`) transfers beyond AI news, what broke, what was fixed and what is still unproven. Live results: `/research/transfer` (admins, or anyone when `RESEARCH_PUBLIC=1`); it re-runs the judge every time it loads. Locked in by the benchmark ratchet: `npm run bench`, suite `domains` (REQ-027, REQ-029, REQ-053).
 
 ## The question
 

@@ -26,7 +26,7 @@ jobs:
         env:
           SITE_PROFILE: extended
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          # Judge panel (REQ-034): two models from different makers, set by a human as a repository variable, for
+          # Judge panel (REQ-055): two models from different makers, set by a human as a repository variable, for
           # example "groq:llama-3.1-8b-instant,openrouter:google/gemma-3-12b-it:free"; each provider's key is a secret.
           # Unset, every review is marked "panel incomplete" and the rules judge stands alone.
           PANEL_MODELS: ${{ vars.PANEL_MODELS }}

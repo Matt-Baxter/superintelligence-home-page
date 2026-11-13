@@ -36,7 +36,7 @@ Two versions run from one codebase (`SITE_PROFILE` in `modules/profiles.json`):
 | `extended` | Everything below. | John's comparison build. |
 | `research` | admin, knowledge, learn, the Lab (with blocks-core, generative-ui, decision), review, research. | A separate research subdomain whose RSS feeds the spec site ([docs/RESEARCH_SITE.md](RESEARCH_SITE.md)). |
 
-Research layer (all proposed in spec 002, REQ-021 to REQ-033, not yet approved):
+Research layer (all proposed in spec 002, REQ-021 to REQ-054, not yet approved):
 
 | Piece | Where | What it does |
 | --- | --- | --- |
@@ -77,7 +77,7 @@ Results at handoff: preflight passed; browser test 182 passed, 0 failed; spec ac
 Most of these are visible and actionable in the research control room (`/m/control`). [PRACTICES.md](PRACTICES.md) lists what to adopt next and [PARITY.md](PARITY.md) compares us with comparable apps (calibration with kappa, skill trigger tests, forecast resolution criteria).
 
 
-- John and Matt: approve or drop REQ-021 to REQ-033 (spec 002), contract 0.6 and constitution 1.2.0.
+- John and Matt: approve or drop REQ-021 to REQ-054 (spec 002), contract 0.6 and constitution 1.2.0.
 - Deploy (REQ-019); share with the class two weeks before the presentation.
 - Write `AGENT_LOG.md` entries (REQ-020). Agents must not.
 - The research subdomain is optional: a second Vercel project with `SITE_PROFILE=research`, `RESEARCH_PUBLIC=1`, its own database; then add its feed as a source on the spec site.

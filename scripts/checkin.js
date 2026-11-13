@@ -16,7 +16,7 @@ async function waiting(db, today = new Date().toISOString().slice(0, 10)) {
     reviewsForPerson: await n("SELECT COUNT(*) AS n FROM review_docs WHERE needs_person = 1 AND label IS NULL"),
     jobsQueued: await n("SELECT COUNT(*) AS n FROM learn_jobs WHERE status IN ('queued', 'needs-agent')"),
     jobsFailed: await n("SELECT COUNT(*) AS n FROM learn_jobs WHERE status = 'failed'"),
-    // Reviews judged without a two-model panel (REQ-034): the rules judge stood alone.
+    // Reviews judged without a two-model panel (REQ-055): the rules judge stood alone.
     unpaneled: await n("SELECT COUNT(*) AS n FROM review_docs WHERE result NOT LIKE '%\"panel\":{\"status\":\"agreed%' AND result NOT LIKE '%\"panel\":{\"status\":\"disagreed%'"),
   };
 }

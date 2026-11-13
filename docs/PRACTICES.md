@@ -18,7 +18,7 @@ One page of the practices this build follows, collected from the research layer'
 
 | Practice | Status |
 | --- | --- |
-| Constitution first; requirements numbered; tests named by requirement. | In place: `.specify/memory/constitution.md`, REQ-001 to REQ-035, `docs/SPEC_TRACE.md` checked by preflight. |
+| Constitution first; requirements numbered; tests named by requirement. | In place: `.specify/memory/constitution.md`, REQ-001 to REQ-056, `docs/SPEC_TRACE.md` checked by preflight. |
 | Change behaviour by editing the spec first; a person reviews every spec diff. | In place: new work goes into spec 002 as Proposed; both partners approve. |
 | Build ahead, prove, then propose. | In place: features ship on a John branch with tests (e.g. `feature/rigor-badge`), then a Proposed REQ. |
 | Run clarify before plan and analyze before implement; converge before merge. | Next: use `/speckit-clarify`, `/speckit-analyze`, `/speckit-converge` on spec 002 with Matt. |
