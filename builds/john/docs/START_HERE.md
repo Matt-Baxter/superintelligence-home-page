@@ -1,11 +1,12 @@
 # Project index
 
-The current checkout continues on `feature/si-combined`. Use this index to find the source of truth instead of treating older handoff summaries as current evidence.
+Use this index for current evidence about John’s bake-off build. The combined handoff below records earlier integration work.
 
 | Need | Open | Authority |
 | --- | --- | --- |
 | Shared requirements | [spec 001](../specs/001-superintelligence-homepage/spec.md) | Both partners; unchanged by this audit |
 | What has passing evidence | [spec status](SPEC_STATUS.md) | Generated from acceptance results; any failed check wins |
+| Review feed relevance and connections | [bake-off acceptance](BAKEOFF-ACCEPTANCE.md#review-local-feed-snapshots) | Local review of saved news and paper feeds |
 | Where code and checks live | [requirement trace](SPEC_TRACE.md) | Each spec has its own scope while IDs collide |
 | What to do in the app | `/m/control`, `/m/project#/specs`, `/m/project#/timeline` | Research queues, requirements and work dependencies |
 | What waits for approval | [spec 003 tasks](../specs/003-judge-fidelity/tasks.md), [spec 004 tasks](../specs/004-parity/tasks.md) | Spec 004 implementation stays blocked by T000 |

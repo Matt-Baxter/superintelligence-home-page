@@ -25,7 +25,7 @@ How this build meets the shared spec ([specs/001-superintelligence-homepage/spec
 
 | Proposed shared requirement | Implementation or comparison | Local evidence |
 | --- | --- | --- |
-| 001 / REQ-003, REQ-005 | Current admission remains active. The comparison uses the proposed fixed phrase table. | `test/pr3-relevance.js` |
+| 001 / REQ-003, REQ-005 | Current admission remains active. The offline snapshot review uses the proposed fixed phrase table and compares literal and exact matching. | `test/pr3-relevance.js` |
 | 001 / REQ-021 | Feed parsers preserve summary markup as text and the shared story card escapes it. | AT-15 in `test/pr3-acceptance.js` |
 | 001 / REQ-022 | Shared reader notice plus the standalone Learn explainer notice. | AT-16 in `test/pr3-acceptance.js` |
 | 001 / REQ-023 | Vote and save retain focus while duplicate requests are blocked. | AT-17 in `test/pr3-acceptance.js` |

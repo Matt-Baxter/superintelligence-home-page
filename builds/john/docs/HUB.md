@@ -369,7 +369,7 @@ Quoted from the repo's own pitfall, trap, troubleshooting and habits sections (n
 - [docs/RESEARCH_SITE.md](RESEARCH_SITE.md): Sections: What it is; How it feeds the feed; Hidden until you opt in; Deploying it (people's steps).
 - [docs/SPEC_STATUS.md](SPEC_STATUS.md): Measured on 2026-11-07 (America/Chicago) by `scripts/spec-status.js`, from the spec acceptance suite (`test/spec-acceptance.js --browser`, 48 of 48…
 - [docs/SPEC_TRACE.md](SPEC_TRACE.md): How this build meets the shared spec…
-- [docs/START_HERE.md](START_HERE.md): The current checkout continues on `feature/si-combined`.
+- [docs/START_HERE.md](START_HERE.md): Use this index for current evidence about John’s bake-off build.
 - [docs/TESTING_ACCESS.md](TESTING_ACCESS.md): Run `npm run demo` from the repository and open http://localhost:3200/?signin=1.
 - [docs/UI_REVIEW_2026-11-09.md](UI_REVIEW_2026-11-09.md): Branch `feature/ui-review-2026-11-09`, from `feature/john-combined-2026-11-10` (2b9377f).
 - [docs/V0.md](V0.md): John builds his version of the homepage experience in **v0**; Matt builds his in **Claude**.

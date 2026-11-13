@@ -58,3 +58,18 @@ node test/pr3-relevance.js
 AT-15 passed on the feed and story page with literal tags, zero script execution and zero image requests. AT-16 passed on 29 page entries. AT-17 passed at 1280 px in light and 390 px in dark. Deployed verification and the separate screen-reader check are pending.
 
 The relevance comparison passed nine synthetic cases. The proposed rule excludes two items the current policy accepts (broad terms across two topics and an author-only match). Literal matching also admits “magic” through “AGI”, and both policies admit “wheel alignment”. John’s feed still uses the current policy while the partners review phrase boundaries and run the blind live sample.
+
+
+### Review local feed snapshots
+
+Save a JSON manifest listing each snapshot’s `name`, `format`, and `file` relative to the manifest. Include its source `url` when available. Use the same format names as the source catalog, such as `rss`, `arxiv`, or `hf-daily`.
+
+```sh
+node scripts/review-feed.js path/to/manifest.json > out/feed-review.json
+```
+
+The report records the current admission decision, the literal phrase comparison, and an exact phrase candidate with title or summary evidence. Phrases such as “alignment” that also occur outside AI are flagged when they provide the only match. Review the flagged items before using them to compare the builds.
+
+Repeated canonical publication keys group coverage of the same paper or article. Shared topics connect related items for reading. A shared topic alone does not establish that two sources cover the same publication. The report runs offline and leaves feed admission and stored stories unchanged.
+
+Real-source review (2026-11-12): 24 current entries from the approved OpenAI News and Import AI feeds, plus 29 cached titles from approved DeepMind, arXiv and Hugging Face intake. The cached replay lacked summaries and was preselected. It cannot measure full-feed recall. Newsletter titles about recursive self-improvement using RSI exposed a recall gap. An AI-related RSI title now gets a review flag. Shared newsletter topics are issue-level leads. No repeated canonical publication keys appeared in this sample. Blind live scoring remains pending.
