@@ -297,7 +297,7 @@ code, .mono, pre { font-family: var(--mono); }
 .feed-error { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 12px; font-size: 14px; }
 .feed-error span { flex: 1 1 220px; } .feed-error .btn { flex: none; }
 .story .meta > * { min-width: 0; overflow-wrap: anywhere; } .story .action-feedback { margin: 0; }
-.story .save { min-height: 36px; } .story .vote:disabled, .story .save:disabled { opacity: .55; cursor: progress; }
+.story .save { min-height: 36px; } .story .vote[aria-disabled="true"], .story .save[aria-disabled="true"] { opacity: .55; cursor: progress; }
 .feed-filters input[type=search] { min-width: 160px; } .feed-filters select { max-width: 100%; }
 @media (max-width: 900px) {
   .topbar .in { flex-wrap: nowrap; gap: 10px; padding: 10px 16px; }
@@ -514,3 +514,5 @@ h2.h3, .jr-card-title { font-size: 16px; margin: 0; }
     grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
   }
 }
+
+.reader-notice { padding: .35rem 1rem; color: var(--muted); font-size: .8125rem; text-align: center; }

@@ -135,5 +135,50 @@
       "REQ-016",
       "REQ-019"
     ]
+  },
+  {
+    "title": "Compare both builds against the proposed relevance rule",
+    "description": "PR #3 proposal (spec 1.1 / contract 1.2). Local: 9 synthetic cases passed with 3 admission differences. The proposal excludes a broad two-topic item and an author-only AGI match. Its literal substring rule admits “magic” via “AGI”, and both policies admit the ambiguous phrase “wheel alignment”. The current feed policy remains active. Both partners still need to agree on phrase boundaries and run the blind live relevance review. Both deployed builds still need verification.\n\nFreeze the proposed phrase table for both builds. Match a listed phrase in the title or summary regardless of case; reject a weak mention or a generic two-tag item when neither contains a listed phrase. Test a mixed-case phrase and a summary-only phrase. Record where the current ontology rule differs; keep feed quality and the blind relevance score separate from phrase parity.\n\nShared spec: REQ-003, REQ-005\nAcceptance: AT-02, AT-04\n\nSpec: https://github.com/Matt-Baxter/superintelligence-home-page/blob/501d8c23acb7e018da197ac5931e8b48c7762e7d/specs/001-superintelligence-homepage/spec.md\nContract: https://github.com/Matt-Baxter/superintelligence-home-page/blob/501d8c23acb7e018da197ac5931e8b48c7762e7d/CONTRACT.md#4-acceptance-tests",
+    "status": "todo",
+    "priority": 1,
+    "labels": [
+      "grading",
+      "grade:pr3-phrase-parity",
+      "REQ-003",
+      "REQ-005"
+    ]
+  },
+  {
+    "title": "Verify hostile feed summaries render as text",
+    "description": "PR #3 proposal (spec 1.1 / contract 1.2). Local PASS. Chromium showed literal script and image tags on the feed and story page. No markup nodes, script execution or image requests were observed. Both deployed builds still need verification.\n\nUse the same summary containing script and image tags in both builds. Verify literal text is visible, no code executes, and no image request is made.\n\nShared spec: REQ-021\nAcceptance: AT-15\n\nSpec: https://github.com/Matt-Baxter/superintelligence-home-page/blob/501d8c23acb7e018da197ac5931e8b48c7762e7d/specs/001-superintelligence-homepage/spec.md\nContract: https://github.com/Matt-Baxter/superintelligence-home-page/blob/501d8c23acb7e018da197ac5931e8b48c7762e7d/CONTRACT.md#4-acceptance-tests",
+    "status": "todo",
+    "priority": 1,
+    "labels": [
+      "grading",
+      "grade:pr3-plain-text",
+      "REQ-021"
+    ]
+  },
+  {
+    "title": "Verify the information-only notice on every page",
+    "description": "PR #3 proposal (spec 1.1 / contract 1.2). Local PASS. Chromium found the notice on 29 page entries, including guest, sign-in, story, and signed-in module pages. Both deployed builds still need verification.\n\nCheck each route in both builds, including direct story links and signed-in pages, for a visible information-only and not-investment-advice notice.\n\nShared spec: REQ-022\nAcceptance: AT-16\n\nSpec: https://github.com/Matt-Baxter/superintelligence-home-page/blob/501d8c23acb7e018da197ac5931e8b48c7762e7d/specs/001-superintelligence-homepage/spec.md\nContract: https://github.com/Matt-Baxter/superintelligence-home-page/blob/501d8c23acb7e018da197ac5931e8b48c7762e7d/CONTRACT.md#4-acceptance-tests",
+    "status": "todo",
+    "priority": 1,
+    "labels": [
+      "grading",
+      "grade:pr3-reader-notice",
+      "REQ-022"
+    ]
+  },
+  {
+    "title": "Verify the core reader flow using only the keyboard",
+    "description": "PR #3 proposal (spec 1.1 / contract 1.2). Local PASS. Chromium completed topic filter, sign-in, vote and save with the keyboard at 1280 px in light and 390 px in dark, with visible focus at the tested controls. Screen-reader and deployed checks are pending. Both deployed builds still need verification.\n\nIn each build, filter, sign in, vote and save using only the keyboard. Record visible focus and any traps. Record the separate screen-reader check before M2.\n\nShared spec: REQ-023\nAcceptance: AT-17\n\nSpec: https://github.com/Matt-Baxter/superintelligence-home-page/blob/501d8c23acb7e018da197ac5931e8b48c7762e7d/specs/001-superintelligence-homepage/spec.md\nContract: https://github.com/Matt-Baxter/superintelligence-home-page/blob/501d8c23acb7e018da197ac5931e8b48c7762e7d/CONTRACT.md#4-acceptance-tests",
+    "status": "todo",
+    "priority": 1,
+    "labels": [
+      "grading",
+      "grade:pr3-keyboard",
+      "REQ-023"
+    ]
   }
 ]

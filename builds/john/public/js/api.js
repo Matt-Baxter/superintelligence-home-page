@@ -4,6 +4,14 @@ const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const params = new URLSearchParams(location.search);
 
+// Keep the reader notice available even when the session or feed request fails.
+if (typeof document !== "undefined") {
+  const readerNotice = document.createElement("aside");
+  readerNotice.className = "reader-notice";
+  readerNotice.textContent = "For information only, not investment advice.";
+  document.body.prepend(readerNotice);
+}
+
 // Loading state for every page: while any api() call is in flight for more than 150 ms, the page is marked
 // aria-busy and app.css draws a thin progress line under the top bar (static under prefers-reduced-motion).
 let apiPending = 0, apiBusyTimer = null;
@@ -166,7 +174,7 @@ function storyCard(s, opts = {}) {
   const feedback = li.querySelector(".action-feedback");
   async function mutate(button, kind) {
     if (!window.SI_USER) { location.href = "/?next=" + encodeURIComponent(location.pathname + location.search); return; }
-    if (button.disabled) return; button.disabled = true; feedback.hidden = false; feedback.className = "action-feedback small muted"; feedback.textContent = "Saving…";
+    if (button.getAttribute("aria-disabled") === "true") return; button.setAttribute("aria-disabled", "true"); feedback.hidden = false; feedback.className = "action-feedback small muted"; feedback.textContent = "Saving…";
     try {
       const r = await api(`/api/stories/${s.id}/${kind}`, { method: "POST" });
       if (kind === "vote") { s.voted = r.voted; s.votes = r.votes; button.classList.toggle("on", r.voted); button.setAttribute("aria-pressed", String(r.voted)); button.querySelector("b").textContent = r.votes; }
@@ -174,7 +182,7 @@ function storyCard(s, opts = {}) {
       feedback.textContent = kind === "save" ? (r.saved ? "Saved for later." : "Removed from saved stories.") : (r.voted ? "Vote added." : "Vote removed.");
       if (opts.onChange) opts.onChange(s, kind);
     } catch (e) { feedback.className = "action-feedback err"; feedback.textContent = `${e.message} Your change was not confirmed. Try again.`; }
-    finally { button.disabled = false; }
+    finally { button.removeAttribute("aria-disabled"); }
   }
   if (!window.SI_USER) { if (!opts.detail) li.querySelector(".acts a").textContent = "Read story"; li.querySelector(".vote").title = "Sign in to vote"; li.querySelector(".save").textContent = "Sign in to save"; }
   li.querySelector(".vote").onclick = (e) => mutate(e.currentTarget, "vote");

@@ -7,6 +7,7 @@ function decode(s) {
     .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(Number(d)))
     .replace(/&([a-z]+);/gi, (m, n) => ENT[n.toLowerCase()] ?? m);
 }
+const plainSummary = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
 const stripHtml = (s) => decode(decode(s)).replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 function tagText(block, name) {
   const m = block.match(new RegExp(`<${name}(?:\\s[^>]*)?>([\\s\\S]*?)</${name}>`, "i"));
@@ -29,7 +30,8 @@ function parseXml(xml) {
     const title = stripHtml(tagText(b, "title"));
     let url = isAtom ? atomLink(b) : decode(tagText(b, "link")).trim();
     if (!url) url = decode(tagText(b, "guid") || tagText(b, "id")).trim();
-    const summary = stripHtml(tagText(b, "description") || tagText(b, "summary") || tagText(b, "content:encoded") || tagText(b, "content"));
+    // Keep summary markup as literal text. Readers escape it at the rendering boundary.
+    const summary = plainSummary(decode(tagText(b, "description") || tagText(b, "summary") || tagText(b, "content:encoded") || tagText(b, "content")));
     const published = isoDate(tagText(b, "pubDate") || tagText(b, "published") || tagText(b, "updated") || tagText(b, "dc:date"));
     const authors = isAtom ? [...b.matchAll(/<author>[\s\S]*?<name>([\s\S]*?)<\/name>/gi)].map((m) => stripHtml(m[1])) : [stripHtml(tagText(b, "dc:creator") || tagText(b, "author"))].filter(Boolean);
     // Rigor a research feed publishes as <category domain="si:..."> (verdict, credibility, grade, panel, evidence): kept
@@ -55,7 +57,7 @@ function parseJsonFeed(json) {
   return (json.items || []).map((i) => {
     const url = i.url || i.external_url || i.id;
     const title = i.title || stripHtml(i.content_html || i.content_text || "").slice(0, 120);
-    return url && title && /^https?:\/\//.test(url) ? { title: cut(stripHtml(title), 300), url, summary: cut(stripHtml(i.summary || i.content_text || i.content_html || ""), 700),
+    return url && title && /^https?:\/\//.test(url) ? { title: cut(stripHtml(title), 300), url, summary: cut(plainSummary(i.summary || i.content_text || i.content_html), 700),
       published: isoDate(i.date_published || i.date_modified), authors: (i.authors || (i.author ? [i.author] : [])).map((a) => a.name).filter(Boolean).slice(0, 4) } : null;
   }).filter(Boolean);
 }

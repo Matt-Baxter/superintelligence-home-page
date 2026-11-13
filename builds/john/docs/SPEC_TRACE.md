@@ -21,6 +21,15 @@ How this build meets the shared spec ([specs/001-superintelligence-homepage/spec
 | REQ-020 | Human-written agent log in the repo | `AGENT_LOG.md` (the partners write it; agents never do). The app has no agent log page: `/agent-log` redirects to the file; old in-app entries can be exported once from `/api/admin/agent-log.md` | e2e: "Agent log" section; preflight smoke "no in-app agent log" |
 
 
+### Shared spec 1.1 proposal (PR #3)
+
+| Proposed shared requirement | Implementation or comparison | Local evidence |
+| --- | --- | --- |
+| 001 / REQ-003, REQ-005 | Current admission remains active. The comparison uses the proposed fixed phrase table. | `test/pr3-relevance.js` |
+| 001 / REQ-021 | Feed parsers preserve summary markup as text and the shared story card escapes it. | AT-15 in `test/pr3-acceptance.js` |
+| 001 / REQ-022 | Shared reader notice plus the standalone Learn explainer notice. | AT-16 in `test/pr3-acceptance.js` |
+| 001 / REQ-023 | Vote and save retain focus while duplicate requests are blocked. | AT-17 in `test/pr3-acceptance.js` |
+
 <!-- trace-spec: 002 -->
 
 ## Research layer (proposed, `specs/002-research-layer/spec.md`; extended version; needs both partners)
