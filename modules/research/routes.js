@@ -52,6 +52,7 @@ module.exports = function mountResearch(app, { db, wrap, auth, admin }) {
     return V.outletsPage(S.trackRecords(docs, events), S.MIN_RESOLVED, base(req));
   }));
   app.get("/research/criteria", gate, page(async (req) => V.criteriaPage(base(req))));
+  app.get("/research/transfer", gate, page(async (req) => V.transferPage(base(req))));
   app.get("/research/data.json", gate, wrap(async (req) => V.dataJson({ papers: await papers(), topics: await topics() }, base(req))));
   app.get("/research/feed.xml", gate, wrap(async (req, res) => { res.type("application/rss+xml").send(V.feedXml({ papers: await papers(), topics: await topics() }, base(req))); }));
   app.get("/research/paper/:id", gate, page(async (req) => {

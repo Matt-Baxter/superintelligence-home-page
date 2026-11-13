@@ -85,6 +85,23 @@ const SUITES = {
       "papers.roleplay_meta_bad_drop": { value: Math.round((rq(0) - rq(1)) * 1000) / 1000, better: "higher", tol: 0.02, about: "drop in the bad-reply rate when a role-play updater refines its own repair rules (arXiv 2611.07469 toy)" },
     };
   },
+  // Transfer beyond AI: the same judge on synthetic pieces from other fields (bench/domains-*.json). "set" was used to
+  // fix the judge; "holdout" was written after the first fixes and run once (27/30 before the second fixes); "overreach"
+  // was written after the second fixes and run once, to catch false alarms on credible work using watched words.
+  domains: () => {
+    const R = require("../modules/review/review"), out = {};
+    for (const set of ["set", "holdout", "overreach"]) {
+      const items = JSON.parse(fs.readFileSync(path.join(DIR, `domains-${set}.json`), "utf8")).items;
+      const rs = items.map((it) => ({ it, r: R.review(it) })), good = rs.filter((x) => x.it.credible), bad = rs.filter((x) => !x.it.credible);
+      let a = 0; for (const g of good) for (const b of bad) a += g.r.credibility > b.r.credibility ? 1 : g.r.credibility === b.r.credibility ? 0.5 : 0;
+      const acc = rs.filter((x) => ["doubtful", "withdrawn"].includes(x.r.verdict) === !x.it.credible).length / rs.length;
+      const fields = new Set(items.map((i) => i.domain)).size, r3 = (x) => Math.round(x * 1000) / 1000;
+      out[`domains.${set}_verdict_accuracy`] = { value: r3(acc), better: "higher", tol: 0, about: `${set}: verdict right on ${items.length} pieces from ${fields} fields` };
+      out[`domains.${set}_credibility_auc`] = { value: r3(a / (good.length * bad.length)), better: "higher", tol: 0, about: `${set}: credible pieces out-rank the rest on credibility` };
+      out[`domains.${set}_false_alarms`] = { value: r3(good.filter((x) => ["doubtful", "withdrawn"].includes(x.r.verdict)).length / good.length), better: "lower", tol: 0, about: `${set}: credible pieces called doubtful` };
+    }
+    return out;
+  },
   analysis: () => {
     // Scope and tagging on the labelled spec fixtures: in-scope titles vs off-topic ones (REQ-003).
     const A = require("../lib/analysis"), { tag } = require("../lib/tagger");

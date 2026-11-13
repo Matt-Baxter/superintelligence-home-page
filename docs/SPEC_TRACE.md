@@ -30,7 +30,7 @@ How this build meets the shared spec ([specs/001-superintelligence-homepage/spec
 | REQ-024 | Background studio jobs | `learn_jobs`, `scripts/learn-worker.js`; the watcher queues `paper-to-code` | e2e: "Learn" section; unit: watch "queued for paper-to-code" |
 | REQ-025 | Explainer video and drafts, people publish | `modules/learn` explainer, RSS of published posts | e2e: "Learn" section |
 | REQ-026 | Worked examples, refuted kept, sources, sandbox | `modules/lab` (`examples.json`, `runners.js`, `interp.js`, `papers.js`), `/m/lab`, `/m/arena` | unit: lab, papers; arena demo; e2e: "refuted hypotheses are kept" |
-| REQ-027 | Review desk with anti-gaming guards | `modules/review` (`review.js`, `store.js`), `/m/review` | unit: review (24 checks); review demo; bench `review.*` |
+| REQ-027 | Review desk with anti-gaming guards | `modules/review` (`review.js`, `store.js`), `/m/review`; transfer beyond AI: `/research/transfer`, [TRANSFER.md](TRANSFER.md) | unit: review (24 checks); review demo; bench `review.*` and `domains.*` (90 synthetic pieces, 16 fields; held-out first run 27/30); research feed test: transfer page |
 | REQ-028 | Daily paper watch | `scripts/watch.js`, `modules/review/watch.json`, `.github/workflows/paper-watch.yml` | unit: watch (5 checks) |
 | REQ-029 | Benchmarks with a ratchet | `scripts/bench.js`, `bench/` | preflight "Benchmarks"; real-data quality report `scripts/quality.js` (unit: quality, 3 checks) |
 | REQ-031 | Topic dossier: traced analysis, blog, posts, video | `modules/review/dossier.js`, `/m/dossier`, `/api/review/dossier/:topic`, worker job `dossier`, `/m/explainer?d=<topic>` | unit: dossier (16 checks); review demo: "Dossier" |

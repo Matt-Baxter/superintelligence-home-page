@@ -1,6 +1,6 @@
 {
   "about": "Accepted benchmark numbers (scripts/bench.js). Update only for an uplift or an explained trade-off.",
-  "updated": "2026-11-07",
+  "updated": "2026-11-13",
   "metrics": {
     "review.credibility_auc": {
       "value": 1,
@@ -61,7 +61,7 @@
       "about": "points the same attack gains on the unguarded judge (the attack is real)"
     },
     "review.ms_per_doc": {
-      "value": 10.8,
+      "value": 12.1,
       "better": "info",
       "about": "time to review one item"
     },
@@ -130,6 +130,60 @@
       "better": "higher",
       "tol": 0.02,
       "about": "drop in the bad-reply rate when a role-play updater refines its own repair rules (arXiv 2611.07469 toy)"
+    },
+    "domains.set_verdict_accuracy": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "set: verdict right on 42 pieces from 7 fields"
+    },
+    "domains.set_credibility_auc": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "set: credible pieces out-rank the rest on credibility"
+    },
+    "domains.set_false_alarms": {
+      "value": 0,
+      "better": "lower",
+      "tol": 0,
+      "about": "set: credible pieces called doubtful"
+    },
+    "domains.holdout_verdict_accuracy": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "holdout: verdict right on 30 pieces from 5 fields"
+    },
+    "domains.holdout_credibility_auc": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "holdout: credible pieces out-rank the rest on credibility"
+    },
+    "domains.holdout_false_alarms": {
+      "value": 0,
+      "better": "lower",
+      "tol": 0,
+      "about": "holdout: credible pieces called doubtful"
+    },
+    "domains.overreach_verdict_accuracy": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "overreach: verdict right on 18 pieces from 14 fields"
+    },
+    "domains.overreach_credibility_auc": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "overreach: credible pieces out-rank the rest on credibility"
+    },
+    "domains.overreach_false_alarms": {
+      "value": 0,
+      "better": "lower",
+      "tol": 0,
+      "about": "overreach: credible pieces called doubtful"
     },
     "analysis.scope_accuracy": {
       "value": 1,

@@ -12,6 +12,9 @@ module.exports = [
   { id: "research.feed", method: "GET", path: "/research/feed.xml", title: "Research RSS feed", effect: "read",
     about: "The write-ups as RSS. Each item keeps the paper's own title, so a news feed that adds this as a source groups it with the paper's story.",
     req: ["REQ-032"], page: "/research" },
+  { id: "research.transfer", method: "GET", path: "/research/transfer", title: "Does the judge work outside AI?", effect: "read",
+    about: "Re-runs the judge on synthetic pieces from 16 fields outside AI (used to fix it, held out, and an overreach check) and shows every verdict.",
+    req: ["REQ-027", "REQ-032"], page: "/research/transfer" },
   { id: "modules.list", method: "GET", path: "/api/admin/modules", title: "Modules and extension points", effect: "read",
     about: "Which plug-in modules are on, what each contributes and which extension points exist.", req: ["REQ-030"] },
 ];

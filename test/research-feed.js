@@ -77,6 +77,15 @@ const serve = (port, env) => new Promise((resolve, reject) => {
     const cpg = await fetch("http://localhost:3291/m/control", { headers: { cookie: adminC } });
     ok(cpg.ok && /Research control room/.test(await cpg.text()), "the control room page is served at /m/control");
 
+    console.log("Hidden research site, signed in (RESEARCH_PUBLIC unset)");
+    const signAt = async (port, u) => { const x = await fetch(`http://localhost:${port}/api/signup`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ username: u, password: "correct-horse-9" }) }); return (x.headers.get("set-cookie") || "").split(";")[0]; };
+    const hAdmin = await signAt(3292, "hidden-admin"), hReader = await signAt(3292, "hidden-reader");
+    const hcrit = await fetch("http://localhost:3292/research/criteria", { headers: { cookie: hAdmin } });
+    ok(hcrit.ok && /How we judge/.test(await hcrit.text()) && /noindex/.test(hcrit.headers.get("x-robots-tag") || ""), "an admin sees the hidden research pages (the session is read on /research), still noindex");
+    ok((await fetch("http://localhost:3292/research/criteria", { headers: { cookie: hReader } })).status === 404, "a signed-in reader who isn't an admin still gets 404");
+    const trp = await (await fetch("http://localhost:3292/research/transfer", { headers: { cookie: hAdmin } })).text();
+    ok(/Does the judge work outside AI/.test(trp) && /42 of 42 right/.test(trp) && /30 of 30 right/.test(trp) && /18 of 18 right/.test(trp) && !/<b>Wrong:<\/b>/.test(trp), "the transfer page re-runs the judge on all three cross-field sets: every verdict right");
+
     console.log("Spec version takes the research feed as a source (SITE_PROFILE=spec)");
     delete process.env.DATABASE_URL; delete process.env.POSTGRES_URL;
     process.env.DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "si-spec-")); process.env.SITE_PROFILE = "spec"; process.env.FETCH_MINUTES = "0";

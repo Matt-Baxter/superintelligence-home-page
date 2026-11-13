@@ -60,9 +60,12 @@ const boot = () => (bootP ||= db.ready().then(seedSources).then(() => harvester.
 const app = express();
 app.set("trust proxy", 1);
 app.use(express.json({ limit: "256kb" }));
-app.use((req, res, next) => (req.path.startsWith("/api/") ? boot().then(() => next(), next) : next()));
+// Sessions are read for the API and for the server-built research pages (/research is hidden unless you're an admin, so
+// it needs to know who you are; before this only RESEARCH_PUBLIC=1 opened it).
+const withSession = (p) => p.startsWith("/api/") || p === "/research" || p.startsWith("/research/");
+app.use((req, res, next) => (withSession(req.path) ? boot().then(() => next(), next) : next()));
 app.use(async (req, res, next) => {
-  const t = req.path.startsWith("/api/") && cookie(req, "sid");
+  const t = withSession(req.path) && cookie(req, "sid");
   if (!t) return next();
   try {
     const r = await db.get("SELECT u.id, u.username, u.display_name, u.is_admin, u.disabled, s.expires_at FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token = ?", t);
