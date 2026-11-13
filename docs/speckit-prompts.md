@@ -120,3 +120,17 @@ stories that match no superintelligence topic are left out rather than shown as 
 Topic tags should be superintelligence topics, and each story should show which words made it
 relevant.
 ```
+
+## 4. `/speckit-plan` (Build A, Matt) — 2026-11-13
+
+Run by Matt for his own build. John's build (v0) doesn't use Spec Kit.
+
+```text
+Build A (Matt's build) for the Superintelligence Homepage bake-off. All application code lives in
+builds/matt/; nothing outside that folder except Spec Kit files. Stack: Next.js (App Router) with
+TypeScript, deployed on Vercel. Neon Postgres for the database (a separate database from John's
+build). Fetch feeds with a Vercel Cron Job every 30 minutes. Simple username/password sign-in with
+hashed passwords and a session cookie; no third-party auth service. Plain CSS, no UI framework.
+Playwright for acceptance tests, organized by requirement ID, using saved sample feeds. Keep it as
+simple as possible: as few dependencies and moving parts as possible. Stay within free tiers.
+```
