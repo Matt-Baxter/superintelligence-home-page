@@ -34,10 +34,14 @@ const serverSrc = fs.readFileSync(path.join(__dirname, "..", "server.js"), "utf8
 const R = M.catalog(real, k.actions());
 const reallyStale = R.stale.filter((s) => !serverSrc.includes(`app.${s.method.toLowerCase()}("${s.path}"`));
 ok(k.actions().length >= 15 && reallyStale.length === 0, `every described action matches a mounted route (${k.actions().length} described${reallyStale.length ? `; stale: ${reallyStale.map((s) => s.id).join(", ")}` : ""})`);
-const ids = k.actions().map((a) => a.id);
+// The core app's own routes (lib/core-actions.js) against server.js.
+const CORE = require("../lib/core-actions");
+const coreMissing = CORE.filter((a) => !serverSrc.includes(`app.${a.method.toLowerCase()}("${a.path}"`));
+ok(CORE.length >= 20 && coreMissing.length === 0, `every core description matches a route in server.js (${CORE.length}${coreMissing.length ? `; missing: ${coreMissing.map((a) => a.id).join(", ")}` : ""})`);
+const ids = [...CORE, ...k.actions()].map((a) => a.id);
 ok(new Set(ids).size === ids.length, "action ids are unique");
-ok(k.actions().every((a) => a.title && a.about && /^[A-Z]/.test(a.title) && (a.req || []).every((r) => /^REQ-\d{3}$/.test(r))), "every described action has a title, a plain-words about and well-formed REQ ids");
-ok(k.actions().filter((a) => (a.effect || (a.method === "GET" ? "read" : "write")) === "write").every((a) => a.undo), "every described write says how to undo it (or that it can't be)");
+ok([...CORE, ...k.actions()].every((a) => a.title && a.about && /^[A-Z]/.test(a.title) && (a.req || []).every((r) => /^REQ-\d{3}$/.test(r))), "every described action has a title, a plain-words about and well-formed REQ ids");
+ok([...CORE, ...k.actions()].filter((a) => (a.effect || (a.method === "GET" ? "read" : "write")) === "write").every((a) => a.undo), "every described write says how to undo it (or that it can't be)");
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
