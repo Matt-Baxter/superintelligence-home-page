@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/"><channel><title>Synthetic lab blog (test data)</title>
+<item><title><![CDATA[Sample post: Our new open-weight model &amp; its safety evals]]></title>
+<link>https://example.org/blog/open-weight-model?utm_source=rss</link><pubDate>Mon, 02 Nov 2026 15:00:00 GMT</pubDate>
+<description>&lt;p&gt;We release open weights alongside &lt;b&gt;dangerous capability&lt;/b&gt; evaluations and red teaming results. Synthetic test record.&lt;/p&gt;</description><dc:creator>Example Lab</dc:creator></item>
+<item><title>Sample post: Notes on 2611.00001 and test-time compute</title>
+<link>https://huggingface.co/papers/2611.00001</link><pubDate>Tue, 03 Nov 2026 12:00:00 GMT</pubDate>
+<description>Discussion of the scaling laws paper. Synthetic test record.</description></item>
+<item><title>Sample post: Export controls and datacenter energy</title>
+<link>https://example.org/policy/export-controls</link><pubDate>Wed, 04 Nov 2026 08:00:00 GMT</pubDate>
+<description>Policy analysis of export controls on GPUs and data center power grid limits. Synthetic test record.</description></item>
+</channel></rss>

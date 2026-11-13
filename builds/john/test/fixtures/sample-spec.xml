@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic items for the shared spec's acceptance tests (test data). Each item's category says whether it is
+     about superintelligence; SC-003 expects exactly the "yes" items in the feed. -->
+<rss version="2.0"><channel><title>Sample mixed feed (test data)</title><link>https://example.org/</link><description>Superintelligence and general AI items, made up for tests.</description>
+<item><title>Sample paper: An alignment technique for superhuman systems (test data)</title><link>https://example.org/sample-alignment-superhuman</link><category>about-superintelligence: yes</category><pubDate>Thu, 05 Nov 2026 10:00:00 GMT</pubDate>
+<description>A made-up method for keeping much more capable systems aligned with human oversight.</description></item>
+<item><title>Sample essay: Updating our AGI timelines (test data)</title><link>https://example.org/sample-agi-timelines</link><category>about-superintelligence: yes</category><pubDate>Thu, 05 Nov 2026 09:00:00 GMT</pubDate>
+<description>Synthetic essay on how forecasts of AGI timelines changed this year.</description></item>
+<item><title>Sample report: interpretability of a frontier model (test data)</title><link>https://example.org/sample-interpretability-report</link><category>about-superintelligence: yes</category><pubDate>Thu, 05 Nov 2026 08:00:00 GMT</pubDate>
+<description>Made-up findings from looking inside a large model's features.</description></item>
+<item><title>Sample launch: a new AI photo-editing app (test data)</title><link>https://example.org/sample-photo-app</link><category>about-superintelligence: no</category><pubDate>Thu, 05 Nov 2026 07:00:00 GMT</pubDate>
+<description>A synthetic consumer app that uses AI to retouch photos.</description></item>
+<item><title>Sample story: AI helps retailers forecast demand (test data)</title><link>https://example.org/sample-retail-ai</link><category>about-superintelligence: no</category><pubDate>Thu, 05 Nov 2026 06:00:00 GMT</pubDate>
+<description>A made-up store chain uses machine learning to forecast what to stock.</description></item>
+<item><title>Sample post: we're hiring research engineers (test data)</title><link>https://example.org/sample-hiring</link><category>about-superintelligence: no</category><pubDate>Thu, 05 Nov 2026 05:00:00 GMT</pubDate>
+<description>A synthetic job posting from a research group.</description></item>
+<item><title>Sample thread about AGI on a social network (test data)</title><link>https://x.com/sample/status/1</link><category>about-superintelligence: link-to-x</category><pubDate>Thu, 05 Nov 2026 04:00:00 GMT</pubDate>
+<description>Mentions AGI, but links to Twitter/X, so it must never be shown (REQ-006).</description></item>
+</channel></rss>

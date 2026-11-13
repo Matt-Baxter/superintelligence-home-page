@@ -1,0 +1,10 @@
+{
+  "name": "si-homepage-kit",
+  "displayName": "Superintelligence Homepage agent kit",
+  "version": "0.1.0",
+  "description": "Skills, subagents, guard hooks and an MCP runtime for building and running the Superintelligence Homepage: sources, ontology, significance scoring, pages, portable SQL, tests, contract and pull requests.",
+  "author": { "name": "John Affolter and Matthew Baxter" },
+  "repository": "https://github.com/Matt-Baxter/superintelligence-home-page",
+  "license": "ISC",
+  "keywords": ["skills", "ai-progress", "news", "ontology", "mcp", "seis-606"]
+}

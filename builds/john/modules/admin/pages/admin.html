@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css">
+<style>
+  .kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .kpi { border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; background: var(--surface); }
+  .kpi b { display: block; font-size: 22px; } .kpi span { font-size: 13px; color: var(--muted); }
+  .tabs { margin-bottom: 14px; } @media (min-width: 901px) { .tabs { flex-wrap: wrap; } }
+  .tabpanel { display: grid; gap: 14px; }
+  td .btn { padding: 3px 8px; font-size: 13px; }
+  td.wrap { max-width: 340px; overflow-wrap: anywhere; }
+  .preview li { margin: 4px 0; } .preview .small { color: var(--muted); }
+  textarea.opml { width: 100%; min-height: 120px; font-family: ui-monospace, monospace; font-size: 12px; }
+  .catgroup h3 { margin: 10px 0 4px; font-size: 15px; }
+  .catgroup label { display: flex; gap: 8px; align-items: baseline; font-weight: normal; margin: 3px 0; }
+  .catgroup label.added { color: var(--muted); }
+  .tablewrap { overflow-x: auto; }
+  .meter { height: 8px; border-radius: var(--radius); background: var(--line); overflow: hidden; } .meter span { display: block; height: 100%; background: var(--accent); }
+</style></head>
+<body>
+<main>
+  <div class="pagehead">
+    <div><h1>Admin</h1><p class="muted" id="sub">Sources, harvesting, accounts and moderation. Every change here is written to the audit log.</p></div>
+    <div class="actions"><button class="btn" id="harvestDue" type="button">Harvest due sources</button><button class="btn" id="harvestAll" type="button">Harvest all now</button></div>
+  </div>
+  <p class="small muted" id="harvestMsg" role="status"></p>
+  <p class="small"><a href="/m/content">Content desk: inspect records and their source trail →</a></p><div class="tabs" role="tablist" id="tabs">
+    <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
+    <button role="tab" data-tab="sources">Sources</button>
+    <button role="tab" data-tab="add">Add sources</button>
+    <button role="tab" data-tab="runs">Harvest log</button>
+    <button role="tab" data-tab="users">Users</button>
+    <button role="tab" data-tab="moderation">Moderation</button>
+    <button role="tab" data-tab="ontology">Ontology</button>
+    <button role="tab" data-tab="audit">Audit log</button>
+
+  </div>
+
+  <section class="tabpanel" data-panel="overview">
+    <div class="kpis" id="kpis"></div>
+    <div class="panel"><h2>Needs attention</h2><div id="failing"></div></div>
+    <div class="panel"><h2>Stories by source kind, last 7 days</h2><div id="kinds"></div></div>
+    <div class="panel"><h2>Free tier</h2><div id="freeTier"></div></div>
+    <div class="panel"><h2>Recent harvests</h2><div class="tablewrap"><table><thead><tr><th>When</th><th>Trigger</th><th>Sources</th><th>Errors</th><th>New stories</th></tr></thead><tbody id="lastRuns"></tbody></table></div></div>
+  </section>
+
+  <section class="tabpanel" data-panel="sources" hidden>
+    <div class="panel">
+      <div class="row"><label>Show<select id="srcFilter"><option value="all">All</option><option value="active">Active</option><option value="failing">Failing</option><option value="pending">Pending review</option><option value="paused">Paused</option></select></label>
+        <div class="actions"><a class="btn" href="/api/admin/opml" download>Export OPML</a></div></div>
+      <div class="tablewrap"><table><thead><tr><th>Source</th><th>Kind / format</th><th>Every</th><th>Stories</th><th>Last fetch</th><th>Status</th><th></th></tr></thead><tbody id="srcRows"></tbody></table></div>
+    </div>
+  </section>
+
+  <section class="tabpanel" data-panel="add" hidden>
+    <form class="panel" id="addForm">
+      <h2>Add one source</h2>
+      <p class="small muted">Paste a feed URL and press <b>Test</b> to see what it would bring in, or paste a site's homepage and press <b>Find feed</b>. Twitter/X isn't accepted.</p>
+      <label>URL<input id="aUrl" required placeholder="https://example.org/feed.xml or https://example.org"></label>
+      <div class="actions"><button class="btn" type="button" id="aFind">Find feed</button><button class="btn" type="button" id="aTest">Test</button></div>
+      <div id="aFound"></div><div id="aPreview" class="preview"></div>
+      <div class="row">
+        <label>Name<input id="aName" required></label>
+        <label>Kind<select id="aKind"></select></label>
+        <label>Format<select id="aFormat"></select></label>
+      </div>
+      <div class="row">
+        <label>Homepage <span class="small">(optional)</span><input id="aHome"></label>
+        <label>Fetch every (minutes)<input id="aEvery" type="number" min="15" max="10080" value="360"></label>
+        <label>Max items per fetch<input id="aMax" type="number" min="1" max="200" value="50"></label>
+      </div>
+      <div class="actions"><button class="btn primary" type="submit">Add and harvest</button></div>
+      <p class="err" id="aErr" role="alert"></p>
+    </form>
+    <div class="panel">
+      <h2>Source catalog</h2>
+      <p class="small muted" id="catAbout"></p>
+      <div id="catalog"></div>
+      <div class="actions"><button class="btn" id="catEnable" type="button">Enable selected and test them</button></div>
+      <p class="small" id="catMsg" role="status"></p>
+    </div>
+    <form class="panel" id="opmlForm">
+      <h2>Import OPML</h2>
+      <p class="small muted">Paste an OPML export from a feed reader. New feeds are added as pending unless you tick “Activate now”.</p>
+      <textarea class="opml" id="opml" required></textarea>
+      <div class="row"><label>Default kind<select id="opmlKind"></select></label><label><input type="checkbox" id="opmlActivate"> Activate now</label></div>
+      <div class="actions"><button class="btn" type="submit">Import</button></div>
+      <p class="small" id="opmlMsg" role="status"></p>
+    </form>
+  </section>
+
+  <section class="tabpanel" data-panel="runs" hidden>
+    <div class="panel">
+      <div class="row"><label>Status<select id="runStatus"><option value="">All</option><option value="ok">OK</option><option value="not_modified">Unchanged</option><option value="error">Error</option></select></label></div>
+      <div class="tablewrap"><table><thead><tr><th>Started</th><th>Source</th><th>Trigger</th><th>Status</th><th>Items</th><th>New</th><th>Time</th></tr></thead><tbody id="runRows"></tbody></table></div>
+    </div>
+  </section>
+
+  <section class="tabpanel" data-panel="users" hidden>
+    <div class="panel"><div class="tablewrap"><table><thead><tr><th>User</th><th>Joined</th><th>Votes</th><th>Notes</th><th>Admin</th><th>Disabled</th></tr></thead><tbody id="userRows"></tbody></table></div>
+      <p class="err" id="uErr" role="alert"></p>
+      <p class="small muted">The agent log is <code>AGENT_LOG.md</code> in the repo (REQ-020). Entries written in the old in-app page: <a href="/api/admin/agent-log.md">export them</a> to copy into that file.</p></div>
+  </section>
+
+  <section class="tabpanel" data-panel="moderation" hidden>
+    <div class="panel">
+      <h2>Stories</h2>
+      <div class="row"><label>Search<input id="mq" placeholder="Title or URL"></label><label><input type="checkbox" id="mHidden"> Hidden only</label><label><input type="checkbox" id="mUntagged"> Untagged only</label><label><input type="checkbox" id="mOff"> Left out of the feed only</label></div>
+      <div class="tablewrap"><table><thead><tr><th>Story</th><th>Topics</th><th>Votes</th><th>Sources</th><th></th></tr></thead><tbody id="storyRows"></tbody></table></div>
+    </div>
+    <div class="panel"><h2>Shared notes</h2><p class="small muted">Private notes aren't shown to admins.</p><div class="tablewrap"><table><thead><tr><th>Note</th><th>By</th><th>On</th><th></th></tr></thead><tbody id="noteRows"></tbody></table></div></div>
+  </section>
+
+  <section class="tabpanel" data-panel="ontology" hidden>
+    <div class="panel"><h2>Ontology</h2><p class="small muted" id="ontAbout"></p>
+      <div class="actions"><button class="btn" id="retag" type="button">Re-tag every story</button></div><p class="small" id="retagMsg" role="status"></p>
+      <div class="tablewrap"><table><thead><tr><th>Topic</th><th>Parent</th><th>Stories</th><th>Matching terms</th></tr></thead><tbody id="ontRows"></tbody></table></div></div>
+  </section>
+
+  <section class="tabpanel" data-panel="audit" hidden>
+    <div class="panel"><div class="tablewrap"><table><thead><tr><th>When</th><th>Admin</th><th>Action</th><th>Target</th><th>Detail</th></tr></thead><tbody id="auditRows"></tbody></table></div></div>
+  </section>
+</main>
+<script src="/js/api.js"></script>
+<script>
+let meta = { kinds: [], formats: [] }, sources = [];
+const opt = (list, sel) => list.map(([v, t]) => `<option value="${esc(v)}" ${v === sel ? "selected" : ""}>${esc(t)}</option>`).join("");
+const fmtLabel = (id) => meta.formats.find((f) => f.id === id)?.label || id;
+const statusCell = (s) => s.status !== "active" ? `<span class="status-dot pending"></span>${esc(s.status)}`
+  : s.last_error ? `<span class="status-dot err"></span>${esc(s.last_error)}${s.failures ? ` <span class="small">(${s.failures}× in a row)</span>` : ""}`
+  : s.last_ok ? `<span class="status-dot ok"></span>OK ${ago(s.last_ok)} · ${s.last_count} items` : `<span class="status-dot"></span>Not fetched yet`;
+const every = (m) => m >= 1440 ? `${+(m / 1440).toFixed(1)} d` : m >= 60 ? `${+(m / 60).toFixed(1)} h` : `${m} min`;
+
+/* tabs */
+const tabs = { overview: loadOverview, sources: loadSources, add: loadAdd, runs: loadRuns, users: loadUsers, moderation: loadModeration, ontology: loadOntology, audit: loadAudit };
+function show(name) {
+  if (!tabs[name]) name = "overview";
+  $$("#tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.tab === name));
+  $$("[data-panel]").forEach((p) => (p.hidden = p.dataset.panel !== name));
+  history.replaceState(null, "", "#" + name);
+  tabs[name]().catch((e) => showErr($("#harvestMsg"), e));
+}
+$$("#tabs button").forEach((b) => (b.onclick = () => show(b.dataset.tab)));
+
+/* overview */
+async function loadOverview() {
+  const d = await api("/api/admin/overview"), c = d.counts;
+  const k = [["Active sources", d.sources.active || 0], ["Pending review", d.sources.pending || 0], ["Failing", d.failing.length], ["Stories", c.stories], ["New in 24 h", c.storiesToday], ["Untagged", c.untagged], ["Left out (off-topic)", c.offTopic], ["Hidden", c.hidden], ["Users", c.users], ["Admins", c.admins], ["Votes", c.votes], ["Notes", c.notes]];
+  $("#kpis").innerHTML = k.map(([t, v]) => `<div class="kpi"><b>${v}</b><span>${t}</span></div>`).join("");
+  $("#sub").textContent = `Database: ${d.engine === "pg" ? "Postgres" : "SQLite"}. Harvest schedule: ${d.schedule}${process_cron(d)}.${d.harvesting ? " A harvest is running now." : ""}`;
+  $("#failing").innerHTML = d.failing.length ? `<ul>${d.failing.map((s) => `<li><b>${esc(s.name)}</b>: ${esc(s.last_error || "")} <span class="small muted">(${s.failures} failures, last ${ago(s.last_fetched)})</span></li>`).join("")}</ul>` : `<p class="small muted">Nothing failing.</p>`;
+  $("#kinds").innerHTML = d.kindsThisWeek.length ? `<div class="chips">${d.kindsThisWeek.map((r) => `<span class="chip">${esc(KIND[r.kind] || r.kind)}: ${r.n}</span>`).join("")}</div>` : `<p class="small muted">No stories this week yet.</p>`;
+  const ft = d.freeTier, mb = (b) => (b / 1024 ** 2).toFixed(1) + " MB";
+  const pct = ft.dbBytes == null ? null : Math.min(100, (100 * ft.dbBytes) / ft.dbLimitBytes);
+  $("#freeTier").innerHTML = `${pct == null ? "" : `<p>Database: <b>${mb(ft.dbBytes)}</b> of the 1 GB Neon free plan allows (${pct.toFixed(1)}%).</p>
+    <div class="meter" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct.toFixed(1)}" aria-label="Database storage used"><span style="width:${Math.max(pct, 0.5)}%"></span></div>`}
+    <p class="small muted">Rows: ${Object.entries(ft.rows).map(([t, n]) => `${t.replace("_", " ")} ${n}`).join(" · ")}. Harvest log keeps 2,000 runs and the audit log 5,000; expired sessions are removed after each harvest.</p>
+    <p class="small muted">Slowest fetch this week: ${(ft.slowestRunMs / 1000).toFixed(1)} s. A harvest stops starting new fetches after ${ft.harvestBudgetMs / 1000} s, inside the 60 s function limit set in vercel.json.</p>`;
+  $("#lastRuns").innerHTML = d.lastRuns.map((r) => `<tr><td>${ago(r.started)}</td><td>${esc(r.trigger)}</td><td>${r.sources}</td><td>${r.errors}</td><td>${r.stored}</td></tr>`).join("") || `<tr><td colspan="5" class="muted">No harvests in the last 7 days.</td></tr>`;
+}
+const process_cron = (d) => (d.schedule.startsWith("Vercel") && !d.cronConfigured ? " (CRON_SECRET isn't set, so the cron call will be refused)" : "");
+
+/* sources */
+async function loadMeta() { if (!meta.kinds.length) { const d = await api("/api/admin/sources"); meta = { kinds: d.kinds, formats: d.formats }; sources = d.sources; } }
+async function loadSources() {
+  const d = await api("/api/admin/sources"); meta = { kinds: d.kinds, formats: d.formats }; sources = d.sources;
+  const f = $("#srcFilter").value;
+  if (params.get("source")) $("#harvestMsg").innerHTML = `Source #${esc(params.get("source"))} selected. <a href="/m/admin#sources">Show all sources</a>`;
+  const list = sources.filter((s) => (!params.get("source") || s.id === Number(params.get("source"))) && (f === "all" || (f === "failing" ? s.status === "active" && s.failures > 0 : s.status === f)));
+  $("#srcRows").innerHTML = list.map((s) => `<tr data-id="${s.id}">
+    <td class="wrap"><a href="${esc(s.home || s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.name)}</a>${s.from_catalog ? ' <span class="small muted">catalog</span>' : ""}<div class="small muted">${esc(s.url)}</div>${s.note ? `<div class="small">“${esc(s.note)}”${s.suggested_by_name ? ` · ${esc(s.suggested_by_name)}` : ""}</div>` : ""}</td>
+    <td><select data-f="kind" aria-label="Kind">${opt(meta.kinds.map((k) => [k, KIND[k] || k]), s.kind)}</select><br><select data-f="format" aria-label="Format">${opt(meta.formats.map((x) => [x.id, x.label]), s.format)}</select></td>
+    <td><select data-f="interval_minutes" aria-label="Fetch interval">${opt([[60, "1 h"], [180, "3 h"], [360, "6 h"], [720, "12 h"], [1440, "1 d"], [10080, "1 wk"]].map(([v, t]) => [String(v), t]).concat([[String(s.interval_minutes), every(s.interval_minutes)]]).filter((x, i, a) => a.findIndex((y) => y[0] === x[0]) === i), String(s.interval_minutes))}</select></td>
+    <td>${s.stories}</td><td class="wrap">${statusCell(s)}</td>
+    <td><select data-f="status" aria-label="Status">${opt(["active", "paused", "pending", "rejected"].map((x) => [x, x]), s.status)}</select></td>
+    <td><button class="btn" data-act="harvest" type="button">Harvest</button>${s.failures ? ' <button class="btn" data-act="reset" type="button">Reset backoff</button>' : ""} <button class="btn" data-act="delete" type="button">Delete</button></td></tr>`).join("") || `<tr><td colspan="7" class="muted">No sources match.</td></tr>`;
+  $$("#srcRows tr[data-id]").forEach((tr) => {
+    const id = tr.dataset.id;
+    $$("select[data-f]", tr).forEach((sel) => (sel.onchange = async () => { await api(`/api/admin/sources/${id}`, { method: "PUT", body: { [sel.dataset.f]: sel.dataset.f === "interval_minutes" ? Number(sel.value) : sel.value } }); loadSources(); }));
+    $$("button[data-act]", tr).forEach((b) => (b.onclick = async () => {
+      b.disabled = true;
+      try {
+        if (b.dataset.act === "harvest") { const { run } = await api(`/api/admin/sources/${id}/harvest`, { body: {} }); flash($("#harvestMsg"), run.status === "error" ? `Failed: ${run.error}` : `${run.source}: ${run.items} items, ${run.stored} new.`); }
+        if (b.dataset.act === "reset") await api(`/api/admin/sources/${id}`, { method: "PUT", body: { resetFailures: true } });
+        if (b.dataset.act === "delete") { if (b.textContent !== "Confirm delete") { b.textContent = "Confirm delete"; b.disabled = false; return; } await api(`/api/admin/sources/${id}`, { method: "DELETE" }); }
+      } catch (e) { showErr($("#harvestMsg"), e); }
+      loadSources();
+    }));
+  });
+}
+$("#srcFilter").onchange = loadSources;
+
+/* add */
+async function loadAdd() {
+  await loadMeta();
+  if (!$("#aKind").options.length) {
+    $("#aKind").innerHTML = opt(meta.kinds.map((k) => [k, KIND[k] || k]), "newsletter"); $("#opmlKind").innerHTML = $("#aKind").innerHTML;
+    $("#aFormat").innerHTML = opt(meta.formats.map((f) => [f.id, f.label]), "rss");
+  }
+  const c = await api("/api/admin/catalog");
+  $("#catAbout").textContent = c.about;
+  const groups = {}; c.sources.forEach((s) => (groups[s.kind] ||= []).push(s));
+  $("#catalog").innerHTML = Object.entries(groups).map(([k, list]) => `<div class="catgroup"><h3>${esc(KIND[k] || k)}</h3>${list.map((s) =>
+    `<label class="${s.added ? "added" : ""}"><input type="checkbox" value="${esc(s.url)}" ${s.added ? "disabled checked" : ""}> <span>${esc(s.name)} <span class="small muted">${esc(fmtLabel(s.format))}${s.added ? " · already added" : ""}</span></span></label>`).join("")}</div>`).join("")
+    + ((c.findFeed || []).length ? `<div class="catgroup"><h3>Important sites without a known feed</h3>${c.findFeed.map((s) => `<label class="${s.added ? "added" : ""}"><span>${esc(s.name)} <span class="small muted">${esc(KIND[s.kind] || s.kind)} · ${esc(s.why)}</span></span> ${s.added ? "" : `<button class="btn" type="button" data-find="${esc(s.home)}" data-name="${esc(s.name)}" data-kind="${esc(s.kind)}">Find feed</button>`}</label>`).join("")}</div>` : "");
+  $$("#catalog [data-find]").forEach((b) => (b.onclick = () => {
+    $("#aUrl").value = b.dataset.find; $("#aName").value = b.dataset.name; $("#aKind").value = b.dataset.kind; $("#aHome").value = b.dataset.find;
+    $("#addForm").scrollIntoView({ behavior: "smooth" }); $("#aFind").click();
+  }));
+}
+$("#aFind").onclick = async () => {
+  $("#aErr").textContent = ""; $("#aFound").innerHTML = '<p class="small muted">Looking…</p>';
+  try {
+    const r = await api("/api/admin/sources/discover", { body: { url: $("#aUrl").value } });
+    $("#aFound").innerHTML = r.feeds.length ? `<p class="small">Found ${r.feeds.length} feed${r.feeds.length > 1 ? "s" : ""}. Pick one:</p><div class="chips">${r.feeds.map((f, i) => `<button type="button" class="chip" data-i="${i}">${esc(f.title || f.url)}</button>`).join("")}</div>` : `<p class="err">${esc(r.error || "No feed found on that page.")}</p>`;
+    $$("#aFound .chip").forEach((b) => (b.onclick = () => { const f = r.feeds[b.dataset.i]; $("#aUrl").value = f.url; $("#aFormat").value = f.format || "rss"; if (!$("#aName").value && f.title) $("#aName").value = f.title; if (!$("#aHome").value) $("#aHome").value = r.page || ""; $("#aTest").click(); }));
+  } catch (e) { $("#aFound").innerHTML = ""; showErr($("#aErr"), e); }
+};
+$("#aTest").onclick = async () => {
+  $("#aErr").textContent = ""; $("#aPreview").innerHTML = '<p class="small muted">Fetching…</p>';
+  try {
+    const r = await api("/api/admin/sources/test", { body: { url: $("#aUrl").value, format: $("#aFormat").value } });
+    $("#aPreview").innerHTML = r.ok ? `<p class="ok">Works: ${r.count} items. First few:</p><ul>${r.preview.map((i) => `<li>${esc(i.title)} <span class="small">${esc(i.topics.join(", ") || "no topic matched")}</span></li>`).join("")}</ul>` : `<p class="err">Didn't work: ${esc(r.error)}</p>`;
+  } catch (e) { $("#aPreview").innerHTML = ""; showErr($("#aErr"), e); }
+};
+$("#addForm").onsubmit = async (e) => {
+  e.preventDefault(); $("#aErr").textContent = "";
+  try {
+    const r = await api("/api/admin/sources", { body: { url: $("#aUrl").value, name: $("#aName").value, kind: $("#aKind").value, format: $("#aFormat").value, home: $("#aHome").value, interval_minutes: Number($("#aEvery").value), max_items: Number($("#aMax").value) } });
+    e.target.reset(); $("#aFound").innerHTML = $("#aPreview").innerHTML = "";
+    flash($("#aErr"), r.run?.status === "error" ? `Added, but the first fetch failed: ${r.run.error}` : `Added. ${r.run?.items ?? 0} items, ${r.run?.stored ?? 0} new stories.`);
+    meta.kinds = []; loadAdd();
+  } catch (err) { showErr($("#aErr"), err); }
+};
+$("#catEnable").onclick = async () => {
+  const urls = $$("#catalog input:checked:not([disabled])").map((i) => i.value);
+  if (!urls.length) return showErr($("#catMsg"), "Tick at least one source.");
+  $("#catEnable").disabled = true; $("#catMsg").className = "small muted"; $("#catMsg").textContent = `Adding ${urls.length} and test-fetching each…`;
+  try {
+    const r = await api("/api/admin/catalog/enable", { body: { urls } });
+    const bad = r.runs.filter((x) => x.status === "error");
+    $("#catMsg").className = bad.length ? "err" : "ok";
+    $("#catMsg").innerHTML = `Added ${r.added}. ${r.runs.length - bad.length} worked${bad.length ? `; ${bad.length} failed: ${bad.map((x) => `${esc(x.source)} (${esc(x.error)})`).join("; ")}. Failed ones stay listed and back off; fix or delete them on the Sources tab.` : "."}`;
+  } catch (e) { showErr($("#catMsg"), e); } finally { $("#catEnable").disabled = false; loadAdd(); }
+};
+$("#opmlForm").onsubmit = async (e) => {
+  e.preventDefault();
+  try { const r = await api("/api/admin/opml", { body: { opml: $("#opml").value, kind: $("#opmlKind").value, activate: $("#opmlActivate").checked } }); flash($("#opmlMsg"), `Imported ${r.added} as ${r.status}; skipped ${r.skipped} (duplicates, non-http or Twitter/X).`); $("#opml").value = ""; }
+  catch (err) { showErr($("#opmlMsg"), err); }
+};
+
+/* runs */
+async function loadRuns() {
+  const r = await api(`/api/admin/runs?limit=200${params.get("source") ? `&source=${encodeURIComponent(params.get("source"))}` : ""}${$("#runStatus").value ? `&status=${$("#runStatus").value}` : ""}`);
+  $("#runRows").innerHTML = r.runs.map((x) => `<tr><td>${ago(x.started_at)}</td><td>${esc(x.source || "(deleted)")}</td><td>${esc(x.trigger)}</td>
+    <td class="wrap">${x.status === "error" ? `<span class="status-dot err"></span>${esc(x.error)}` : x.status === "not_modified" ? `<span class="status-dot"></span>unchanged` : `<span class="status-dot ok"></span>ok`}</td>
+    <td>${x.items}</td><td>${x.stored}</td><td>${(x.duration_ms / 1000).toFixed(1)} s</td></tr>`).join("") || `<tr><td colspan="7" class="muted">No runs yet.</td></tr>`;
+}
+$("#runStatus").onchange = loadRuns;
+
+/* users */
+async function loadUsers() {
+  const r = await api("/api/admin/users");
+  $("#userRows").innerHTML = r.users.map((u) => `<tr data-id="${u.id}"><td><b>${esc(u.display_name)}</b> <span class="small muted">@${esc(u.username)}</span></td><td>${fmtDate(u.created_at)}</td><td>${u.votes}</td><td>${u.notes}</td>
+    <td><input type="checkbox" data-f="admin" aria-label="Admin" ${u.is_admin ? "checked" : ""}></td><td><input type="checkbox" data-f="disabled" aria-label="Disabled" ${u.disabled ? "checked" : ""}></td></tr>`).join("");
+  $$("#userRows input").forEach((cb) => (cb.onchange = async () => {
+    $("#uErr").textContent = "";
+    try { await api(`/api/admin/users/${cb.closest("tr").dataset.id}`, { method: "PUT", body: { [cb.dataset.f]: cb.checked } }); } catch (e) { showErr($("#uErr"), e); }
+    loadUsers();
+  }));
+}
+
+/* moderation */
+let mt;
+async function loadModeration() {
+  const q = new URLSearchParams({ q: $("#mq").value, hidden: $("#mHidden").checked ? 1 : 0, untagged: $("#mUntagged").checked ? 1 : 0, scope: $("#mOff").checked ? "out" : "", limit: 100 });
+  const [s, n] = await Promise.all([api(`/api/admin/stories?${q}`), api("/api/admin/notes")]);
+  $("#storyRows").innerHTML = s.stories.map((x) => `<tr data-id="${x.id}"><td class="wrap"><a href="/story?id=${x.id}">${esc(x.title)}</a>${x.hidden ? `<div class="small err">Hidden${x.hidden_reason ? `: ${esc(x.hidden_reason)}` : ""}</div>` : ""}${x.in_scope === false ? `<div class="small muted">Left out of the feed: ${esc(x.scope_reason)}</div>` : ""}</td>
+    <td class="small">${esc(x.topics.join(", ") || "none")}</td><td>${x.votes}</td><td>${x.links}</td>
+    <td>${x.hidden ? '<button class="btn" data-act="unhide" type="button">Unhide</button>' : '<input aria-label="Reason" placeholder="Reason" size="12"> <button class="btn" data-act="hide" type="button">Hide</button>'}</td></tr>`).join("") || `<tr><td colspan="5" class="muted">No stories match.</td></tr>`;
+  $$("#storyRows button").forEach((b) => (b.onclick = async () => { const tr = b.closest("tr"); await api(`/api/admin/stories/${tr.dataset.id}`, { method: "PUT", body: { hidden: b.dataset.act === "hide", reason: $("input", tr)?.value || "" } }); loadModeration(); }));
+  $("#noteRows").innerHTML = n.notes.map((x) => `<tr data-id="${x.id}"><td class="wrap">${esc(x.text)}</td><td>${esc(x.username)}</td><td class="wrap"><a href="/story?id=${x.story_id}">${esc(x.story)}</a></td><td><button class="btn" type="button">Delete</button></td></tr>`).join("") || `<tr><td colspan="4" class="muted">No shared notes.</td></tr>`;
+  $$("#noteRows button").forEach((b) => (b.onclick = async () => { if (b.textContent !== "Confirm") { b.textContent = "Confirm"; return; } await api(`/api/admin/notes/${b.closest("tr").dataset.id}`, { method: "DELETE" }); loadModeration(); }));
+}
+$("#mq").oninput = () => { clearTimeout(mt); mt = setTimeout(loadModeration, 250); };
+$("#mHidden").onchange = $("#mUntagged").onchange = $("#mOff").onchange = loadModeration;
+
+/* ontology */
+async function loadOntology() {
+  const o = await api("/api/admin/ontology");
+  $("#ontAbout").textContent = `${o.about || ""} ${o.untagged} stories have no topic.`;
+  $("#ontRows").innerHTML = o.topics.map((t) => `<tr><td><a href="/?topic=${esc(t.id)}">${esc(t.label)}</a></td><td>${esc(t.parent || "")}</td><td>${t.stories}</td><td class="small wrap">${esc(t.terms.join(", "))}</td></tr>`).join("");
+}
+$("#retag").onclick = async () => { $("#retag").disabled = true; try { const r = await api("/api/admin/retag", { body: {} }); flash($("#retagMsg"), `Re-tagged ${r.stories} stories.`); loadOntology(); } catch (e) { showErr($("#retagMsg"), e); } finally { $("#retag").disabled = false; } };
+
+/* audit */
+async function loadAudit() {
+  const r = await api("/api/admin/audit");
+  $("#auditRows").innerHTML = r.entries.map((x) => `<tr><td>${ago(x.at)}</td><td>${esc(x.username || "")}</td><td>${esc(x.action)}</td><td class="wrap">${esc(x.target)}</td><td class="small wrap">${esc(x.detail)}</td></tr>`).join("") || `<tr><td colspan="5" class="muted">Nothing yet.</td></tr>`;
+}
+
+/* harvest buttons */
+async function runHarvest(force) {
+  $("#harvestAll").disabled = $("#harvestDue").disabled = true; $("#harvestMsg").className = "small muted"; $("#harvestMsg").textContent = force ? "Harvesting every active source…" : "Harvesting sources that are due…";
+  try {
+    const r = await api("/api/admin/harvest", { body: { force } });
+    $("#harvestMsg").className = r.errors ? "err" : "ok";
+    $("#harvestMsg").textContent = r.skipped ? r.reason : `${r.sources} sources: ${r.ok} ok, ${r.errors} failed, ${r.stored} new stories in ${(r.ms / 1000).toFixed(1)} s${r.notReached ? `; ${r.notReached} not reached (time budget), they run next time` : ""}.`;
+  } catch (e) { showErr($("#harvestMsg"), e); } finally { $("#harvestAll").disabled = $("#harvestDue").disabled = false; show(location.hash.slice(1)); }
+}
+$("#harvestAll").onclick = () => runHarvest(true);
+$("#harvestDue").onclick = () => runHarvest(false);
+
+requireUser().then((u) => {
+  if (!u.admin) { document.querySelector("main").innerHTML = '<div class="panel"><h1>Admin</h1><p>Only an admin can see this page. The first account created on the site is the admin; an admin can make others admins.</p></div>'; return; }
+  show(location.hash.slice(1));
+});
+</script>
+</body></html>

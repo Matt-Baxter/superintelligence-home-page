@@ -1,0 +1,11 @@
+const assert = require('node:assert/strict'), fs = require('node:fs'), vm = require('node:vm');
+const ctx = vm.createContext({ URL, URLSearchParams, location: { search: '', origin: 'http://localhost' } });
+vm.runInContext(fs.readFileSync('public/js/api.js', 'utf8'), ctx);
+const render = value => vm.runInContext(`storyDate(${JSON.stringify(value)})`, ctx);
+assert.match(render({published_at:'2026-11-07T12:00:00-06:00'}), /2026-11-07T18:00:00.000Z/);
+assert.match(render({published_at:'2026-11-07T12:00:00Z'}), /Published:.*12:00:00 UTC/);
+assert.match(render({first_seen:'2026-11-07 12:00:00'}), /First seen:.*12:00:00 UTC/);
+assert.match(render({published_at:'2026-11-07'}), /datetime="2026-11-07">2026-11-07 \(time unavailable\)/);
+assert.match(render({published_at:'2026-02-30'}), /Date unavailable/);
+assert.match(render({first_seen:'bad-date'}), /Date unavailable/);
+console.log('UI dates: 6 passed, 0 failed.');

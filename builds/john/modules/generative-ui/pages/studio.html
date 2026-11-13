@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Studio · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css">
+<style>
+  .studio { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 18px; align-items: start; }
+  .studio textarea { font-family: var(--mono); font-size: 12.5px; min-height: 420px; line-height: 1.45; }
+  .issues { font-size: 13px; margin: 6px 0 0; padding-left: 18px; } .issues li { color: var(--bad); }
+  .blocklist { display: flex; flex-wrap: wrap; gap: 6px; }
+  .blocklist .chip { cursor: help; }
+  @media (max-width: 860px) { .studio { grid-template-columns: minmax(0, 1fr); } }
+</style></head>
+<body>
+<main>
+  <div class="pagehead">
+    <div><h1>Studio</h1><p class="muted">Generative UI with json-render. An agent or a person writes a spec in JSON using only the blocks below; it's checked against the catalog and previewed live. Views that modules register run on live data.</p></div>
+    <div class="actions"><button class="btn" id="copyPrompt" type="button">Copy prompt for an AI</button></div>
+  </div>
+  <section class="panel">
+    <h2>Blocks and views</h2>
+    <p class="small muted" id="blockNote"></p>
+    <div class="blocklist" id="blocks"></div>
+    <div class="row" style="margin-top:10px"><label>Open a registered view<select id="viewPick"><option value="">Choose a view…</option></select></label></div>
+  </section>
+  <div class="studio">
+    <section class="panel">
+      <h2>Spec</h2>
+      <textarea id="spec" spellcheck="false" aria-label="json-render spec"></textarea>
+      <div class="actions"><button class="btn primary" id="validate" type="button">Validate and preview</button><button class="btn" id="download" type="button">Download JSON</button></div>
+      <p class="small" id="status" role="status"></p><ul class="issues" id="issues"></ul>
+      <p class="small muted">To ship a view: save the JSON as <code>modules/&lt;module&gt;/views/&lt;name&gt;.json</code> and register it in that module's <code>setup()</code> with <code>ctx.point("ui.views").add(name, { title, spec })</code>.</p>
+    </section>
+    <section class="panel"><h2>Preview</h2><div id="preview"></div></section>
+  </div>
+</main>
+<script src="/js/api.js"></script>
+<script src="/js/jr.js"></script>
+<script>
+const SAMPLE = { root: "stack-1", elements: {
+  "stack-1": { type: "Stack", props: { gap: "md" }, children: ["callout-1", "grid-1"] },
+  "callout-1": { type: "Callout", props: { tone: "accent", title: "Sample view (test data)", text: "Edit this JSON, or paste a spec an AI generated from the prompt." }, children: [] },
+  "grid-1": { type: "Grid", props: { columns: 2 }, children: ["metric-1", "metric-2"] },
+  "metric-1": { type: "Metric", props: { label: "Sample metric", value: "42", hint: "test data" }, children: [] },
+  "metric-2": { type: "Metric", props: { label: "Another sample", value: "7", tone: "good" }, children: [] },
+} };
+let CAT;
+async function preview() {
+  $("#issues").innerHTML = ""; $("#status").className = "small muted"; $("#status").textContent = "Checking…";
+  let spec; try { spec = JSON.parse($("#spec").value); } catch (e) { $("#status").className = "err"; $("#status").textContent = "Not valid JSON: " + e.message; return; }
+  const r = await api("/api/ui/validate", { body: { spec } });
+  if (!r.ok) { $("#status").className = "err"; $("#status").textContent = `${r.issues.length} problem${r.issues.length > 1 ? "s" : ""}; nothing rendered.`; $("#issues").innerHTML = r.issues.map((i) => `<li><code>${esc(i.path || "spec")}</code> ${esc(i.message)}</li>`).join(""); return; }
+  $("#status").className = "ok"; $("#status").textContent = `Valid: ${r.elements} elements.`;
+  JR.render($("#preview"), spec, jrHandlers());
+}
+$("#validate").onclick = preview;
+$("#download").onclick = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([$("#spec").value], { type: "application/json" })); a.download = "view.json"; a.click(); };
+$("#copyPrompt").onclick = (e) => copy(`${CAT.prompt}\n\nReturn only the JSON spec ({root, elements}). Use only the components and actions listed above.`, e.currentTarget);
+$("#viewPick").onchange = async () => {
+  if (!$("#viewPick").value) return;
+  const r = await api(`/api/ui/views/${encodeURIComponent($("#viewPick").value)}`);
+  $("#spec").value = JSON.stringify(r.spec, null, 2); preview();
+};
+requireUser().then(async (u) => {
+  if (!u.admin) { $("main").innerHTML = '<div class="panel"><h1>Studio</h1><p>The Studio is for admins.</p></div>'; return; }
+  CAT = await api("/api/ui/catalog");
+  $("#blockNote").textContent = `${CAT.blocks.length} blocks from ${new Set(CAT.blocks.map((b) => b.module)).size} modules, ${CAT.actions.length} actions. Hover a block for what it does.`;
+  $("#blocks").innerHTML = CAT.blocks.map((b) => `<span class="chip" title="${esc(b.description)} (module: ${esc(b.module)})">${esc(b.name)}</span>`).join("");
+  const v = await api("/api/ui/views");
+  $("#viewPick").insertAdjacentHTML("beforeend", v.views.map((x) => `<option value="${esc(x.name)}">${esc(x.title)} (${esc(x.module)})</option>`).join(""));
+  $("#spec").value = JSON.stringify(SAMPLE, null, 2); preview();
+});
+</script>
+</body></html>

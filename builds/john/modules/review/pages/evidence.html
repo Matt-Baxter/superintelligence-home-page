@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Evidence index · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css">
+<style>
+  .ix { display: grid; gap: 10px; }
+  .row { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.15fr) minmax(0, 0.85fr) auto; gap: 18px; align-items: center; padding: 16px 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+  .row h2 { font-size: 17px; margin: 0 0 2px; } .row h2 a { color: var(--fg); text-decoration: none; } .row h2 a:hover { text-decoration: underline; }
+  .gap { font-size: 14px; } .gap.ahead { font-weight: 600; }
+  .k { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .ladder { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--line-strong); border-radius: var(--radius); overflow: hidden; }
+  .ladder span { font-size: 12px; text-align: center; padding: 5px 6px; border-left: 1px solid var(--line); color: var(--muted); white-space: nowrap; } .ladder span:first-child { border-left: 0; }
+  .ladder span.on { background: var(--fg); color: var(--surface); font-weight: 600; }
+  .nums { font-size: 13px; color: var(--muted); margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .top { font-size: 13px; color: var(--muted); margin-top: 4px; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .key { display: grid; gap: 2px; margin: -8px 0 0; }
+  @media (max-width: 860px) { .row { grid-template-columns: 1fr 1fr; } .row .what { grid-column: 1 / -1; } .row .go { grid-column: 1 / -1; justify-self: start; } }
+  @media (max-width: 420px) { .row { grid-template-columns: 1fr; } }
+</style></head>
+<body>
+<main>
+  <div class="pagehead"><div><h1>Where AI talk runs ahead of the evidence</h1>
+    <p class="muted">Every research area on one page: how strong the reviewed evidence is next to how loudly it is being talked about. Topics where the talk is furthest ahead come first. Each row opens its dossier, with every judgement sourced.</p></div></div>
+  <p class="key small muted"><span><b>Evidence</b>: reviewed papers and our own toy checks, never rated stronger than abstracts allow.</span><span><b>Buzz</b>: news, newsletters, blogs and forums in the last 30 days; it never changes the evidence.</span></p>
+  <div class="ix" id="ix" aria-busy="true"><p class="muted">Loading the index…</p></div>
+  <p class="small muted" id="foot"></p>
+</main>
+<script src="/js/api.js"></script>
+<script>
+const ladder = (levels, on) => `<div class="ladder" role="img" aria-label="${esc(on)}">${levels.map((l) => `<span class="${l === on ? "on" : ""}">${esc(l)}</span>`).join("")}</div>`;
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+requireUser().then(async () => {
+  try {
+    const r = await api("/api/review/evidence-index");
+    $("#ix").innerHTML = r.topics.map((t) => `<article class="row">
+      <div class="what"><h2><a href="/m/dossier#${encodeURIComponent(t.id)}">${esc(t.label)}</a></h2>
+        ${/roughly in step/.test(t.buzz.gap) ? "" : `<p class="gap ${/more than it has been shown/.test(t.buzz.gap) ? "ahead" : ""}">${esc(t.buzz.gap[0].toUpperCase() + t.buzz.gap.slice(1))}.</p>`}
+        ${t.top ? `<p class="top">Most credible paper: <a href="${esc(t.top.url)}" target="_blank" rel="noopener noreferrer">${esc(t.top.title)}</a> (${t.top.credibility}/100)</p>` : ""}</div>
+      <div><p class="k">Evidence</p>${ladder(r.levels, t.strength)}<p class="nums">${plural(t.counts.papers, "paper", "papers")} · ${t.counts.supported} of ${plural(t.counts.checks, "toy check", "toy checks")} held up</p></div>
+      <div><p class="k">Buzz</p>${ladder(r.buzzLevels, t.buzz.level)}<p class="nums">${plural(t.buzz.items, "item", "items")} in 30 days${t.buzz.hype != null ? ` · hype ${t.buzz.hype}/100` : ""}</p></div>
+      <a class="btn go" href="/m/dossier#${encodeURIComponent(t.id)}">Open dossier</a>
+    </article>`).join("") || '<p class="empty">No research areas yet.</p>';
+    const ahead = r.topics.filter((t) => /more than it has been shown/.test(t.buzz.gap)).length;
+    $("#foot").textContent = `${ahead ? `${ahead} of ${r.topics.length} areas are talked about ahead of their evidence.` : "No area is talked about ahead of its evidence right now: talk and evidence are roughly in step everywhere."} Weighed on ${r.at} from the Review desk's reviews and the Lab's checks. Rule-based and explainable; a reading aid, not a forecast.`;
+  } catch (e) { $("#ix").innerHTML = `<p class="err">${esc(e.message)}</p>`; }
+  $("#ix").removeAttribute("aria-busy");
+});
+</script>
+</body></html>

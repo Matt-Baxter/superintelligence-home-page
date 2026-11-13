@@ -1,0 +1,80 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "@vocab": "https://github.com/Matt-Baxter/superintelligence-home-page/blob/main/schema/gen/vocab.md#",
+    "schema": "https://schema.org/",
+    "si": "https://github.com/Matt-Baxter/superintelligence-home-page/blob/main/schema/gen/vocab.md#",
+    "kind": "si:kind",
+    "key": "si:key",
+    "canonical_url": "si:canonical_url",
+    "basis": {
+      "@id": "si:basis",
+      "@container": "@set"
+    },
+    "reference": "si:reference",
+    "status": "si:status",
+    "candidates": {
+      "@id": "si:candidates",
+      "@container": "@set"
+    },
+    "Tag": "schema:DefinedTerm",
+    "qid": "@id",
+    "label": "schema:name",
+    "matched": {
+      "@id": "si:matched",
+      "@container": "@set"
+    },
+    "via": "si:via",
+    "method": "si:method",
+    "score": "si:score",
+    "in": "si:in",
+    "rule": "si:rule",
+    "reason": "si:reason",
+    "term": "si:term",
+    "topics": {
+      "@id": "si:topics",
+      "@container": "@set"
+    },
+    "Story": "schema:NewsArticle",
+    "id": "si:id",
+    "title": "schema:headline",
+    "url": "schema:url",
+    "summary": "schema:abstract",
+    "published_at": {
+      "@id": "schema:datePublished",
+      "@type": "schema:DateTime"
+    },
+    "tags": {
+      "@id": "schema:about",
+      "@container": "@set"
+    },
+    "scope": "si:scope",
+    "significance": "si:significance",
+    "Chunk": "schema:CreativeWork",
+    "story_id": "schema:isPartOf",
+    "ord": "si:ord",
+    "text": "schema:text",
+    "hash": "si:hash",
+    "subject": "si:subject",
+    "model": "si:model",
+    "dims": "si:dims",
+    "vector": {
+      "@id": "si:vector",
+      "@container": "@set"
+    },
+    "src": "si:src",
+    "rel": "si:rel",
+    "dst": "si:dst",
+    "weight": "si:weight",
+    "evidence": {
+      "@id": "si:evidence",
+      "@container": "@set"
+    },
+    "taggers": {
+      "@id": "si:taggers",
+      "@container": "@set"
+    },
+    "data": "si:data",
+    "value": "si:value"
+  }
+}

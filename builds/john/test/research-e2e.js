@@ -1,0 +1,5 @@
+// Run after the full synthetic fixture suite creates the two test readers.
+const {chromium}=require('playwright'),assert=require('node:assert/strict');const B=process.env.BASE||'http://localhost:3200';
+(async()=>{const b=await chromium.launch(),p=await b.newPage(),errors=[];p.on('pageerror',e=>errors.push(e.message));await p.goto(B+'/?signin=1');await p.fill('#username','matt');await p.fill('#password','correct-horse-9');await p.click('#authBtn');await p.waitForSelector('#feed .story');let n=0;
+for(const id of ['jepa','recurrent-depth','latent-reasoning','world-models']){await p.goto(B+'/m/learn#/c/'+id);await p.waitForSelector('#view .plain');assert.ok(await p.locator('#view a[href^="https://arxiv.org/abs/"]').count()>=2);assert.equal(await p.getByRole('link',{name:'Definition and notation pointers',exact:true}).count(),1);await p.locator('#quiz [data-o="1"]').click();assert.match(await p.textContent('#why'),/^Right\./);n++;}
+assert.equal(errors.length,0);console.log(`Research concept browser: ${n} passed, 0 failed; page errors: none.`);await b.close();})().catch(e=>{console.error(e);process.exit(1)});

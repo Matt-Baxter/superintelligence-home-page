@@ -1,0 +1,25 @@
+[package]
+name = "si-expr"
+version = "1.0.0"
+edition = "2021"
+description = "si-expr: JSON AST rules (a JSONLogic superset) for the Superintelligence Homepage; same semantics as lib/expr (Node) and interop/python."
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+serde_json = { version = "1", features = ["preserve_order"] }
+serde = { version = "1", features = ["derive"], optional = true }
+
+[features]
+# Typed structs generated from schema/types.json (schema/gen/si_types.rs).
+types = ["dep:serde"]
+
+[[bin]]
+name = "si-expr-vectors"
+path = "src/bin/vectors.rs"
+
+[profile.release]
+opt-level = "s"
+lto = true
