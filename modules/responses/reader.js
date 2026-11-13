@@ -127,7 +127,7 @@ async function read(input, { cacheDir = process.env.PAPER_CACHE || (process.env.
   if (fs.existsSync(pdf)) return fromPdf(pdf, m);
   // Text saved by an agent's reader (the web fetch tool's markdown of the arXiv HTML page), for hosts scripts can't reach.
   if (fs.existsSync(txt)) return fromText(fs.readFileSync(txt, "utf8"), m);
-  if (offline) throw new Error(`${id} isn't cached in ${dir}; put paper.html or paper.pdf there, or run without --offline.`);
+  if (offline) throw new Error(`${id} isn't cached in ${dir}; put paper.html, paper.pdf or paper.txt (a web reader's text) there, or run without --offline.`);
   // The HTML rendering keeps sections and tables; older papers or failed conversions only have the PDF.
   try { const page = await get(`https://arxiv.org/html/${id}`); if (/ltx_section|ltx_abstract/.test(page)) { fs.writeFileSync(html, page); return fromHtml(page, m); } } catch (e) { if (e.status && e.status !== 404) throw e; }
   fs.writeFileSync(pdf, await get(`https://arxiv.org/pdf/${id}`, true));

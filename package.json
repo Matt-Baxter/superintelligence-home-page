@@ -69,7 +69,8 @@
     "test:elements": "node --no-warnings test/elements-unit.js",
     "test:coordination-proofs": "node --no-warnings test/coordination-lean.js",
     "demo:capture": "node --no-warnings scripts/demo-capture.js",
-    "read": "node scripts/read.js"
+    "read": "node scripts/read.js",
+    "test:walkthroughs": "node test/review-demo.js && node test/arena-demo.js && node test/dictionary-graph-e2e.js"
   },
   "keywords": [],
   "author": "",

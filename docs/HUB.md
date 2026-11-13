@@ -255,6 +255,7 @@ How a spec is produced: [constitution](../.specify/memory/constitution.md), [tem
 | `npm run test:coordination-proofs` | Lean proofs of coordination and the element catalog (proposed REQ-069, REQ-072; proofs/CoordinationSpec.lean, Coordination.lean, FinalCheck.lean),… |
 | `npm run demo:capture` | Screenshots and short videos for the docs (REQ-068..REQ-075, proposed): the work board, two people on one response in the builder, the element… |
 | `npm run read` | Read every paper and article in a watch input in full, and set the full-text reading next to the judgement of the abstract or summary… |
+| `npm run test:walkthroughs` | Review desk walkthrough in a real browser against `SITE_PROFILE=extended node test/serve-fixtures.js` (port 3200): judge a careful sample paper and…; Arena walkthrough: drives the Arena in a real browser against `SITE_PROFILE=extended npm run dev:sample` (port 3200), checks each step and saves…; Backend-only HTTP integration against throwaway synthetic fixtures after npm test creates readers. |
 
 ## Measures
 

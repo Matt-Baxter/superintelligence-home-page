@@ -32,7 +32,7 @@ const paperCut = (t, doc) => marked(t) || !(doc.sections || []).some((s) => ["co
         const raw = ["paper.txt", "paper.html"].map((f) => path.join(root, "out", "papers", id, f)).find((f) => fs.existsSync(f));
         // The paper's own abstract replaces our summary for the abstract judgement, when the reader found it.
         const abstractReview = doc.abstract && doc.abstract.length > 200 ? R.review({ kind: "paper", title: e.title, text: doc.abstract, authors: (e.authors || []).join(", "), url: e.url, sourceKind: e.sourceKind, at: e.published }) : quick;
-        rows.push({ ...base, read: F.paper({ abstractReview, analysis: A.analyse(doc, { review: abstractReview }), doc, truncated: raw ? paperCut(fs.readFileSync(raw, "utf8"), doc) : false }) });
+        rows.push({ ...base, read: F.paper({ abstractReview, analysis: A.analyse(doc, { review: abstractReview }), doc, truncated: raw ? paperCut(fs.readFileSync(raw, "utf8"), doc) : false, at: e.published }) });
       } else {
         const file = e.file || path.join("out", "articles", `${slug((e.authors || [])[0] || e.title)}.txt`), p = path.resolve(root, file);
         if (!fs.existsSync(p)) throw new Error(`save the article's text to ${file}`);
@@ -49,7 +49,10 @@ const paperCut = (t, doc) => marked(t) || !(doc.sections || []).some((s) => ["co
     "| Piece | Abstract or summary | Full text | Rubric (full text) | Readings |", "| --- | --- | --- | --- | --- |",
     ...rows.map((r) => !r.read ? `| [${r.title}](${r.url}) | ${r.abstract.verdict}, ${r.abstract.credibility} | not read: ${r.notRead} | | |`
       : `| [${r.title}](${r.url}) | ${r.read.abstract.verdict}, ${r.read.abstract.credibility}${r.read.abstract.grade ? `, grade ${r.read.abstract.grade}` : ""} | ${r.read.verdict}, ${r.read.credibility}${r.read.kind === "paper" ? ` (rigor ${r.read.rigor}; contributions backed ${r.read.contributions.backedShare ?? "n/a"}; abstract numbers in body ${r.read.abstractNumbers.traced ?? "n/a"})` : `${r.read.grade ? `, grade ${r.read.grade}` : ""}`}${r.read.truncated ? "; text cut off" : ""} | ${r.read.si.stance}, ${r.read.si.relevance} | ${r.read.agree ? "agree" : `disagree: ${r.read.reasons.join("; ")}`} |`),
-    "", "## Dated forecasts found in full texts", "", ...read.flatMap((r) => (r.read.forecasts || []).map((f) => `- ${f.due}: ${f.sentence} (${r.title})`)), ""];
+    "", "## Dated forecasts found in full texts", "", ...read.flatMap((r) => (r.read.forecasts || []).map((f) => `- ${f.due}: ${f.sentence} (${r.title})`)), "",
+    "## The logic, piece by piece", "", "Every number above comes from these steps. Each step shows its result and what produced it; quotes are short excerpts from the piece.", "",
+    ...read.flatMap((r) => [`### ${r.title}`, "", `Rubric on the full text: ${r.read.si.summary} (relevance ${r.read.si.relevance}).`, ...r.read.si.dimensions.map((d) => `- ${d.label} (${d.axis}) ${d.level}/3: ${d.why.join("; ")}`), "",
+      ...r.read.logic.flatMap((l) => [`**${l.step}: ${l.result}**`, ...l.because.map((b) => `- ${b}`), ""])])];
   fs.writeFileSync(path.join(dir, `${date}.md`), md.join("\n"));
   console.log(`read: ${read.length} of ${rows.length} read in full, ${split.length} disagree -> out/read/${date}.md`);
 })().catch((e) => { console.error(e); process.exit(1); });

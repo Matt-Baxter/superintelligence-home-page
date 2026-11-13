@@ -49,7 +49,8 @@ function benchmarksIn(text) {
 }
 
 function analyse(doc, { review = null, example = null } = {}) {
-  const body = doc.sections.filter((s) => !["references", "appendix", "related"].includes(s.kind));
+  // Credits, acknowledgements and funding are about people, not the work: they never count as evidence.
+  const body = doc.sections.filter((s) => !["references", "appendix", "related"].includes(s.kind) && !/\b(contribut\w*|acknowledg\w*|funding|author statement)\b/i.test(s.heading));
   const all = body.map((s) => ({ s, sents: sentences(s.text).filter((x) => x.length > 30) }));
   const flat = all.flatMap(({ s, sents }) => sents.map((t, i) => ({ id: `${s.id}.${i + 1}`, section: s.heading, kind: s.kind, text: t })));
   const abs = sentences(doc.abstract || "").filter((x) => x.length > 20);

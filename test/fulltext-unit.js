@@ -14,7 +14,7 @@ We study a sample self-improving agent on held-out tasks and find that our gate 
 We propose a gate for self-improvement. We show that it keeps good updates and rejects harmful ones on held-out tasks.
 
 2 Method
-The gate compares each update with the incumbent on held-out tasks, with a sequential test. Compared with the greedy baseline, it rejects more harmful updates.
+The gate compares each update with the incumbent on held-out tasks, with a sequential test. Compared with the greedy baseline, it rejects more harmful updates. Each round the agent proposes an edit to its own prompt or tools, the gate runs both versions on a fresh sample of tasks, and the edit is kept only when the test says the gain is real. The sample tasks are short coding problems written for this test data.
 
 3 Experiments
 Across 5 seeds the gate keeps ${bodyNum} of good updates (95% confidence interval 2.1 to 3.4 points). An ablation without the test keeps 61.0% of harmful updates.
@@ -35,6 +35,34 @@ ok(moved.reasons.some((r) => /97\.5%/.test(r)) && !moved.agree, "an abstract num
 ok(readPaper("97.5%", "92.5%", false).reasons.every((r) => !/found nowhere/.test(r)), "a cut-off text never reports a missing number");
 ok(F.RULES.credibility && F.RULES.disagree && R.CRITERIA.fulltext === F.RULES, "the full-text rules are published with the criteria");
 
+// Direction: a body weaker than its abstract goes to a person; a body stronger is a note.
+const thin = reader.fromText(`Sample: an oversold study (test data)
+
+Abstract
+Compared with three baselines on held-out tasks, our method improves accuracy by 12.5% across 5 seeds with 95% confidence intervals, an ablation of each part and a paired t-test (p < 0.01). Code is available at github.com/sample-org/sample.
+
+1 Introduction
+We present a method for training sample agents. The method is simple and general, and we describe it in words here so that the body has enough text to count as a full paper rather than an abstract alone.
+
+2 Results
+The method works well on the sample tasks we tried. Readers found the outputs pleasant, and the agents behaved as we hoped in the runs we looked at during development of this sample paper.
+
+3 Conclusion
+The method works and we are happy with it. We describe what we did in plain words throughout this sample text, and we thank the sample reviewers for reading an early sample draft of it.
+
+References
+[1] Sample reference (test data).`, {});
+const absThin = R.review({ kind: "paper", title: "Sample: an oversold study (test data)", text: thin.abstract });
+const over = F.paper({ abstractReview: absThin, analysis: A.analyse(thin), doc: thin });
+ok(!over.agree && over.reasons.some((r) => /oversells/.test(r)), `a body weaker than its abstract goes to a person (abstract ${absThin.credibility}, full text ${over.credibility})`);
+ok(readPaper("92.5%", "92.5%").notes.length === 0 || readPaper("92.5%", "92.5%").agree, "a body as strong as its abstract raises nothing");
+const under = (() => { const doc = reader.fromText(paperText("92.5%", "92.5%"), {}); const weakAbs = R.review({ kind: "paper", title: "Sample (test data)", text: "Sample (test data): we study a gate for self-improving agents." }); return F.paper({ abstractReview: weakAbs, analysis: A.analyse(doc), doc }); })();
+ok(under.agree && under.notes.some((n) => /undersells/.test(n)), `a body stronger than its abstract is a note, not a disagreement (${under.abstract.credibility} -> ${under.credibility})`);
+ok(over.logic.find((l) => l.step === "Full text: credibility and verdict").because[0] === `credibility = full-text rigor / 2 + (100 - full-text hype) / 2 = ${over.rigor} / 2 + (100 - ${over.hype}) / 2` && Math.round(over.rigor / 2 + (100 - over.hype) / 2) === over.credibility, "the logic shows the arithmetic, and the arithmetic gives the result");
+const shortDoc = reader.fromText("Abstract\nSample (test data): compared with three baselines across 5 seeds, our method improves accuracy by 12.5% on held-out tasks.\n\n1 Results\nIt works.", {});
+const short = F.paper({ abstractReview: R.review({ kind: "paper", title: "Sample (test data)", text: shortDoc.abstract }), analysis: A.analyse(shortDoc), doc: shortDoc });
+ok(short.abstractOnly && short.agree, "a text too short to be a full paper is an abstract-only reading and sends nothing to a person");
+ok(over.logic.every((l) => l.step && l.result !== undefined && Array.isArray(l.because)), "every step of the logic has a result and its reasons");
 const md = reader.fromText("Source: https://example.org/sample\n# Sample paper (test data)\nURL: https://example.org/sample\n\n## 3 Results\nTable 1: Sample accuracy\n| Method | Accuracy |\n| --- | --- |\n| Ours | 92.5 |\n| Baseline | 80.1 |\n", {});
 ok(md.tables.length === 1 && md.tables[0].rows.length === 3 && md.tables[0].caption === "Sample accuracy" && md.sections.some((s) => /^3 Results/.test(s.heading)), "markdown from a web reader keeps its headings and tables");
 ok(A.analyse(reader.fromText("Abstract\nSample (test data): the gate improves accuracy by 38 points over the baseline on held-out tasks with five seeds.\n\n1 Results\nThe gate improves accuracy by 38 points.", {})).abstractNumbers.every((n) => n.inBody), "abstract numbers are traced by their digits (\"38 points\" in the body traces the abstract's figure)");
