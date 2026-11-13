@@ -1,7 +1,7 @@
 # Bake-off Contract
 
 **Project:** Superintelligence Homepage | **Partners:** Matt Baxter, John Affolter |
-**Current version:** 1.2 (draft: both partners approve it at our next check-in, which completes milestone M1)
+**Current version:** 1.3 (draft: both partners approve it at our next check-in, which completes milestone M1)
 
 **Main question:** Is our comparison of the two builds fair?
 
@@ -108,14 +108,15 @@ We agree on these criteria and weights before either of us starts building (mile
 
 ## 6. Choosing the final version
 
-Dates are set once Paul confirms our presentation date.
+Our presentation is on **December 9, 2026**. M2 matches Paul's Nov 18 deadline for a running app, and
+M4 is the latest date that still shares the app with the class 2 weeks before the presentation.
 
-| # | Milestone | What must be true | Decision |
-|---|-----------|-------------------|----------|
-| M1 | Contract approved | Both partners approve this contract, including the criteria and weights | Freeze scope and criteria; building starts |
-| M2 | Both builds live | Both builds are deployed and pass AT-01 through AT-09 and AT-15 | Cut extras if either build is behind |
-| M3 | Both builds complete | Both builds are feature-complete; code and prompts are shared for scoring | Scoring starts; criteria and weights are locked |
-| M4 | Final version chosen and shared | Scores are final; the merged version is deployed and shared with the class at least 2 weeks before the presentation | Open to the class |
+| # | Date | Milestone | What must be true | Decision |
+|---|------|-----------|-------------------|----------|
+| M1 | Nov 16 | Contract approved | Both partners approve this contract, including the criteria and weights | Freeze scope and criteria; building starts |
+| M2 | Nov 18 | Both builds live | Both builds are deployed and pass AT-01 through AT-09 and AT-15 | Cut extras if either build is behind |
+| M3 | Nov 22 | Both builds complete | Both builds are feature-complete; code and prompts are shared for scoring | Scoring starts; criteria and weights are locked |
+| M4 | Nov 25 | Final version chosen and shared | Scores are final; the merged version is deployed and shared with the class at least 2 weeks before the presentation | Open to the class |
 
 - **How we pick:** a decision model (CLEF or JEV) scores both builds against Section 5 and
   recommends one build as the base, or a merge. We both sign off or override, and the decision,
@@ -152,3 +153,4 @@ Dates are set once Paul confirms our presentation date.
 | 1.0 | Nov 11, 2026 | Matt | Rewrote as a full bake-off contract following the course's Example B: the two builds, shared scope, fairness rules, acceptance tests AT-01 to AT-14, weighted comparison criteria, milestones and tiebreaker. Dropped the split-only parts of John's draft (shared API and data models), since in a bake-off each build designs its own. |
 | 1.1 | Nov 11, 2026 | Matt | Removed the `shared/sample-data/` folder requirement; described the test data in plain terms. |
 | 1.2 | Nov 13, 2026 | Matt | Changes from peer review: key phrases now decide what counts as superintelligence and are fixed for both builds; new feature F9 (plain-text feed content, not-investment-advice notice, keyboard access) with tests AT-15 to AT-17; a separate database per build; relevance judged by three classmates who don't know which build is which; a points rubric for maintainability; note that tests are run by hand until after the CI/CD class. |
+| 1.3 | Nov 13, 2026 | Matt | Set milestone dates from our Dec 9 presentation date: M1 Nov 16, M2 Nov 18, M3 Nov 22, M4 Nov 25. |

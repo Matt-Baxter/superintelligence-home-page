@@ -6,7 +6,7 @@
 
 **Status**: Draft (shared bake-off spec; both partners build against it)
 
-**Spec version**: 1.1 (changes are listed in [`CHANGELOG.md`](../../CHANGELOG.md))
+**Spec version**: 1.2 (changes are listed in [`CHANGELOG.md`](../../CHANGELOG.md))
 
 **Input**: User description: see `docs/speckit-prompts.md`, sections 2 and 3 (`/speckit-specify`
 and the superintelligence amendment).
@@ -212,7 +212,7 @@ filter and check the full feed returns.
 **Delivery**
 
 - **REQ-019**: The Superintelligence Homepage MUST be live at a public URL and shared with the
-  class at least 2 weeks before our presentation.
+  class at least 2 weeks before our presentation (presentation Dec 9, 2026, so by Nov 25).
 - **REQ-020**: Each partner MUST keep a human-written agent log in the repository
   (`AGENT_LOG.md`) answering "What did the agent get wrong & how did you catch it?". The agent log
   is not a feature of the app.
@@ -290,7 +290,7 @@ named milestone).
 | R6 | People | Readers with disabilities can't use the site, for example people using a screen reader or a keyboard instead of a mouse. | Medium | Medium | Every action works with a keyboard alone (REQ-023); text has enough contrast; both builds are checked with a screen reader before milestone M2. | Each build's owner | Planned |
 | R7 | Code | Agent-written or reused code carries a license we can't use, or copies someone else's work. Article text from sources is also copyrighted. | Medium | Low | Use only dependencies with permissive licenses and check them before M3; note where reused code came from (John's earlier projects); link out instead of hosting article text (REQ-007). | Both | Open |
 | R8 | Agents | An agent pushes, deploys or spends money without a human noticing. | Low | High | Agents push to `main` only when a partner says so, never deploy, never handle real secrets and never spend money; a $10/month cap with hard limits in each provider's dashboard (working agreement, Agent rules and Data and costs). | Both | In place |
-| R12 | Failure | Schedule: two complete builds, every milestone date still unset, and a running app expected by Nov 18. One or both builds may not be ready. | High | High | Set milestone dates as soon as Paul confirms the presentation date; required features only until M2; the falling-behind rule (contract, Section 6) makes the further-along build the base. | Both | Open |
+| R12 | Failure | Schedule: two complete builds in under two weeks (M1 Nov 16 to M4 Nov 25, presentation Dec 9), with a running app expected by Nov 18. One or both builds may not be ready. | High | High | Milestone dates are set in the contract (Section 6); required features only until M2; the falling-behind rule (contract, Section 6) makes the further-along build the base. | Both | Open |
 | R13 | Failure | Shared infrastructure: both builds run on John's Vercel account and one $10 budget. If they also shared a database, one build could break the other's data, and one account problem would take down both. | Medium | High | Each build gets its own database (contract, Section 3); spending limits set in each provider's dashboard; Matt has access to the Vercel project as a backup. | John | Open |
 | R14 | Failure | Sources change their feed format, rate-limit us or block us, so stories quietly stop arriving. | Medium | Medium | Each source's last successful fetch is recorded and visible; at least 8 sources so one loss doesn't break REQ-001; fetch no more often than every 30 minutes. | Each build's owner | Open |
 | R9 | Failure | A source or the whole site goes down, or the feed silently stops updating. | Medium | Medium | One failing source doesn't break the feed (REQ-008); each source's last successful fetch is recorded; the hosting platform emails John when a deploy fails, and he tells Matt by text the same day; recovery is to roll back to the last working deploy within 24 hours. | John (hosting), both builds' owners | Open |
