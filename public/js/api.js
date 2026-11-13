@@ -33,7 +33,7 @@ function topbar(user) {
   const here = location.pathname.replace(/\.html$/, "").replace(/\/index$/, "/") || "/";
   const bar = document.createElement("header"); bar.className = "topbar";
   // Module links from "ui.nav": reader-facing ones sit in the bar; admin tools go in one Admin menu.
-  const nav = user?.nav || [], isHere = (h) => (h === "/" ? here === "/" : here.startsWith(h));
+  const nav = user?.nav || [], isHere = (h) => (h === "/" ? here === "/" : here === h || here.startsWith(h.replace(/\/$/, "") + "/") || here.startsWith(h + ".")); // /m/lab is not here on /m/labels
   const mod = nav.filter((n) => !n.admin), tools = nav.filter((n) => n.admin);
   const core = NAV.filter(([, , f]) => !f || (user?.features || []).includes(f));
   const links = [core[0], ...mod.filter((n) => (n.order ?? 50) < 20).map((n) => [n.href, n.label]), ...core.slice(1), ...mod.filter((n) => (n.order ?? 50) >= 20).map((n) => [n.href, n.label])];

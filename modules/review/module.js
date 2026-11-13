@@ -18,6 +18,10 @@ CREATE TABLE IF NOT EXISTS review_events (id \${ID}, qid TEXT NOT NULL UNIQUE, d
   sentence TEXT NOT NULL, due TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', note TEXT DEFAULT '',
   resolved_by INTEGER REFERENCES users(id) ON DELETE SET NULL, resolved_at TEXT, created_at TEXT DEFAULT \${T});
 CREATE INDEX IF NOT EXISTS idx_review_events_outlet ON review_events(outlet);
+CREATE TABLE IF NOT EXISTS review_blind (id \${ID}, doc_id INTEGER NOT NULL REFERENCES review_docs(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, credible TEXT NOT NULL, unmasked INTEGER DEFAULT 0, note TEXT DEFAULT '',
+  created_at TEXT DEFAULT \${T}, UNIQUE (doc_id, user_id));
+CREATE INDEX IF NOT EXISTS idx_review_blind_user ON review_blind(user_id);
 `);
     // A probability the forecast states (0 to 1), Brier-scored once resolved.
     ctx.point("db.schema").addColumns([["review_events", "probability", "REAL"]]);
@@ -26,11 +30,13 @@ CREATE INDEX IF NOT EXISTS idx_review_events_outlet ON review_events(outlet);
       await db.run("DELETE FROM review_docs WHERE id NOT IN (SELECT id FROM review_docs ORDER BY id DESC LIMIT 1000)");
       await db.run("DELETE FROM knowledge_edges WHERE src LIKE 'doc:%' AND src NOT IN (SELECT qid FROM review_docs)");
       await db.run("DELETE FROM review_events WHERE doc_qid NOT IN (SELECT qid FROM review_docs)");
+      await db.run("DELETE FROM review_blind WHERE doc_id NOT IN (SELECT id FROM review_docs)");
       await db.run("DELETE FROM knowledge_edges WHERE src LIKE 'event:%' AND src NOT IN (SELECT qid FROM review_events)");
     });
     ctx.point("http.routes").add((app, deps) => require("./routes")(app, deps));
     ctx.point("meta.actions").add(require("./actions"));
     ctx.point("ui.nav").add({ href: "/m/review", label: "Review", order: 21 });
+    ctx.point("ui.nav").add({ href: "/m/labels", label: "Label", order: 22, admin: true });
     ctx.point("ui.nav").add({ href: "/m/map", label: "Map", order: 17 });
   },
 };

@@ -127,6 +127,10 @@ Every interface change gets a row here. Breaking changes bump the major version 
 - **Route:** `GET /research/transfer` (same gate as /research): re-runs the judge on `bench/domains-{set,holdout,overreach}.json` at request time and shows every verdict.
 - **Sessions:** the session cookie is now read on `/research` pages as well as `/api/`, so a signed-in admin sees the hidden research site (before, only `RESEARCH_PUBLIC=1` opened it).
 - **Benchmark:** suite `domains`, 9 metrics (verdict accuracy, credibility AUC, false alarms per set), tolerance 0. | logged by John |
+| 2.5 | Nov 12, 2026 | Blind labels: ground truth from people (REQ-027, REQ-029; extended and research versions).
+- **Table:** `review_blind (id, doc_id → review_docs ON DELETE CASCADE, user_id → users ON DELETE CASCADE, credible 'yes'|'no'|'unsure', unmasked 0/1, note, created_at, UNIQUE (doc_id, user_id))`; pruned with `review_docs`.
+- **Routes (admins):** `GET /api/admin/review/blind/next?skip=` → `{doc: {id, kind, title, excerpt} | null, left, mine}` with names, organisations and links masked and no verdict; `GET /api/admin/review/blind/:id/source` → `{title, authors, url, excerpt}`; `POST /api/admin/review/blind/:id {credible, note?, unmasked?}` → `{verdict, credibility, judge, agree}`, 400 on a second label; `GET /api/admin/review/blind/stats` → `{pieces, shared, people[], pairs[{a, b, n, agree, kappa, low, high, reading}], judge[...], majority{...}, notes[], unmasked}`.
+- **Page:** `/m/labels` (nav item "Label", admins). **Nav:** a link is current only on its own path or below it (`/m/lab` no longer lights up on `/m/labels`). | logged by John |
 
 **Done means:** a classmate can sign up on the live site, see a grouped, tagged feed from at least 8 sources, and vote on and save stories that are still there the next time they sign in.
 

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blind labels · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css">
+<style>
+  .lab { display: grid; gap: 16px; max-width: 760px; }
+  .piece h2 { font-family: var(--serif); font-weight: 500; font-size: clamp(20px, 4vw, 26px); line-height: 1.25; margin: 0 0 8px; overflow-wrap: anywhere; }
+  .piece .ex { font-size: 16px; line-height: 1.6; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .kind { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+  .q { font-size: 16px; font-weight: 600; margin: 0; }
+  .choices { display: flex; gap: 8px; flex-wrap: wrap; } .choices .btn { min-width: 120px; }
+  textarea { width: 100%; min-height: 56px; }
+  .reveal { border-left: 3px solid var(--fg); padding: 4px 0 4px 12px; display: grid; gap: 4px; }
+  .src { font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+  table.t { width: 100%; border-collapse: collapse; font-size: 14px; } table.t th { text-align: left; font-weight: 500; color: var(--muted); font-size: 13px; }
+  table.t td, table.t th { padding: 8px 8px 8px 0; border-bottom: 1px solid var(--line); vertical-align: top; } table.t td.n { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .scroll { overflow-x: auto; }
+</style></head>
+<body>
+<main class="lab">
+  <div class="pagehead"><div><h1>Blind labels</h1><p class="muted">Would you rely on this piece? Answer before you see what the judge said. Names, organisations and links are hidden, the way the model panel sees them, so the source doesn't decide for you. Your first answer stands.</p></div></div>
+  <p id="status" class="small muted" role="status" aria-live="polite">Loading…</p>
+  <section class="panel" id="piece" hidden></section>
+  <section class="panel" id="stats"><h2>Agreement so far</h2><div id="st"><p class="small muted">Loading…</p></div></section>
+  <p class="small muted">How to read it: kappa is agreement beyond chance (0 is chance, 1 is perfect). The judge is worth trusting only as far as it agrees with you, and only as far as you agree with each other. Through the API: <a href="/m/control#act-review.blind.next">review.blind.next</a>, <a href="/m/control#act-review.blind.label">review.blind.label</a>, <a href="/m/control#act-review.blind.stats">review.blind.stats</a>.</p>
+</main>
+<script src="/js/api.js"></script>
+<script>
+let current = null, unmasked = false;
+const skipped = [];
+async function next() {
+  unmasked = false;
+  const r = await api("/api/admin/review/blind/next" + (skipped.length ? "?skip=" + skipped.join(",") : ""));
+  const box = $("#piece");
+  $("#status").textContent = `${r.mine} labelled by you · ${r.left} left`;
+  if (!r.doc) { current = null; box.hidden = false; box.innerHTML = `<p>${r.mine ? "You've labelled every piece there is. New ones arrive as papers and articles are reviewed." : "Nothing to label yet. Pieces appear here once the review desk or the paper watch has judged some."}</p>${skipped.length ? '<button class="btn" type="button" id="unskip">Show the ones I skipped</button>' : ""}`; if ($("#unskip")) $("#unskip").onclick = () => { skipped.length = 0; next(); }; return; }
+  current = r.doc; box.hidden = false;
+  box.innerHTML = `<div class="piece"><span class="kind">${esc(r.doc.kind)}</span><h2>${esc(r.doc.title)}</h2><p class="ex">${esc(r.doc.excerpt ? r.doc.excerpt + (/[.!?)"']$/.test(r.doc.excerpt.trim()) ? "" : " …") : "(no excerpt stored)")}</p></div>
+    <p class="q" id="q">Would you rely on this?</p><p class="small muted" style="margin:-8px 0 0">The three answers are equal on purpose: none is the default.</p>
+    <div class="choices" role="group" aria-labelledby="q"><button class="btn" type="button" data-c="yes">Yes</button><button class="btn" type="button" data-c="no">No</button><button class="btn" type="button" data-c="unsure">Can't tell</button></div>
+    <label class="small">Why, in a sentence (optional)<textarea id="note" maxlength="300"></textarea></label>
+    <div class="acts"><button class="btn" type="button" id="skip">Skip for now</button><button class="btn" type="button" id="show">Show the source</button></div>
+    <div id="src" class="src"></div><div id="res" role="status" aria-live="polite"></div>`;
+  $$("[data-c]").forEach((b) => (b.onclick = () => answer(b.dataset.c)));
+  $("#skip").onclick = () => { skipped.push(current.id); next(); };
+  $("#show").onclick = async () => {
+    const s = await api(`/api/admin/review/blind/${current.id}/source`); unmasked = true;
+    $("#src").innerHTML = `Source shown, and noted on your label: ${esc(s.authors || "no authors given")}${s.url ? ` · <a href="${esc(s.url)}" rel="noopener" target="_blank">${esc(s.url)}</a>` : ""}`;
+    $("#show").remove();
+  };
+}
+async function answer(c) {
+  $$("[data-c]").forEach((b) => (b.disabled = true));
+  try {
+    const r = await api(`/api/admin/review/blind/${current.id}`, { method: "POST", body: { credible: c, note: $("#note").value, unmasked } });
+    const words = { yes: "would rely on it", no: "would not rely on it", unsure: "couldn't tell" };
+    $("#res").innerHTML = `<div class="reveal"><b>You ${words[c]}. The judge said: ${esc(r.verdict)} (credibility ${r.credibility}).</b>
+      <span class="small">${r.agree === null ? "Unsure answers are counted but left out of kappa." : r.agree ? "You agree with the judge." : "You disagree with the judge. That is exactly what this measures."} <a href="/m/review#doc-${current.id}">See its reasons</a></span>
+      <div><button class="btn primary" type="button" id="go">Next piece</button></div></div>`;
+    $("#go").onclick = next; $("#go").focus(); loadStats();
+  } catch (e) { showErr($("#res"), e); $$("[data-c]").forEach((b) => (b.disabled = false)); }
+}
+async function loadStats() {
+  const s = await api("/api/admin/review/blind/stats"), k = (x) => (x.kappa == null ? "–" : `${x.kappa} <span class="small muted">(${x.low} to ${x.high})</span>`);
+  const pct = (x) => (x.agree == null ? "–" : Math.round(x.agree * 100) + "%");
+  const row = (who, x) => `<tr><td>${who}</td><td class="n">${x.n}</td><td class="n">${pct(x)}</td><td class="n">${k(x)}</td><td>${esc(x.reading)}</td></tr>`;
+  $("#st").innerHTML = `<p class="small">${s.pieces} piece${s.pieces === 1 ? "" : "s"} labelled, ${s.shared} by two or more people. ${s.people.map((p) => `${esc(p.name)}: ${p.n}${p.unsure ? ` (${p.unsure} unsure)` : ""}`).join(" · ") || "No labels yet."}${s.unmasked ? ` ${s.unmasked} label${s.unmasked === 1 ? "" : "s"} made after seeing the source.` : ""}</p>
+    ${s.notes.map((n) => `<p class="small muted">${esc(n)}</p>`).join("")}
+    <div class="scroll"><table class="t"><thead><tr><th>Who</th><th>Pieces</th><th>Agree</th><th>Kappa (95% interval)</th><th>Reading</th></tr></thead><tbody>
+      ${s.pairs.map((p) => row(`${esc(p.a)} and ${esc(p.b)}`, p)).join("")}
+      ${s.judge.map((j) => row(`Judge and ${esc(j.person)}`, j)).join("")}
+      ${row("Judge and the people's majority", s.majority)}
+    </tbody></table></div>`;
+}
+requireUser().then((u) => {
+  if (!u.admin) { $("#status").textContent = "Only an admin can label."; $("#stats").remove(); return; }
+  next().catch((e) => showErr($("#status"), e)); loadStats().catch((e) => showErr($("#st"), e));
+});
+</script>
+</body></html>
