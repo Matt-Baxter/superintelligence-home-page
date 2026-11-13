@@ -10,6 +10,7 @@ made the change. The contract also keeps its own version history in
 
 | Date | Person | Change | Commit(s) |
 |------|--------|--------|-----------|
+| 2026-11-13 | Matt (with Claude Code) | Set milestone dates from our Dec 9 presentation date: M1 Nov 16, M2 Nov 18, M3 Nov 22, M4 Nov 25 (contract v1.3, spec v1.2). | `5a0a612` |
 | 2026-11-13 | Matt (with Claude Code) | Revised spec (v1.1) and contract (v1.2) from peer review: key phrases define what counts as superintelligence; new REQ-021 to REQ-023 (plain-text feed content, not-investment-advice notice, keyboard access) with tests AT-15 to AT-17; new risks R12 to R14; R2 deferred; RLS recommended, not required; blind relevance judging and a maintainability rubric. | `3088688` |
 | 2026-11-12 | Matt (with Claude Code) | Risks & Governance updates from class discussion: row-level security (RLS) added as a mitigation for R3; R5 rewritten around superintelligence being a subjective domain with ambiguous definitions; new risks R10 (fearmongering) and R11 (not investment advice). | `68402e5` |
 | 2026-11-12 | Matt (with Claude Code) | Added a **Risks & Governance** section to the spec: 9 risks across Data, People, Decisions, Code, Agents, Security and Failure, each with likelihood, impact, mitigation, owner and status. Added this changelog. | `9b32204` |
