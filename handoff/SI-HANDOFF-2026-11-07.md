@@ -1,7 +1,5 @@
 # SI handoff, 2026-11-07 (for Codex, v0 and John and Matt)
 
-> **Later note (2026-11-12):** the research-layer requirements this handoff calls REQ-032 to REQ-035 were renumbered REQ-053 to REQ-056 (same order) to avoid a collision with `feature/judge-fidelity-rules`. See `specs/002-research-layer/spec.md`.
-
 Start here. The work is split across **two lines that are each tested but not yet combined**, and they reuse the same requirement numbers for different things. The first job for the next agent is to combine them cleanly; nothing else should land on top until that is done.
 
 Rules that apply to every tool (from [AGENTS.md](../AGENTS.md) and [CLAUDE.md](../CLAUDE.md), plus John's standing instructions): never push to `main` or any of Matt's branches (`main`, `bakeoff/claude-matt`, `claude/*`); never merge or deploy; commits authored as **John Affolter <affo4353@stthomas.edu>**, no trailers, and no assistant or model name in any commit, file or report; never write `AGENT_LOG.md` entries; no Twitter/X; no claims or forecasts attributed to real people; synthetic test data labelled "test data"; report exact pass/fail lines.

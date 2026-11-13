@@ -33,10 +33,10 @@ async function main() {
     const first = String(j.note || "").split("\n")[0].replace(/^Paper:\s*/, "").slice(0, 120) || `job #${j.id}`;
     items.push({ key: `job:${j.id}`, title: `${j.kind === "paper-to-code" ? "Paper-to-code" : `Studio ${j.kind}`}: ${first}`, description: `${j.note || ""}\n\nLearn studio job #${j.id} (${j.status}). An agent does it; see /m/learn.`, labels: ["agent", j.kind, j.kind === "paper-to-code" ? "REQ-026" : "REQ-024"], priority: 3, status: JOB_STATUS[j.status] || "todo", follow: true, milestone: true });
   }
-  // Research-layer work only people can do, kept open while anything waits (REQ-027, REQ-054): the agents' check-in
+  // Research-layer work only people can do, kept open while anything waits (REQ-027, REQ-033): the agents' check-in
   // (scripts/checkin.js) reports the same counts every day.
   const W = await require("./checkin").waiting(db);
-  items.push({ key: "research:forecasts-due", title: "Resolve forecasts that have fallen due", description: `Mark each due forecast as happened, did not happen or unclear on its topic's dossier (/m/dossier). Waiting now: ${W.forecastsDue}. Outlets' track records only count resolved forecasts.`, labels: ["REQ-054", "people"], priority: 2, status: W.forecastsDue ? "todo" : "done", follow: true, milestone: true });
+  items.push({ key: "research:forecasts-due", title: "Resolve forecasts that have fallen due", description: `Mark each due forecast as happened, did not happen or unclear on its topic's dossier (/m/dossier). Waiting now: ${W.forecastsDue}. Outlets' track records only count resolved forecasts.`, labels: ["REQ-033", "people"], priority: 2, status: W.forecastsDue ? "todo" : "done", follow: true, milestone: true });
   items.push({ key: "research:reviews-for-a-person", title: "Label the reviews the guards sent to a person", description: `Agree or disagree with each flagged verdict on the Review desk (/m/review). Waiting now: ${W.reviewsForPerson}. These labels are the judges' calibration (SC-104).`, labels: ["REQ-027", "people"], priority: 2, status: W.reviewsForPerson ? "todo" : "done", follow: true, milestone: true });
   for (const s of CFG.scheduled) items.push({ ...s, priority: 3, status: "in_progress", milestone: true });
 

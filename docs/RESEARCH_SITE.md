@@ -1,6 +1,6 @@
 # Research site: a second deployment that feeds the feed
 
-**Status:** built and tested on `fix/sync-with-main`; proposed as REQ-053 in `specs/002-research-layer/spec.md`, so it needs both partners' approval. Nothing here changes the spec version. Deploying it, and adding its feed as a source on the spec site, are people's steps (agents don't deploy or change Vercel).
+**Status:** built and tested on `fix/sync-with-main`; proposed as REQ-032 in `specs/002-research-layer/spec.md`, so it needs both partners' approval. Nothing here changes the spec version. Deploying it, and adding its feed as a source on the spec site, are people's steps (agents don't deploy or change Vercel).
 
 ## What it is
 

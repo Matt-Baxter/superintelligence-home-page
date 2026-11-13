@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Evidence for the two-model panel (REQ-055 proposed, REQ-029): run each model in PANEL_MODELS on every labelled
+// Evidence for the two-model panel (REQ-034 proposed, REQ-029): run each model in PANEL_MODELS on every labelled
 // synthetic piece (bench/review-set.json and bench/domains-*.json) through the same path the paper watch uses
 // (masking, rubric order, prestige and wording counterfactuals, quote verification), and report per model:
 //   - how often its verdict matches the label, and its credibility AUC (does it rank credible pieces higher?)

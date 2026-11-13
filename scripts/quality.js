@@ -30,7 +30,7 @@ function analyse(rows) {
   const papers = R.filter((x) => x.kind === "paper" && !x.survey), sp = papers.length ? papers.filter((x) => x.verdict === "minor").length / papers.length : 0;
   add("papers-minor", "Share of primary papers judged \"minor\"", +sp.toFixed(2), sp <= 0.6, "abstracts of careful papers landing in \"minor\" means the significance side is too stingy or the verdict rules too coarse", "review the verdict thresholds with synthetic papers of known size");
   const paneled = R.filter((x) => x.panel === "agreed" || x.panel === "disagreed").length / (R.length || 1);
-  add("panel-coverage", "Share of reviews judged by the two-model panel", +paneled.toFixed(2), paneled >= 0.9, "REQ-055: every background judgement should be compared across two models", "set PANEL_MODELS where the watcher runs");
+  add("panel-coverage", "Share of reviews judged by the two-model panel", +paneled.toFixed(2), paneled >= 0.9, "REQ-034: every background judgement should be compared across two models", "set PANEL_MODELS where the watcher runs");
   return { n: R.length, kinds: R.reduce((a, x) => ((a[x.kind] = (a[x.kind] || 0) + 1), a), {}), verdicts, checks, rows: R };
 }
 

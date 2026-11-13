@@ -1,4 +1,4 @@
-// Plain-words descriptions of the review desk's routes, for the catalog at /api/admin/meta (REQ-027, REQ-030, REQ-054).
+// Plain-words descriptions of the review desk's routes, for the catalog at /api/admin/meta (REQ-027, REQ-030, REQ-033).
 // Keep each one in step with routes.js: the catalog lists any description whose route has gone as "stale".
 const piece = [
   { name: "title", in: "body", type: "string", about: "The piece's title. Give a title or some text.", example: "Sample: a new method improves reasoning (test data)" },
@@ -48,23 +48,23 @@ module.exports = [
     undo: "Label it again; the newest label replaces the old one.",
     params: [{ name: "id", in: "path", type: "number", about: "The review's number." },
       { name: "label", in: "body", type: "string", enum: ["agree", "disagree"], required: true, about: "Whether you agree with the verdict." },
-      { name: "note", in: "body", type: "string", about: "Why, in a sentence (optional)." }], req: ["REQ-027", "REQ-055"], page: "/m/control#flagged" },
+      { name: "note", in: "body", type: "string", about: "Why, in a sentence (optional)." }], req: ["REQ-027", "REQ-034"], page: "/m/control#flagged" },
   { id: "review.outlets", method: "GET", path: "/api/review/outlets", title: "Outlet grades and track records", effect: "read",
     about: "Each outlet's A to E grade and its forecast track record, with Brier scores where forecasts stated a probability. Personal blogs are pooled, never named.",
-    req: ["REQ-054"], page: "/research/outlets" },
+    req: ["REQ-033"], page: "/research/outlets" },
   { id: "review.events", method: "GET", path: "/api/review/events", title: "List forecasts", effect: "read",
     about: "Dated forecasts found in reviewed pieces, soonest due first. Forecasts carry an outlet, never a person's name.",
-    params: [{ name: "status", in: "query", type: "string", enum: ["pending", "happened", "did-not", "unclear", "annulled"], about: "Only this status." }], req: ["REQ-054"] },
+    params: [{ name: "status", in: "query", type: "string", enum: ["pending", "happened", "did-not", "unclear", "annulled"], about: "Only this status." }], req: ["REQ-033"] },
   { id: "review.resolve", method: "POST", path: "/api/admin/review/events/:id", title: "Resolve a forecast", effect: "write",
     about: "Marks a forecast as happened or did not. Unclear (reality is ambiguous) and annulled (a premise fell away) count for neither side of the track record.",
     undo: "Set the status back to pending.",
     params: [{ name: "id", in: "path", type: "number", about: "The forecast's number." },
       { name: "status", in: "body", type: "string", enum: ["pending", "happened", "did-not", "unclear", "annulled"], required: true, about: "What happened." },
-      { name: "note", in: "body", type: "string", about: "What you checked (optional)." }], req: ["REQ-054"], page: "/m/control#forecasts" },
+      { name: "note", in: "body", type: "string", about: "What you checked (optional)." }], req: ["REQ-033"], page: "/m/control#forecasts" },
   { id: "review.metrics", method: "GET", path: "/api/review/metrics", title: "How the judges are doing", effect: "read",
     about: "Verdict counts, how often each guard fires, the gap between the naive and guarded score, and how often people agree with the judge.",
     req: ["REQ-027", "REQ-029"] },
   { id: "review.dossier", method: "GET", path: "/api/review/dossier/:topic", title: "Topic dossier", effect: "read",
     about: "A traced analysis of one topic: how strong the evidence is, how loud the buzz is (kept separate), contested claims and forecasts.",
-    params: [{ name: "topic", in: "path", type: "string", about: "A topic id from the ontology.", example: "reasoning" }], req: ["REQ-031", "REQ-054"], page: "/m/dossier" },
+    params: [{ name: "topic", in: "path", type: "string", about: "A topic id from the ontology.", example: "reasoning" }], req: ["REQ-031", "REQ-033"], page: "/m/dossier" },
 ];
