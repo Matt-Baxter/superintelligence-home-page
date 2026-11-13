@@ -1,0 +1,139 @@
+[
+  {
+    "title": "Local grading baseline for John’s preview",
+    "description": "Evidence and next steps\nLocal pass at dcc28da: preflight, 38 spec acceptance checks (18/18 requirements in API mode), and 38 benchmark metrics with zero regressions. Latest seeded package: 12 stories, evidence, source links and return navigation passed in Chromium at 390 and 1280 px in light and dark. Writes returned 405. This is local evidence. The earlier 345 browser checks are recorded for 7d2ed6c.\n\nShared spec: REQ-002, REQ-005, REQ-007, REQ-018\nAcceptance / governance: AT-03, AT-04, AT-13 (related local evidence)\n\nSpec: https://github.com/Matt-Baxter/superintelligence-home-page/blob/041451b/specs/001-superintelligence-homepage/spec.md\nContract: https://github.com/Matt-Baxter/superintelligence-home-page/blob/041451b/CONTRACT.md#4-acceptance-tests",
+    "status": "done",
+    "priority": 0,
+    "labels": [
+      "grading",
+      "grade:local-evidence",
+      "REQ-002",
+      "REQ-005",
+      "REQ-007",
+      "REQ-018"
+    ]
+  },
+  {
+    "title": "Agree on a shared relevance rule and score 20 live stories",
+    "description": "Evidence and next steps\nLocal: photo-editing fixture is rejected and matched words are shown. John’s rule admits one strong term or two root topics. John and Matthew: agree on clear single-topic, weak and off-topic two-tag examples before scoring. Independently label the same 20 live stories, reconcile disagreements and record whether at least 18 qualify.\n\nShared spec: REQ-003, REQ-005\nAcceptance / governance: AT-02, AT-04 · SC-003, SC-004, SC-006\n\nSpec: https://github.com/Matt-Baxter/superintelligence-home-page/blob/041451b/specs/001-superintelligence-homepage/spec.md\nContract: https://github.com/Matt-Baxter/superintelligence-home-page/blob/041451b/CONTRACT.md#4-acceptance-tests\n\nScreenshot review follow-up\nFreeze a shared test set before scoring: one substantive single-topic story, one weak mention, and one off-topic story with two tags. Label a common sample independently, mask build identity where practical, and record adjudication before using relevance as the tiebreaker (Contract §§5–6).\n\nJohn’s proposed scoring guidance: prioritize relevance over story count. Include a story only when the source gives a concrete connection to a shared superintelligence topic, such as frontier capability, alignment, safety, scaling or governance. Leave weak mentions and generic applied AI out of the candidate public feed. Treat this as a proposed shared interpretation for partner review before changing admission. If the live feed has fewer than 20 eligible stories, record the shortfall and leave SC-004 pending.",
+    "status": "todo",
+    "priority": 1,
+    "labels": [
+      "grading",
+      "grade:relevance",
+      "REQ-003",
+      "REQ-005"
+    ]
+  },
+  {
+    "title": "Verify deployed source coverage and failure handling",
+    "description": "Evidence and next steps\nLocal: fixture checks cover ordering, duplicate grouping, excluded links and source failure. Both partners: run the same cases on both deployed builds. Record at least eight sources across five kinds, scheduled fetch evidence, grouping, original links and one failing source.\n\nShared spec: REQ-001, REQ-002, REQ-004, REQ-006, REQ-007, REQ-008\nAcceptance / governance: AT-01, AT-03, AT-05, AT-06 · SC-002, SC-005\n\nSpec: https://github.com/Matt-Baxter/superintelligence-home-page/blob/041451b/specs/001-superintelligence-homepage/spec.md\nContract: https://github.com/Matt-Baxter/superintelligence-home-page/blob/041451b/CONTRACT.md#4-acceptance-tests\n\nScreenshot review follow-up\nRecord upstream rate limiting or format changes and prove the feed remains usable. Include a failed fetch and successful recovery in AT-06 evidence (REQ-001, REQ-008, R9).",
+    "status": "todo",
+    "priority": 2,
+    "labels": [
+      "grading",
+      "grade:sources",
+      "REQ-001",
+      "REQ-002",
+      "REQ-004",
+      "REQ-006",
+      "REQ-007",
+      "REQ-008"
+    ]
+  },
+  {
+    "title": "Verify account flows and persistence after redeploy",
+    "description": "Evidence and next steps\nLocal: account and curation tests pass on fixtures. Both partners: use two test accounts on each writable deployment; test signup, duplicate usernames, session return, vote and save behavior. Repeat after an actual redeploy, recording commit and URL. Ownership and persistence also map to REQ-015 and REQ-016.\n\nShared spec: REQ-009, REQ-010, REQ-011, REQ-012, REQ-013, REQ-014\nAcceptance / governance: AT-07 through AT-12 · SC-007\n\nSpec: https://github.com/Matt-Baxter/superintelligence-home-page/blob/041451b/specs/001-superintelligence-homepage/spec.md\nContract: https://github.com/Matt-Baxter/superintelligence-home-page/blob/041451b/CONTRACT.md#4-acceptance-tests",
+    "status": "todo",
+    "priority": 1,
+    "labels": [
+      "grading",
+      "grade:accounts",
+      "REQ-009",
+      "REQ-010",
+      "REQ-011",
+      "REQ-012",
+      "REQ-013",
+      "REQ-014"
+    ]
+  },
+  {
+    "title": "Cross-review ownership, database isolation and governance",
+    "description": "Evidence and next steps\nLocal: John’s login route has a limiter and ownership checks exist. Both partners: verify cross-user writes fail, confirm R3 database RLS or agree on the shared wording, and explicitly check R2 throttling and R4 safe rendering. Review R11 investment notice and agree how to test it. Record security findings by severity.\n\nShared spec: REQ-006, REQ-007, REQ-011, REQ-012, REQ-015, REQ-016\nAcceptance / governance: AT-08, AT-12 · R2, R3, R4, R11\n\nSpec: https://github.com/Matt-Baxter/superintelligence-home-page/blob/041451b/specs/001-superintelligence-homepage/spec.md\nContract: https://github.com/Matt-Baxter/superintelligence-home-page/blob/041451b/CONTRACT.md#4-acceptance-tests\n\nScreenshot review follow-up\nFor R2/R4/R6/R11, agree which mitigations become explicit shared requirements and identify the checks that would demonstrate them. Keep RLS as a separate verification from AT-12’s observed ownership behavior.",
+    "status": "todo",
+    "priority": 2,
+    "labels": [
+      "grading",
+      "grade:security",
+      "REQ-006",
+      "REQ-007",
+      "REQ-011",
+      "REQ-012",
+      "REQ-015",
+      "REQ-016"
+    ]
+  },
+  {
+    "title": "Run the same reading task on both builds",
+    "description": "Evidence and next steps\nLocal: John’s light/dark phone and desktop flow passes. Both partners: ask three classmates to filter Alignment, open a story, find the matched words and original source, and return. Record completion and feedback for both builds. Verify keyboard, contrast and screen-reader use separately for R6.\n\nShared spec: REQ-005, REQ-007, REQ-017, REQ-018\nAcceptance / governance: AT-04, AT-13 · R6\n\nSpec: https://github.com/Matt-Baxter/superintelligence-home-page/blob/041451b/specs/001-superintelligence-homepage/spec.md\nContract: https://github.com/Matt-Baxter/superintelligence-home-page/blob/041451b/CONTRACT.md#4-acceptance-tests",
+    "status": "todo",
+    "priority": 2,
+    "labels": [
+      "grading",
+      "grade:usability",
+      "REQ-005",
+      "REQ-007",
+      "REQ-017",
+      "REQ-018"
+    ]
+  },
+  {
+    "title": "Verify public delivery, class signup and class sharing",
+    "description": "Evidence and next steps\nThe older hosted seeded preview is read-only and the dcc28da hosted update was blocked. Both partners: record the working public URL and commit, time a classmate’s unaided signup and feed visit (under two minutes), and retain evidence the URL was shared at least two weeks before the presentation.\n\nShared spec: REQ-019\nAcceptance / governance: AT-14 · SC-001\n\nSpec: https://github.com/Matt-Baxter/superintelligence-home-page/blob/041451b/specs/001-superintelligence-homepage/spec.md\nContract: https://github.com/Matt-Baxter/superintelligence-home-page/blob/041451b/CONTRACT.md#4-acceptance-tests\n\nScreenshot review follow-up\nConfirm the date and scope of the next-class runnable demo with Paul and record milestone dates and owners. Distinguish that checkpoint from the public delivery and class-sharing evidence for REQ-019.",
+    "status": "todo",
+    "priority": 1,
+    "labels": [
+      "grading",
+      "grade:delivery",
+      "REQ-019"
+    ]
+  },
+  {
+    "title": "Complete human agent logs and compare maintainability",
+    "description": "Evidence and next steps\nShared main contains Matthew’s human-written entries. John: add your own example of an agent mistake and how you caught it. Both partners: record time since contract approval, agree on one comparable code change, cross-review and record time, affected files and tests.\n\nShared spec: REQ-020\nAcceptance / governance: SC-008 · Contract §5 maintainability and human effort; no dedicated AT for the human-written log\n\nSpec: https://github.com/Matt-Baxter/superintelligence-home-page/blob/041451b/specs/001-superintelligence-homepage/spec.md\nContract: https://github.com/Matt-Baxter/superintelligence-home-page/blob/041451b/CONTRACT.md#4-acceptance-tests\n\nScreenshot review follow-up\nAgree on scoring anchors for maintainability before cross-review (time, files changed, clarity and tests). Record both starting points and the approved start date for effort. Identify the screenshot as an internal AI-assisted review if included in the report.",
+    "status": "todo",
+    "priority": 2,
+    "labels": [
+      "grading",
+      "grade:effort",
+      "REQ-020"
+    ]
+  },
+  {
+    "title": "Record paired acceptance results and confirm course rubric",
+    "description": "Evidence and next steps\nBoth partners: record AT-01 through AT-14 by build, revision, URL, fixture and outcome. Track shared-spec human checks separately. Confirm Paul’s actual assignment rubric and submission receipt. The team contract weights are acceptance 30, relevance 20, security 15, maintainability 15, effort 10, usability 10.\n\nShared spec: REQ-018, REQ-019, REQ-020\nAcceptance / governance: AT-01 through AT-14 · SC-008\n\nSpec: https://github.com/Matt-Baxter/superintelligence-home-page/blob/041451b/specs/001-superintelligence-homepage/spec.md\nContract: https://github.com/Matt-Baxter/superintelligence-home-page/blob/041451b/CONTRACT.md#4-acceptance-tests\n\nTwo-build checklist: builds/john/docs/BAKEOFF-ACCEPTANCE.md. Record Pass, Fail, or Blocked with evidence for each deployed test.\n\nScreenshot review follow-up\nContract v1.1 at 041451b still says draft. Record both partners’ approval and the exact contract and spec revisions for M1. Pin both build commits and fixture version per run. Agree which local checks to rerun after a change, and record deployed AT-01–14 results separately.",
+    "status": "todo",
+    "priority": 2,
+    "labels": [
+      "grading",
+      "grade:scorecard",
+      "REQ-018",
+      "REQ-019",
+      "REQ-020"
+    ]
+  },
+  {
+    "title": "Verify isolation between the two bake-off deployments",
+    "description": "Screenshot review follow-up\nConfirm which Vercel project and database each build actually uses. Verify that deployment, migrations and test writes for one build cannot disrupt the other. Record resource ownership, spending against the shared cap, and a rollback owner. If hosting or database isolation is unresolved, keep it as an open risk.\n\nAcceptance evidence: AT-06, AT-12, AT-14 and SC-007. Governance: R8 and R9.",
+    "status": "todo",
+    "priority": 2,
+    "labels": [
+      "grading",
+      "grade:infra",
+      "REQ-008",
+      "REQ-015",
+      "REQ-016",
+      "REQ-019"
+    ]
+  }
+]

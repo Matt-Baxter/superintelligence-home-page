@@ -4,7 +4,7 @@ Run `npm run demo` from the repository and open http://localhost:3200/?signin=1.
 
 The sign-in page offers **Use reader account** and **Use admin account**. Select a role to fill the form, then select **Sign in**. Readers can browse, vote and save. Admins can also use the project and administration tools. Test both people in separate browser profiles; tabs in the same profile share a session. Sign out before switching roles in one profile.
 
-Every launch creates a fresh temporary SQLite database and synthetic feeds. It ignores hosted database configuration, listens only on 127.0.0.1 and refuses production mode. The shared credentials belong only to this disposable demo. They never appear on the normal server. Existing users in another database are unaffected. The existing `npm run dev:sample` test runner continues to start without seeded accounts so the first-account-admin acceptance checks remain meaningful.
+The demo keeps its SQLite database in `out/demo-data/`. Restarting preserves tracker issues and other demo changes. Run `DEMO_FRESH=1 npm run demo` for a separate temporary database. The demo loads synthetic feeds. It ignores hosted database configuration, listens only on 127.0.0.1 and refuses production mode. The shared credentials belong only to this disposable demo. They never appear on the normal server. Existing users in another database are unaffected. The existing `npm run dev:sample` test runner continues to start without seeded accounts so the first-account-admin acceptance checks remain meaningful.
 
 Public entry: `/welcome`. It explains the reader, topics, source grouping and significance scores, with explicitly synthetic examples and account links. The actual feed at `/` and story detail are public. Guests can search, filter and inspect sources; voting, saves, submission and administration require sign-in. Guest detail responses exclude notes and list memberships. Password reset by email is not implemented; the sign-in help says so. There is no authentication bypass.
 
@@ -25,3 +25,5 @@ The demo's public feed now has **Test reader** and **Test admin** links. Each op
 After `npm ci`, run `npx playwright install chromium` once to install the test browser. Run `npm run test:demo` against `npm run demo` to emulate guest, reader and admin experiences at 390px and 1280px in light and dark themes. It tests credential filling, actual server permissions, logout, saved-view protection, page errors and horizontal overflow; screenshots are saved in `out/demo-*.png`. The test uses Playwright (the same browser-test dependency as `npm test`). These are browser viewport emulations, not real-device or production integration tests.
 
 Role-emulation validation: `24 passed, 0 failed`; `page errors: none`. The existing normal test runner still has no seeded users, preserving its first-account-admin checks.
+
+Record paired deployed results in the [bake-off acceptance checklist](BAKEOFF-ACCEPTANCE.md).

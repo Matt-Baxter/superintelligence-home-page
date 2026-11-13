@@ -41,7 +41,16 @@ const { shiftItems } = require("./fixture-dates"); // fixture dates move forward
     const crypto = require("node:crypto");
     const accounts = [{ role: "reader", username: "demo-reader", password: "local-reader-2026" }, { role: "admin", username: "demo-admin", password: "local-admin-2026" }];
     for (const account of accounts) {
-      if (await db.get("SELECT id FROM users WHERE username = ?", account.username)) throw new Error("Use a fresh DATA_DIR for the demo.");
+      const existing = await db.get("SELECT display_name, pass_hash, is_admin, disabled FROM users WHERE username = ?", account.username);
+      if (existing) {
+        const [salt, hash] = existing.pass_hash.split(":");
+        const matches = salt && crypto.scryptSync(account.password, salt, 64).toString("hex") === hash;
+        if (!matches || existing.disabled || Boolean(existing.is_admin) !== (account.role === "admin") ||
+            existing.display_name !== `Sample ${account.role} (test data)`) {
+          throw new Error("The existing demo account differs from the sample account. Use DEMO_FRESH=1 for a clean demo.");
+        }
+        continue;
+      }
       const salt = crypto.randomBytes(16).toString("hex"), hash = salt + ":" + crypto.scryptSync(account.password, salt, 64).toString("hex");
       await db.insert("INSERT INTO users (username, display_name, pass_hash, is_admin, created_at) VALUES (?, ?, ?, ?, ?)", account.username, `Sample ${account.role} (test data)`, hash, account.role === "admin" ? 1 : 0, db.now());
     }

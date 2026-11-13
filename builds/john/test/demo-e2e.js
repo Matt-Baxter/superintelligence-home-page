@@ -1,4 +1,4 @@
-// Run against a disposable npm run demo server. Emulates roles and screen sizes, not production integrations.
+// Run against DEMO_FRESH=1 npm run demo. Emulates roles and screen sizes, not production integrations.
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 const B = process.env.DEMO_BASE || 'http://localhost:3200';
