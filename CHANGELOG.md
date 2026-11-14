@@ -10,6 +10,8 @@ made the change. The contract also keeps its own version history in
 
 | Date | Person | Change | Commit(s) |
 |------|--------|--------|-----------|
+| 2026-11-14 | Matt (with Claude Code) | Build A User Story 2 (tasks T028–T035): sign up, sign in, sign out, stay signed in for 30 days. All 23 acceptance tests pass (AT-01 to AT-09, AT-15). | `11e1a08` |
+| 2026-11-14 | Matt (with Claude Code) | Build A's arXiv source narrowed to paper titles with core superintelligence phrases, after a real fetch showed off-topic papers matching "alignment" or "scaling laws" in other senses. | `0f1ef7e` |
 | 2026-11-14 | Matt (with Claude Code) | Build A User Story 1 (tasks T019–T027): the superintelligence feed. Fetching, filtering, grouping and the feed page; all 11 acceptance tests pass (AT-01 to AT-06, AT-15). | `4451d93` |
 | 2026-11-14 | Matt (with Claude Code) | Added singular and plural forms of key phrases (spec v1.4), since whole-word matching meant "frontier model" missed "frontier models". Shared rule: John's build should use the same list. | `17c1ddb` |
 | 2026-11-13 | Matt (with Claude Code) | Build A setup and foundation (tasks T001–T018): Next.js project in `builds/matt/`, database schema, topic matching, 11 checked sources across 6 kinds, sample feeds and test setup. | `06f89d9` |
