@@ -10,6 +10,7 @@ made the change. The contract also keeps its own version history in
 
 | Date | Person | Change | Commit(s) |
 |------|--------|--------|-----------|
+| 2026-11-14 | Matt (with Claude Code) | Added singular and plural forms of key phrases (spec v1.4), since whole-word matching meant "frontier model" missed "frontier models". Shared rule: John's build should use the same list. | `17c1ddb` |
 | 2026-11-13 | Matt (with Claude Code) | Build A setup and foundation (tasks T001–T018): Next.js project in `builds/matt/`, database schema, topic matching, 11 checked sources across 6 kinds, sample feeds and test setup. | `06f89d9` |
 | 2026-11-13 | Matt (with Claude Code) | Build A plan: tests use a throwaway local database with fake data; the live Neon database is added from Vercel's Storage tab at deploy time; database package changed to `postgres` so one codebase works with both. | `2a57749` |
 | 2026-11-13 | Matt (with Claude Code) | Task list for Build A via `/speckit-tasks`: 60 tasks in 8 phases, tests first for each user story, ordered so the app is live by M2 (Nov 18); manual steps marked for Matt. | `07e7153` |
