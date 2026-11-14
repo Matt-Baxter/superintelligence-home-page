@@ -10,6 +10,7 @@ made the change. The contract also keeps its own version history in
 
 | Date | Person | Change | Commit(s) |
 |------|--------|--------|-----------|
+| 2026-11-14 | Matt (with Claude Code) | Build A User Story 1 (tasks T019–T027): the superintelligence feed. Fetching, filtering, grouping and the feed page; all 11 acceptance tests pass (AT-01 to AT-06, AT-15). | `4451d93` |
 | 2026-11-14 | Matt (with Claude Code) | Added singular and plural forms of key phrases (spec v1.4), since whole-word matching meant "frontier model" missed "frontier models". Shared rule: John's build should use the same list. | `17c1ddb` |
 | 2026-11-13 | Matt (with Claude Code) | Build A setup and foundation (tasks T001–T018): Next.js project in `builds/matt/`, database schema, topic matching, 11 checked sources across 6 kinds, sample feeds and test setup. | `06f89d9` |
 | 2026-11-13 | Matt (with Claude Code) | Build A plan: tests use a throwaway local database with fake data; the live Neon database is added from Vercel's Storage tab at deploy time; database package changed to `postgres` so one codebase works with both. | `2a57749` |
