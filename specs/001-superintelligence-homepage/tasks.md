@@ -137,16 +137,16 @@ own saves, vote totals count both, and a hand-crafted request can't change the o
 
 ### Tests for User Story 3 (write first; they must fail)
 
-- [ ] T039 [US3] Create `builds/matt/tests/acceptance/us3-votes-saves.spec.ts` with blocks: `REQ-013` voting raises the count by one and shows "voted"; voting again removes it; `REQ-013 / REQ-015 (AT-10)` user A's vote survives sign-out and sign-in; `REQ-014 / REQ-015 (AT-11)` users A and B each see only their own saved stories on `/saved`; `REQ-016 (AT-12)` signed in as A, a direct `POST` to B's voted story with an added `userId` field for B leaves B's vote unchanged; signed-out vote or save redirects to `/signin` and records nothing (US3 scenario 5); `REQ-015` votes and saves remain after the app restarts
+- [X] T039 [US3] Create `builds/matt/tests/acceptance/us3-votes-saves.spec.ts` with blocks: `REQ-013` voting raises the count by one and shows "voted"; voting again removes it; `REQ-013 / REQ-015 (AT-10)` user A's vote survives sign-out and sign-in; `REQ-014 / REQ-015 (AT-11)` users A and B each see only their own saved stories on `/saved`; `REQ-016 (AT-12)` signed in as A, a direct `POST` to B's voted story with an added `userId` field for B leaves B's vote unchanged; signed-out vote or save redirects to `/signin` and records nothing (US3 scenario 5); `REQ-015` votes and saves remain after signing out and back in (restart persistence is covered by the database; redeploy persistence is checked on the live site at M3)
 
 ### Implementation for User Story 3
 
-- [ ] T040 [US3] Create `builds/matt/app/api/stories/[id]/vote/route.ts`: `POST`; if not signed in, 303 to `/signin`; if the story doesn't exist, 404; otherwise toggle the row in `votes` for `(currentUser.id, storyId)` only, ignoring any other form fields; 303 to `returnTo` if it is a path on this site (starts with `/` and not `//`), else `/` (REQ-013, REQ-015, REQ-016)
-- [ ] T041 [P] [US3] Create `builds/matt/app/api/stories/[id]/save/route.ts` with the same rules for `saves` (REQ-014, REQ-015, REQ-016)
-- [ ] T042 [US3] Extend `listStories` in `builds/matt/lib/stories.ts` to return each story's vote count and, for a signed-in user, `voted` and `saved` flags; add `listSavedStories(userId)` (REQ-013, REQ-014)
-- [ ] T043 [US3] Update `builds/matt/app/page.tsx`: each story gets a "Vote" / "Remove vote" form button with the count, and a "Save" / "Unsave" form button, each posting with `returnTo` set to the current page (REQ-013, REQ-014)
-- [ ] T044 [US3] Create `builds/matt/app/saved/page.tsx`: signed-out visitors are redirected to `/signin`; otherwise list the user's saved stories with the same story layout, or "You haven't saved any stories yet." (REQ-014)
-- [ ] T045 [US3] Run `npm run test:acceptance -- us3-votes-saves` and fix until every US3 test passes
+- [X] T040 [US3] Create `builds/matt/app/api/stories/[id]/vote/route.ts`: `POST`; if not signed in, 303 to `/signin`; if the story doesn't exist, 404; otherwise toggle the row in `votes` for `(currentUser.id, storyId)` only, ignoring any other form fields; 303 to `returnTo` if it is a path on this site (starts with `/` and not `//`), else `/` (REQ-013, REQ-015, REQ-016)
+- [X] T041 [P] [US3] Create `builds/matt/app/api/stories/[id]/save/route.ts` with the same rules for `saves` (REQ-014, REQ-015, REQ-016)
+- [X] T042 [US3] Extend `listStories` in `builds/matt/lib/stories.ts` to return each story's vote count and, for a signed-in user, `voted` and `saved` flags; add `listSavedStories(userId)` (REQ-013, REQ-014)
+- [X] T043 [US3] Update `builds/matt/app/page.tsx`: each story gets a "Vote" / "Remove vote" form button with the count, and a "Save" / "Unsave" form button, each posting with `returnTo` set to the current page (REQ-013, REQ-014)
+- [X] T044 [US3] Create `builds/matt/app/saved/page.tsx`: signed-out visitors are redirected to `/signin`; otherwise list the user's saved stories with the same story layout, or "You haven't saved any stories yet." (REQ-014)
+- [X] T045 [US3] Run `npm run test:acceptance -- us3-votes-saves` and fix until every US3 test passes
 
 **Checkpoint**: User Stories 1–3 work (AT-01 to AT-12, AT-15).
 

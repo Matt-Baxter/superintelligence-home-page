@@ -213,3 +213,37 @@ button {
   background: #fdecea;
   color: #8c1d18;
 }
+
+.page-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.actions form {
+  margin: 0;
+}
+
+.actions button {
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--accent);
+}
+
+.actions button[aria-pressed="true"] {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.vote-count {
+  color: var(--muted);
+}
