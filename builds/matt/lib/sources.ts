@@ -6,10 +6,14 @@
 //
 // | Source                     | Kind         | Result                                              |
 // |----------------------------|--------------|-----------------------------------------------------|
-// | arXiv (AI papers)          | papers       | Replaced: the daily cs.AI RSS feed is empty on some  |
-// |                            |              | days, so this uses arXiv's search feed (Atom) for    |
-// |                            |              | cs.AI papers on alignment, superintelligence, AGI   |
-// |                            |              | or interpretability. OK, 50 items.                  |
+// | arXiv (superintelligence   | papers       | Replaced twice. The daily cs.AI RSS feed is empty on  |
+// | papers)                    |              | some days. A search of abstracts for "alignment" etc. |
+// |                            |              | let in off-topic papers (clustering, proteins). Now   |
+// |                            |              | it searches cs.AI paper *titles* for core phrases     |
+// |                            |              | only (superintelligence, AGI, AI safety, AI alignment, |
+// |                            |              | scalable oversight, existential risk, loss of control, |
+// |                            |              | recursive self-improvement, intelligence explosion,   |
+// |                            |              | deceptive alignment), newest 20. (2026-11-14)         |
 // | OpenAI News                | frontier-lab | OK                                                  |
 // | Google DeepMind Blog       | frontier-lab | OK                                                  |
 // | MIRI                       | safety-group | OK                                                  |

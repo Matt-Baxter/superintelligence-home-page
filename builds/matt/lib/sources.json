@@ -1,13 +1,13 @@
 [
-  { "id": "arxiv-ai", "name": "arXiv (AI papers)", "kind": "papers", "feedUrl": "https://export.arxiv.org/api/query?search_query=cat:cs.AI+AND+(abs:alignment+OR+abs:superintelligence+OR+abs:AGI+OR+abs:interpretability)&sortBy=submittedDate&sortOrder=descending&max_results=50" },
-  { "id": "openai", "name": "OpenAI News", "kind": "frontier-lab", "feedUrl": "https://openai.com/news/rss.xml" },
-  { "id": "google-deepmind", "name": "Google DeepMind Blog", "kind": "frontier-lab", "feedUrl": "https://deepmind.google/blog/rss.xml" },
-  { "id": "miri", "name": "MIRI", "kind": "safety-group", "feedUrl": "https://intelligence.org/feed/" },
-  { "id": "redwood", "name": "Redwood Research", "kind": "safety-group", "feedUrl": "https://blog.redwoodresearch.org/feed" },
-  { "id": "epoch-ai", "name": "Epoch AI", "kind": "research-org", "feedUrl": "https://epochai.substack.com/feed" },
-  { "id": "ai-impacts", "name": "AI Impacts", "kind": "research-org", "feedUrl": "https://blog.aiimpacts.org/feed" },
-  { "id": "alignment-forum", "name": "AI Alignment Forum", "kind": "forum", "feedUrl": "https://www.alignmentforum.org/feed.xml" },
-  { "id": "lesswrong", "name": "LessWrong", "kind": "forum", "feedUrl": "https://www.lesswrong.com/feed.xml" },
-  { "id": "import-ai", "name": "Import AI", "kind": "newsletter", "feedUrl": "https://importai.substack.com/feed" },
-  { "id": "zvi", "name": "Don't Worry About the Vase", "kind": "newsletter", "feedUrl": "https://thezvi.substack.com/feed" }
+  {"id": "arxiv-ai", "name": "arXiv (superintelligence papers)", "kind": "papers", "feedUrl": "https://export.arxiv.org/api/query?search_query=cat:cs.AI+AND+(ti:superintelligence+OR+ti:superintelligent+OR+ti:AGI+OR+ti:%22artificial+general+intelligence%22+OR+ti:%22AI+safety%22+OR+ti:%22AI+alignment%22+OR+ti:%22scalable+oversight%22+OR+ti:%22existential+risk%22+OR+ti:%22loss+of+control%22+OR+ti:%22recursive+self-improvement%22+OR+ti:%22intelligence+explosion%22+OR+ti:%22deceptive+alignment%22)&sortBy=submittedDate&sortOrder=descending&max_results=20"},
+  {"id": "openai", "name": "OpenAI News", "kind": "frontier-lab", "feedUrl": "https://openai.com/news/rss.xml"},
+  {"id": "google-deepmind", "name": "Google DeepMind Blog", "kind": "frontier-lab", "feedUrl": "https://deepmind.google/blog/rss.xml"},
+  {"id": "miri", "name": "MIRI", "kind": "safety-group", "feedUrl": "https://intelligence.org/feed/"},
+  {"id": "redwood", "name": "Redwood Research", "kind": "safety-group", "feedUrl": "https://blog.redwoodresearch.org/feed"},
+  {"id": "epoch-ai", "name": "Epoch AI", "kind": "research-org", "feedUrl": "https://epochai.substack.com/feed"},
+  {"id": "ai-impacts", "name": "AI Impacts", "kind": "research-org", "feedUrl": "https://blog.aiimpacts.org/feed"},
+  {"id": "alignment-forum", "name": "AI Alignment Forum", "kind": "forum", "feedUrl": "https://www.alignmentforum.org/feed.xml"},
+  {"id": "lesswrong", "name": "LessWrong", "kind": "forum", "feedUrl": "https://www.lesswrong.com/feed.xml"},
+  {"id": "import-ai", "name": "Import AI", "kind": "newsletter", "feedUrl": "https://importai.substack.com/feed"},
+  {"id": "zvi", "name": "Don't Worry About the Vase", "kind": "newsletter", "feedUrl": "https://thezvi.substack.com/feed"}
 ]
