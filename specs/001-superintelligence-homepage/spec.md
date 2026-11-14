@@ -6,7 +6,7 @@
 
 **Status**: Draft (shared bake-off spec; both partners build against it)
 
-**Spec version**: 1.3 (changes are listed in [`CHANGELOG.md`](../../CHANGELOG.md))
+**Spec version**: 1.4 (changes are listed in [`CHANGELOG.md`](../../CHANGELOG.md))
 
 **Input**: User description: see `docs/speckit-prompts.md`, sections 2 and 3 (`/speckit-specify`
 and the superintelligence amendment).
@@ -226,19 +226,20 @@ filter and check the full feed returns.
 ### Superintelligence topics and key phrases
 
 Fixed for both builds (constitution, Bake-off Rules). Changes need both partners' approval and a
-changelog entry.
+changelog entry. Because matching is by whole words, singular and plural forms are listed
+separately (for example "frontier model" and "frontier models").
 
 | Topic | Key phrases |
 |-------|-------------|
-| Capabilities & AGI progress | AGI, artificial general intelligence, superintelligence, superintelligent, frontier model, human-level AI |
-| Automating AI research | automated AI research, AI scientist, automating AI research, AI research agent |
+| Capabilities & AGI progress | AGI, artificial general intelligence, superintelligence, superintelligent, frontier model, frontier models, human-level AI |
+| Automating AI research | automated AI research, AI scientist, AI scientists, automating AI research, AI research agent, AI research agents |
 | Recursive self improvement | recursive self-improvement, self-improving AI, intelligence explosion |
 | Alignment | alignment, aligned AI, misalignment, reward hacking, scalable oversight, superalignment |
-| Interpretability | interpretability, mechanistic interpretability, sparse autoencoder |
-| Safety & risk | AI safety, existential risk, x-risk, catastrophic risk, loss of control, deceptive alignment |
-| Forecasting & timelines | AGI timelines, forecasting AI, AI forecast, transformative AI |
-| Compute & scaling | scaling laws, compute scaling, training compute, scaling hypothesis |
-| Governance & policy | AI governance, frontier AI regulation, compute governance, AI policy, frontier AI safety |
+| Interpretability | interpretability, mechanistic interpretability, sparse autoencoder, sparse autoencoders |
+| Safety & risk | AI safety, existential risk, existential risks, x-risk, catastrophic risk, catastrophic risks, loss of control, deceptive alignment |
+| Forecasting & timelines | AGI timeline, AGI timelines, forecasting AI, AI forecast, AI forecasts, transformative AI |
+| Compute & scaling | scaling law, scaling laws, compute scaling, training compute, scaling hypothesis |
+| Governance & policy | AI governance, frontier AI regulation, compute governance, AI policy, AI policies, frontier AI safety |
 
 ### Key Entities
 

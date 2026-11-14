@@ -1,5 +1,5 @@
 // Superintelligence topics and key phrases, copied exactly from the spec table
-// "Superintelligence topics and key phrases" (spec v1.3). Fixed for both builds: change it only
+// "Superintelligence topics and key phrases" (spec v1.4). Fixed for both builds: change it only
 // with both partners' approval and a changelog entry. (REQ-003, REQ-005)
 
 export type Topic = {
@@ -12,12 +12,12 @@ export const TOPICS: Topic[] = [
   {
     id: "capabilities-agi",
     label: "Capabilities & AGI progress",
-    phrases: ["AGI", "artificial general intelligence", "superintelligence", "superintelligent", "frontier model", "human-level AI"],
+    phrases: ["AGI", "artificial general intelligence", "superintelligence", "superintelligent", "frontier model", "frontier models", "human-level AI"],
   },
   {
     id: "automating-ai-research",
     label: "Automating AI research",
-    phrases: ["automated AI research", "AI scientist", "automating AI research", "AI research agent"],
+    phrases: ["automated AI research", "AI scientist", "AI scientists", "automating AI research", "AI research agent", "AI research agents"],
   },
   {
     id: "recursive-self-improvement",
@@ -32,27 +32,27 @@ export const TOPICS: Topic[] = [
   {
     id: "interpretability",
     label: "Interpretability",
-    phrases: ["interpretability", "mechanistic interpretability", "sparse autoencoder"],
+    phrases: ["interpretability", "mechanistic interpretability", "sparse autoencoder", "sparse autoencoders"],
   },
   {
     id: "safety-risk",
     label: "Safety & risk",
-    phrases: ["AI safety", "existential risk", "x-risk", "catastrophic risk", "loss of control", "deceptive alignment"],
+    phrases: ["AI safety", "existential risk", "existential risks", "x-risk", "catastrophic risk", "catastrophic risks", "loss of control", "deceptive alignment"],
   },
   {
     id: "forecasting-timelines",
     label: "Forecasting & timelines",
-    phrases: ["AGI timelines", "forecasting AI", "AI forecast", "transformative AI"],
+    phrases: ["AGI timeline", "AGI timelines", "forecasting AI", "AI forecast", "AI forecasts", "transformative AI"],
   },
   {
     id: "compute-scaling",
     label: "Compute & scaling",
-    phrases: ["scaling laws", "compute scaling", "training compute", "scaling hypothesis"],
+    phrases: ["scaling law", "scaling laws", "compute scaling", "training compute", "scaling hypothesis"],
   },
   {
     id: "governance-policy",
     label: "Governance & policy",
-    phrases: ["AI governance", "frontier AI regulation", "compute governance", "AI policy", "frontier AI safety"],
+    phrases: ["AI governance", "frontier AI regulation", "compute governance", "AI policy", "AI policies", "frontier AI safety"],
   },
 ];
 
