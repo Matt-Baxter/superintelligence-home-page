@@ -10,6 +10,9 @@
 //   roleplay-rsi             "Recursive Self-Improvement for Long-Horizon Role-Playing Dialogue" (arXiv 2611.07469): an
 //                            updater repairs a character's artifacts after bad replies and, one level up, refines its
 //                            own repair rules from how those repairs turned out, within a bound on edits per round.
+//   experience-handoff       "Experience-Handoff Reinforcement Learning for Recursive Self-Improvement" (arXiv
+//                            2611.16409): notes written from error logs are handed to later attempts, and each note
+//                            is credited by its effect on those attempts rather than kept on trust.
 function rng(seed = 1) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 const gauss = (r) => { const u = Math.max(1e-12, r()), v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
 const round = (x, d = 3) => Math.round(x * 10 ** d) / 10 ** d;
@@ -116,6 +119,52 @@ function rolePlayRSI({ meta = 1, edit_bound = 3, judge_noise = 0.2, rounds = 30,
     notes: [`${meta ? "The updater refined its own rules" : "The updater's rules were fixed"}; ${switches} rule switches, ${side} repairs hit the wrong artifact.`, `${Math.round(right * F)} of ${F} repair rules point at the artifact that really fixes that failure.`] };
 }
 
+// ---------- experience handoff: notes from error logs, credited by their effect on later attempts ----------
+// T task types, each with one hidden right action among A. The policy learns per-type preferences from a scalar
+// reward (1 or 0). A failed attempt also leaves an error log: it names the failed action and, half the time, hints at
+// another one (the hint is wrong with probability hint_noise). Tests are flaky: the right action fails with
+// probability flake, so a log can blame the right action. A reflector turns each log into notes ("avoid a", "try h")
+// that a curator hands to later attempts at the same type. handoff 0 = scalar reward only (logs discarded),
+// 1 = keep every note, 2 = credit each note by its effect on later attempts: a note stays on trial for `trial` uses
+// and is kept only if attempts with it beat the type's success rate before it; otherwise it is dropped.
+function experienceHandoff({ handoff = 2, hint_noise = 0.4, flake = 0.15, trial = 6, episodes = 600, seed = 11 }) {
+  const r = rng(seed), T = 12, A = 8, lr = 0.5;
+  const target = Array.from({ length: T }, () => Math.floor(r() * A));
+  const pref = Array.from({ length: T }, () => new Array(A).fill(0));
+  const book = Array.from({ length: T }, () => ({ avoid: new Map(), tryA: null })); // note -> { uses, wins, kept }
+  const hist = Array.from({ length: T }, () => ({ n: 0, w: 0 }));
+  const choose = (t, rr) => {
+    const b = book[t]; if (b.tryA && rr() < 0.9) return b.tryA.a;
+    const ok = [...Array(A).keys()].filter((a) => !b.avoid.has(a)); const cand = ok.length ? ok : [...Array(A).keys()];
+    const ex = cand.map((a) => Math.exp(pref[t][a])), s = ex.reduce((x, y) => x + y, 0); let u = rr() * s;
+    for (let i = 0; i < cand.length; i++) { u -= ex[i]; if (u <= 0) return cand[i]; } return cand[cand.length - 1];
+  };
+  const succeeds = (t, a, rr) => a === target[t] && rr() >= flake;
+  const pts = []; let wins = 0, dropped = 0;
+  for (let ep = 1; ep <= episodes; ep++) {
+    const t = Math.floor(r() * T), a = choose(t, r), win = succeeds(t, a, r); wins += win;
+    const base = hist[t].n ? hist[t].w / hist[t].n : 1 / A;
+    pref[t][a] += lr * ((win ? 1 : 0) - base); hist[t].n++; hist[t].w += win;
+    if (handoff) {
+      const b = book[t], live = [...b.avoid.values()]; if (b.tryA && b.tryA.a === a) live.push(b.tryA);
+      for (const n of live) if (!n.kept) { n.uses++; n.wins += win; if (n.uses >= trial) {
+        if (handoff === 1 || n.wins / n.uses >= n.before) n.kept = true;
+        else { if (n === b.tryA) b.tryA = null; else b.avoid.delete(n.a); dropped++; } } }
+      if (!win) { // the reflector reads the log
+        if (!b.avoid.has(a) && !(b.tryA && b.tryA.a === a)) b.avoid.set(a, { a, uses: 0, wins: 0, kept: handoff === 1, before: base });
+        if (r() < 0.5 && !b.tryA) { const h = r() < hint_noise ? Math.floor(r() * A) : target[t]; if (h !== a) b.tryA = { a: h, uses: 0, wins: 0, kept: handoff === 1, before: base }; }
+      }
+    }
+    if (ep % 50 === 0) pts.push([ep, round(wins / ep)]);
+  }
+  // Held-out check: fresh attempts at every type with the final policy and playbook, no learning.
+  const r2 = rng(seed + 7); let ok = 0, n = 0; for (let t = 0; t < T; t++) for (let k = 0; k < 25; k++) { ok += succeeds(t, choose(t, r2), r2); n++; }
+  const bad = book.reduce((s, b, t) => s + (b.avoid.has(target[t]) ? 1 : 0) + (b.tryA && b.tryA.a !== target[t] ? 1 : 0), 0);
+  return { metrics: { heldout: round(ok / n), train_success: round(wins / episodes), bad_notes: bad, dropped },
+    series: [{ name: "success rate so far", points: pts }],
+    notes: [`${["Scalar reward only: error logs were discarded", "Every note from the logs was handed on", "Each note was kept only if attempts with it beat the type's earlier success rate"][handoff]}.`, `${bad} notes in the final playbook point the wrong way; ${dropped} were dropped after their trial.`] };
+}
+
 const runnersList = [
   { id: "self-improve-selection", about: "An agent edits itself and keeps the best version, judged on visible tests or hidden evaluations (with an edit budget)",
     params: {
@@ -148,6 +197,17 @@ const runnersList = [
     },
     metrics: [{ id: "bad_rate", label: "Bad-reply rate (last 5 rounds)", better: "lower" }, { id: "rules_right", label: "Share of repair rules aimed at the right artifact", better: "higher" }, { id: "side_effects", label: "Repairs that hit the wrong artifact", better: "lower" }],
     run: (p) => rolePlayRSI(p) },
+  { id: "experience-handoff", about: "Notes written from error logs are handed to later attempts, kept blindly or credited by their effect on those attempts",
+    params: {
+      handoff: { default: 2, min: 0, max: 2, step: 1, about: "0 = scalar reward only, 1 = keep every note, 2 = keep a note only if later attempts with it do better" },
+      hint_noise: { default: 0.4, min: 0, max: 1, step: 0.1, about: "Chance an error log's hint points at the wrong action" },
+      flake: { default: 0.15, min: 0, max: 0.5, step: 0.05, about: "Chance the right action fails anyway (flaky tests), so a log blames it" },
+      trial: { default: 6, min: 2, max: 20, step: 1, about: "Uses before a note is judged (credited handoff)" },
+      episodes: { default: 600, min: 100, max: 2000, step: 100, about: "Training attempts" },
+      seed: { default: 11, min: 1, max: 999, step: 1, about: "Random seed" },
+    },
+    metrics: [{ id: "heldout", label: "Held-out success rate", better: "higher" }, { id: "bad_notes", label: "Notes in the final playbook that point the wrong way", better: "lower" }, { id: "train_success", label: "Success rate during training", better: "higher" }, { id: "dropped", label: "Notes dropped after their trial", better: "info" }],
+    run: (p) => experienceHandoff(p) },
 ];
 // Averaging over seeds, so a verdict doesn't hang on one lucky draw (the Lab's examples pass seeds via "seeds").
 function averaged(fn, p, seeds = 10) {
@@ -157,4 +217,4 @@ function averaged(fn, p, seeds = 10) {
 }
 for (const r of runnersList) { const raw = r.run; r.run = (p) => averaged(raw, p, 10); }
 
-module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI };
+module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI, experienceHandoff };

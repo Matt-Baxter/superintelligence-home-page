@@ -83,6 +83,7 @@ const SUITES = {
       "papers.recompute_evasion": { value: ev, better: "lower", tol: 0, about: "undetected exploits with independent recomputation (arXiv 2609.28614 toy)" },
       "papers.cosine_sae_gain": { value: c(1) - c(0), better: "higher", tol: 1, about: "extra true features a cosine-scored SAE recovers when input sizes vary (arXiv 2606.15054 toy)" },
       "papers.roleplay_meta_bad_drop": { value: Math.round((rq(0) - rq(1)) * 1000) / 1000, better: "higher", tol: 0.02, about: "drop in the bad-reply rate when a role-play updater refines its own repair rules (arXiv 2611.07469 toy)" },
+      "papers.handoff_credit_gain": { value: (() => { const eh = P.runners.find((r) => r.id === "experience-handoff"), h = (m) => eh.run({ handoff: m, hint_noise: 0.4, flake: 0.15, trial: 6, episodes: 600, seed: 11 }).metrics.heldout; return Math.round((h(2) - h(1)) * 1000) / 1000; })(), better: "higher", tol: 0.02, about: "held-out success gained by crediting handed-on notes by their effect instead of keeping them all (arXiv 2611.16409 toy)" },
     };
   },
   // Transfer beyond AI: the same judge on synthetic pieces from other fields (bench/domains-*.json). "set" was used to

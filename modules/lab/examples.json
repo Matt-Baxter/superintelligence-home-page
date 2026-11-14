@@ -644,6 +644,57 @@
      "weight": 20
     }
    ]
+  },
+  {
+   "id": "experience-handoff-credit",
+   "title": "Experience handoff: notes from error logs, kept only if they help",
+   "concept": "concept:recursive-self-improvement",
+   "topics": [
+    "topic:recursive-self-improvement"
+   ],
+   "source": {
+    "title": "Experience-Handoff Reinforcement Learning for Recursive Self-Improvement",
+    "url": "https://arxiv.org/abs/2611.16409",
+    "via": "daily paper watcher, Nov 14, 2026"
+   },
+   "idea": "Training an agent with a plain pass/fail reward throws away most of what a failed attempt teaches: the error log. Here the agent also reflects on each log and writes short notes (\"avoid this\", \"try that\") into a playbook that later attempts at the same task read. Logs can mislead, so the key step is crediting each note by what it does to later attempts and keeping only the notes that help.",
+   "reproduce": {
+    "runner": "experience-handoff",
+    "params": {
+     "handoff": 2,
+     "hint_noise": 0.4,
+     "flake": 0.15,
+     "trial": 6,
+     "episodes": 600,
+     "seed": 11
+    },
+    "expect": "With each note credited by its effect on later attempts, the held-out success rate is about 0.69 and about 2 wrong notes remain in the playbook. Keeping every note instead (handoff 1) leaves about 6 wrong notes and held-out success near 0.53. Training success is highest with credited notes (about 0.62, against about 0.48 with the scalar reward alone), but at this toy scale the scalar-only policy ends higher on the held-out check (about 0.79): a note kept after its trial is never revisited."
+   },
+   "hypothesis": {
+    "statement": "Ours: a longer trial before a note is judged (12 uses instead of 6) gives a cleaner estimate of its effect, so at least 0.5 fewer wrong notes stay in the final playbook.",
+    "params": {
+     "trial": 12
+    },
+    "predict": {
+     "metric": "bad_notes",
+     "direction": "down",
+     "delta": 0.5
+    }
+   },
+   "criteria": [
+    {
+     "metric": "heldout",
+     "weight": 50
+    },
+    {
+     "metric": "bad_notes",
+     "weight": 30
+    },
+    {
+     "metric": "train_success",
+     "weight": 20
+    }
+   ]
   }
  ]
 }

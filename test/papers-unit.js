@@ -23,7 +23,13 @@ ok(JSON.stringify(rq(1, 3)) === JSON.stringify(refine), "role-play self-improvem
 ok(fixed.bad_rate > fixed.start_rate, `with fixed repair rules, wrong-artifact repairs cause drift (${fixed.start_rate} -> ${fixed.bad_rate})`);
 ok(refine.bad_rate < fixed.bad_rate - 0.1 && refine.rules_right > fixed.rules_right, `refining its own rules cuts the bad-reply rate (${fixed.bad_rate} -> ${refine.bad_rate})`);
 ok(loose.rules_right < refine.rules_right, `a looser edit bound makes rules thrash rather than settle (${refine.rules_right} at 3, ${loose.rules_right} at 6)`);
-const ex = ["rsi-hidden-evals", "rrsi-edit-budget", "oversight-recompute", "cosine-sae", "roleplay-bounded-rsi"].map((id) => [id, L.runExample(id)]);
+const eh = P.runners.find((r) => r.id === "experience-handoff"), hq = (m, x = {}) => eh.run({ handoff: m, hint_noise: 0.4, flake: 0.15, trial: 6, episodes: 600, seed: 11, ...x }).metrics;
+const scalar = hq(0), keepAll = hq(1), credited = hq(2);
+ok(JSON.stringify(hq(2)) === JSON.stringify(credited), "experience-handoff toy is deterministic");
+ok(credited.heldout > keepAll.heldout + 0.1 && credited.bad_notes < keepAll.bad_notes, `crediting notes by their effect beats keeping every note (${keepAll.heldout} -> ${credited.heldout} held-out, ${keepAll.bad_notes} -> ${credited.bad_notes} wrong notes)`);
+ok(credited.train_success > scalar.train_success + 0.1, `handed-on notes speed up training over the scalar reward alone (${scalar.train_success} -> ${credited.train_success})`);
+ok(hq(1, { hint_noise: 0.7 }).heldout < keepAll.heldout, "noisier log hints hurt a playbook that keeps every note");
+const ex = ["rsi-hidden-evals", "rrsi-edit-budget", "oversight-recompute", "cosine-sae", "roleplay-bounded-rsi", "experience-handoff-credit"].map((id) => [id, L.runExample(id)]);
 ok(ex.every(([, r]) => r.example.source && /^https:\/\/arxiv\.org\/abs\/\d{4}\.\d{4,5}$/.test(r.example.source.url)), "every paper example links its arXiv source");
-ok(ex.filter(([, r]) => !r.verdict.supported).map(([id]) => id).join() === "rrsi-edit-budget,roleplay-bounded-rsi", "the edit-budget and looser-bound hypotheses are kept as refuted at toy scale");
+ok(ex.filter(([, r]) => !r.verdict.supported).map(([id]) => id).join() === "rrsi-edit-budget,roleplay-bounded-rsi,experience-handoff-credit", "the edit-budget, looser-bound and longer-trial hypotheses are kept as refuted at toy scale");
 console.log(`\npapers unit: ${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);
