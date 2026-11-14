@@ -63,3 +63,80 @@ main {
     padding-right: 1.5rem;
   }
 }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.story {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.story h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.125rem;
+  line-height: 1.35;
+}
+
+.story h2 a {
+  color: var(--text);
+}
+
+.meta {
+  margin: 0 0 0.5rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.summary {
+  margin: 0 0 0.75rem;
+}
+
+.topics,
+.sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin: 0 0 0.5rem;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+}
+
+.topics li {
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.topic-label {
+  font-weight: 600;
+}
+
+.matched {
+  color: var(--muted);
+}
+
+.sources li:not(:last-child)::after {
+  content: "·";
+  margin-left: 0.375rem;
+  color: var(--muted);
+}
+
+.empty {
+  color: var(--muted);
+}
+
+.pager {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0;
+}
