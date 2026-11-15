@@ -10,6 +10,9 @@
 //   roleplay-rsi             "Recursive Self-Improvement for Long-Horizon Role-Playing Dialogue" (arXiv 2611.07469): an
 //                            updater repairs a character's artifacts after bad replies and, one level up, refines its
 //                            own repair rules from how those repairs turned out, within a bound on edits per round.
+//   graded-reward-rl         "Reward-Driven Collider Physics Challenges for Self-Improving Agentic AI via Reinforcement
+//                            Learning" (arXiv 2611.15885): a learner tunes a two-cut event selection from an automatic
+//                            evaluator, rewarded by a continuous score or only by pass/fail against a hard bar.
 function rng(seed = 1) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 const gauss = (r) => { const u = Math.max(1e-12, r()), v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
 const round = (x, d = 3) => Math.round(x * 10 ** d) / 10 ** d;
@@ -116,6 +119,36 @@ function rolePlayRSI({ meta = 1, edit_bound = 3, judge_noise = 0.2, rounds = 30,
     notes: [`${meta ? "The updater refined its own rules" : "The updater's rules were fixed"}; ${switches} rule switches, ${side} repairs hit the wrong artifact.`, `${Math.round(right * F)} of ${F} repair rules point at the artifact that really fixes that failure.`] };
 }
 
+// ---------- continuous vs pass/fail rewards for a learner on an open-ended optimisation task ----------
+// A synthetic "collider" selection: signal and background are Gaussian in two features, and the task is to pick two
+// cuts (keep events with x > c1 and y > c2) that maximise expected s / sqrt(b + 1). Expected counts come from the normal
+// tail, so the score is exact and cheap. A learner keeps a Gaussian over the cuts and moves its mean from sampled
+// proposals (evolution-strategies style, a stand-in for RL). The automatic evaluator returns either the score itself
+// (reward 1, continuous) or only whether it clears a hard bar (reward 0, pass/fail); evaluator noise jitters every
+// score it returns. Quality is the learner's final cuts scored without noise, as a share of the best cuts on a grid.
+function gradedReward({ reward = 1, bar = 0.9, noise = 0, steps = 60, proposals = 8, seed = 11 }) {
+  const r = rng(seed), tail = (z) => 0.5 * erfc(z / Math.SQRT2);
+  const S = 200 * (0.8 + 0.4 * r()), B = 20000 * (0.8 + 0.4 * r()), ms = [1.4 + 0.4 * r(), 1.0 + 0.4 * r()];
+  const sig = (c) => { const s = S * tail((c[0] - ms[0]) / 0.8) * tail((c[1] - ms[1]) / 0.8), b = B * tail(c[0]) * tail(c[1]); return s / Math.sqrt(b + 1); };
+  let best = 0; for (let i = -10; i <= 40; i++) for (let j = -10; j <= 40; j++) best = Math.max(best, sig([i / 10, j / 10]));
+  const evalR = (c) => { const v = (sig(c) / best) * (1 + noise * gauss(r)); return reward ? v : v >= bar ? 1 : 0; };
+  const mu = [-1 + 0.4 * gauss(r), -1 + 0.4 * gauss(r)], sd = 0.3, lr = 20; let informative = 0, reachedAt = null; const pts = [[0, round(sig(mu) / best)]];
+  for (let t = 1; t <= steps; t++) {
+    const eps = Array.from({ length: proposals }, () => [gauss(r), gauss(r)]), R = eps.map((e) => evalR([mu[0] + sd * e[0], mu[1] + sd * e[1]]));
+    const m = mean(R);
+    if (Math.max(...R) - Math.min(...R) > 1e-9) { informative++; for (let k = 0; k < 2; k++) mu[k] += (lr / (1 + t / 30)) * sd * mean(R.map((x, i) => (x - m) * eps[i][k])); }
+    const q = sig(mu) / best; if (reachedAt === null && q >= bar) reachedAt = t; pts.push([t, round(q)]);
+  }
+  const q = sig(mu) / best;
+  return { metrics: { quality: round(q), reached: q >= bar ? 1 : 0, informative: round(informative / steps), steps_to_bar: reachedAt ?? steps + 1 },
+    series: [{ name: "quality by step", points: pts }],
+    notes: [`${reward ? "Continuous" : "Pass/fail"} reward: ${informative} of ${steps} steps gave the learner a usable signal.`, `Final quality ${round(q)} of the best cuts${reachedAt ? `, first at the bar on step ${reachedAt}` : ", never at the bar"}.`] };
+}
+// Complementary error function (Numerical Recipes erfcc, relative error under 1.2e-7).
+function erfc(x) { const z = Math.abs(x), t = 1 / (1 + 0.5 * z);
+  const v = t * Math.exp(-z * z - 1.26551223 + t * (1.00002368 + t * (0.37409196 + t * (0.09678418 + t * (-0.18628806 + t * (0.27886807 + t * (-1.13520398 + t * (1.48851587 + t * (-0.82215223 + t * 0.17087277)))))))));
+  return x >= 0 ? v : 2 - v; }
+
 const runnersList = [
   { id: "self-improve-selection", about: "An agent edits itself and keeps the best version, judged on visible tests or hidden evaluations (with an edit budget)",
     params: {
@@ -148,6 +181,17 @@ const runnersList = [
     },
     metrics: [{ id: "bad_rate", label: "Bad-reply rate (last 5 rounds)", better: "lower" }, { id: "rules_right", label: "Share of repair rules aimed at the right artifact", better: "higher" }, { id: "side_effects", label: "Repairs that hit the wrong artifact", better: "lower" }],
     run: (p) => rolePlayRSI(p) },
+  { id: "graded-reward-rl", about: "A learner tunes event-selection cuts from an automatic evaluator that gives a continuous score or only pass/fail",
+    params: {
+      reward: { default: 1, min: 0, max: 1, step: 1, about: "1 = the evaluator returns the score, 0 = only whether it clears the bar" },
+      bar: { default: 0.9, min: 0.5, max: 0.99, step: 0.01, about: "The bar, as a share of the best achievable score" },
+      noise: { default: 0, min: 0, max: 1, step: 0.05, about: "Relative noise in every score the evaluator returns" },
+      steps: { default: 60, min: 10, max: 200, step: 10, about: "Learning steps" },
+      proposals: { default: 8, min: 2, max: 32, step: 1, about: "Proposals evaluated per step" },
+      seed: { default: 11, min: 1, max: 999, step: 1, about: "Random seed" },
+    },
+    metrics: [{ id: "quality", label: "Quality (share of the best cuts)", better: "higher" }, { id: "reached", label: "Share of runs at the bar", better: "higher" }, { id: "informative", label: "Steps with a usable learning signal", better: "higher" }, { id: "steps_to_bar", label: "Steps to reach the bar", better: "lower" }],
+    run: (p) => gradedReward(p) },
 ];
 // Averaging over seeds, so a verdict doesn't hang on one lucky draw (the Lab's examples pass seeds via "seeds").
 function averaged(fn, p, seeds = 10) {
@@ -157,4 +201,4 @@ function averaged(fn, p, seeds = 10) {
 }
 for (const r of runnersList) { const raw = r.run; r.run = (p) => averaged(raw, p, 10); }
 
-module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI };
+module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI, gradedReward };

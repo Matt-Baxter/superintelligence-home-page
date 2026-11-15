@@ -644,6 +644,58 @@
      "weight": 20
     }
    ]
+  },
+  {
+   "id": "graded-reward-self-improving-science",
+   "title": "Self-improving science agents: a continuous score versus pass/fail",
+   "concept": "concept:recursive-self-improvement",
+   "topics": [
+    "topic:recursive-self-improvement",
+    "topic:automating-ai-research"
+   ],
+   "source": {
+    "title": "Reward-Driven Collider Physics Challenges for Self-Improving Agentic AI via Reinforcement Learning",
+    "url": "https://arxiv.org/abs/2611.15885",
+    "via": "daily paper watcher, Nov 15, 2026"
+   },
+   "idea": "Many science tasks have no single right answer, only better and worse ones, such as choosing which collision events to keep so a signal stands out from background. If an automatic evaluator scores every attempt on a continuous scale, an agent can learn from its own attempts without a person in the loop. A pass/fail benchmark on a hard task gives no such signal: when every attempt fails, there is nothing to learn from.",
+   "reproduce": {
+    "runner": "graded-reward-rl",
+    "params": {
+     "reward": 0,
+     "bar": 0.9,
+     "noise": 0,
+     "steps": 60,
+     "proposals": 8,
+     "seed": 11
+    },
+    "expect": "With only pass/fail feedback against a bar at 0.9 of the best score, no step gives the learner a usable signal and its cuts stay where they started, at about 0.37 of the best. (With the continuous score, reward 1, every step is informative and the learner ends at about 0.95, at the bar in 9 of 10 seeds.)"
+   },
+   "hypothesis": {
+    "statement": "Ours: lowering the pass/fail bar from 0.9 to 0.5 lets some attempts pass, which is enough signal to climb, so final quality rises by at least 0.3.",
+    "params": {
+     "bar": 0.5
+    },
+    "predict": {
+     "metric": "quality",
+     "direction": "up",
+     "delta": 0.3
+    }
+   },
+   "criteria": [
+    {
+     "metric": "quality",
+     "weight": 50
+    },
+    {
+     "metric": "informative",
+     "weight": 30
+    },
+    {
+     "metric": "steps_to_bar",
+     "weight": 20
+    }
+   ]
   }
  ]
 }

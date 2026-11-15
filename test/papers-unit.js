@@ -23,7 +23,13 @@ ok(JSON.stringify(rq(1, 3)) === JSON.stringify(refine), "role-play self-improvem
 ok(fixed.bad_rate > fixed.start_rate, `with fixed repair rules, wrong-artifact repairs cause drift (${fixed.start_rate} -> ${fixed.bad_rate})`);
 ok(refine.bad_rate < fixed.bad_rate - 0.1 && refine.rules_right > fixed.rules_right, `refining its own rules cuts the bad-reply rate (${fixed.bad_rate} -> ${refine.bad_rate})`);
 ok(loose.rules_right < refine.rules_right, `a looser edit bound makes rules thrash rather than settle (${refine.rules_right} at 3, ${loose.rules_right} at 6)`);
-const ex = ["rsi-hidden-evals", "rrsi-edit-budget", "oversight-recompute", "cosine-sae", "roleplay-bounded-rsi"].map((id) => [id, L.runExample(id)]);
+const gr = P.runners.find((r) => r.id === "graded-reward-rl"), gq = (o) => gr.run({ reward: 1, bar: 0.9, noise: 0, steps: 60, proposals: 8, seed: 11, ...o }).metrics;
+const cont = gq({}), pf = gq({ reward: 0 }), pfLow = gq({ reward: 0, bar: 0.5 });
+ok(JSON.stringify(gq({ reward: 0 })) === JSON.stringify(pf), "graded-reward toy is deterministic");
+ok(pf.informative === 0 && cont.informative === 1, `pass/fail feedback against a hard bar gives no usable signal; a continuous score gives it every step (${pf.informative} vs ${cont.informative})`);
+ok(cont.quality > pf.quality + 0.4 && cont.reached >= 0.8, `the continuous score lets the learner climb near the best cuts (${pf.quality} -> ${cont.quality})`);
+ok(pfLow.quality < pf.quality + 0.3, `a lower pass/fail bar alone doesn't close the gap at toy scale (${pf.quality} -> ${pfLow.quality})`);
+const ex = ["rsi-hidden-evals", "rrsi-edit-budget", "oversight-recompute", "cosine-sae", "roleplay-bounded-rsi", "graded-reward-self-improving-science"].map((id) => [id, L.runExample(id)]);
 ok(ex.every(([, r]) => r.example.source && /^https:\/\/arxiv\.org\/abs\/\d{4}\.\d{4,5}$/.test(r.example.source.url)), "every paper example links its arXiv source");
-ok(ex.filter(([, r]) => !r.verdict.supported).map(([id]) => id).join() === "rrsi-edit-budget,roleplay-bounded-rsi", "the edit-budget and looser-bound hypotheses are kept as refuted at toy scale");
+ok(ex.filter(([, r]) => !r.verdict.supported).map(([id]) => id).join() === "rrsi-edit-budget,roleplay-bounded-rsi,graded-reward-self-improving-science", "the edit-budget, looser-bound and lower-bar hypotheses are kept as refuted at toy scale");
 console.log(`\npapers unit: ${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);
