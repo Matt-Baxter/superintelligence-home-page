@@ -9,6 +9,8 @@ What is proved here is the logic of the toy, not the paper's results:
   * so "needed reasons plus junk" gets the optimistic verifier's full reward while its exact score is below 1;
   * once every rollout in a batch gets the decision right, an outcome-only verifier gives no teaching signal;
   * a cost per listed reason makes every irrelevant reason strictly lower the training reward.
+  * under the exact oracle, listing everything is never the dominant choice, so the trainer axiom forces no padding
+    there; under the outcome-only verifier, extra reasons are free once a needed one is listed.
 One modelling assumption is stated as an axiom, not proved: a trainer settles on a choice that is at least as good as
 every alternative in every world and strictly better than each alternative in some world. `trainer_axiom_satisfiable`
 shows the axiom's condition picks out at most one choice, so it can be met by a function and adds no contradiction.
@@ -181,6 +183,37 @@ theorem optimistic_trainer_pads (order : List Nat) :
     trainer (optimisticR order) (List.range (order.length + 1)) = order.length :=
   trainer_dominant _ _ _ (listing_all_dominant order)
 
+/-- The exact oracle's reward for listing the top `k` reasons of `order`. -/
+def exactR (order : List Nat) (k : Nat) (need : List Nat) : Nat × Nat := exact need (order.take k)
+
+theorem hits_head_only (x : Nat) (rest : List Nat) (hx : x ∉ rest) : hits [x] (x :: rest) = 1 := by
+  have h0 : hits [x] rest = 0 := hits_all_irrelevant [x] rest (fun y hy hyx => by
+    simp at hyx; subst hyx; exact hx hy)
+  have e : x :: rest = [x] ++ rest := rfl
+  rw [e, hits_append, hits_self, h0]; rfl
+
+/-- 7. The trainer axiom does not force padding under the exact oracle: when the top-ranked reason is not repeated
+    and there is anything else to list, listing everything is not a dominant choice, because in the world where only
+    the top reason is needed, listing just that one scores strictly higher. -/
+theorem exact_listing_all_not_dominant (x : Nat) (rest : List Nat) (hx : x ∉ rest) (hr : rest ≠ [])
+    (ks : List Nat) (h1 : 1 ∈ ks) :
+    ¬ Dominant (exactR (x :: rest)) ks (x :: rest).length := by
+  intro hd
+  have hle := hd.2.1 1 h1 [x]
+  have hrl : 0 < rest.length := List.length_pos.mpr hr
+  have hh := hits_head_only x rest hx
+  simp only [le, exactR, exact, List.take_length, hh, List.take, List.length_singleton, List.length_cons] at hle
+  have e1 : hits [x] [x] = 1 := hits_self [x]
+  rw [e1] at hle
+  simp only [List.length_nil] at hle
+  omega
+
+/-- 8. ...and under the outcome-only verifier, extra reasons are never penalised either: once a needed reason is
+    listed, appending anything keeps the outcome reward at 1. -/
+theorem outcome_padding_free (need L extra : List Nat) (h : 0 < hits need L) : outcome need (L ++ extra) = 1 := by
+  have : 0 < hits need (L ++ extra) := by rw [hits_append]; omega
+  simp [outcome, this]
+
 /-- A concrete instance (10 candidates, needed reasons 0, 1, 2 ranked first): listing all 10 gets the optimistic
     verifier's full reward, yet the exact oracle prefers listing exactly the 3 needed reasons (1 vs 3/10). -/
 example : optimistic [0, 1, 2] (List.range 10) = (3, 3) := by decide
@@ -198,3 +231,5 @@ end OptimisticVerifier
 #print axioms OptimisticVerifier.outcome_saturates
 #print axioms OptimisticVerifier.penalty_charges_padding
 #print axioms OptimisticVerifier.optimistic_trainer_pads
+#print axioms OptimisticVerifier.exact_listing_all_not_dominant
+#print axioms OptimisticVerifier.outcome_padding_free

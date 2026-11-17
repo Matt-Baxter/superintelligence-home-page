@@ -42,7 +42,7 @@ if (leanRun.error) console.log("  - Lean 4 not found (set LEAN=/path/to/lean): p
 else {
   const outL = leanRun.stdout + leanRun.stderr, deps = (name) => (outL.split(`'OptimisticVerifier.${name}' depends on axioms:`)[1] || "").split("'")[0];
   ok(leanRun.status === 0 && !/error|sorryAx/.test(outL), "the Lean proof checks with plain Lean 4");
-  ok(["exact_irrelevant_costs", "padded_exact_below_one", "outcome_saturates", "penalty_charges_padding"].every((n) => deps(n) && !/trainer/.test(deps(n))) && /trainer_dominant/.test(deps("optimistic_trainer_pads")),
+  ok(["exact_irrelevant_costs", "padded_exact_below_one", "outcome_saturates", "penalty_charges_padding", "exact_listing_all_not_dominant", "outcome_padding_free"].every((n) => deps(n) && !/trainer/.test(deps(n))) && /trainer_dominant/.test(deps("optimistic_trainer_pads")),
     "only the padding theorem rests on the trainer axiom; the arithmetic results use Lean's standard axioms alone");
 }
 const ex = ["rsi-hidden-evals", "rrsi-edit-budget", "oversight-recompute", "cosine-sae", "roleplay-bounded-rsi"].map((id) => [id, L.runExample(id)]);
