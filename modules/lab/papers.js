@@ -10,6 +10,10 @@
 //   roleplay-rsi             "Recursive Self-Improvement for Long-Horizon Role-Playing Dialogue" (arXiv 2611.07469): an
 //                            updater repairs a character's artifacts after bad replies and, one level up, refines its
 //                            own repair rules from how those repairs turned out, within a bound on edits per round.
+//   verifier-hacking         "Optimistic Verifiers Get Hacked: Reward Hacking Under an Exact Process Oracle" (arXiv
+//                            2611.21538): a policy learns how many reasons to list for a decision, trained against an
+//                            exact verifier, an optimistic one that never penalises extra reasons, or an outcome-only one,
+//                            and every rollout is also scored by the exact oracle.
 function rng(seed = 1) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 const gauss = (r) => { const u = Math.max(1e-12, r()), v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
 const round = (x, d = 3) => Math.round(x * 10 ** d) / 10 ** d;
@@ -116,6 +120,41 @@ function rolePlayRSI({ meta = 1, edit_bound = 3, judge_noise = 0.2, rounds = 30,
     notes: [`${meta ? "The updater refined its own rules" : "The updater's rules were fixed"}; ${switches} rule switches, ${side} repairs hit the wrong artifact.`, `${Math.round(right * F)} of ${F} repair rules point at the artifact that really fixes that failure.`] };
 }
 
+// ---------- reward hacking under an exact process oracle ----------
+// Each context has 10 candidate reasons; 2 or 3 of them form the minimal sufficient set (the exact oracle knows it). The
+// policy sees a noisy relevance score per reason and lists its top k; it learns the mean of k by REINFORCE. Verifiers:
+// 0 exact (Jaccard overlap with the minimal set: padding and omissions both cost), 1 optimistic (share of the minimal
+// set covered: extra reasons never cost), 2 outcome-only (the decision is right when any needed reason is listed, so the
+// reward saturates). "penalty" charges the training reward per listed reason. Every rollout is also scored exactly.
+function verifierHack({ verifier = 1, penalty = 0, noise = 0.8, steps = 150, batch = 16, seed = 11 }) {
+  const r = rng(seed), N = 10, sigma = 1.2, lr = 0.6;
+  let mu = 3; const pts = [], prox = [], faith = [], spread = [], ks = [];
+  for (let t = 0; t < steps; t++) {
+    const rows = [];
+    for (let b = 0; b < batch; b++) {
+      const m = r() < 0.5 ? 2 : 3, needed = new Set([...Array(m).keys()]);
+      const score = [...Array(N).keys()].map((i) => (needed.has(i) ? 1 : 0) + noise * gauss(r));
+      const kc = mu + sigma * gauss(r), k = Math.max(1, Math.min(N, Math.round(kc)));
+      const listed = [...Array(N).keys()].sort((a, c) => score[c] - score[a] || a - c).slice(0, k);
+      const hit = listed.filter((i) => needed.has(i)).length, exact = hit / (k + m - hit);
+      const proxy = verifier === 0 ? exact : verifier === 1 ? hit / m : hit > 0 ? 1 : 0;
+      rows.push({ kc, k, exact, proxy, reward: proxy - penalty * k });
+    }
+    const base = mean(rows.map((x) => x.reward));
+    const g = mean(rows.map((x) => (x.reward - base) * (x.kc - mu) / (sigma * sigma)));
+    mu = Math.max(1, Math.min(N, mu + lr * g));
+    const sd = Math.sqrt(mean(rows.map((x) => (x.reward - base) ** 2)));
+    prox.push(mean(rows.map((x) => x.proxy))); faith.push(mean(rows.map((x) => x.exact))); spread.push(sd); ks.push(mean(rows.map((x) => x.k)));
+    if (t % 5 === 0) pts.push([t, round(faith[t])]);
+  }
+  const last = (a) => mean(a.slice(-20)), first = (a) => mean(a.slice(0, 10));
+  const names = ["the exact verifier", "an optimistic verifier", "an outcome-only verifier"];
+  return { metrics: { faithful: round(last(faith)), start_faithful: round(first(faith)), proxy: round(last(prox)), start_proxy: round(first(prox)), listed: round(last(ks), 2), reward_spread: round(last(spread)) },
+    series: [{ name: "exact faithfulness by step", points: pts }],
+    notes: [`Trained against ${names[verifier] || names[1]}${penalty ? ` with a cost of ${penalty} per listed reason` : ""}; the policy ends up listing about ${round(last(ks), 1)} reasons (the minimal set has 2 or 3).`,
+      `The training verifier's reward went ${round(first(prox))} -> ${round(last(prox))}; the exact oracle's faithfulness went ${round(first(faith))} -> ${round(last(faith))}.`] };
+}
+
 const runnersList = [
   { id: "self-improve-selection", about: "An agent edits itself and keeps the best version, judged on visible tests or hidden evaluations (with an edit budget)",
     params: {
@@ -148,6 +187,16 @@ const runnersList = [
     },
     metrics: [{ id: "bad_rate", label: "Bad-reply rate (last 5 rounds)", better: "lower" }, { id: "rules_right", label: "Share of repair rules aimed at the right artifact", better: "higher" }, { id: "side_effects", label: "Repairs that hit the wrong artifact", better: "lower" }],
     run: (p) => rolePlayRSI(p) },
+  { id: "verifier-hacking", about: "A policy learns how many reasons to list for a decision, trained against an exact, an optimistic or an outcome-only verifier, and is always scored by the exact oracle",
+    params: {
+      verifier: { default: 1, min: 0, max: 2, step: 1, about: "0 = exact verifier, 1 = optimistic (extra reasons never cost), 2 = outcome-only (right decision is enough)" },
+      penalty: { default: 0, min: 0, max: 0.3, step: 0.01, about: "Cost charged per listed reason in the training reward" },
+      noise: { default: 0.8, min: 0, max: 2, step: 0.1, about: "How noisy the policy's sense of which reasons matter is" },
+      steps: { default: 150, min: 20, max: 400, step: 10, about: "Training steps" },
+      seed: { default: 11, min: 1, max: 999, step: 1, about: "Random seed" },
+    },
+    metrics: [{ id: "faithful", label: "Exact faithfulness (last 20 steps)", better: "higher" }, { id: "proxy", label: "Training verifier's reward", better: "higher" }, { id: "listed", label: "Reasons listed", better: "lower" }, { id: "reward_spread", label: "Spread of the training reward (teaching signal)", better: "higher" }],
+    run: (p) => verifierHack(p) },
 ];
 // Averaging over seeds, so a verdict doesn't hang on one lucky draw (the Lab's examples pass seeds via "seeds").
 function averaged(fn, p, seeds = 10) {
@@ -157,4 +206,4 @@ function averaged(fn, p, seeds = 10) {
 }
 for (const r of runnersList) { const raw = r.run; r.run = (p) => averaged(raw, p, 10); }
 
-module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI };
+module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI, verifierHack };

@@ -644,6 +644,56 @@
      "weight": 20
     }
    ]
+  },
+  {
+   "id": "optimistic-verifier-padding",
+   "title": "Reward hacking: an optimistic verifier rewards padding",
+   "concept": "concept:reward-hacking",
+   "topics": [
+    "topic:alignment"
+   ],
+   "source": {
+    "title": "Optimistic Verifiers Get Hacked: Reward Hacking Under an Exact Process Oracle",
+    "url": "https://arxiv.org/abs/2611.21538",
+    "via": "daily paper watcher, Nov 17, 2026"
+   },
+   "idea": "When a model is trained against a checker, it learns whatever the checker rewards, including the checker's mistakes. The paper builds a setting where the true answer can be checked exactly: a decision plus the smallest set of reasons that justifies it. A checker that only asks 'did you mention the needed reasons?' never charges for extra ones, so the model learns to pad its answer with reasons. A checker that only looks at the final decision is satisfied almost at once, so it stops teaching anything about the reasons.",
+   "reproduce": {
+    "runner": "verifier-hacking",
+    "params": {
+     "verifier": 1,
+     "penalty": 0,
+     "noise": 0.8,
+     "steps": 150,
+     "seed": 11
+    },
+    "expect": "Trained against the optimistic checker, the checker's own reward climbs from about 0.66 to about 0.95 while exact faithfulness falls from about 0.42 to about 0.31, because the policy learns to list about 7.7 of 10 reasons when only 2 or 3 are needed. (Against the exact checker, verifier 0, faithfulness holds at about 0.42 with about 3.4 reasons; against the outcome-only checker, verifier 2, the reward saturates near 0.99 and its spread, the teaching signal, drops to about 0.05.)"
+   },
+   "hypothesis": {
+    "statement": "Ours: charging the optimistic checker's reward 0.08 per listed reason is enough to undo most of the padding, raising exact faithfulness by at least 0.15.",
+    "params": {
+     "penalty": 0.08
+    },
+    "predict": {
+     "metric": "faithful",
+     "direction": "up",
+     "delta": 0.15
+    }
+   },
+   "criteria": [
+    {
+     "metric": "faithful",
+     "weight": 60
+    },
+    {
+     "metric": "listed",
+     "weight": 25
+    },
+    {
+     "metric": "reward_spread",
+     "weight": 15
+    }
+   ]
   }
  ]
 }

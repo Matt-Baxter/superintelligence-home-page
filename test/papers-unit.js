@@ -23,6 +23,15 @@ ok(JSON.stringify(rq(1, 3)) === JSON.stringify(refine), "role-play self-improvem
 ok(fixed.bad_rate > fixed.start_rate, `with fixed repair rules, wrong-artifact repairs cause drift (${fixed.start_rate} -> ${fixed.bad_rate})`);
 ok(refine.bad_rate < fixed.bad_rate - 0.1 && refine.rules_right > fixed.rules_right, `refining its own rules cuts the bad-reply rate (${fixed.bad_rate} -> ${refine.bad_rate})`);
 ok(loose.rules_right < refine.rules_right, `a looser edit bound makes rules thrash rather than settle (${refine.rules_right} at 3, ${loose.rules_right} at 6)`);
+const vh = P.runners.find((r) => r.id === "verifier-hacking"), vr = (v, pen = 0) => vh.run({ verifier: v, penalty: pen, noise: 0.8, steps: 150, seed: 11 }).metrics;
+const vEx = vr(0), vOpt = vr(1), vOut = vr(2), vPen = vr(1, 0.08);
+ok(JSON.stringify(vr(1)) === JSON.stringify(vOpt), "verifier-hacking toy is deterministic");
+ok(vOpt.proxy > vOpt.start_proxy + 0.2 && vOpt.faithful < vOpt.start_faithful - 0.05, `an optimistic verifier's reward rises while exact faithfulness falls (${vOpt.start_proxy} -> ${vOpt.proxy}; ${vOpt.start_faithful} -> ${vOpt.faithful})`);
+ok(vOpt.listed > vEx.listed + 2, `...because the policy pads its reasons (${vEx.listed} listed on the exact verifier, ${vOpt.listed} on the optimistic one)`);
+ok(vOut.reward_spread < vEx.reward_spread / 2 && vOut.proxy > 0.95, `an outcome-only verifier saturates and stops teaching (reward spread ${vEx.reward_spread} -> ${vOut.reward_spread})`);
+ok(vPen.faithful > vOpt.faithful, `a cost per listed reason recovers some faithfulness (${vOpt.faithful} -> ${vPen.faithful})`);
+const vx = L.runExample("optimistic-verifier-padding");
+ok(/^https:\/\/arxiv\.org\/abs\/2611\.21538$/.test(vx.example.source.url) && !vx.verdict.supported, "the padding-penalty hypothesis is linked to its source and kept as not supported at toy scale");
 const ex = ["rsi-hidden-evals", "rrsi-edit-budget", "oversight-recompute", "cosine-sae", "roleplay-bounded-rsi"].map((id) => [id, L.runExample(id)]);
 ok(ex.every(([, r]) => r.example.source && /^https:\/\/arxiv\.org\/abs\/\d{4}\.\d{4,5}$/.test(r.example.source.url)), "every paper example links its arXiv source");
 ok(ex.filter(([, r]) => !r.verdict.supported).map(([id]) => id).join() === "rrsi-edit-budget,roleplay-bounded-rsi", "the edit-budget and looser-bound hypotheses are kept as refuted at toy scale");
