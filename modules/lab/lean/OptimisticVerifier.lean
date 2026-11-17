@@ -9,12 +9,18 @@ What is proved here is the logic of the toy, not the paper's results:
   * so "needed reasons plus junk" gets the optimistic verifier's full reward while its exact score is below 1;
   * once every rollout in a batch gets the decision right, an outcome-only verifier gives no teaching signal;
   * a cost per listed reason makes every irrelevant reason strictly lower the training reward.
-  * under the exact oracle, listing everything is never the dominant choice, so the trainer axiom forces no padding
-    there; under the outcome-only verifier, extra reasons are free once a needed one is listed.
+  * under the exact oracle, listing everything is not a dominant choice (when the top reason is not repeated and
+    there is more than one candidate), so the trainer axiom does not force padding there; it does not forbid it either;
+  * under the outcome-only verifier, extra reasons are free once a needed one is listed.
+Scope: as in the JS toy, reasons are distinct, so `order`, `need` and listed reasons are meant without repeats (lists
+with repeats double-count hits and are out of scope; theorems stay true but stop meaning scores). "Full reward" means
+m/m, which is 1 when `need` is non-empty.
 One modelling assumption is stated as an axiom, not proved: a trainer settles on a choice that is at least as good as
 every alternative in every world and strictly better than each alternative in some world. `trainer_axiom_satisfiable`
 shows the axiom's condition picks out at most one choice, so it can be met by a function and adds no contradiction.
-Under that axiom, `optimistic_trainer_pads` proves the trainer lists every candidate reason.
+Under that axiom, `optimistic_trainer_pads` proves the trainer lists every candidate reason, whether it may list
+none (k from 0) or must list at least one (k from 1, as in the JS toy). This is about a robust-dominance abstraction
+(one fixed ranking, judged across every world), not a proof about the toy's REINFORCE dynamics.
 -/
 
 namespace OptimisticVerifier
@@ -76,7 +82,8 @@ theorem exact_irrelevant_costs (need L : List Nat) (x : Nat) (hx : x ∉ need) (
   rw [this, Nat.mul_succ]
   exact Nat.lt_add_of_pos_right hpos
 
-/-- 3. The Goodhart gap: the needed reasons plus any junk get the optimistic verifier's full reward (score 1),
+/-- 3. The Goodhart gap: the needed reasons plus any junk get the optimistic verifier's full reward (m/m, so 1 when
+    `need` is non-empty),
     while the exact oracle scores the same answer strictly below 1. -/
 theorem padded_full_optimistic (need junk : List Nat) (hj : ∀ x ∈ junk, x ∉ need) :
     optimistic need (need ++ junk) = (need.length, need.length) := by
@@ -214,6 +221,24 @@ theorem outcome_padding_free (need L extra : List Nat) (h : 0 < hits need L) : o
   have : 0 < hits need (L ++ extra) := by rw [hits_append]; omega
   simp [outcome, this]
 
+/-- Dominance survives narrowing the allowed choices, as long as the dominant one is still allowed. -/
+theorem dominant_mono (R : Nat → List Nat → Nat × Nat) (ks ks' : List Nat) (k : Nat)
+    (h : Dominant R ks k) (hk : k ∈ ks') (hsub : ∀ j ∈ ks', j ∈ ks) : Dominant R ks' k :=
+  ⟨hk, fun j hj need => h.2.1 j (hsub j hj) need, fun j hj hne => h.2.2 j (hsub j hj) hne⟩
+
+/-- 6b. As in the JS toy, where at least one reason is listed (k from 1 to n): the trainer still lists all n. -/
+theorem optimistic_trainer_pads_from_one (order : List Nat) (hne : order ≠ []) :
+    trainer (optimisticR order) ((List.range order.length).map (· + 1)) = order.length := by
+  have hn : 0 < order.length := List.length_pos.mpr hne
+  apply trainer_dominant
+  apply dominant_mono _ _ _ _ (listing_all_dominant order)
+  · simp only [List.mem_map, List.mem_range]
+    exact ⟨order.length - 1, by omega, by omega⟩
+  · intro j hj
+    simp only [List.mem_map, List.mem_range] at hj ⊢
+    obtain ⟨i, hi, rfl⟩ := hj
+    omega
+
 /-- A concrete instance (10 candidates, needed reasons 0, 1, 2 ranked first): listing all 10 gets the optimistic
     verifier's full reward, yet the exact oracle prefers listing exactly the 3 needed reasons (1 vs 3/10). -/
 example : optimistic [0, 1, 2] (List.range 10) = (3, 3) := by decide
@@ -224,12 +249,13 @@ example : lt (exact [0, 1, 2] (List.range 10)) (exact [0, 1, 2] ((List.range 10)
 
 end OptimisticVerifier
 
--- Which axioms each main result rests on: the five arithmetic results use only Lean's standard axioms (propext, and
+-- Which axioms each main result rests on: the arithmetic results use only Lean's standard axioms (propext, and
 -- Quot.sound / Classical.choice where simp needs them); `optimistic_trainer_pads` also uses the trainer axioms.
 #print axioms OptimisticVerifier.exact_irrelevant_costs
 #print axioms OptimisticVerifier.padded_exact_below_one
 #print axioms OptimisticVerifier.outcome_saturates
 #print axioms OptimisticVerifier.penalty_charges_padding
 #print axioms OptimisticVerifier.optimistic_trainer_pads
+#print axioms OptimisticVerifier.optimistic_trainer_pads_from_one
 #print axioms OptimisticVerifier.exact_listing_all_not_dominant
 #print axioms OptimisticVerifier.outcome_padding_free
