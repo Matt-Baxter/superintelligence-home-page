@@ -32,6 +32,19 @@ ok(vOut.reward_spread < vEx.reward_spread / 2 && vOut.proxy > 0.95, `an outcome-
 ok(vPen.faithful > vOpt.faithful, `a cost per listed reason recovers some faithfulness (${vOpt.faithful} -> ${vPen.faithful})`);
 const vx = L.runExample("optimistic-verifier-padding");
 ok(/^https:\/\/arxiv\.org\/abs\/2611\.21538$/.test(vx.example.source.url) && !vx.verdict.supported, "the padding-penalty hypothesis is linked to its source and kept as not supported at toy scale");
+// The Lean 4 proof of the verifier toy's logic: no sorry, exactly the two declared trainer axioms, and (when a Lean 4
+// binary is on PATH or in LEAN) it checks, with the trainer axioms used only by the padding theorem.
+const fs = require("fs"), path = require("path"), { spawnSync } = require("child_process");
+const leanFile = path.join(__dirname, "..", "modules", "lab", "lean", "OptimisticVerifier.lean"), leanSrc = fs.readFileSync(leanFile, "utf8");
+ok(!/\bsorry\b/.test(leanSrc.replace(/sorryAx/g, "")) && (leanSrc.match(/^axiom /gm) || []).length === 2, "the Lean proof has no sorry and declares only the two trainer axioms");
+const leanRun = spawnSync(process.env.LEAN || "lean", [leanFile], { encoding: "utf8", cwd: path.dirname(leanFile) });
+if (leanRun.error) console.log("  - Lean 4 not found (set LEAN=/path/to/lean): proof not re-checked here");
+else {
+  const outL = leanRun.stdout + leanRun.stderr, deps = (name) => (outL.split(`'OptimisticVerifier.${name}' depends on axioms:`)[1] || "").split("'")[0];
+  ok(leanRun.status === 0 && !/error|sorryAx/.test(outL), "the Lean proof checks with plain Lean 4");
+  ok(["exact_irrelevant_costs", "padded_exact_below_one", "outcome_saturates", "penalty_charges_padding"].every((n) => deps(n) && !/trainer/.test(deps(n))) && /trainer_dominant/.test(deps("optimistic_trainer_pads")),
+    "only the padding theorem rests on the trainer axiom; the arithmetic results use Lean's standard axioms alone");
+}
 const ex = ["rsi-hidden-evals", "rrsi-edit-budget", "oversight-recompute", "cosine-sae", "roleplay-bounded-rsi"].map((id) => [id, L.runExample(id)]);
 ok(ex.every(([, r]) => r.example.source && /^https:\/\/arxiv\.org\/abs\/\d{4}\.\d{4,5}$/.test(r.example.source.url)), "every paper example links its arXiv source");
 ok(ex.filter(([, r]) => !r.verdict.supported).map(([id]) => id).join() === "rrsi-edit-budget,roleplay-bounded-rsi", "the edit-budget and looser-bound hypotheses are kept as refuted at toy scale");

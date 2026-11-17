@@ -14,6 +14,7 @@
 //                            2611.21538): a policy learns how many reasons to list for a decision, trained against an
 //                            exact verifier, an optimistic one that never penalises extra reasons, or an outcome-only one,
 //                            and every rollout is also scored by the exact oracle.
+//                            Its logic is proved in Lean 4 in modules/lab/lean/OptimisticVerifier.lean.
 function rng(seed = 1) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 const gauss = (r) => { const u = Math.max(1e-12, r()), v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
 const round = (x, d = 3) => Math.round(x * 10 ** d) / 10 ** d;
