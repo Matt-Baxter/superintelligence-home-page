@@ -10,6 +10,10 @@
 //   roleplay-rsi             "Recursive Self-Improvement for Long-Horizon Role-Playing Dialogue" (arXiv 2611.07469): an
 //                            updater repairs a character's artifacts after bad replies and, one level up, refines its
 //                            own repair rules from how those repairs turned out, within a bound on edits per round.
+//   integrate-rsi            "Evaluation-Free Recursive Self-Improvement for Coding Agents" (arXiv 2611.21056): instead of
+//                            running each self-edited child on benchmark tasks and keeping the best (evaluate-and-select),
+//                            draft several focused improvements, inspect them for broken, redundant and conflicting
+//                            mechanisms, and merge the compatible ones, with no task evaluations inside the loop.
 function rng(seed = 1) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 const gauss = (r) => { const u = Math.max(1e-12, r()), v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
 const round = (x, d = 3) => Math.round(x * 10 ** d) / 10 ** d;
@@ -116,6 +120,56 @@ function rolePlayRSI({ meta = 1, edit_bound = 3, judge_noise = 0.2, rounds = 30,
     notes: [`${meta ? "The updater refined its own rules" : "The updater's rules were fixed"}; ${switches} rule switches, ${side} repairs hit the wrong artifact.`, `${Math.round(right * F)} of ${F} repair rules point at the artifact that really fixes that failure.`] };
 }
 
+// ---------- self-improvement with or without task evaluations in the loop ----------
+// A coding agent is a set of mechanisms. Each proposal is one new mechanism with a hidden effect on general ability:
+// most help a little, some are broken (a deterministic run check catches them), some are valid but quietly hurt
+// (harm_share), some are benchmark tricks (no general value, but the fixed benchmark rewards them: bench_bias), and
+// mechanisms in the same family are redundant. Some pairs conflict (both present costs ability). Evaluate-and-select
+// runs every child on the fixed benchmark and keeps the best; explore-then-integrate never runs a task: it drops
+// broken and redundant proposals, spots each conflict with probability inspect_acc, and merges the rest.
+function integrateRSI({ integrate = 1, generations = 12, proposals = 6, harm_share = 0.1, inspect_acc = 0.8, bench_bias = 0.5, seed = 11 }) {
+  const r = rng(seed), G = 14, mech = [];
+  const make = () => {
+    const u = r(), m = { id: mech.length, fam: Math.floor(r() * G), broken: false, trick: false, value: 0 };
+    if (u < 0.15) { m.broken = true; m.value = -0.3; }
+    else if (u < 0.15 + harm_share) m.value = -0.08 - 0.04 * Math.abs(gauss(r));
+    else if (u < 0.3 + harm_share) m.trick = true;
+    else m.value = 0.06 + 0.04 * Math.abs(gauss(r));
+    m.conf = new Set(mech.filter(() => r() < 0.08).map((x) => x.id)); for (const c of m.conf) mech[c].conf.add(m.id);
+    mech.push(m); return m;
+  };
+  const general = (set) => { const seen = new Set(); let v = 0; const ids = [...set];
+    for (const i of ids) { const m = mech[i]; if (seen.has(m.fam)) continue; seen.add(m.fam); v += m.value; }
+    for (let a = 0; a < ids.length; a++) for (let b = a + 1; b < ids.length; b++) if (mech[ids[a]].conf.has(ids[b])) v -= 0.12;
+    return v; };
+  const tricks = (set) => [...set].filter((i) => mech[i].trick).length * 0.12 * bench_bias;
+  const bench = (set) => general(set) + tricks(set) + 0.03 * gauss(r);
+  const held = (set) => 0.5 + 0.5 * Math.tanh(general(set));
+  let agent = new Set(), evals = 0, parentBench = bench(agent); const pts = [[0, round(held(agent))]];
+  for (let t = 1; t <= generations; t++) {
+    const props = Array.from({ length: proposals }, make);
+    if (!integrate) {
+      let best = null, bestS = parentBench;
+      for (const m of props) { evals++; const child = new Set([...agent, m.id]); const s = m.broken ? -1 : bench(child); if (s > bestS) { bestS = s; best = child; } }
+      if (best) { agent = best; parentBench = bestS; }
+    } else {
+      const fams = new Set([...agent].map((i) => mech[i].fam)), keep = [];
+      for (const m of props) {
+        if (m.broken || fams.has(m.fam)) continue; // the run check and the family check are exact
+        const clash = [...agent, ...keep.map((k) => k.id)].some((i) => m.conf.has(i) && r() < inspect_acc);
+        if (clash) continue; keep.push(m); fams.add(m.fam);
+      }
+      for (const m of keep) agent.add(m.id);
+    }
+    pts.push([t, round(held(agent))]);
+  }
+  const ids = [...agent], gain = Math.max(1e-9, Math.max(0, general(agent)) + tricks(agent));
+  return { metrics: { heldout: round(held(agent)), evals, trick_share: round(tricks(agent) / gain), mechanisms: ids.length, harmful: ids.filter((i) => mech[i].value < 0).length },
+    series: [{ name: "held-out ability by generation", points: pts }],
+    notes: [`${integrate ? "Explore-then-integrate: no task evaluations in the loop" : "Evaluate-and-select: every child run on the fixed benchmark"}; ${evals} task evaluations used.`,
+      `The final agent has ${ids.length} mechanisms, ${ids.filter((i) => mech[i].value < 0).length} of them quietly harmful and ${ids.filter((i) => mech[i].trick).length} benchmark tricks.`] };
+}
+
 const runnersList = [
   { id: "self-improve-selection", about: "An agent edits itself and keeps the best version, judged on visible tests or hidden evaluations (with an edit budget)",
     params: {
@@ -148,6 +202,18 @@ const runnersList = [
     },
     metrics: [{ id: "bad_rate", label: "Bad-reply rate (last 5 rounds)", better: "lower" }, { id: "rules_right", label: "Share of repair rules aimed at the right artifact", better: "higher" }, { id: "side_effects", label: "Repairs that hit the wrong artifact", better: "lower" }],
     run: (p) => rolePlayRSI(p) },
+  { id: "integrate-rsi", about: "A coding agent improves itself by merging inspected proposals with no task evaluations, or by running each child on a fixed benchmark and keeping the best",
+    params: {
+      integrate: { default: 1, min: 0, max: 1, step: 1, about: "1 = explore-then-integrate (no task evaluations), 0 = evaluate-and-select on a fixed benchmark" },
+      generations: { default: 12, min: 2, max: 40, step: 1, about: "Self-improvement generations" },
+      proposals: { default: 6, min: 1, max: 12, step: 1, about: "Focused improvements drafted per generation" },
+      harm_share: { default: 0.1, min: 0, max: 0.5, step: 0.05, about: "Share of proposals that pass every check but quietly hurt general ability" },
+      inspect_acc: { default: 0.8, min: 0, max: 1, step: 0.1, about: "Chance that inspecting the code spots a conflict between two mechanisms" },
+      bench_bias: { default: 0.5, min: 0, max: 1, step: 0.1, about: "How much the fixed benchmark rewards benchmark-specific tricks" },
+      seed: { default: 11, min: 1, max: 999, step: 1, about: "Random seed" },
+    },
+    metrics: [{ id: "heldout", label: "Held-out ability", better: "higher" }, { id: "evals", label: "Task evaluations used", better: "lower" }, { id: "trick_share", label: "Share of gain from benchmark tricks", better: "lower" }, { id: "harmful", label: "Quietly harmful mechanisms kept", better: "lower" }, { id: "mechanisms", label: "Mechanisms in the final agent", better: "info" }],
+    run: (p) => integrateRSI(p) },
 ];
 // Averaging over seeds, so a verdict doesn't hang on one lucky draw (the Lab's examples pass seeds via "seeds").
 function averaged(fn, p, seeds = 10) {
@@ -157,4 +223,4 @@ function averaged(fn, p, seeds = 10) {
 }
 for (const r of runnersList) { const raw = r.run; r.run = (p) => averaged(raw, p, 10); }
 
-module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI };
+module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI, integrateRSI };

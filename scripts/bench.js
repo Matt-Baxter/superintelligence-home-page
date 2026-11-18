@@ -82,6 +82,7 @@ const SUITES = {
       "papers.hidden_eval_hack_drop": { value: Math.round(drop * 1000) / 1000, better: "higher", tol: 0.02, about: "drop in the quirk share when a self-improving agent is judged on hidden evaluations (arXiv 2609.26457 toy)" },
       "papers.recompute_evasion": { value: ev, better: "lower", tol: 0, about: "undetected exploits with independent recomputation (arXiv 2609.28614 toy)" },
       "papers.cosine_sae_gain": { value: c(1) - c(0), better: "higher", tol: 1, about: "extra true features a cosine-scored SAE recovers when input sizes vary (arXiv 2606.15054 toy)" },
+      "papers.eval_free_heldout_gain": { value: Math.round((P.runners.find((r) => r.id === "integrate-rsi").run({ integrate: 1, generations: 12, proposals: 6, harm_share: 0.1, inspect_acc: 0.8, bench_bias: 0.5, seed: 11 }).metrics.heldout - 0.5) * 1000) / 1000, better: "higher", tol: 0.02, about: "held-out gain a self-improving agent gets by merging inspected proposals with no task evaluations (arXiv 2611.21056 toy)" },
       "papers.roleplay_meta_bad_drop": { value: Math.round((rq(0) - rq(1)) * 1000) / 1000, better: "higher", tol: 0.02, about: "drop in the bad-reply rate when a role-play updater refines its own repair rules (arXiv 2611.07469 toy)" },
     };
   },

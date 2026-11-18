@@ -644,6 +644,58 @@
      "weight": 20
     }
    ]
+  },
+  {
+   "id": "integrate-eval-free-rsi",
+   "title": "Self-improvement without benchmark runs: merge what passes inspection",
+   "concept": "concept:recursive-self-improvement",
+   "topics": [
+    "topic:recursive-self-improvement"
+   ],
+   "source": {
+    "title": "Evaluation-Free Recursive Self-Improvement for Coding Agents",
+    "url": "https://arxiv.org/abs/2611.21056",
+    "via": "daily paper watcher, Nov 18, 2026"
+   },
+   "idea": "Self-improving coding agents usually decide which edited version of themselves survives by running every candidate on benchmark tasks and keeping the best. That costs a task run per candidate and keeps pointing the agent at one fixed benchmark. The alternative here never runs a task inside the loop: each generation drafts several focused improvements from the same parent, checks that each one runs, reads them to throw out duplicates and pairs that clash, and merges everything compatible into one descendant.",
+   "reproduce": {
+    "runner": "integrate-rsi",
+    "params": {
+     "integrate": 1,
+     "generations": 12,
+     "proposals": 6,
+     "harm_share": 0.1,
+     "inspect_acc": 0.8,
+     "bench_bias": 0.5,
+     "seed": 11
+    },
+    "expect": "With no task evaluations at all, the merged agent's held-out ability rises from 0.5 to about 0.73. Running every child on the benchmark and keeping the best (integrate 0) gets to about 0.82 but spends 72 task evaluations, and its result drops when the benchmark rewards tricks more (bench_bias 1), while the merged agent's does not move, because it never sees the benchmark. Inspection that misses every clash (inspect_acc 0) loses most of the gain."
+   },
+   "hypothesis": {
+    "statement": "Ours: the loop has no signal for a change that runs, is not a duplicate and clashes with nothing, yet quietly hurts. If such changes rise from a tenth to three tenths of proposals, the merged agent's held-out ability falls by at least 0.1.",
+    "params": {
+     "harm_share": 0.3
+    },
+    "predict": {
+     "metric": "heldout",
+     "direction": "down",
+     "delta": 0.1
+    }
+   },
+   "criteria": [
+    {
+     "metric": "heldout",
+     "weight": 50
+    },
+    {
+     "metric": "evals",
+     "weight": 30
+    },
+    {
+     "metric": "harmful",
+     "weight": 20
+    }
+   ]
   }
  ]
 }

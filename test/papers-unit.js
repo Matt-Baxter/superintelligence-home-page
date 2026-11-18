@@ -23,7 +23,14 @@ ok(JSON.stringify(rq(1, 3)) === JSON.stringify(refine), "role-play self-improvem
 ok(fixed.bad_rate > fixed.start_rate, `with fixed repair rules, wrong-artifact repairs cause drift (${fixed.start_rate} -> ${fixed.bad_rate})`);
 ok(refine.bad_rate < fixed.bad_rate - 0.1 && refine.rules_right > fixed.rules_right, `refining its own rules cuts the bad-reply rate (${fixed.bad_rate} -> ${refine.bad_rate})`);
 ok(loose.rules_right < refine.rules_right, `a looser edit bound makes rules thrash rather than settle (${refine.rules_right} at 3, ${loose.rules_right} at 6)`);
-const ex = ["rsi-hidden-evals", "rrsi-edit-budget", "oversight-recompute", "cosine-sae", "roleplay-bounded-rsi"].map((id) => [id, L.runExample(id)]);
+const ir = P.runners.find((r) => r.id === "integrate-rsi"), iq = (o) => ir.run({ integrate: 1, generations: 12, proposals: 6, harm_share: 0.1, inspect_acc: 0.8, bench_bias: 0.5, seed: 11, ...o }).metrics;
+const merged = iq({}), selected = iq({ integrate: 0 });
+ok(JSON.stringify(iq({})) === JSON.stringify(merged), "evaluation-free self-improvement toy is deterministic");
+ok(merged.evals === 0 && selected.evals === 72, `merging inspected proposals uses no task evaluations; keeping the best child uses one per child (${selected.evals})`);
+ok(merged.heldout - 0.5 > 0.5 * (selected.heldout - 0.5), `with no evaluations the merged agent still gets over half the held-out gain (${merged.heldout} vs ${selected.heldout})`);
+ok(iq({ bench_bias: 1 }).heldout === merged.heldout && iq({ integrate: 0, bench_bias: 1 }).heldout < selected.heldout, "a benchmark that rewards tricks moves the selected agent, never the merged one");
+ok(iq({ inspect_acc: 0 }).heldout < merged.heldout - 0.1, `inspection that misses every clash loses most of the gain (${iq({ inspect_acc: 0 }).heldout})`);
+const ex = ["rsi-hidden-evals", "rrsi-edit-budget", "oversight-recompute", "cosine-sae", "roleplay-bounded-rsi", "integrate-eval-free-rsi"].map((id) => [id, L.runExample(id)]);
 ok(ex.every(([, r]) => r.example.source && /^https:\/\/arxiv\.org\/abs\/\d{4}\.\d{4,5}$/.test(r.example.source.url)), "every paper example links its arXiv source");
 ok(ex.filter(([, r]) => !r.verdict.supported).map(([id]) => id).join() === "rrsi-edit-budget,roleplay-bounded-rsi", "the edit-budget and looser-bound hypotheses are kept as refuted at toy scale");
 console.log(`\npapers unit: ${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);
