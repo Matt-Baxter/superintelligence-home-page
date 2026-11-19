@@ -11,6 +11,9 @@
     "build": "node db/migrate.mjs && next build",
     "start": "next start",
     "db:migrate": "node db/migrate.mjs",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "node --test --experimental-strip-types --no-warnings \"tests/unit/*.test.ts\"",
     "test:acceptance": "playwright test"
   },
   "dependencies": {
@@ -24,6 +27,8 @@
     "@playwright/test": "1.65.0",
     "@types/node": "^22",
     "@types/react": "^19",
+    "eslint": "10.15.0",
+    "eslint-config-next": "16.4.6",
     "typescript": "5.9.3"
   }
 }
