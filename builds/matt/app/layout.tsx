@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import "./globals.css";
 
@@ -16,16 +17,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="en">
       <body>
         <header className="site-header">
-          <a href="/" className="site-title">
+          <Link href="/" className="site-title">
             Superintelligence Homepage
-          </a>
+          </Link>
           <nav className="account" aria-label="Account">
             {user ? (
               <>
                 <span>
                   Signed in as <strong>{user.username}</strong>
                 </span>
-                <a href="/saved">Saved</a>
+                <Link href="/saved">Saved</Link>
                 <form method="post" action="/api/auth/signout">
                   <button type="submit" className="link-button">
                     Sign out
@@ -34,8 +35,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </>
             ) : (
               <>
-                <a href="/signin">Sign in</a>
-                <a href="/signup">Sign up</a>
+                <Link href="/signin">Sign in</Link>
+                <Link href="/signup">Sign up</Link>
               </>
             )}
           </nav>
