@@ -11,6 +11,7 @@
     "dev:sample": "node --no-warnings test/serve-fixtures.js",
     "pretest": "node scripts/build-extended.js",
     "test": "node test/e2e.js",
+    "test:ci": "node test/run-ci.js",
     "dev:sample:pg": "node --no-warnings test/serve-fixtures-pg.js",
     "preflight": "node scripts/preflight.js",
     "prepare": "node scripts/install-hooks.js",
