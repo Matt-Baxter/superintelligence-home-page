@@ -6,7 +6,6 @@ import postgres from "postgres";
 
 declare global {
   // Reuse one client across hot reloads in development.
-  // eslint-disable-next-line no-var
   var __buildADb: ReturnType<typeof postgres> | undefined;
 }
 

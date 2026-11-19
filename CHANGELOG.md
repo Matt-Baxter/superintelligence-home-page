@@ -10,6 +10,7 @@ made the change. The contract also keeps its own version history in
 
 | Date | Person | Change | Commit(s) |
 |------|--------|--------|-----------|
+| 2026-11-19 | Matt (with Claude Code) | CI for Build A (GitHub Actions): ESLint linter, type check, 17 unit tests (including a check that the code's key phrases match the spec) and the 33 acceptance tests, on every pull request and every push to `main`. | `32eec30` |
 | 2026-11-18 | Matt (with Claude Code) | Added Build A's live site link (https://superintelligence-home-page.vercel.app) to the README and a new `builds/matt/README.md`. | `5498bd2` |
 | 2026-11-14 | Matt (with Claude Code) | Build A User Story 2 (tasks T028–T035): sign up, sign in, sign out, stay signed in for 30 days. All 23 acceptance tests pass (AT-01 to AT-09, AT-15). | `11e1a08` |
 | 2026-11-14 | Matt (with Claude Code) | Build A's arXiv source narrowed to paper titles with core superintelligence phrases, after a real fetch showed off-topic papers matching "alignment" or "scaling laws" in other senses. | `0f1ef7e` |

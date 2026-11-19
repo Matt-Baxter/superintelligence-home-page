@@ -1,0 +1,96 @@
+# CI for Build A (Matt): lint, type check, unit tests and acceptance tests.
+# Runs on every pull request and every push to main that touches Build A, the shared spec
+# (the unit tests check the code against it) or this workflow.
+name: Build A CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "builds/matt/**"
+      - "specs/**"
+      - ".github/workflows/build-a-ci.yml"
+  pull_request:
+    paths:
+      - "builds/matt/**"
+      - "specs/**"
+      - ".github/workflows/build-a-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-a-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: builds/matt
+
+jobs:
+  lint-and-unit:
+    name: Lint, type check and unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: builds/matt/package-lock.json
+      - run: npm ci
+      - name: Lint (ESLint)
+        run: npm run lint
+      - name: Type check
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm run test:unit
+
+  acceptance:
+    name: Acceptance tests (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: build_a_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # Throwaway test database with fake data only; no real secrets in CI.
+      DATABASE_URL: postgres://postgres@localhost:5432/build_a_test
+      CRON_SECRET: test-secret
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: builds/matt/package-lock.json
+      - run: npm ci
+      - name: Install the Playwright browser
+        run: npx playwright install --with-deps chromium
+      - name: Set up the test database
+        run: npm run db:migrate
+        env:
+          SOURCES: fixtures
+      - name: Acceptance tests
+        run: npm run test:acceptance
+      - name: Upload test report on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-results
+          path: |
+            builds/matt/test-results/
+            builds/matt/playwright-report/
+          retention-days: 7
