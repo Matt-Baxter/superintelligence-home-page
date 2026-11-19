@@ -8,7 +8,7 @@
       "terms": [
         "state of the art",
         "sota",
-        "frontier model",
+        "frontier model*",
         "new model",
         "outperforms",
         "capabilit*"
@@ -114,10 +114,11 @@
         "safety",
         "jailbreak*",
         "red team*",
-        "existential risk",
+        "existential risk*",
         "x-risk",
         "catastrophic risk*",
-        "loss of control"
+        "loss of control",
+        "deceptive alignment"
       ]
     },
     {
@@ -219,6 +220,8 @@
         "liability",
         "licensing",
         "ai governance",
+        "ai policies",
+        "frontier ai safety",
         "international treaty",
         "compute governance",
         "frontier ai policy"
@@ -251,7 +254,8 @@
         "explosion",
         "agi timeline*",
         "timelines to agi",
-        "ai 2027"
+        "ai 2027",
+        "transformative ai"
       ]
     },
     {
