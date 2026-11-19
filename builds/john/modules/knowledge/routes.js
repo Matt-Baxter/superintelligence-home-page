@@ -52,6 +52,7 @@ module.exports = function mountKnowledge(app, { db, auth, admin, wrap, str, bad,
     });
     return { stories: stories.length, chunks_changed: changed, chunks_kept: kept, edges: edgeCount, taggers: taggers.registry.ids(), embedder: embedder.id };
   }
+  app.locals.knowledgeBuild = build;
   app.post("/api/admin/knowledge/build", auth, admin, wrap(async (req) => build(Number(req.body?.limit) || 200)));
   app.get("/api/admin/knowledge/stats", auth, admin, wrap(async () => ({
     chunks: (await db.get("SELECT COUNT(*) AS n FROM knowledge_chunks")).n, edges: (await db.get("SELECT COUNT(*) AS n FROM knowledge_edges")).n,
