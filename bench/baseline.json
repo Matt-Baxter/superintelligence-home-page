@@ -1,6 +1,6 @@
 {
   "about": "Accepted benchmark numbers (scripts/bench.js). Update only for an uplift or an explained trade-off.",
-  "updated": "2026-11-13",
+  "updated": "2026-11-19",
   "metrics": {
     "review.credibility_auc": {
       "value": 1,
@@ -61,7 +61,7 @@
       "about": "points the same attack gains on the unguarded judge (the attack is real)"
     },
     "review.ms_per_doc": {
-      "value": 12.1,
+      "value": 12.6,
       "better": "info",
       "about": "time to review one item"
     },
@@ -124,6 +124,12 @@
       "better": "higher",
       "tol": 1,
       "about": "extra true features a cosine-scored SAE recovers when input sizes vary (arXiv 2606.15054 toy)"
+    },
+    "papers.observer_auroc_lead": {
+      "value": 0.173,
+      "better": "higher",
+      "tol": 0.02,
+      "about": "AUROC lead of an observer trained for accuracy over a transcript monitor when misbehaviour barely shows (arXiv 2611.23365 toy)"
     },
     "papers.roleplay_meta_bad_drop": {
       "value": 0.231,

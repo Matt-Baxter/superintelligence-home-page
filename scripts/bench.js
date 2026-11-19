@@ -82,6 +82,7 @@ const SUITES = {
       "papers.hidden_eval_hack_drop": { value: Math.round(drop * 1000) / 1000, better: "higher", tol: 0.02, about: "drop in the quirk share when a self-improving agent is judged on hidden evaluations (arXiv 2609.26457 toy)" },
       "papers.recompute_evasion": { value: ev, better: "lower", tol: 0, about: "undetected exploits with independent recomputation (arXiv 2609.28614 toy)" },
       "papers.cosine_sae_gain": { value: c(1) - c(0), better: "higher", tol: 1, about: "extra true features a cosine-scored SAE recovers when input sizes vary (arXiv 2606.15054 toy)" },
+      "papers.observer_auroc_lead": { value: (() => { const m = P.runners.find((r) => r.id === "introspective-oversight").run({ visibility: 0.3, confess: 0.15, prevalence: 0.3, episodes: 300, seed: 11 }).metrics; return m.observer_lead; })(), better: "higher", tol: 0.02, about: "AUROC lead of an observer trained for accuracy over a transcript monitor when misbehaviour barely shows (arXiv 2611.23365 toy)" },
       "papers.roleplay_meta_bad_drop": { value: Math.round((rq(0) - rq(1)) * 1000) / 1000, better: "higher", tol: 0.02, about: "drop in the bad-reply rate when a role-play updater refines its own repair rules (arXiv 2611.07469 toy)" },
     };
   },

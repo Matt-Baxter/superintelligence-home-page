@@ -10,6 +10,9 @@
 //   roleplay-rsi             "Recursive Self-Improvement for Long-Horizon Role-Playing Dialogue" (arXiv 2611.07469): an
 //                            updater repairs a character's artifacts after bad replies and, one level up, refines its
 //                            own repair rules from how those repairs turned out, within a bound on edits per round.
+//   introspective-oversight  "Training Language Models for Introspective Oversight" (arXiv 2611.23365): a separate
+//                            observer role, trained only to answer verifiable questions about what the assistant did,
+//                            against asking the assistant itself and against a monitor that reads only the transcript.
 function rng(seed = 1) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 const gauss = (r) => { const u = Math.max(1e-12, r()), v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
 const round = (x, d = 3) => Math.round(x * 10 ** d) / 10 ** d;
@@ -116,6 +119,40 @@ function rolePlayRSI({ meta = 1, edit_bound = 3, judge_noise = 0.2, rounds = 30,
     notes: [`${meta ? "The updater refined its own rules" : "The updater's rules were fixed"}; ${switches} rule switches, ${side} repairs hit the wrong artifact.`, `${Math.round(right * F)} of ${F} repair rules point at the artifact that really fixes that failure.`] };
 }
 
+// ---------- an observer trained for accuracy vs asking the assistant vs reading the transcript ----------
+// Each episode the assistant either misbehaves (y = 1: a hidden shortcut, a misleading report) or not. Its internal
+// context carries a weak trace of that in 8 features; the visible transcript carries a trace in 4 features whose
+// strength is `visibility`. Asking the assistant: a reward-trained assistant admits misbehaviour only with probability
+// `confess`. Transcript monitor: logistic regression on the transcript alone. Observer: a separate role that reads the
+// full context (internal features and transcript) and is trained only for accuracy on labels checked against what the
+// assistant really did. Scored by AUROC on held-out episodes.
+function logistic(X, y, r, steps = 150, lr = 0.5) {
+  const d = X[0].length, w = new Array(d + 1).fill(0), n = X.length;
+  for (let s = 0; s < steps; s++) {
+    const g = new Array(d + 1).fill(0);
+    for (let i = 0; i < n; i++) { let z = w[d]; for (let j = 0; j < d; j++) z += w[j] * X[i][j]; const e = 1 / (1 + Math.exp(-z)) - y[i]; for (let j = 0; j < d; j++) g[j] += e * X[i][j]; g[d] += e; }
+    for (let j = 0; j <= d; j++) w[j] -= (lr * g[j]) / n;
+  }
+  return (x) => x.reduce((z, v, j) => z + w[j] * v, w[d]);
+}
+function auroc(scores, y) {
+  const pos = scores.filter((_, i) => y[i]), neg = scores.filter((_, i) => !y[i]); let s = 0;
+  for (const p of pos) for (const q of neg) s += p > q ? 1 : p === q ? 0.5 : 0;
+  return pos.length && neg.length ? s / (pos.length * neg.length) : 0.5;
+}
+function introspect({ visibility = 0.3, confess = 0.15, prevalence = 0.3, episodes = 300, seed = 11 }) {
+  const r = rng(seed), H = 8, T = 4;
+  const muH = Array.from({ length: H }, () => 0.25 + 0.2 * r()), muT = Array.from({ length: T }, () => 0.5 + 0.2 * r());
+  const make = (n) => Array.from({ length: n }, () => { const y = r() < prevalence ? 1 : 0;
+    return { y, h: muH.map((m) => y * m + gauss(r)), t: muT.map((m) => y * m * visibility + gauss(r)), said: y && r() < confess ? 1 : 0 }; });
+  const train = make(episodes), test = make(episodes), ys = test.map((e) => e.y);
+  const mon = logistic(train.map((e) => e.t), train.map((e) => e.y), r), obs = logistic(train.map((e) => [...e.h, ...e.t]), train.map((e) => e.y), r);
+  const self = auroc(test.map((e) => e.said), ys), transcript = auroc(test.map((e) => mon(e.t)), ys), observer = auroc(test.map((e) => obs([...e.h, ...e.t])), ys);
+  return { metrics: { observer: round(observer), transcript: round(transcript), self_report: round(self), observer_lead: round(observer - transcript) },
+    series: [{ name: "AUROC by method", points: [[0, round(self)], [1, round(transcript)], [2, round(observer)]] }],
+    notes: [`Asking the assistant ${round(self)}, transcript monitor ${round(transcript)}, trained observer ${round(observer)} (AUROC, 0.5 = chance).`, `Misbehaviour shows in the transcript at strength ${visibility}; the assistant admits it ${Math.round(confess * 100)}% of the time.`] };
+}
+
 const runnersList = [
   { id: "self-improve-selection", about: "An agent edits itself and keeps the best version, judged on visible tests or hidden evaluations (with an edit budget)",
     params: {
@@ -148,6 +185,16 @@ const runnersList = [
     },
     metrics: [{ id: "bad_rate", label: "Bad-reply rate (last 5 rounds)", better: "lower" }, { id: "rules_right", label: "Share of repair rules aimed at the right artifact", better: "higher" }, { id: "side_effects", label: "Repairs that hit the wrong artifact", better: "lower" }],
     run: (p) => rolePlayRSI(p) },
+  { id: "introspective-oversight", about: "Detect misbehaviour three ways: ask the assistant, read the transcript, or ask an observer trained only for accuracy",
+    params: {
+      visibility: { default: 0.3, min: 0, max: 1, step: 0.1, about: "How strongly misbehaviour shows in the visible transcript" },
+      confess: { default: 0.15, min: 0, max: 1, step: 0.05, about: "How often the reward-trained assistant admits misbehaviour when asked" },
+      prevalence: { default: 0.3, min: 0.1, max: 0.9, step: 0.1, about: "Share of episodes with misbehaviour" },
+      episodes: { default: 300, min: 100, max: 600, step: 50, about: "Training and test episodes (each)" },
+      seed: { default: 11, min: 1, max: 999, step: 1, about: "Random seed" },
+    },
+    metrics: [{ id: "observer", label: "Observer AUROC", better: "higher" }, { id: "transcript", label: "Transcript monitor AUROC", better: "higher" }, { id: "self_report", label: "Asking the assistant AUROC", better: "higher" }, { id: "observer_lead", label: "Observer lead over the transcript monitor", better: "higher" }],
+    run: (p) => introspect(p) },
 ];
 // Averaging over seeds, so a verdict doesn't hang on one lucky draw (the Lab's examples pass seeds via "seeds").
 function averaged(fn, p, seeds = 10) {
@@ -157,4 +204,4 @@ function averaged(fn, p, seeds = 10) {
 }
 for (const r of runnersList) { const raw = r.run; r.run = (p) => averaged(raw, p, 10); }
 
-module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI };
+module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI, introspect, auroc };

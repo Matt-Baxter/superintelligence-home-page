@@ -644,6 +644,57 @@
      "weight": 20
     }
    ]
+  },
+  {
+   "id": "introspective-observer",
+   "title": "Oversight by an observer trained only to be right about the assistant",
+   "concept": "concept:scalable-oversight",
+   "topics": [
+    "topic:alignment",
+    "topic:interpretability"
+   ],
+   "source": {
+    "title": "Training Language Models for Introspective Oversight",
+    "url": "https://arxiv.org/abs/2611.23365",
+    "via": "daily paper watcher, Nov 19, 2026"
+   },
+   "idea": "Asking an assistant whether it cut a corner is unreliable: it was trained for reward, and admitting the shortcut costs reward. A monitor that reads only the transcript misses what never shows up in the visible output. The paper's idea is to add a separate observer role that reads the same context as the assistant and is trained for one thing only, answering questions about what the assistant did, with every answer checked against what really happened.",
+   "reproduce": {
+    "runner": "introspective-oversight",
+    "params": {
+     "visibility": 0.3,
+     "confess": 0.15,
+     "prevalence": 0.3,
+     "episodes": 300,
+     "seed": 11
+    },
+    "expect": "When misbehaviour leaves only a faint trace in the transcript, the observer trained for accuracy on the full context separates misbehaving from honest episodes best (AUROC about 0.76), ahead of a transcript monitor (about 0.59) and of simply asking the assistant (about 0.58)."
+   },
+   "hypothesis": {
+    "statement": "Ours: the observer's advantage comes from what the transcript hides. If misbehaviour shows clearly in the transcript (visibility 0.3 to 0.9), the observer's lead over the transcript monitor shrinks by at least 0.05 AUROC.",
+    "params": {
+     "visibility": 0.9
+    },
+    "predict": {
+     "metric": "observer_lead",
+     "direction": "down",
+     "delta": 0.05
+    }
+   },
+   "criteria": [
+    {
+     "metric": "observer",
+     "weight": 50
+    },
+    {
+     "metric": "observer_lead",
+     "weight": 30
+    },
+    {
+     "metric": "self_report",
+     "weight": 20
+    }
+   ]
   }
  ]
 }
