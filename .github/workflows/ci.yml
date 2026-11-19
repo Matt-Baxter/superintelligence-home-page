@@ -1,10 +1,12 @@
 # Runs John's build tests (unit, contract and spec acceptance) on every pull request
-# and every push to main. No browser and no network; synthetic sample data only.
+# and every push to main (the repo default) or bakeoff/v0-john (this build's
+# integration branch, where its PRs merge). No browser and no network; synthetic
+# sample data only.
 name: CI
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, bakeoff/v0-john]
 permissions:
   contents: read
 concurrency:
