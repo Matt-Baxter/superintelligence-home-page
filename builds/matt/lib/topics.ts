@@ -41,7 +41,7 @@ export const TOPICS: Topic[] = [
   },
   {
     id: "forecasting-timelines",
-    label: "Forecasting & timelines",
+    label: "Forecasting",
     phrases: ["AGI timeline", "AGI timelines", "forecasting AI", "AI forecast", "AI forecasts", "transformative AI"],
   },
   {
