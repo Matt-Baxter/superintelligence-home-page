@@ -45,7 +45,7 @@ const NAV = [["/", "Feed"], ["/?saved=1&days=", "Saved"], ["/brief", "Weekly bri
 const PAGE_FEATURE = { "/brief": "brief", "/lists": "lists" };
 async function requireUser() {
   const { user } = await api("/api/me", { allow401: true });
-  if (!user) { location.href = "/?next=" + encodeURIComponent(location.pathname + location.search + location.hash); throw new Error("Not signed in"); }
+  if (!user) { location.href = "/?next=" + encodeURIComponent(location.pathname + location.search + location.hash); return new Promise(() => {}); } // redirecting: never settle, so callers don't log an uncaught rejection
   topbar(user);
   const need = PAGE_FEATURE[location.pathname.replace(/\.html$/, "")];
   if (need && !(user.features || []).includes(need)) { const m = document.querySelector("main"); if (m) m.innerHTML = `<div class="panel"><h1>Not in this version</h1><p class="muted">This page is an extra beyond the shared spec. It runs when the site uses the extended profile (SITE_PROFILE=extended).</p><p><a href="/">Back to the feed</a></p></div>`; return new Promise(() => {}); } // stop here: the page stays on the notice
