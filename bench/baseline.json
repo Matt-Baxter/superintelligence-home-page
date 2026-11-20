@@ -1,6 +1,6 @@
 {
   "about": "Accepted benchmark numbers (scripts/bench.js). Update only for an uplift or an explained trade-off.",
-  "updated": "2026-11-13",
+  "updated": "2026-11-20",
   "metrics": {
     "review.credibility_auc": {
       "value": 1,
@@ -61,7 +61,7 @@
       "about": "points the same attack gains on the unguarded judge (the attack is real)"
     },
     "review.ms_per_doc": {
-      "value": 12.1,
+      "value": 11.4,
       "better": "info",
       "about": "time to review one item"
     },
@@ -124,6 +124,12 @@
       "better": "higher",
       "tol": 1,
       "about": "extra true features a cosine-scored SAE recovers when input sizes vary (arXiv 2606.15054 toy)"
+    },
+    "papers.twin_lab_gap": {
+      "value": 60.57,
+      "better": "higher",
+      "tol": 1,
+      "about": "lead of an agent that designs its own measurements over a closed-book guess, in a lab twin grounded in records (arXiv 2611.26248 toy)"
     },
     "papers.roleplay_meta_bad_drop": {
       "value": 0.231,

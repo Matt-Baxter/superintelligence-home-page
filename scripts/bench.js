@@ -82,6 +82,7 @@ const SUITES = {
       "papers.hidden_eval_hack_drop": { value: Math.round(drop * 1000) / 1000, better: "higher", tol: 0.02, about: "drop in the quirk share when a self-improving agent is judged on hidden evaluations (arXiv 2609.26457 toy)" },
       "papers.recompute_evasion": { value: ev, better: "lower", tol: 0, about: "undetected exploits with independent recomputation (arXiv 2609.28614 toy)" },
       "papers.cosine_sae_gain": { value: c(1) - c(0), better: "higher", tol: 1, about: "extra true features a cosine-scored SAE recovers when input sizes vary (arXiv 2606.15054 toy)" },
+      "papers.twin_lab_gap": { value: P.runners.find((r) => r.id === "twin-lab").run({ grounding: 1, budget: 10, tasks: 24, noise: 0.3, seed: 13 }).metrics.gap, better: "higher", tol: 1, about: "lead of an agent that designs its own measurements over a closed-book guess, in a lab twin grounded in records (arXiv 2611.26248 toy)" },
       "papers.roleplay_meta_bad_drop": { value: Math.round((rq(0) - rq(1)) * 1000) / 1000, better: "higher", tol: 0.02, about: "drop in the bad-reply rate when a role-play updater refines its own repair rules (arXiv 2611.07469 toy)" },
     };
   },

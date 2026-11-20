@@ -10,6 +10,9 @@
 //   roleplay-rsi             "Recursive Self-Improvement for Long-Horizon Role-Playing Dialogue" (arXiv 2611.07469): an
 //                            updater repairs a character's artifacts after bad replies and, one level up, refines its
 //                            own repair rules from how those repairs turned out, within a bound on edits per round.
+//   twin-lab                 "TwinLab-Bench: Evaluating AI Scientists in Agentic Twins of Real Labs" (arXiv 2611.26248):
+//                            an agent designs its own measurements and an environment answers them from the lab's
+//                            records, so the report can be scored against a hidden answer from those records.
 function rng(seed = 1) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 const gauss = (r) => { const u = Math.max(1e-12, r()), v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
 const round = (x, d = 3) => Math.round(x * 10 ** d) / 10 ** d;
@@ -116,6 +119,37 @@ function rolePlayRSI({ meta = 1, edit_bound = 3, judge_noise = 0.2, rounds = 30,
     notes: [`${meta ? "The updater refined its own rules" : "The updater's rules were fixed"}; ${switches} rule switches, ${side} repairs hit the wrong artifact.`, `${Math.round(right * F)} of ${F} repair rules point at the artifact that really fixes that failure.`] };
 }
 
+// ---------- an AI scientist judged in a lab twin grounded in records vs a simulator that improvises ----------
+// Each synthetic task has a response curve over one setting x in [0, 1] with a hidden optimum x*; the lab's records hold
+// a reading at 41 grid points. The tested agent designs its own measurements (a coarse sweep, then refining around the
+// best reading) and reports the setting it thinks is best. A closed-book guesser never measures and reports the setting
+// a generic prior expects (0.5). The environment answers each request: with `grounding` 1 it reads the records (the same
+// request always gets the same answer); with less, part of each reading is a generic prior curve plus fresh noise, as a
+// language model improvising the lab would. Score per task: 1 at the hidden optimum, 0 at 0.25 away or more.
+function twinLab({ grounding = 1, budget = 10, tasks = 24, noise = 0.3, seed = 13 }) {
+  const r = rng(seed), G = 41, grid = Array.from({ length: G }, (_, i) => i / (G - 1)), tol = 0.05;
+  const bump = (x, c, w) => Math.exp(-((x - c) ** 2) / (2 * w * w));
+  let exp = 0, closed = 0, readings = 0, off = 0, repeats = 0, differ = 0;
+  for (let k = 0; k < tasks; k++) {
+    const star = 0.1 + 0.8 * r(), w = 0.08 + 0.08 * r(), base = 0.2 * r();
+    const rec = grid.map((x) => base + bump(x, star, w) + 0.02 * gauss(r));
+    const xs = grid[rec.indexOf(Math.max(...rec))];
+    const read = (i) => { const v = grounding * rec[i] + (1 - grounding) * (base + bump(grid[i], 0.5, 0.2) + noise * gauss(r)); readings++; if (Math.abs(v - rec[i]) > tol) off++; return v; };
+    const seen = new Map(), measure = (i) => { const v = read(i); if (seen.has(i)) { repeats++; if (Math.abs(v - seen.get(i)) > tol) differ++; } seen.set(i, v); return v; };
+    const coarse = Math.max(2, Math.ceil(budget / 2)); let best = -1, bestV = -Infinity, used = 0;
+    for (let j = 0; j < coarse && used < budget; j++, used++) { const i = Math.round((j * (G - 1)) / (coarse - 1)); const v = measure(i); if (v > bestV) { bestV = v; best = i; } }
+    let step = Math.max(1, Math.round((G - 1) / (coarse - 1) / 2));
+    while (used < budget) { for (const i of [best - step, best + step]) { if (used >= budget || i < 0 || i >= G) continue; used++; const v = measure(i); if (v > bestV) { bestV = v; best = i; } } step = Math.max(1, Math.round(step / 2)); }
+    measure(best); // a repeat request: does the environment give the same reading twice?
+    const score = (x) => Math.max(0, 1 - Math.abs(x - xs) / 0.25);
+    exp += score(grid[best]); closed += score(0.5);
+  }
+  const e = (100 * exp) / tasks, c = (100 * closed) / tasks;
+  return { metrics: { experimenter: round(e, 1), closed_book: round(c, 1), gap: round(e - c, 1), off_record: round(off / readings), inconsistent: round(differ / (repeats || 1)) },
+    series: [{ name: "score by agent", points: [[0, round(c, 1)], [1, round(e, 1)]] }],
+    notes: [`Experimenting agent ${round(e, 1)}, closed-book guesser ${round(c, 1)} (0-100) with the environment ${Math.round(grounding * 100)}% grounded in the records.`, `${Math.round((100 * off) / readings)}% of readings were off the records; ${Math.round((100 * differ) / (repeats || 1))}% of repeated requests got a different answer.`] };
+}
+
 const runnersList = [
   { id: "self-improve-selection", about: "An agent edits itself and keeps the best version, judged on visible tests or hidden evaluations (with an edit budget)",
     params: {
@@ -148,6 +182,16 @@ const runnersList = [
     },
     metrics: [{ id: "bad_rate", label: "Bad-reply rate (last 5 rounds)", better: "lower" }, { id: "rules_right", label: "Share of repair rules aimed at the right artifact", better: "higher" }, { id: "side_effects", label: "Repairs that hit the wrong artifact", better: "lower" }],
     run: (p) => rolePlayRSI(p) },
+  { id: "twin-lab", about: "An AI scientist designs its own measurements; the lab environment answers from the records, or improvises",
+    params: {
+      grounding: { default: 1, min: 0, max: 1, step: 0.1, about: "How much of each reading comes from the lab's records (1 = a twin grounded in the records)" },
+      budget: { default: 10, min: 2, max: 30, step: 1, about: "Measurements the agent may design per task" },
+      tasks: { default: 24, min: 6, max: 60, step: 6, about: "Synthetic lab tasks" },
+      noise: { default: 0.3, min: 0, max: 1, step: 0.1, about: "Noise in the improvised part of a reading" },
+      seed: { default: 13, min: 1, max: 999, step: 1, about: "Random seed" },
+    },
+    metrics: [{ id: "gap", label: "Experimenter's lead over a closed-book guesser", better: "higher" }, { id: "experimenter", label: "Experimenting agent's score (0-100)", better: "higher" }, { id: "closed_book", label: "Closed-book guesser's score (0-100)", better: "lower" }, { id: "off_record", label: "Share of readings off the records", better: "lower" }, { id: "inconsistent", label: "Share of repeated requests answered differently", better: "lower" }],
+    run: (p) => twinLab(p) },
 ];
 // Averaging over seeds, so a verdict doesn't hang on one lucky draw (the Lab's examples pass seeds via "seeds").
 function averaged(fn, p, seeds = 10) {
@@ -157,4 +201,4 @@ function averaged(fn, p, seeds = 10) {
 }
 for (const r of runnersList) { const raw = r.run; r.run = (p) => averaged(raw, p, 10); }
 
-module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI };
+module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI, twinLab };

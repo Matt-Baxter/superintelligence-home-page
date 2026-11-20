@@ -23,7 +23,14 @@ ok(JSON.stringify(rq(1, 3)) === JSON.stringify(refine), "role-play self-improvem
 ok(fixed.bad_rate > fixed.start_rate, `with fixed repair rules, wrong-artifact repairs cause drift (${fixed.start_rate} -> ${fixed.bad_rate})`);
 ok(refine.bad_rate < fixed.bad_rate - 0.1 && refine.rules_right > fixed.rules_right, `refining its own rules cuts the bad-reply rate (${fixed.bad_rate} -> ${refine.bad_rate})`);
 ok(loose.rules_right < refine.rules_right, `a looser edit bound makes rules thrash rather than settle (${refine.rules_right} at 3, ${loose.rules_right} at 6)`);
-const ex = ["rsi-hidden-evals", "rrsi-edit-budget", "oversight-recompute", "cosine-sae", "roleplay-bounded-rsi"].map((id) => [id, L.runExample(id)]);
+const tl = P.runners.find((r) => r.id === "twin-lab"), tq = (g) => tl.run({ grounding: g, budget: 10, tasks: 24, noise: 0.3, seed: 13 }).metrics;
+const twin = tq(1), improv = tq(0);
+ok(JSON.stringify(tq(1)) === JSON.stringify(twin), "twin-lab toy is deterministic");
+ok(twin.off_record === 0 && twin.inconsistent === 0, "a twin grounded in the records never reads off the records and answers a repeated request the same way");
+ok(twin.gap > 40, `in the grounded twin, designing and refining measurements beats a closed-book guess (${twin.experimenter} vs ${twin.closed_book})`);
+ok(improv.gap < 10 && improv.off_record > 0.5 && improv.inconsistent > 0.5, `an improvising environment drifts from the records and can no longer tell experimenting from guessing (lead ${improv.gap})`);
+ok(tq(0.7).gap < twin.gap, `partial grounding narrows the lead (${twin.gap} -> ${tq(0.7).gap})`);
+const ex = ["rsi-hidden-evals", "rrsi-edit-budget", "oversight-recompute", "cosine-sae", "roleplay-bounded-rsi", "twin-lab-grounding"].map((id) => [id, L.runExample(id)]);
 ok(ex.every(([, r]) => r.example.source && /^https:\/\/arxiv\.org\/abs\/\d{4}\.\d{4,5}$/.test(r.example.source.url)), "every paper example links its arXiv source");
-ok(ex.filter(([, r]) => !r.verdict.supported).map(([id]) => id).join() === "rrsi-edit-budget,roleplay-bounded-rsi", "the edit-budget and looser-bound hypotheses are kept as refuted at toy scale");
+ok(ex.filter(([, r]) => !r.verdict.supported).map(([id]) => id).join() === "rrsi-edit-budget,roleplay-bounded-rsi,twin-lab-grounding", "the edit-budget, looser-bound and partial-grounding hypotheses are kept as refuted at toy scale");
 console.log(`\npapers unit: ${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

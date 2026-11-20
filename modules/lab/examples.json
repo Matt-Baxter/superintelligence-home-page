@@ -644,6 +644,57 @@
      "weight": 20
     }
    ]
+  },
+  {
+   "id": "twin-lab-grounding",
+   "title": "Judging an AI scientist's own experiments in a lab twin grounded in records",
+   "concept": "concept:agents",
+   "topics": [
+    "topic:automating-ai-research",
+    "topic:evals"
+   ],
+   "source": {
+    "title": "TwinLab-Bench: Evaluating AI Scientists in Agentic Twins of Real Labs",
+    "url": "https://arxiv.org/abs/2611.26248",
+    "via": "daily paper watcher, Nov 20, 2026"
+   },
+   "idea": "To test whether an AI scientist can design its own experiments, something has to run those experiments. Letting a language model improvise the lab's readings makes the test unreliable: readings drift from what a real lab would measure, and the same request can get different answers. The paper's idea is a twin of a real lab: an environment that answers each designed measurement from the lab's own records, so the agent's final report can be scored against a hidden answer taken from those records.",
+   "reproduce": {
+    "runner": "twin-lab",
+    "params": {
+     "grounding": 1,
+     "budget": 10,
+     "tasks": 24,
+     "noise": 0.3,
+     "seed": 13
+    },
+    "expect": "With the environment fully grounded in the records, no reading is off the records and repeated requests always get the same answer; an agent that designs and refines its own measurements scores about 93 of 100 against about 33 for a closed-book guesser, a lead of about 61 points."
+   },
+   "hypothesis": {
+    "statement": "Ours: grounding is what lets the benchmark tell experimenting from guessing. With an environment only 70% grounded in the records (the rest a generic prior curve plus fresh noise each request), the experimenter's lead over a closed-book guesser shrinks by at least half.",
+    "params": {
+     "grounding": 0.7
+    },
+    "predict": {
+     "metric": "gap",
+     "direction": "down",
+     "factor": 2
+    }
+   },
+   "criteria": [
+    {
+     "metric": "gap",
+     "weight": 50
+    },
+    {
+     "metric": "off_record",
+     "weight": 30
+    },
+    {
+     "metric": "inconsistent",
+     "weight": 20
+    }
+   ]
   }
  ]
 }
