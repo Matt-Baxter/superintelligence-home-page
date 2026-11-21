@@ -1,14 +1,19 @@
 /* Build A styles: plain CSS, mobile-first, no UI framework (REQ-018). */
 
 :root {
-  --text: #1a1a1a;
-  --muted: #555555;
-  --bg: #ffffff;
-  --surface: #f5f4f7;
-  --border: #d9d6df;
-  --accent: #4b2a7b;
+  /* Dark theme. Text colors meet WCAG AA contrast on --bg (REQ-023, risk R6). */
+  --text: #e8e6ed;
+  --muted: #a9a4b5;
+  --bg: #121016;
+  --surface: #1e1b25;
+  --border: #34303f;
+  --accent: #c4a8ff;
+  --on-accent: #16121f;
+  --error-text: #ffb4ab;
+  --error-bg: #3a1714;
+  --error-border: #ff8a7a;
   --max-width: 46rem;
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 *,
@@ -186,6 +191,8 @@ button {
 .auth-form input {
   padding: 0.5rem;
   font: inherit;
+  color: var(--text);
+  background: var(--surface);
   border: 1px solid var(--muted);
   border-radius: 4px;
 }
@@ -196,7 +203,7 @@ button {
   border: 0;
   border-radius: 4px;
   background: var(--accent);
-  color: #ffffff;
+  color: var(--on-accent);
 }
 
 .hint,
@@ -209,9 +216,9 @@ button {
 .form-error {
   margin: 0;
   padding: 0.5rem 0.75rem;
-  border-left: 4px solid #b3261e;
-  background: #fdecea;
-  color: #8c1d18;
+  border-left: 4px solid var(--error-border);
+  background: var(--error-bg);
+  color: var(--error-text);
 }
 
 .page-title {
@@ -241,7 +248,7 @@ button {
 
 .actions button[aria-pressed="true"] {
   background: var(--accent);
-  color: #ffffff;
+  color: var(--on-accent);
 }
 
 .vote-count {
