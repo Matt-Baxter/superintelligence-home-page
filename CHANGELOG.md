@@ -10,6 +10,7 @@ made the change. The contract also keeps its own version history in
 
 | Date | Person | Change | Commit(s) |
 |------|--------|--------|-----------|
+| 2026-11-21 | Matt (with Claude Code) | Build A daily cap: with the AI judge on, at most 5 stories per day (the top-scoring 8+ stories), so the bar is relative to each day's news. | `f90ab81` |
 | 2026-11-21 | Matt (with Claude Code) | Build A: AI significance judge (Claude Haiku 5.5 scores stories 1–10; only 8+ shown, with a labelled one-line reason; off until an API key is added) and five Google News search feeds for more outlets. Build A only; shared spec unchanged. | `6a084f7` |
 | 2026-11-21 | Matt (with Claude Code) | Build A dark theme (all colors meet WCAG AA contrast). Votes and saves (User Story 3) merged to `main` and deployed to the live site. | `efc818d`, `fb3aa74` |
 | 2026-11-19 | Matt (with Claude Code) | CI for Build A (GitHub Actions): ESLint linter, type check, 17 unit tests (including a check that the code's key phrases match the spec) and the 33 acceptance tests, on every pull request and every push to `main`. | `32eec30` |
