@@ -1,5 +1,5 @@
 import { sql } from "./db";
-import { JUDGE_MIN_SCORE, judgeMode } from "./judge";
+import { FEED_TIME_ZONE, JUDGE_MIN_SCORE, dailyCap, judgeMode } from "./judge";
 import { TOPICS } from "./topics";
 
 // Reads stories for the feed. (REQ-002, REQ-004, REQ-005)
@@ -85,10 +85,27 @@ function storyColumns(userId: string) {
 
 export async function listStories({ page = 1, userId }: { page?: number; userId?: string } = {}): Promise<{ stories: Story[]; hasMore: boolean }> {
   const offset = (Math.max(1, Math.floor(page)) - 1) * PAGE_SIZE;
+  // With judging on: only stories scoring 8+, and at most dailyCap() per day, chosen by score,
+  // then by how many sources covered the story, then newest (Build A research §14).
+  const visible =
+    judgeMode() === "off"
+      ? sql`SELECT id FROM stories`
+      : sql`
+          SELECT id FROM (
+            SELECT st.id, row_number() OVER (
+              PARTITION BY (st.published_at AT TIME ZONE ${FEED_TIME_ZONE})::date
+              ORDER BY st.ai_score DESC,
+                (SELECT count(*) FROM story_sources c WHERE c.story_id = st.id) DESC,
+                st.published_at DESC, st.id DESC
+            ) AS rank_in_day
+            FROM stories st
+            WHERE st.ai_score >= ${JUDGE_MIN_SCORE}
+          ) ranked
+          WHERE rank_in_day <= ${dailyCap()}`;
   const rows = await sql<Row[]>`
     SELECT ${storyColumns(userId ?? "0")}
     FROM stories s
-    WHERE ${judgeMode() === "off" ? sql`TRUE` : sql`s.ai_score >= ${JUDGE_MIN_SCORE}`}
+    WHERE s.id IN (${visible})
     ORDER BY s.published_at DESC, s.id DESC
     LIMIT ${PAGE_SIZE + 1} OFFSET ${offset}`;
   return { stories: rows.slice(0, PAGE_SIZE).map(toStory), hasMore: rows.length > PAGE_SIZE };

@@ -150,8 +150,11 @@ Technical Context. Versions were checked against the npm registry on 2026-11-13.
 - **Cost:** about $1/month on Haiku at roughly 150–200 stories a day; paid by Matt for Build A.
 - **Documentation note:** the spec lists "AI-written summaries" as out of scope. The one-sentence
   reason is an assessment, not a summary, and is clearly labelled; flagged to John.
+- **Daily cap (Matt, 2026-11-21):** at most 5 stories per day appear (`DAILY_CAP`, default 5): the
+  highest-scoring 8+ stories of that day (Central time), ties broken by how many sources covered the
+  story, then newest. So each day shows 0–5 stories, and the bar is relative to what else happened.
 - **Alternatives considered:** Opus 5.5 or Sonnet 5.5 (better nuance, roughly $15–40/month);
-  showing the score only; a per-source daily cap (not needed for now with the 8+ bar).
+  showing the score only; a per-source cap (the daily cap covers it).
 
 ## 15. Google News search feeds (added 2026-11-21)
 

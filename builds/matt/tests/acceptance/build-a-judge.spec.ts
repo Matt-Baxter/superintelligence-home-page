@@ -37,6 +37,47 @@ test.describe("Build A: AI significance judge", () => {
   });
 });
 
+test.describe("Build A: daily cap (top 5 per day)", () => {
+  test("at most 5 stories appear per day: the highest scores, ties broken by number of sources", async ({ page, request }) => {
+    await resetDatabase();
+    await runFetch(request);
+    const db = testDb();
+    // Seven extra judged stories, all on one day (Nov 20, Central time).
+    const day = "2026-11-20T18:00:00Z";
+    const extra: [string, number][] = [
+      ["Sample: Cap Test Score Ten", 10],
+      ["Sample: Cap Test Score Nine A", 9],
+      ["Sample: Cap Test Score Nine B", 9],
+      ["Sample: Cap Test Score Eight Two Sources", 8],
+      ["Sample: Cap Test Score Eight One Source A", 8],
+      ["Sample: Cap Test Score Eight One Source B", 8],
+      ["Sample: Cap Test Score Seven", 7],
+    ];
+    const ids: Record<string, string> = {};
+    for (const [title, score] of extra) {
+      const [row] = await db`
+        INSERT INTO stories (title, url, summary, published_at, ai_score, ai_reason, ai_model, judged_at)
+        VALUES (${title}, ${"https://example.com/" + encodeURIComponent(title)}, '', ${day}, ${score}, 'Sample assessment.', 'fixture-judge', now())
+        RETURNING id`;
+      ids[title] = String(row.id);
+      await db`INSERT INTO story_sources (story_id, source_id, url) VALUES (${row.id}, 'sample-forum-a', ${"https://example.com/a/" + row.id})`;
+    }
+    await db`INSERT INTO story_sources (story_id, source_id, url)
+      VALUES (${ids["Sample: Cap Test Score Eight Two Sources"]}, 'sample-forum-b', 'https://example.com/b/two')`;
+
+    await page.goto("/");
+    const shown = (await page.locator("article.story h2").allTextContents()).filter((t) => t.includes("Cap Test"));
+    expect(shown).toHaveLength(5);
+    expect(shown).toContain("Sample: Cap Test Score Ten");
+    expect(shown).toContain("Sample: Cap Test Score Nine A");
+    expect(shown).toContain("Sample: Cap Test Score Nine B");
+    expect(shown).toContain("Sample: Cap Test Score Eight Two Sources");
+    expect(shown).not.toContain("Sample: Cap Test Score Seven");
+    // Exactly one of the two single-source 8s fits in the last slot.
+    expect(shown.filter((t) => t.includes("One Source"))).toHaveLength(1);
+  });
+});
+
 test.describe("Build A: Google News sources", () => {
   test.beforeEach(async ({ request }) => {
     await resetDatabase();

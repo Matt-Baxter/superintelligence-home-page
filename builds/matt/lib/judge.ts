@@ -13,6 +13,15 @@ import { sql } from "./db";
 // ANTHROPIC_API_KEY is set, otherwise "off", so the site keeps working before the key is added.
 
 export const JUDGE_MIN_SCORE = 8;
+// At most this many stories per day appear (env DAILY_CAP, default 5): the top-scoring ones, so
+// the bar is relative to what else happened that day. Days are counted in Central time.
+export const DAILY_CAP_DEFAULT = 5;
+export const FEED_TIME_ZONE = "America/Chicago";
+
+export function dailyCap(): number {
+  const n = Number.parseInt(process.env.DAILY_CAP ?? "", 10);
+  return Number.isFinite(n) && n > 0 ? n : DAILY_CAP_DEFAULT;
+}
 export const DEFAULT_JUDGE_MODEL = "claude-haiku-5-5";
 const MAX_PER_RUN = 300;
 const CONCURRENCY = 4;

@@ -23,6 +23,7 @@ Copy `.env.example` to `.env.local` (git-ignored) and fill in:
 | `ANTHROPIC_API_KEY` | Optional. Turns on the AI significance judge. Add it only in Vercel's settings (and `.env.local` if you want to test locally); never commit it |
 | `JUDGE_MODEL` | Optional. Claude model for the judge; default `claude-haiku-5-5` |
 | `JUDGE` | Optional. `anthropic`, `fixtures` (tests: fake judge) or `off` |
+| `DAILY_CAP` | Optional. With judging on, at most this many stories appear per day (default 5) |
 
 On Vercel, set the same variables in the project's settings. Never commit them.
 
