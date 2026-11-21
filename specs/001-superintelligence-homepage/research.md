@@ -150,6 +150,8 @@ Technical Context. Versions were checked against the npm registry on 2026-11-13.
 - **Cost:** about $1/month on Haiku at roughly 150–200 stories a day; paid by Matt for Build A.
 - **Documentation note:** the spec lists "AI-written summaries" as out of scope. The one-sentence
   reason is an assessment, not a summary, and is clearly labelled; flagged to John.
+- **Decimal scores (Matt, 2026-11-21):** scores have one decimal place (e.g. 8.2) for finer ranking
+  within a day; the threshold is 8.0. Stored as `numeric(3,1)`.
 - **Daily cap (Matt, 2026-11-21):** at most 5 stories per day appear (`DAILY_CAP`, default 5): the
   highest-scoring 8+ stories of that day (Central time), ties broken by how many sources covered the
   story, then newest. So each day shows 0–5 stories, and the bar is relative to what else happened.

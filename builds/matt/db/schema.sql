@@ -101,3 +101,8 @@ ALTER TABLE stories ADD COLUMN IF NOT EXISTS ai_reason text;
 ALTER TABLE stories ADD COLUMN IF NOT EXISTS ai_model text;
 ALTER TABLE stories ADD COLUMN IF NOT EXISTS judged_at timestamptz;
 CREATE INDEX IF NOT EXISTS stories_unjudged ON stories (published_at DESC) WHERE judged_at IS NULL;
+
+-- 2026-11-21: decimal scores (one decimal place, e.g. 8.2) for finer ranking within a day.
+ALTER TABLE stories DROP CONSTRAINT IF EXISTS stories_ai_score_check;
+ALTER TABLE stories ALTER COLUMN ai_score TYPE numeric(3,1);
+ALTER TABLE stories ADD CONSTRAINT stories_ai_score_check CHECK (ai_score BETWEEN 0 AND 10);

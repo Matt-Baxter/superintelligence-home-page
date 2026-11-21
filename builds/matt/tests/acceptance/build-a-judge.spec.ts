@@ -19,18 +19,19 @@ test.describe("Build A: AI significance judge", () => {
 
   test("stories scoring below 8 are hidden from the feed", async ({ page }) => {
     const [low] = await testDb()`SELECT ai_score FROM stories WHERE title ILIKE '%Minor Note%'`;
-    expect(low.ai_score).toBe(4);
+    expect(Number(low.ai_score)).toBe(4.2);
     await page.goto("/");
     await expect(page.locator("article.story")).not.toHaveCount(0);
     await expect(page.getByText("Minor Note Mentioning AI Safety")).toHaveCount(0);
   });
 
-  test("each shown story has its score and reason, labelled as an AI assessment", async ({ page }) => {
+  test("each shown story has its score (one decimal) and reason, labelled as an AI assessment", async ({ page }) => {
     await page.goto("/");
     const scores = await page.locator("article.story .ai-score").allTextContents();
     const storyCount = await page.locator("article.story").count();
     expect(scores.length).toBe(storyCount);
-    expect(scores.every((s) => /^AI significance: (8|9|10)\/10$/.test(s))).toBe(true);
+    // One decimal place, and never below 8.0.
+    expect(scores.every((s) => /^AI significance: (8\.\d|9\.\d|10\.0)\/10$/.test(s))).toBe(true);
     const first = page.locator("article.story .ai-assessment").first();
     await expect(first.locator(".ai-reason")).toHaveText("Sample assessment: a significant development for testing.");
     await expect(first.locator(".ai-label")).toContainText("AI assessment");
@@ -46,12 +47,12 @@ test.describe("Build A: daily cap (top 5 per day)", () => {
     const day = "2026-11-20T18:00:00Z";
     const extra: [string, number][] = [
       ["Sample: Cap Test Score Ten", 10],
-      ["Sample: Cap Test Score Nine A", 9],
-      ["Sample: Cap Test Score Nine B", 9],
-      ["Sample: Cap Test Score Eight Two Sources", 8],
-      ["Sample: Cap Test Score Eight One Source A", 8],
-      ["Sample: Cap Test Score Eight One Source B", 8],
-      ["Sample: Cap Test Score Seven", 7],
+      ["Sample: Cap Test Score Nine A", 9.4],
+      ["Sample: Cap Test Score Nine B", 9.4],
+      ["Sample: Cap Test Score Eight Two Sources", 8.3],
+      ["Sample: Cap Test Score Eight One Source A", 8.3],
+      ["Sample: Cap Test Score Eight One Source B", 8.3],
+      ["Sample: Cap Test Score Seven", 7.9],
     ];
     const ids: Record<string, string> = {};
     for (const [title, score] of extra) {

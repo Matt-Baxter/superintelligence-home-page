@@ -44,7 +44,7 @@ export type Judgment = { score: number; reason: string };
 // The scoring guide. Matt reviews and tunes this; it decides what "meaningful" means for Build A.
 export const SCORING_GUIDE = `You rate stories for the Superintelligence Homepage, a site that shows only meaningful developments on the path to superintelligence: progress toward AGI and superintelligence, frontier AI capabilities, automating AI research, recursive self-improvement, alignment and safety of advanced AI, interpretability, forecasts and timelines, compute and scaling, and governance of frontier AI.
 
-Score how significant this story is as a development toward (or for the safety and governance of) superintelligence, from 1 to 10:
+Score how significant this story is as a development toward (or for the safety and governance of) superintelligence, from 1.0 to 10.0, with one decimal place (for example 8.2 or 6.7). Use the decimal to place the story within a band, so stronger stories in the same band score higher:
 
 10: A landmark. A new frontier model that clearly advances the state of the art, a major alignment or interpretability breakthrough, or binding national or international law on frontier AI.
 9: A major development from a leading lab, government or research group that people following superintelligence will discuss for weeks. For example a significant new capability result, an important safety finding, a major forecast revision by a leading forecaster, or a significant frontier AI policy action.
@@ -55,7 +55,7 @@ Score how significant this story is as a development toward (or for the safety a
 
 Judge only from the title, summary and source given. Do not reward hype, alarmist wording or a famous name on its own. When unsure between two scores, choose the lower one.
 
-Give the score and a reason of one short sentence (at most 25 words) that a reader will see under the story, saying concretely why it is or isn't a meaningful development.`;
+Give the score (one decimal place) and a reason of one short sentence (at most 25 words) that a reader will see under the story, saying concretely why it is or isn't a meaningful development.`;
 
 const JudgmentSchema = z.object({
   score: z.number(),
@@ -89,7 +89,7 @@ async function judgeWithClaude(story: StoryToJudge): Promise<Judgment> {
   }
   const parsed = response.parsed_output;
   if (!parsed) throw new Error(`No valid judgment (stop reason: ${response.stop_reason})`);
-  const score = Math.min(10, Math.max(1, Math.round(parsed.score)));
+  const score = Math.min(10, Math.max(1, Math.round(parsed.score * 10) / 10));
   const reason = parsed.reason.replace(/\s+/g, " ").trim().slice(0, 300);
   return { score, reason };
 }
@@ -97,8 +97,8 @@ async function judgeWithClaude(story: StoryToJudge): Promise<Judgment> {
 // Fake judge for tests: deterministic, no network. Titles containing "Minor" score low.
 function judgeWithFixtures(story: StoryToJudge): Judgment {
   return /\bminor\b/i.test(story.title)
-    ? { score: 4, reason: "Sample assessment: a minor mention, not a meaningful development." }
-    : { score: 9, reason: "Sample assessment: a significant development for testing." };
+    ? { score: 4.2, reason: "Sample assessment: a minor mention, not a meaningful development." }
+    : { score: 9.1, reason: "Sample assessment: a significant development for testing." };
 }
 
 export async function judgeStory(story: StoryToJudge): Promise<Judgment> {

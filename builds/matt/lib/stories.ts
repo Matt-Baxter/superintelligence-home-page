@@ -38,7 +38,7 @@ type Row = {
   votes: number;
   voted: boolean;
   saved: boolean;
-  ai_score: number | null;
+  ai_score: string | number | null; // numeric(3,1) comes back as a string
   ai_reason: string | null;
   ai_model: string | null;
 };
@@ -58,7 +58,7 @@ function toStory(r: Row): Story {
     votes: Number(r.votes),
     voted: r.voted,
     saved: r.saved,
-    aiScore: r.ai_score,
+    aiScore: r.ai_score === null ? null : Number(r.ai_score),
     aiReason: r.ai_reason,
     aiModel: r.ai_model,
   };

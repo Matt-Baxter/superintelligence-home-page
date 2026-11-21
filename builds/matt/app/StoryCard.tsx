@@ -25,7 +25,7 @@ export function StoryCard({ story, returnTo }: { story: Story; returnTo: string 
       {story.summary && <p className="summary">{story.summary}</p>}
       {story.aiScore !== null && story.aiReason && (
         <p className="ai-assessment">
-          <span className="ai-score">AI significance: {story.aiScore}/10</span>{" "}
+          <span className="ai-score">AI significance: {story.aiScore.toFixed(1)}/10</span>{" "}
           <span className="ai-reason">{story.aiReason}</span>{" "}
           <span className="ai-label">(AI assessment by {modelName(story.aiModel)})</span>
         </p>
