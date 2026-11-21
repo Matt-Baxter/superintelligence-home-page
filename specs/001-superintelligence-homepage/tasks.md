@@ -230,3 +230,20 @@ Setup → Foundational → US1 ─┬─→ US3 ─┐
 3. **M3 (Nov 22)** = add User Story 3, User Story 4, the notice and keyboard work, and polish.
 4. Stop after each phase, run that phase's tests, and review before moving on (Matt's direction:
    one reviewable step at a time).
+
+---
+
+## Phase 9: Build A additions (2026-11-21, after the first live feed)
+
+Requested by Matt after reviewing the live feed: too many minor keyword matches, too much from
+LessWrong and arXiv, and a preference for a dark background. Build A only; the shared spec is
+unchanged (research §14–15).
+
+- [X] T061 Add `zod` and `@anthropic-ai/sdk`; create `builds/matt/lib/judge.ts` with the scoring guide, `judgeMode()` (anthropic / fixtures / off; off without `ANTHROPIC_API_KEY`), `JUDGE_MODEL` (default `claude-haiku-5-5`) and `judgePending()` (research §14)
+- [X] T062 Extend `builds/matt/db/schema.sql` with `stories.ai_score`, `ai_reason`, `ai_model`, `judged_at`, `story_sources.outlet` and the `news` source kind, as ALTERs so existing databases update
+- [X] T063 Run the judge after each fetch in `builds/matt/app/api/cron/fetch/route.ts` (max duration 300 s); show only 8+ stories when judging is on (`lib/stories.ts`); show the score, reason and AI-assessment label (`app/StoryCard.tsx`)
+- [X] T064 Add five Google News search feeds to `builds/matt/lib/sources.json`; read the outlet and remove the " - Outlet" suffix in `lib/feeds.ts`; store and show the outlet; skip items whose outlet is X/Twitter (REQ-006) (research §15)
+- [X] T065 Tests: sample news feed `tests/fixtures/feeds/news.xml`; fake judge for tests (`JUDGE=fixtures`); `tests/acceptance/build-a-judge.spec.ts` (4 tests); a unit test for news feed parsing; AT-06's expected count now follows the sample source list
+- [X] T066 Dark theme in `builds/matt/app/globals.css`; every color pair meets WCAG AA contrast (REQ-023, R6)
+- [ ] T067 **MANUAL (Matt)**: create an Anthropic API key at console.anthropic.com, set a monthly spending limit there, and add it in Vercel as `ANTHROPIC_API_KEY` (all environments); then redeploy
+- [ ] T068 After the first judged run, review the kept and dropped stories; tune `SCORING_GUIDE` or switch `JUDGE_MODEL` to `claude-sonnet-5-5` if Haiku's calls are poor

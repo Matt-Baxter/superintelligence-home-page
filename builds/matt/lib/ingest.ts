@@ -22,14 +22,17 @@ function keysFor(link: string, title: string): string[] {
 export async function ingestItem(item: FeedItem, sourceId: string): Promise<IngestOutcome> {
   const link = item.link.trim();
 
-  // REQ-006: never Twitter/X.
-  if (isTwitterUrl(link)) return "skipped";
+  // REQ-006: never Twitter/X, including news-search items whose outlet is Twitter/X.
+  if (isTwitterUrl(link) || (item.outletUrl && isTwitterUrl(item.outletUrl))) return "skipped";
   // Only web links to an original page (REQ-007).
   if (!/^https?:\/\//i.test(link)) return "skipped";
 
   // REQ-021, REQ-007: plain text only; summaries at most 300 characters.
   const title = htmlToText(item.title);
-  const summary = truncate(htmlToText(item.summary), 300);
+  let summary = htmlToText(item.summary);
+  // News-search summaries just repeat the headline and outlet; show no summary instead.
+  if (item.outlet && summary.startsWith(title)) summary = "";
+  summary = truncate(summary, 300);
   if (!title) return "skipped";
 
   // REQ-003: keep only items that match a superintelligence key phrase (whole words).
@@ -62,8 +65,8 @@ export async function ingestItem(item: FeedItem, sourceId: string): Promise<Inge
     }
 
     await tx`
-      INSERT INTO story_sources (story_id, source_id, url)
-      VALUES (${storyId}, ${sourceId}, ${link})
+      INSERT INTO story_sources (story_id, source_id, url, outlet)
+      VALUES (${storyId}, ${sourceId}, ${link}, ${item.outlet ?? null})
       ON CONFLICT (story_id, source_id) DO NOTHING`;
 
     for (const t of topics) {

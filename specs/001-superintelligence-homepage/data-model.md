@@ -31,7 +31,7 @@ No email or other personal data (REQ-012).
 |-------|------|-------|
 | id | text | primary key, short slug (e.g. `alignment-forum`) |
 | name | text | display name |
-| kind | text | one of: `papers`, `frontier-lab`, `safety-group`, `research-org`, `forum`, `newsletter` |
+| kind | text | one of: `papers`, `frontier-lab`, `safety-group`, `research-org`, `forum`, `newsletter`, `news` (news searches, added 2026-11-21) |
 | feed_url | text | unique |
 | last_ok_at | timestamptz, nullable | last successful fetch (shown so a stalled source is noticed; R14) |
 | last_error | text, nullable | short message from the last failed fetch |
@@ -48,6 +48,10 @@ Seeded from `lib/sources.ts`.
 | summary | text | plain text, at most 300 characters (REQ-007, REQ-021) |
 | published_at | timestamptz | earliest publish date across its sources; feed is sorted by this, newest first |
 | first_seen_at | timestamptz | default now() |
+| ai_score | smallint, nullable | AI significance 1–10 (0 = the AI declined); NULL until judged. Feed shows 8+ when judging is on (research §14) |
+| ai_reason | text, nullable | Claude's one-sentence reason, shown and labelled as an AI assessment |
+| ai_model | text, nullable | the model that judged it, e.g. `claude-haiku-5-5` |
+| judged_at | timestamptz, nullable | when it was judged |
 
 Only items matching at least one superintelligence topic are ever stored (REQ-003).
 
@@ -68,6 +72,7 @@ Primary key (story_id, topic_id).
 | story_id | bigint | references stories, delete cascade |
 | source_id | text | references sources |
 | url | text | this source's link to the item |
+| outlet | text, nullable | for news searches: the publication, e.g. "IEEE Spectrum" |
 
 Primary key (story_id, source_id).
 

@@ -1,11 +1,12 @@
 import { sql } from "./db";
+import { JUDGE_MIN_SCORE, judgeMode } from "./judge";
 import { TOPICS } from "./topics";
 
 // Reads stories for the feed. (REQ-002, REQ-004, REQ-005)
 
 export const PAGE_SIZE = 40;
 
-export type StorySource = { name: string; kind: string; url: string };
+export type StorySource = { name: string; kind: string; url: string; outlet: string | null };
 export type StoryTopic = { id: string; label: string; matched: string[] };
 export type Story = {
   id: string;
@@ -18,6 +19,9 @@ export type Story = {
   votes: number;
   voted: boolean;
   saved: boolean;
+  aiScore: number | null;
+  aiReason: string | null;
+  aiModel: string | null;
 };
 
 const TOPIC_ORDER = new Map(TOPICS.map((t, i) => [t.id, i]));
@@ -34,6 +38,9 @@ type Row = {
   votes: number;
   voted: boolean;
   saved: boolean;
+  ai_score: number | null;
+  ai_reason: string | null;
+  ai_model: string | null;
 };
 
 function toStory(r: Row): Story {
@@ -51,6 +58,9 @@ function toStory(r: Row): Story {
     votes: Number(r.votes),
     voted: r.voted,
     saved: r.saved,
+    aiScore: r.ai_score,
+    aiReason: r.ai_reason,
+    aiModel: r.ai_model,
   };
 }
 
@@ -58,9 +68,9 @@ function toStory(r: Row): Story {
 // visitor (no user has ID 0, so voted and saved are false).
 function storyColumns(userId: string) {
   return sql`
-    s.id, s.title, s.url, s.summary, s.published_at,
+    s.id, s.title, s.url, s.summary, s.published_at, s.ai_score, s.ai_reason, s.ai_model,
     COALESCE((
-      SELECT json_agg(json_build_object('name', src.name, 'kind', src.kind, 'url', ss.url) ORDER BY src.name)
+      SELECT json_agg(json_build_object('name', src.name, 'kind', src.kind, 'url', ss.url, 'outlet', ss.outlet) ORDER BY src.name)
       FROM story_sources ss JOIN sources src ON src.id = ss.source_id
       WHERE ss.story_id = s.id
     ), '[]') AS sources,
@@ -78,6 +88,7 @@ export async function listStories({ page = 1, userId }: { page?: number; userId?
   const rows = await sql<Row[]>`
     SELECT ${storyColumns(userId ?? "0")}
     FROM stories s
+    WHERE ${judgeMode() === "off" ? sql`TRUE` : sql`s.ai_score >= ${JUDGE_MIN_SCORE}`}
     ORDER BY s.published_at DESC, s.id DESC
     LIMIT ${PAGE_SIZE + 1} OFFSET ${offset}`;
   return { stories: rows.slice(0, PAGE_SIZE).map(toStory), hasMore: rows.length > PAGE_SIZE };

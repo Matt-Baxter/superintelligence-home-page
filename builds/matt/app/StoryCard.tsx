@@ -4,6 +4,13 @@ import type { Story } from "@/lib/stories";
 // nothing from a feed can run (REQ-021). Vote and save are plain form posts, so they work with
 // the keyboard and without JavaScript (REQ-013, REQ-014, REQ-023).
 
+// "claude-haiku-5-5" → "Claude Haiku 5.5"; anything else is shown as given.
+function modelName(id: string | null): string {
+  const m = id?.match(/^claude-([a-z]+)-(\d+)(?:-(\d+))?$/);
+  if (!m) return id ?? "AI";
+  return `Claude ${m[1][0].toUpperCase()}${m[1].slice(1)} ${m[2]}${m[3] ? `.${m[3]}` : ""}`;
+}
+
 const dateFormat = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
 
 export function StoryCard({ story, returnTo }: { story: Story; returnTo: string }) {
@@ -16,6 +23,13 @@ export function StoryCard({ story, returnTo }: { story: Story; returnTo: string 
         <time dateTime={story.publishedAt.toISOString()}>{dateFormat.format(story.publishedAt)}</time>
       </p>
       {story.summary && <p className="summary">{story.summary}</p>}
+      {story.aiScore !== null && story.aiReason && (
+        <p className="ai-assessment">
+          <span className="ai-score">AI significance: {story.aiScore}/10</span>{" "}
+          <span className="ai-reason">{story.aiReason}</span>{" "}
+          <span className="ai-label">(AI assessment by {modelName(story.aiModel)})</span>
+        </p>
+      )}
       <ul className="topics" aria-label="Superintelligence topics">
         {story.topics.map((t) => (
           <li key={t.id}>
@@ -27,7 +41,7 @@ export function StoryCard({ story, returnTo }: { story: Story; returnTo: string 
       <ul className="sources" aria-label="Sources">
         {story.sources.map((s) => (
           <li key={s.name}>
-            <a href={s.url}>{s.name}</a>
+            <a href={s.url}>{s.outlet ? `${s.outlet} (via Google News)` : s.name}</a>
           </li>
         ))}
       </ul>

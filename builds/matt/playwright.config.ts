@@ -43,7 +43,7 @@ export default defineConfig({
           url: "http://localhost:3000",
           reuseExistingServer: true,
           timeout: 120_000,
-          env: { SOURCES: "fixtures", CRON_SECRET: "test-secret" },
+          env: { SOURCES: "fixtures", CRON_SECRET: "test-secret", JUDGE: "fixtures" },
         },
       ],
 });

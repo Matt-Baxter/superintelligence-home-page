@@ -7,6 +7,7 @@ import { resetDatabase, runFetch, testDb } from "./helpers";
 // Contract tests AT-01 to AT-06 and AT-15, using the saved sample feeds in tests/fixtures/.
 
 const pixelLog = join(__dirname, "..", "fixtures", "pixel-hits.log");
+const SAMPLE_SOURCE_COUNT = JSON.parse(readFileSync(join(__dirname, "..", "fixtures", "sources.json"), "utf8")).length;
 const WORKING_SAMPLE_SOURCES = [
   "Sample arXiv",
   "Sample Frontier Lab",
@@ -113,8 +114,9 @@ test.describe("User Story 1: superintelligence feed", () => {
 
   test.describe("REQ-008 (AT-06): a failing source doesn't break the feed", () => {
     test("the feed loads although one sample source is unreachable", async ({ page }) => {
+      // Every sample source except the deliberately unreachable one is fetched.
       expect(fetchResult.failed).toBe(1);
-      expect(fetchResult.fetched).toBe(8);
+      expect(fetchResult.fetched).toBe(SAMPLE_SOURCE_COUNT - 1);
       await page.goto("/");
       await expect(page.locator("article.story")).not.toHaveCount(0);
       const [row] = await testDb()`SELECT last_error FROM sources WHERE id = 'sample-down'`;

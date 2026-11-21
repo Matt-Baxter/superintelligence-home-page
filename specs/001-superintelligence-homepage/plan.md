@@ -24,7 +24,7 @@ Vercel's free plan allows ([research §2](research.md#2-scheduled-fetching-on-th
 **Language/Version**: TypeScript 5.9, Node.js 22 (Vercel runtime)
 
 **Primary Dependencies**: Next.js 16 (App Router), React 19, `postgres` 4.1,
-`fast-xml-parser` 5.12. Dev only: `@playwright/test` 1.65, `typescript`, `@types/node`,
+`fast-xml-parser` 5.12, `@anthropic-ai/sdk` 1.12 and `zod` 4 (AI judge, added 2026-11-21). Dev only: `@playwright/test` 1.65, `typescript`, `@types/node`,
 `@types/react`. Password hashing and session tokens use Node's built-in `crypto`.
 
 **Storage**: Neon Postgres for the live site, a separate database for Build A; a throwaway local
@@ -134,6 +134,20 @@ builds/matt/
 together on Vercel and the app is small. The Vercel project's Root Directory is `builds/matt`, so
 nothing outside that folder is deployed for Build A.
 
+## Additions after the first plan (2026-11-21)
+
+- **AI significance judge:** Claude (Haiku 5.5 by default) scores each story 1–10; only 8+ appear,
+  with the score and a labelled one-sentence reason. Off until `ANTHROPIC_API_KEY` is set.
+  ([research §14](research.md#14-ai-significance-judge-added-2026-11-21))
+- **Google News search feeds:** five news searches for a wider range of outlets.
+  ([research §15](research.md#15-google-news-search-feeds-added-2026-11-21))
+- **Dark theme.**
+
+These are Build A choices. The shared spec is unchanged: REQ-003 already requires that only
+superintelligence stories appear, and the contract lets each build choose its own sources.
+
 ## Complexity Tracking
 
-No constitution violations and no extra moving parts to justify.
+| Choice | Why needed | Simpler alternative rejected because |
+|--------|------------|--------------------------------------|
+| A paid AI service (Anthropic API) for the significance judge | Keyword matching can't tell a meaningful development from a passing mention; the live feed showed this (2026-11-21) | Keyword-only filtering kept too many minor stories; stricter keyword rules dropped important ones (research §14) |

@@ -28,12 +28,16 @@
 //
 // 11 working sources across 6 kinds (the bar is 8 across 5; AT-01).
 //
+// 2026-11-21: added 5 Google News search feeds (kind "news"), one per query, for a wider range of
+// outlets. Checked: each returns up to 100 recent articles from dozens of outlets. They are noisy
+// (e.g. "AGI" is also a stock ticker), so their items rely on the AI judge (lib/judge.ts).
+//
 // When SOURCES=fixtures (tests only), the saved sample feeds in tests/fixtures/ are used instead.
 
 import realSources from "./sources.json";
 import fixtureSources from "../tests/fixtures/sources.json";
 
-export type SourceKind = "papers" | "frontier-lab" | "safety-group" | "research-org" | "forum" | "newsletter";
+export type SourceKind = "papers" | "frontier-lab" | "safety-group" | "research-org" | "forum" | "newsletter" | "news";
 
 export type Source = {
   id: string;

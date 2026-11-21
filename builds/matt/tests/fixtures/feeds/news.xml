@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Sample data for tests only. Shaped like a Google News search feed: " - Outlet" on each title,
+     a <source> element, and a summary that only repeats the headline. -->
+<rss version="2.0"><channel>
+  <title>Sample News Search</title>
+  <item>
+    <title>Sample: Lab Publishes Frontier Model Safety Framework - Sample Times</title>
+    <link>https://news.example.com/rss/articles/sample-frontier-framework</link>
+    <description><![CDATA[<a href="https://news.example.com/rss/articles/sample-frontier-framework">Sample: Lab Publishes Frontier Model Safety Framework</a>&nbsp;&nbsp;<font color="#6f6f6f">Sample Times</font>]]></description>
+    <pubDate>Wed, 11 Nov 2026 16:00:00 GMT</pubDate>
+    <source url="https://sampletimes.example.com">Sample Times</source>
+  </item>
+  <item>
+    <title>Sample: Minor Note Mentioning AI Safety - Sample Daily</title>
+    <link>https://news.example.com/rss/articles/sample-minor-note</link>
+    <description><![CDATA[<a href="https://news.example.com/rss/articles/sample-minor-note">Sample: Minor Note Mentioning AI Safety</a>&nbsp;&nbsp;<font color="#6f6f6f">Sample Daily</font>]]></description>
+    <pubDate>Wed, 11 Nov 2026 15:00:00 GMT</pubDate>
+    <source url="https://sampledaily.example.com">Sample Daily</source>
+  </item>
+  <item>
+    <title>Sample: Post About AGI Timelines - X</title>
+    <link>https://news.example.com/rss/articles/sample-x-post</link>
+    <description>Sample: Post About AGI Timelines</description>
+    <pubDate>Wed, 11 Nov 2026 14:00:00 GMT</pubDate>
+    <source url="https://x.com">X</source>
+  </item>
+</channel></rss>

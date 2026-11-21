@@ -254,3 +254,21 @@ button {
 .vote-count {
   color: var(--muted);
 }
+
+.ai-assessment {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  font-size: 0.9375rem;
+}
+
+.ai-score {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.ai-label {
+  color: var(--muted);
+  font-size: 0.8125rem;
+}

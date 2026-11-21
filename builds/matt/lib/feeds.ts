@@ -7,6 +7,9 @@ export type FeedItem = {
   link: string;
   summary: string;
   published: Date | null;
+  // For news searches (Google News): the publication and its web address, e.g. "IEEE Spectrum".
+  outlet?: string;
+  outletUrl?: string;
 };
 
 const TIMEOUT_MS = 10_000;
@@ -66,12 +69,23 @@ export function parseFeed(xml: string): FeedItem[] {
   if (rss || rdf) {
     const channel = (rss?.channel ?? {}) as Raw;
     const rawItems = asArray((rss ? channel.item : rdf?.item) as Raw | Raw[]);
-    items = rawItems.map((i) => ({
-      title: text(i.title),
-      link: text(i.link) || text(i.guid),
-      summary: text(i.description) || text(i["content:encoded"]),
-      published: date(i.pubDate) ?? date(i["dc:date"]),
-    }));
+    items = rawItems.map((i) => {
+      const source = i.source as Raw | string | undefined;
+      const outlet = text(source).trim() || undefined;
+      const outletUrl = typeof source === "object" && source ? text(source["@_url"]) || undefined : undefined;
+      let title = text(i.title);
+      // News searches append " - Outlet" to every headline; drop it so the same article groups
+      // across searches and reads cleanly.
+      if (outlet && title.endsWith(` - ${outlet}`)) title = title.slice(0, -(outlet.length + 3));
+      return {
+        title,
+        link: text(i.link) || text(i.guid),
+        summary: text(i.description) || text(i["content:encoded"]),
+        published: date(i.pubDate) ?? date(i["dc:date"]),
+        outlet,
+        outletUrl,
+      };
+    });
   } else if (atom) {
     items = asArray(atom.entry as Raw | Raw[]).map((e) => ({
       title: text(e.title),

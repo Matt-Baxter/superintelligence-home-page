@@ -20,6 +20,9 @@ Copy `.env.example` to `.env.local` (git-ignored) and fill in:
 | `DATABASE_URL` | Local test database locally; on Vercel it's set by the Neon integration |
 | `CRON_SECRET` | Random string; Vercel sends it to `/api/cron/fetch` |
 | `SOURCES` | Optional. `fixtures` makes the app read the saved sample feeds instead of the real ones (tests only) |
+| `ANTHROPIC_API_KEY` | Optional. Turns on the AI significance judge. Add it only in Vercel's settings (and `.env.local` if you want to test locally); never commit it |
+| `JUDGE_MODEL` | Optional. Claude model for the judge; default `claude-haiku-5-5` |
+| `JUDGE` | Optional. `anthropic`, `fixtures` (tests: fake judge) or `off` |
 
 On Vercel, set the same variables in the project's settings. Never commit them.
 

@@ -12,7 +12,7 @@ from. The user is always taken from the session cookie, never from the request (
 
 | Path | Who | Shows | Requirements |
 |------|-----|-------|--------------|
-| `/` | Anyone | Superintelligence feed, newest first, 40 stories per page. Each story: title (link to original), summary, every source, topics with matched words, vote count; vote and save buttons. Topic filter links. | REQ-002 to REQ-007, REQ-013, REQ-014, REQ-017, REQ-018 |
+| `/` | Anyone | Superintelligence feed, newest first, 40 stories per page. Each story: title (link to original), summary, AI significance score and reason labelled as an AI assessment (when judging is on; only 8+ shown), every source (news-search items show "Outlet (via Google News)"), topics with matched words, vote count; vote and save buttons. Topic filter links. | REQ-002 to REQ-007, REQ-013, REQ-014, REQ-017, REQ-018 |
 | `/?topic=<topic-id>` | Anyone | Feed filtered to one topic; "No stories yet" message if empty. | REQ-017 |
 | `/saved` | Signed in | The user's saved stories. Signed-out visitors are sent to `/signin`. | REQ-014 |
 | `/signup` | Anyone | Username and password form. | REQ-009 |
@@ -36,7 +36,7 @@ is met: a request can only ever change the sender's own vote or save.
 
 | Method and path | Caller | Behavior |
 |-----------------|--------|----------|
-| `GET /api/cron/fetch` | Vercel Cron, daily | Requires header `Authorization: Bearer <CRON_SECRET>`; otherwise 401. Runs one fetch of all sources and returns `{ "fetched": n, "failed": n, "stories": n }`. |
+| `GET /api/cron/fetch` | Vercel Cron, daily | Requires header `Authorization: Bearer <CRON_SECRET>`; otherwise 401. Runs one fetch of all sources, then judges new stories, and returns `{ "fetched": n, "failed": n, "stories": n, "judge": { "mode", "judged", "failed", "remaining" } }`. |
 
 ## Error messages
 

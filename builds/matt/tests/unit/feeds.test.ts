@@ -28,3 +28,13 @@ describe("REQ-001: feeds are read in RSS and Atom formats", () => {
     assert.throws(() => parseFeed("<html><body>Not a feed</body></html>"), /Not an RSS or Atom feed/);
   });
 });
+
+describe("Google News search feeds (Build A)", () => {
+  it("reads the outlet and removes the \" - Outlet\" suffix from headlines", () => {
+    const items = parseFeed(fixture("news.xml"));
+    assert.equal(items[0].title, "Sample: Lab Publishes Frontier Model Safety Framework");
+    assert.equal(items[0].outlet, "Sample Times");
+    assert.equal(items[0].outletUrl, "https://sampletimes.example.com");
+    assert.equal(items[2].outlet, "X");
+  });
+});

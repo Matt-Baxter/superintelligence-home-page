@@ -121,6 +121,48 @@ Technical Context. Versions were checked against the npm registry on 2026-11-13.
 
 ## 13. Styling and accessibility (REQ-018, REQ-023)
 
-- **Decision:** One plain CSS file, mobile-first, no UI framework. Every control is a real link,
+- **Decision:** One plain CSS file, mobile-first, no UI framework, dark theme (2026-11-21; every
+  color pair meets WCAG AA contrast). Every control is a real link,
   button or form field, so it works with the keyboard; focus outlines stay visible. The "not
   investment advice" notice (REQ-022) lives in the shared page layout so it appears on every page.
+
+## 14. AI significance judge (added 2026-11-21)
+
+- **Why:** On the live site, keyword matching kept many stories that mention a key phrase but are
+  not meaningful developments (Matt, 2026-11-21). The spec's REQ-003 requires that *only*
+  superintelligence stories appear; it doesn't require that every keyword match appears, so a
+  stricter filter in Build A still meets it. This is a Build A choice, not a shared-spec change.
+- **Decision:** After the keyword filter, Claude scores each new story 1–10 for how meaningful a
+  development it is toward superintelligence, using a written scoring guide (`lib/judge.ts`,
+  `SCORING_GUIDE`). Only stories scoring **8 or higher** appear. Each shows "AI significance: N/10",
+  Claude's one-sentence reason, and a label saying it is an AI assessment.
+- **Model:** Claude Haiku 5.5 (`claude-haiku-5-5`) to start, set by the `JUDGE_MODEL` environment
+  variable so switching (for example to `claude-sonnet-5-5`) is a settings change, not a code change.
+  Matt's direction: start with Haiku, move to Sonnet if the results are poor.
+- **Call:** Anthropic TypeScript SDK `messages.parse()` with a Zod schema (structured output), effort
+  `low`, one story per call, 4 at a time, up to 300 stories per daily run. A refusal stores score 0
+  (hidden); an error leaves the story unjudged and hidden until the next run ("too few rather than
+  too many").
+- **Safe default:** judging is on only when `ANTHROPIC_API_KEY` is set (or `JUDGE=anthropic`).
+  Without the key, every keyword-matched story is shown, as before.
+- **Tests:** `JUDGE=fixtures` is a fake judge (titles containing "Minor" score 4, others 9), so CI
+  never calls the API.
+- **Cost:** about $1/month on Haiku at roughly 150–200 stories a day; paid by Matt for Build A.
+- **Documentation note:** the spec lists "AI-written summaries" as out of scope. The one-sentence
+  reason is an assessment, not a summary, and is clearly labelled; flagged to John.
+- **Alternatives considered:** Opus 5.5 or Sonnet 5.5 (better nuance, roughly $15–40/month);
+  showing the score only; a per-source daily cap (not needed for now with the 8+ bar).
+
+## 15. Google News search feeds (added 2026-11-21)
+
+- **Why:** a wider range of outlets; LessWrong and arXiv were dominating the feed.
+- **Decision:** five Google News search feeds (kind `news`): "superintelligence", "artificial
+  general intelligence", "AI safety", "AI alignment", "frontier AI", each limited to the last two
+  days. The contract lets each build choose its own sources.
+- **Details:** the " - Outlet" suffix is removed from headlines so the same article groups across
+  searches; the outlet is stored on `story_sources.outlet` and shown as "Outlet (via Google News)";
+  summaries that only repeat the headline are dropped; items whose outlet is X/Twitter are skipped
+  (REQ-006).
+- **Check (2026-11-21):** one real fetch returned 50 items from 41 outlets across the five searches,
+  mixed in quality, which is why these items rely on the AI judge.
+- **Alternatives considered:** Google's Custom Search API (closed to new users) and paid news APIs.

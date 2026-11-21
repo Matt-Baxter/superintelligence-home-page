@@ -9,5 +9,10 @@
   {"id": "alignment-forum", "name": "AI Alignment Forum", "kind": "forum", "feedUrl": "https://www.alignmentforum.org/feed.xml"},
   {"id": "lesswrong", "name": "LessWrong", "kind": "forum", "feedUrl": "https://www.lesswrong.com/feed.xml"},
   {"id": "import-ai", "name": "Import AI", "kind": "newsletter", "feedUrl": "https://importai.substack.com/feed"},
-  {"id": "zvi", "name": "Don't Worry About the Vase", "kind": "newsletter", "feedUrl": "https://thezvi.substack.com/feed"}
+  {"id": "zvi", "name": "Don't Worry About the Vase", "kind": "newsletter", "feedUrl": "https://thezvi.substack.com/feed"},
+  {"id": "gnews-superintelligence", "name": "Google News: superintelligence", "kind": "news", "feedUrl": "https://news.google.com/rss/search?q=superintelligence+when%3A2d&hl=en-US&gl=US&ceid=US:en"},
+  {"id": "gnews-artificial-general-intelligence", "name": "Google News: artificial general intelligence", "kind": "news", "feedUrl": "https://news.google.com/rss/search?q=%22artificial+general+intelligence%22+when%3A2d&hl=en-US&gl=US&ceid=US:en"},
+  {"id": "gnews-ai-safety", "name": "Google News: AI safety", "kind": "news", "feedUrl": "https://news.google.com/rss/search?q=%22AI+safety%22+when%3A2d&hl=en-US&gl=US&ceid=US:en"},
+  {"id": "gnews-ai-alignment", "name": "Google News: AI alignment", "kind": "news", "feedUrl": "https://news.google.com/rss/search?q=%22AI+alignment%22+when%3A2d&hl=en-US&gl=US&ceid=US:en"},
+  {"id": "gnews-frontier-ai", "name": "Google News: frontier AI", "kind": "news", "feedUrl": "https://news.google.com/rss/search?q=%22frontier+AI%22+when%3A2d&hl=en-US&gl=US&ceid=US:en"}
 ]
