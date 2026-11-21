@@ -23,7 +23,13 @@ ok(JSON.stringify(rq(1, 3)) === JSON.stringify(refine), "role-play self-improvem
 ok(fixed.bad_rate > fixed.start_rate, `with fixed repair rules, wrong-artifact repairs cause drift (${fixed.start_rate} -> ${fixed.bad_rate})`);
 ok(refine.bad_rate < fixed.bad_rate - 0.1 && refine.rules_right > fixed.rules_right, `refining its own rules cuts the bad-reply rate (${fixed.bad_rate} -> ${refine.bad_rate})`);
 ok(loose.rules_right < refine.rules_right, `a looser edit bound makes rules thrash rather than settle (${refine.rules_right} at 3, ${loose.rules_right} at 6)`);
-const ex = ["rsi-hidden-evals", "rrsi-edit-budget", "oversight-recompute", "cosine-sae", "roleplay-bounded-rsi"].map((id) => [id, L.runExample(id)]);
+const sw = P.runners.find((r) => r.id === "self-rewrite"), sr = (o) => sw.run({ practice: 60, sessions: 8, proposals: 6, gate: 1, damage: 0, label_noise: 0.1, seed: 21, ...o }).metrics;
+const g1 = sr({}), g0 = sr({ gate: 0 }), d1 = sr({ damage: 0.5 }), d0 = sr({ damage: 0.5, gate: 0 });
+ok(JSON.stringify(sr({})) === JSON.stringify(g1), "self-rewriting toy is deterministic");
+ok(g1.practice_gain > g1.heldout_gain && g1.heldout_gain > 0, `a practice-gated self-edit helps held-out problems, but less than practice shows (${g1.practice_gain} vs ${g1.heldout_gain})`);
+ok(g1.held_drops < g0.held_drops, `the practice gate cuts sessions where held-out accuracy falls (${g0.held_drops} -> ${g1.held_drops})`);
+ok(d1.heldout > d0.heldout && d1.heldout > d1.start_heldout + 0.1, `the gated loop repairs a damaged copy (${d1.start_heldout} -> ${d1.heldout}; ungated ${d0.heldout})`);
+const ex = ["rsi-hidden-evals", "rrsi-edit-budget", "oversight-recompute", "cosine-sae", "roleplay-bounded-rsi", "self-rewrite-practice-gate"].map((id) => [id, L.runExample(id)]);
 ok(ex.every(([, r]) => r.example.source && /^https:\/\/arxiv\.org\/abs\/\d{4}\.\d{4,5}$/.test(r.example.source.url)), "every paper example links its arXiv source");
 ok(ex.filter(([, r]) => !r.verdict.supported).map(([id]) => id).join() === "rrsi-edit-budget,roleplay-bounded-rsi", "the edit-budget and looser-bound hypotheses are kept as refuted at toy scale");
 console.log(`\npapers unit: ${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

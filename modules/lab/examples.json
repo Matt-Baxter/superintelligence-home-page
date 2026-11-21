@@ -644,6 +644,58 @@
      "weight": 20
     }
    ]
+  },
+  {
+   "id": "self-rewrite-practice-gate",
+   "title": "Self-rewriting weights: how much of a practice-gated gain is real",
+   "concept": "concept:recursive-self-improvement",
+   "topics": [
+    "topic:recursive-self-improvement"
+   ],
+   "source": {
+    "title": "Language Models Can Rewrite Their Own Weights",
+    "url": "https://arxiv.org/abs/2611.21885",
+    "via": "daily paper watcher, Nov 21, 2026"
+   },
+   "idea": "Instead of training with gradients, a model is shown its own weights and its graded answers, works out which weights are behind its mistakes, and edits them directly. To avoid making itself worse it tries each edit on practice problems first and only keeps edits that do better there. The same loop can be pointed at a damaged copy of the model to repair it. The catch to watch: an edit kept because it wins on a handful of practice problems may not help on problems the model has never seen.",
+   "reproduce": {
+    "runner": "self-rewrite",
+    "params": {
+     "practice": 60,
+     "sessions": 8,
+     "proposals": 6,
+     "gate": 1,
+     "damage": 0,
+     "label_noise": 0.1,
+     "seed": 21
+    },
+    "expect": "With 60 noisy practice problems, eight gated sessions raise practice accuracy by about 0.14 but held-out accuracy by only about 0.06: less than half of the visible gain holds out. Without the gate (gate 0) held-out accuracy falls in more sessions (about 2 of 8 instead of under 1) and the gain is smaller. On a copy with half its biggest weights zeroed (damage 0.5), the gated loop wins back most of the lost held-out accuracy (about 0.58 to 0.75, against 0.76 for the undamaged copy); ungated, it gets to about 0.69."
+   },
+   "hypothesis": {
+    "statement": "Ours: with only 20 practice problems instead of 60, the gate is too easy to pass by luck, so the held-out gain shrinks by at least 0.02 even though practice accuracy rises as much or more.",
+    "params": {
+     "practice": 20
+    },
+    "predict": {
+     "metric": "heldout_gain",
+     "direction": "down",
+     "delta": 0.02
+    }
+   },
+   "criteria": [
+    {
+     "metric": "heldout_gain",
+     "weight": 50
+    },
+    {
+     "metric": "real_share",
+     "weight": 30
+    },
+    {
+     "metric": "held_drops",
+     "weight": 20
+    }
+   ]
   }
  ]
 }

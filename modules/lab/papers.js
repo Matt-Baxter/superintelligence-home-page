@@ -10,6 +10,9 @@
 //   roleplay-rsi             "Recursive Self-Improvement for Long-Horizon Role-Playing Dialogue" (arXiv 2611.07469): an
 //                            updater repairs a character's artifacts after bad replies and, one level up, refines its
 //                            own repair rules from how those repairs turned out, within a bound on edits per round.
+//   self-rewrite             "Language Models Can Rewrite Their Own Weights" (arXiv 2611.21885): a model reads its own
+//                            graded mistakes, proposes a gradient-free edit to the weights behind them, and keeps the
+//                            edit only if it scores better on practice problems; it can also repair a damaged copy.
 function rng(seed = 1) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 const gauss = (r) => { const u = Math.max(1e-12, r()), v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
 const round = (x, d = 3) => Math.round(x * 10 ** d) / 10 ** d;
@@ -116,6 +119,47 @@ function rolePlayRSI({ meta = 1, edit_bound = 3, judge_noise = 0.2, rounds = 30,
     notes: [`${meta ? "The updater refined its own rules" : "The updater's rules were fixed"}; ${switches} rule switches, ${side} repairs hit the wrong artifact.`, `${Math.round(right * F)} of ${F} repair rules point at the artifact that really fixes that failure.`] };
 }
 
+// ---------- a model that rewrites its own weights, gated by practice problems ----------
+// The "model" is a linear scorer over D features; the right answer to a problem is the sign of a hidden rule w*·x. It
+// starts from an imperfect copy of w* (or a damaged one: a share of its weights zeroed). Each session it grades itself on
+// its practice problems, diagnoses the failures (for each weight, how strongly its wrong answers lean on it, with no
+// gradients of a loss), proposes `proposals` edits that move the most implicated weights, and submits one only if it
+// answers more practice problems right than the current weights (gate 1). With gate 0 it keeps its first proposal
+// whatever happens. Held-out problems are never seen. The question the toy asks: how much of the practice gain is real.
+function selfRewrite({ practice = 60, sessions = 8, proposals = 6, gate = 1, damage = 0, label_noise = 0.1, seed = 21 }) {
+  const r = rng(seed), q = rng(seed + 7919), D = 16; // q: the hidden rule, the starting weights and held-out problems
+  const wStar = Array.from({ length: D }, () => gauss(q));
+  const prob = () => { const x = Array.from({ length: D }, () => gauss(r)); const s = x.reduce((a, xi, i) => a + xi * wStar[i], 0); return { x, y: (s >= 0 ? 1 : -1) * (r() < label_noise ? -1 : 1) }; };
+  const clean = (n) => Array.from({ length: n }, () => { const x = Array.from({ length: D }, () => gauss(q)); return { x, y: x.reduce((a, xi, i) => a + xi * wStar[i], 0) >= 0 ? 1 : -1 }; });
+  const prac = Array.from({ length: practice }, prob), held = clean(600);
+  const acc = (w, set) => set.filter((p) => (p.x.reduce((a, xi, i) => a + xi * w[i], 0) >= 0 ? 1 : -1) === p.y).length / set.length;
+  let w = wStar.map((v) => v + 0.9 * gauss(q));
+  const cut = [...Array(D).keys()].sort((a, b) => Math.abs(w[b]) - Math.abs(w[a])).slice(0, Math.round(damage * D)); // the biggest weights
+  for (const i of cut) w[i] = 0;
+  const start = { prac: acc(w, prac), held: acc(w, held) }; const pts = [[0, round(start.held)]];
+  let submitted = 0, heldDrops = 0, last = start.held;
+  for (let t = 1; t <= sessions; t++) {
+    const wrong = prac.filter((p) => (p.x.reduce((a, xi, i) => a + xi * w[i], 0) >= 0 ? 1 : -1) !== p.y);
+    if (!wrong.length) { pts.push([t, round(last)]); continue; }
+    const blame = Array.from({ length: D }, (_, i) => mean(wrong.map((p) => p.y * p.x[i]))); // which way each weight should move
+    const order = [...Array(D).keys()].sort((a, b) => Math.abs(blame[b]) - Math.abs(blame[a]));
+    let best = null, bestA = gate ? acc(w, prac) : -1;
+    for (let k = 0; k < proposals; k++) {
+      const cand = w.slice(), n = 1 + (k % 3), step = 0.4 + 0.6 * r();
+      for (let j = 0; j < n; j++) { const i = order[(k + j) % D]; cand[i] += step * Math.sign(blame[i]) + 0.2 * gauss(r); }
+      const a = acc(cand, prac); if (!gate) { best = cand; break; } if (a > bestA) { bestA = a; best = cand; }
+    }
+    if (best) { w = best; submitted++; }
+    const h = acc(w, held); if (h < last - 1e-9) heldDrops++; last = h; pts.push([t, round(h)]);
+  }
+  const end = { prac: acc(w, prac), held: acc(w, held) };
+  const pg = end.prac - start.prac, hg = end.held - start.held;
+  return { metrics: { heldout: round(end.held), heldout_gain: round(hg), practice_gain: round(pg), real_share: round(pg > 1e-9 ? hg / pg : 0), held_drops: heldDrops, submitted, start_heldout: round(start.held) },
+    series: [{ name: "held-out accuracy by session", points: pts }],
+    notes: [`${gate ? "Edits were submitted only if they beat the current weights on practice problems" : "Every first proposal was kept"}; ${submitted} of ${sessions} sessions changed the weights.`,
+      `Practice accuracy moved ${round(pg)}, held-out accuracy ${round(hg)}; held-out fell in ${heldDrops} session(s).`] };
+}
+
 const runnersList = [
   { id: "self-improve-selection", about: "An agent edits itself and keeps the best version, judged on visible tests or hidden evaluations (with an edit budget)",
     params: {
@@ -148,6 +192,18 @@ const runnersList = [
     },
     metrics: [{ id: "bad_rate", label: "Bad-reply rate (last 5 rounds)", better: "lower" }, { id: "rules_right", label: "Share of repair rules aimed at the right artifact", better: "higher" }, { id: "side_effects", label: "Repairs that hit the wrong artifact", better: "lower" }],
     run: (p) => rolePlayRSI(p) },
+  { id: "self-rewrite", about: "A model diagnoses its own graded mistakes and rewrites the weights behind them without gradients, keeping only edits that win on practice problems",
+    params: {
+      practice: { default: 60, min: 10, max: 300, step: 10, about: "Practice problems the model grades itself on (labels are noisy)" },
+      sessions: { default: 8, min: 1, max: 30, step: 1, about: "Self-rewriting sessions" },
+      proposals: { default: 6, min: 1, max: 20, step: 1, about: "Edits proposed per session" },
+      gate: { default: 1, min: 0, max: 1, step: 1, about: "1 = submit an edit only if it beats the current weights on practice problems, 0 = keep the first edit" },
+      damage: { default: 0, min: 0, max: 0.9, step: 0.1, about: "Share of weights zeroed before the first session (a damaged copy)" },
+      label_noise: { default: 0.1, min: 0, max: 0.4, step: 0.05, about: "Share of practice answers graded wrongly" },
+      seed: { default: 21, min: 1, max: 999, step: 1, about: "Random seed" },
+    },
+    metrics: [{ id: "heldout_gain", label: "Held-out accuracy gain", better: "higher" }, { id: "practice_gain", label: "Practice accuracy gain", better: "info" }, { id: "real_share", label: "Share of the practice gain that holds out", better: "higher" }, { id: "held_drops", label: "Sessions where held-out accuracy fell", better: "lower" }, { id: "heldout", label: "Held-out accuracy", better: "higher" }],
+    run: (p) => selfRewrite(p) },
 ];
 // Averaging over seeds, so a verdict doesn't hang on one lucky draw (the Lab's examples pass seeds via "seeds").
 function averaged(fn, p, seeds = 10) {
@@ -157,4 +213,4 @@ function averaged(fn, p, seeds = 10) {
 }
 for (const r of runnersList) { const raw = r.run; r.run = (p) => averaged(raw, p, 10); }
 
-module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI };
+module.exports = { runners: runnersList, selfImprove, oversight, rolePlayRSI, selfRewrite };

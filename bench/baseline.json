@@ -1,6 +1,6 @@
 {
   "about": "Accepted benchmark numbers (scripts/bench.js). Update only for an uplift or an explained trade-off.",
-  "updated": "2026-11-13",
+  "updated": "2026-11-21",
   "metrics": {
     "review.credibility_auc": {
       "value": 1,
@@ -61,7 +61,7 @@
       "about": "points the same attack gains on the unguarded judge (the attack is real)"
     },
     "review.ms_per_doc": {
-      "value": 12.1,
+      "value": 11.4,
       "better": "info",
       "about": "time to review one item"
     },
@@ -130,6 +130,12 @@
       "better": "higher",
       "tol": 0.02,
       "about": "drop in the bad-reply rate when a role-play updater refines its own repair rules (arXiv 2611.07469 toy)"
+    },
+    "papers.self_rewrite_gate_gain": {
+      "value": 0.056,
+      "better": "higher",
+      "tol": 0.01,
+      "about": "extra held-out accuracy a damaged copy wins back when self-edits must beat practice problems first (arXiv 2611.21885 toy)"
     },
     "domains.set_verdict_accuracy": {
       "value": 1,
