@@ -10,6 +10,7 @@ made the change. The contract also keeps its own version history in
 
 | Date | Person | Change | Commit(s) |
 |------|--------|--------|-----------|
+| 2026-11-21 | Matt (with Claude Code) | Build A dark theme (all colors meet WCAG AA contrast). Votes and saves (User Story 3) merged to `main` and deployed to the live site. | `efc818d`, `fb3aa74` |
 | 2026-11-19 | Matt (with Claude Code) | CI for Build A (GitHub Actions): ESLint linter, type check, 17 unit tests (including a check that the code's key phrases match the spec) and the 33 acceptance tests, on every pull request and every push to `main`. | `32eec30` |
 | 2026-11-18 | Matt (with Claude Code) | Added Build A's live site link (https://superintelligence-home-page.vercel.app) to the README and a new `builds/matt/README.md`. | `5498bd2` |
 | 2026-11-14 | Matt (with Claude Code) | Build A User Story 3 (tasks T039–T045): voting and saving, the saved page, and server-side ownership checks. All 33 acceptance tests pass (AT-01 to AT-12, AT-15). | `fb3aa74` |
