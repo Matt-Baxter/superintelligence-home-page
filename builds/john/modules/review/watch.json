@@ -1,0 +1,13 @@
+{
+  "about": "What the daily paper watcher (scripts/watch.js) looks for on arXiv. Queries use arXiv's search syntax (https://info.arxiv.org/help/api/user-manual.html). The watcher asks once a day, one request every 3 seconds (arXiv's limit), newest first. 'people' searches the ontology watchlist by author name; it is off by default and matches names only, never claims. Twitter/X is never a source.",
+  "maxPerQuery": 8,
+  "maxNewPerRun": 25,
+  "paperToCode": { "maxPerRun": 2, "minCredibility": 50, "topics": ["topic:interpretability", "topic:recursive-self-improvement", "topic:automating-ai-research", "topic:alignment"] },
+  "queries": [
+    { "id": "interp-sae", "topic": "interpretability", "q": "all:\"sparse autoencoder\" OR all:\"sparse autoencoders\"" },
+    { "id": "interp-circuits", "topic": "interpretability", "q": "all:\"mechanistic interpretability\" OR all:\"attribution graph\" OR all:transcoder" },
+    { "id": "rsi", "topic": "recursive-self-improvement", "q": "all:\"recursive self-improvement\" OR all:\"self-improving agent\" OR all:\"self-improving\"" },
+    { "id": "auto-research", "topic": "automating-ai-research", "q": "all:\"automated AI research\" OR all:\"AI scientist\" OR all:\"automated research agent\"" },
+    { "id": "superintelligence", "topic": "superintelligence", "q": "all:superintelligence OR all:\"scalable oversight\" OR all:\"reward hacking\"" }
+  ]
+}

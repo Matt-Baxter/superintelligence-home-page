@@ -1,0 +1,41 @@
+{
+  "about": "Which version of the site runs. 'spec' (the default) is exactly what the shared spec requires (specs/001-superintelligence-homepage): the superintelligence feed, grouping, explainable tags, accounts, votes, saves, sources, topic filter, and the admin tools needed to run the site. 'extended' adds John's extra work (notes, reading lists, weekly brief, source suggestions, the capability tracker, project tracker, codebase map, Learn layer and generative UI studio). 'research' runs only the research write-ups and their RSS feed (for a research subdomain whose feed another site can add as a source). Choose with SITE_PROFILE=spec|extended|research. The extended build is also saved as branch feature/snapshot-john-extended-2026-11-07 (docs/snapshots).",
+  "default": "spec",
+  "profiles": {
+    "spec": {
+      "about": "Matt's shared spec, REQ-001 to REQ-020, and nothing else: only the admin module, which running the site needs (sources, fetch status). The generative UI, blocks and decision judges are extended-only, since no spec requirement needs them (constitution II). The spec lists notes, reading lists, a weekly brief, user-suggested sources and an in-app agent log as out of scope.",
+      "features": [],
+      "modules": [
+        "admin"
+      ]
+    },
+    "extended": {
+      "about": "Everything: the spec plus John's additions, kept for comparison and later use.",
+      "features": [
+        "notes",
+        "lists",
+        "brief",
+        "suggest-sources",
+        "display-name",
+        "rigor-badges"
+      ],
+      "modules": "*"
+    },
+    "research": {
+      "about": "The research site on its own: the review desk, topic dossiers, Lab checks (with the decision and generative UI modules the Lab is built on) and Learn concepts behind public, plain-language write-ups at /research and their RSS feed at /research/feed.xml (public only with RESEARCH_PUBLIC=1). Not part of the bake-off build; meant for a separate deployment, such as a research subdomain, whose feed the spec version can add as one more source.",
+      "features": [],
+      "modules": [
+        "admin",
+        "knowledge",
+        "learn",
+        "blocks-core",
+        "generative-ui",
+        "decision",
+        "lab",
+        "review",
+        "research",
+        "verification"
+      ]
+    }
+  }
+}

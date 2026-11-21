@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Review desk · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css">
+<style>
+  .desk { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 20px; align-items: start; }
+  @media (max-width: 900px) { .desk { grid-template-columns: minmax(0, 1fr); } }
+  .kinds { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .kinds { flex-wrap: wrap; max-width: 100%; } .kinds label { position: relative; padding: 6px 12px; font-size: 14px; cursor: pointer; border-right: 1px solid var(--line); }
+  .kinds label:focus-within { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .kinds label:last-child { border-right: 0; } .kinds input { position: absolute; opacity: 0; pointer-events: none; }
+  .kinds label:has(input:checked) { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  textarea#text { min-height: 220px; resize: vertical; font-size: 15px; line-height: 1.5; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; } .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+  .samples { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .score { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .score > div { background: var(--surface); padding: 12px 14px; display: grid; gap: 2px; min-width: 0; }
+  .score .n { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .score .k { font-size: 13px; color: var(--muted); }
+  .verdict { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .tag { font-size: 13px; font-weight: 600; padding: 2px 8px; border-radius: var(--radius); background: var(--bg); border: 1px solid var(--line); white-space: nowrap; }
+  .tag.good { background: var(--fg); color: var(--surface);  } .tag.warn { background: var(--warn-soft); color: var(--fg); border: 1px dashed var(--line-strong);  } .tag.bad { background: var(--surface); color: var(--fg); border: 1px solid var(--fg);  }
+  .judges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; } @media (max-width: 640px) { .judges { grid-template-columns: minmax(0, 1fr); } }
+  .judge { border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; display: grid; gap: 8px; align-content: start; min-width: 0; background: var(--surface); }
+  .judge .head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .judge .head b { font-variant-numeric: tabular-nums; font-size: 20px; }
+  .bar { height: 4px; background: var(--bg); border-radius: var(--radius); overflow: hidden; } .bar i { display: block; height: 100%; background: var(--accent); }
+  .judge.inverse .bar i { background: var(--warn); }
+  .why { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 13px; }
+  .why li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; } .why li span:last-child { font-variant-numeric: tabular-nums; color: var(--muted); }
+  .why li small { grid-column: 1 / -1; color: var(--muted); overflow-wrap: anywhere; }
+  .guards { list-style: none; margin: 0; padding: 0; display: grid; }
+  .guards li { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .guards li:last-child { border-bottom: 0; } .dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 7px; background: var(--line); }
+  .guards li.on .dot { background: var(--warn); } .guards small { display: block; color: var(--muted); overflow-wrap: anywhere; }
+  .claims { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; } .claims li { font-size: 14px; display: grid; gap: 4px; overflow-wrap: anywhere; }
+  .edges { display: flex; flex-wrap: wrap; gap: 6px; } .edge { font-size: 13px; padding: 2px 8px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
+  .edge em { font-style: normal; color: var(--muted); }
+  table.t { width: 100%; border-collapse: collapse; font-size: 14px; } table.t th { text-align: left; font-weight: 600; color: var(--muted); font-size: 13px; }
+  table.t td, table.t th { padding: 6px 8px 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; } table.t td.n { text-align: right; font-variant-numeric: tabular-nums; }
+  table.t td { overflow-wrap: anywhere; }
+  svg.chart { width: 100%; height: auto; display: block; } svg.chart text { fill: var(--muted); font: 11px var(--font); }
+  svg.chart .axis { stroke: var(--line); } svg.chart .naive { fill: none; stroke: var(--warn); stroke-width: 2; stroke-dasharray: 5 4; } svg.chart .guarded { fill: none; stroke: var(--accent); stroke-width: 2.2; } svg.chart .wb { fill: none; stroke: var(--muted); stroke-width: 1.6; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--muted); } .legend i { display: inline-block; width: 16px; height: 0; border-top: 2px solid; vertical-align: middle; margin-right: 6px; }
+  .callout { border-left: 3px solid var(--warn); background: var(--warn-soft); padding: 8px 12px; border-radius: var(--radius); font-size: 14px; }
+  details summary { cursor: pointer; font-size: 14px; color: var(--muted); }
+  .metrics { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; } .metrics div { display: grid; gap: 2px; } .metrics b { font-size: 20px; font-variant-numeric: tabular-nums; }
+  #result:empty::before { content: "Paste a paper abstract, an article or a comment, or load a sample, then judge it."; color: var(--muted); display: block; padding: 18px; border: 1px dashed var(--line); border-radius: var(--radius); }
+</style></head>
+<body>
+<main>
+  <div class="pagehead"><div><h1>Review desk</h1><p class="muted">Judge a paper, article or comment about superintelligence: three explainable judges, guards against gaming them, a stress test that tries to game them anyway, and a place in the knowledge graph.</p></div></div>
+  <div class="desk">
+    <section class="panel" aria-label="What to review">
+      <form id="f" class="panel" style="border:0;padding:0">
+        <div class="kinds" role="radiogroup" aria-label="Kind">
+          <label><input type="radio" name="kind" value="" checked>Work it out</label><label><input type="radio" name="kind" value="paper">Paper</label><label><input type="radio" name="kind" value="article">Article</label><label><input type="radio" name="kind" value="comment">Comment</label>
+        </div>
+        <label>Title<input id="title" maxlength="300" autocomplete="off"></label>
+        <label>Authors <span class="small muted">(watched people only count when they are authors)</span><input id="authors" maxlength="600" autocomplete="off"></label>
+        <label>Text<textarea id="text" maxlength="20000" placeholder="Paste the abstract, the article or the comment"></textarea></label>
+        <div class="row"><label>arXiv id<input id="arxiv" placeholder="2501.01234" inputmode="decimal"></label><button class="btn" type="button" id="bArxiv">Fill from arXiv</button></div>
+        <div class="samples"><span class="small muted">Samples (test data):</span><span id="samples"></span></div>
+        <div class="actions"><button class="btn primary" id="bCheck">Judge it</button><button class="btn" type="button" id="bSave">Judge and save</button><button class="btn" type="button" id="bStress">Stress-test the judge</button></div>
+        <p id="status" class="small muted" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+    <section id="result" aria-live="polite"></section>
+  </div>
+  <section class="panel" id="stress" hidden></section>
+  <div class="cols side">
+    <section class="panel"><h2>Catalog</h2><p class="small muted">Saved reviews. Each is a <code>doc:</code> node in the knowledge graph, linked to the topics it is about, the concepts it explains, the benchmarks it uses and the organisations and watched people it mentions.</p><div id="catalog"></div></section>
+    <section class="panel"><h2>How the judges are doing</h2><div id="metrics"></div></section>
+  </div>
+</main>
+<script src="/js/api.js"></script>
+<script>
+let user, last = null, savedId = null;
+const val = () => ({ kind: (document.querySelector('[name=kind]:checked') || {}).value || "", title: $("#title").value, authors: $("#authors").value, text: $("#text").value });
+const st = (m, cls = "small muted") => { const s = $("#status"); s.textContent = m; s.className = cls; };
+const tone = (v) => ({ "major and credible": "good", "solid, modest step": "good", "worth reading": "good", "big if true": "warn", minor: "", doubtful: "bad" }[v] || "");
+const level = (l) => (l === "backed" ? "good" : l === "unbacked" ? "bad" : "warn");
+
+function judge(j) {
+  const inv = j.id === "hype";
+  return `<div class="judge${inv ? " inverse" : ""}"><div class="head"><h3>${esc(j.label)}</h3><b>${j.score}</b></div><div class="bar"><i style="width:${Math.min(100, j.score)}%"></i></div>
+    <p class="small muted">${esc(j.about)}</p><ul class="why">${j.why.filter((w) => w.points || w.detail).map((w) => `<li><span>${esc(w.factor)}</span><span>${inv ? "" : "+"}${w.points}</span>${w.detail ? `<small>${esc(w.detail)}</small>` : ""}</li>`).join("") || '<li><span class="muted">Nothing found</span><span></span></li>'}</ul>
+    ${j.missing?.length ? `<p class="small muted">Missing: ${j.missing.map(esc).join(", ")}</p>` : ""}</div>`;
+}
+function show(r, doc) {
+  last = r;
+  const byRel = {}; for (const e of r.edges) (byRel[e.rel] ||= []).push(e.dst);
+  $("#result").innerHTML = `<div class="panel enter">
+    <div class="verdict"><h2 style="margin:0">${esc(r.title || "Untitled")}</h2></div>
+    <div class="verdict"><span class="tag ${tone(r.verdict)}">${esc(r.verdict)}</span>${r.verdictNote ? `<span class="small" data-verdict-note>${esc(r.verdictNote)}</span>` : ""}<span class="small muted">${esc(r.kindLabel)}: ${esc(r.kindWhy)}${r.arxiv ? ` · arXiv ${esc(r.arxiv)}` : ""}${r.scope.in ? "" : " · may be off-topic"}</span></div>
+    <div class="score"><div><span class="k">Score (guarded)</span><span class="n">${r.score}</span><span class="small muted">unguarded judge: ${r.naive}</span></div>
+      <div><span class="k">Credibility</span><span class="n">${r.credibility}</span><span class="small muted">rigor and lack of hype</span></div>
+      <div><span class="k">Claims backed</span><span class="n">${r.claims.filter((c) => c.level === "backed").length}/${r.claims.length}</span><span class="small muted">with a number nearby</span></div></div>
+    ${r.needsPerson ? `<p class="callout">Sent to a person: ${r.reasons.map(esc).join("; ")}.</p>` : ""}
+    <p class="small muted">${esc(r.guarded.scoreRule)}. Base ${r.guarded.base}, rigor cap ${r.guarded.cap}.</p>
+    <div class="judges">${r.judges.map(judge).join("")}</div>
+    <h3>Guards</h3><ul class="guards">${r.guards.map((g) => `<li class="${g.fired ? "on" : ""}"><span class="dot" aria-hidden="true"></span><div>${esc(g.label)}<small>${g.fired ? "Fired: " : ""}${esc(g.detail)}</small></div></li>`).join("")}</ul>
+    ${r.claims.length ? `<h3>Claims</h3><ul class="claims">${r.claims.map((c) => `<li><div><span class="tag ${level(c.level)}">${esc(c.level)}</span></div><span>${esc(c.sentence)}</span>${c.support.length ? `<span class="small muted">Backed by: ${c.support.map(esc).join(", ")}</span>` : ""}</li>`).join("")}</ul>` : ""}
+    ${r.dropped.length ? `<details><summary>${r.dropped.length} sentences the guarded judges didn't read</summary><ul class="small">${r.dropped.map((d) => `<li>${esc(d.sentence)} <span class="muted">(${esc(d.why)})</span></li>`).join("")}</ul></details>` : ""}
+    <h3>In the knowledge graph as <code>${esc(r.qid)}</code></h3>
+    <div class="edges">${Object.entries(byRel).map(([rel, ds]) => ds.map((d) => `<span class="edge"><em>${esc(rel)}</em> ${esc(d)}</span>`).join("")).join("") || '<span class="small muted">No tags matched.</span>'}</div>
+    <details><summary>Pipeline trace (${r.trace.length} steps${r.ms ? `, ${r.ms.toFixed(1)} ms` : ""})</summary><table class="t"><tbody>${r.trace.map((t) => `<tr><td>${esc(t.label || t.id)}</td><td class="n">${t.ms.toFixed(2)} ms</td></tr>`).join("")}</tbody></table></details>
+    ${doc && user?.admin ? `<div class="actions"><span class="small muted">Do you agree with "${esc(r.verdict)}"?</span><button class="btn" type="button" data-label="agree">Agree</button><button class="btn" type="button" data-label="disagree">Disagree</button></div>` : ""}
+  </div>`;
+  $$("[data-label]").forEach((b) => (b.onclick = async () => { await api(`/api/admin/review/docs/${doc.id}/label`, { body: { label: b.dataset.label } }); st(`Marked ${b.dataset.label}. Thanks: that's the judges' calibration data.`, "ok"); metrics(); }));
+}
+function chart(a, b) {
+  const W = 560, H = 190, P = 28, steps = Math.max(a.path.length, b.path.length) - 1 || 1;
+  const x = (i) => P + (i / steps) * (W - 2 * P), y = (v) => H - P - (v / 100) * (H - 2 * P);
+  const line = (pts, key) => pts.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p[key]).toFixed(1)}`).join("");
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Scores while the adversary edits the text">
+    ${[0, 50, 100].map((v) => `<line class="axis" x1="${P}" x2="${W - P}" y1="${y(v)}" y2="${y(v)}"/><text x="2" y="${y(v) + 4}">${v}</text>`).join("")}
+    ${Array.from({ length: steps + 1 }, (_, i) => `<text x="${x(i) - 3}" y="${H - 8}">${i}</text>`).join("")}
+    <path class="naive" d="${line(a.path, "naive")}"/><path class="guarded" d="${line(a.path, "guarded")}"/><path class="wb" d="${line(b.path, "guarded")}"/></svg>`;
+}
+async function stress() {
+  st("Two adversaries are editing the text to raise the score…");
+  const r = await api("/api/review/stress", { body: { ...val(), steps: 6 } });
+  const s = $("#stress"); s.hidden = false;
+  s.innerHTML = `<h2>Stress test</h2><p>${esc(r.summary)}</p>
+    <div class="legend"><span><i style="border-color:var(--warn);border-top-style:dashed"></i>Unguarded judge, attacked</span><span><i style="border-color:var(--accent)"></i>Guarded score on the same edits</span><span><i style="border-color:var(--muted)"></i>Adversary attacking the guarded score</span></div>
+    ${chart(r.naiveAttack, r.whiteBox)}
+    <div class="cols"><div><h3>Edits against the unguarded judge</h3><table class="t"><thead><tr><th>Appended</th><th>Unguarded</th><th>Guarded</th></tr></thead><tbody>${r.naiveAttack.path.slice(1).map((p) => `<tr><td>${esc(p.added)}</td><td class="n">${p.naive}</td><td class="n">${p.guarded}</td></tr>`).join("") || '<tr><td colspan="3" class="muted">No edit raised the score.</td></tr>'}</tbody></table></div>
+    <div><h3>Edits against the guarded judge</h3><table class="t"><thead><tr><th>Appended</th><th>Guarded</th></tr></thead><tbody>${r.whiteBox.path.slice(1).map((p) => `<tr><td>${esc(p.added)}</td><td class="n">${p.guarded}</td></tr>`).join("") || '<tr><td colspan="2" class="muted">No edit raised the guarded score.</td></tr>'}</tbody></table>
+    <p class="small muted">Whatever still works here is the next rule to fix.</p></div></div>`;
+  st("Stress test done.", "ok");
+}
+async function catalog() {
+  const { docs } = await api("/api/review/docs");
+  $("#catalog").innerHTML = docs.length ? `<table class="t"><thead><tr><th>Title</th><th>Verdict</th><th>Score</th><th>Cred.</th></tr></thead><tbody>${docs.map((d) => `<tr><td><a href="#/doc/${d.id}">${esc(d.title)}</a>${d.label ? ` <span class="small muted">· person: ${esc(d.label)}</span>` : d.needs_person ? ' <span class="small muted">· needs a person</span>' : ""}</td><td><span class="tag ${tone(d.verdict)}">${esc(d.verdict)}</span></td><td class="n">${d.score}</td><td class="n">${d.credibility}</td></tr>`).join("")}</tbody></table>` : '<p class="small muted">Nothing saved yet. Judge something and choose "Judge and save".</p>';
+}
+async function metrics() {
+  const m = await api("/api/review/metrics");
+  const fires = Object.entries(m.guardFires).sort((a, b) => b[1].count - a[1].count);
+  $("#metrics").innerHTML = `<div class="metrics"><div><span class="small muted">Reviews</span><b>${m.reviews}</b></div><div><span class="small muted">Sent to a person</span><b>${m.sentToPeople}</b></div>
+    <div><span class="small muted">Mean points the guards removed</span><b>${m.meanGapNaiveMinusGuarded}</b></div><div><span class="small muted">People agree</span><b>${m.people.agreement == null ? "–" : Math.round(m.people.agreement * 100) + "%"}</b><span class="small muted">${m.people.labelled} labelled</span></div></div>
+    ${fires.length ? `<table class="t"><thead><tr><th>Guard</th><th>Fired</th><th>Rate</th></tr></thead><tbody>${fires.map(([k, v]) => `<tr><td>${esc(k)}</td><td class="n">${v.count}</td><td class="n">${Math.round(v.rate * 100)}%</td></tr>`).join("")}</tbody></table>` : ""}
+    <p class="small muted">${esc(m.people.note)}</p>`;
+}
+async function route() {
+  const m = location.hash.match(/^#\/doc\/(\d+)/); if (!m) return;
+  const d = await api(`/api/review/docs/${m[1]}`); savedId = d.doc.id; setPageContext(d.doc.title); show(d.review, d.doc); st(`Saved review #${d.doc.id}.`);
+}
+async function run(save) {
+  try {
+    st(save ? "Judging and saving…" : "Judging…");
+    if (save) { const r = await api("/api/review/docs", { body: val() }); show(r.review, r.doc); st(r.existing ? `Already in the catalog as #${r.doc.id}.` : `Saved as #${r.doc.id} and added to the knowledge graph.`, "ok"); history.replaceState(null, "", `#/doc/${r.doc.id}`); catalog(); metrics(); }
+    else { show(await api("/api/review/check", { body: val() })); st("Judged. Nothing was saved."); }
+  } catch (e) { showErr($("#status"), e); }
+}
+$("#f").onsubmit = (e) => { e.preventDefault(); run(false); };
+$("#bSave").onclick = () => run(true);
+$("#bStress").onclick = () => stress().catch((e) => showErr($("#status"), e));
+$("#bArxiv").onclick = async () => { try { st("Asking arXiv…"); const r = await api("/api/review/arxiv", { body: { id: $("#arxiv").value } }); $("#title").value = r.title; $("#authors").value = r.authors; $("#text").value = r.text; document.querySelector('[name=kind][value=paper]').checked = true; st("Filled from arXiv.", "ok"); } catch (e) { showErr($("#status"), e); } };
+requireUser().then(async (u) => {
+  user = u;
+  const { samples } = await api("/api/review/samples");
+  $("#samples").innerHTML = samples.map((s) => `<button class="chip" type="button" data-sample="${esc(s.id)}">${esc(s.label)}</button>`).join(" ");
+  $$("[data-sample]").forEach((b) => (b.onclick = () => { const s = samples.find((x) => x.id === b.dataset.sample); $("#title").value = s.title; $("#authors").value = s.authors; $("#text").value = s.text; document.querySelector(`[name=kind][value=${s.kind}]`).checked = true; st(`Loaded "${s.label}".`); }));
+  window.onhashchange = route;
+  const linkedQid = params.get("qid");
+  if (linkedQid) { const {docs} = await api(`/api/review/docs?qid=${encodeURIComponent(linkedQid)}`); if (docs.length) history.replaceState(null,"",`#/doc/${docs[0].id}`); else st("This saved review is no longer available."); }
+  route(); catalog(); metrics();
+});
+</script>
+</body></html>

@@ -1,0 +1,317 @@
+# Build interfaces: John's build
+
+SEIS 606 Project 2 · Superintelligence Homepage · John Affolter and Matthew Baxter
+
+**Version 2.1 · November 9, 2026.**
+
+The data model, API, auth and rules of **John's build** (the code in this repo). Under the [constitution](../.specify/memory/constitution.md), each bake-off build may differ in database, framework and internal structure, so this is not the shared contract. What both builds must meet is the [shared spec](../specs/001-superintelligence-homepage/spec.md) and the bake-off rules in [CONTRACT.md](../CONTRACT.md); [SPEC_TRACE.md](SPEC_TRACE.md) shows how this build meets each requirement.
+
+Log every change to a table, route or shape here, so whoever merges the builds (or reads this API) can follow it. Rows up to 0.8 were drafted when we planned a split; their approval boxes are history, not a requirement.
+
+## Change log
+
+- **2.1, November 9, 2026 (002/REQ-024, 003/REQ-038).** The worker accepts `recheck <id>` for one historical done Lean job. It compares the referenced job-owned source bytes with the curated statement and checks the curated source with Lean. A matching proof gets fresh evidence in a separate attempt directory. Missing, changed or ambiguous source evidence moves the job to needs-agent and detaches active evidence references. Previous artifacts stay on disk. The update checks that the row still matches the snapshot read before Lean ran.
+
+- **2.0, November 9, 2026 (002/REQ-024, 003/REQ-038).** The admin job update API returns 400 when a manual write would leave a Lean job done. The worker CLI rejects manual success for Lean jobs and accepts failure reports. Manual status changes detach prior proof artifacts from the job. Requeue clears proof output. The worker removes the previous acceptance receipt when it starts another attempt. Historical job records retain their stored status.
+
+- **1.22, Nov9,2026 — controlled Lean worker admission (002/REQ-024,003/REQ-038).** A worker may mark a curated Lean proof done only after Lean4 compiles it as a proof of a proposition and the requested theorem axiom footprints contain only propext, Classical.choice and Quot.sound. Existing job status/files/output shapes remain unchanged. Successful jobs additionally list proof-audit.lean and proof-audit.json; the latter records toolVersion, sourceSha256, theorem names, actual footprints and allowedAxioms. A hash binds source bytes, not independent authenticity. Custom/unfinished assumptions, missing/duplicate reports or compilation failures fail admission. Controlled-source checking is not a sandbox for uploaded Lean code; human/admin manual completion remains a separate trust boundary. No public route, scoring-rule, table or automatic publishing change.
+
+- **1.21, Nov 8, 2026 — backend publication/entity resolution (REQ-004/005/007).** Schema1.3.0 adds internal PublicationIdentity and VocabularyResolution contracts. External arXiv/DOI grouping keys are not Tag.qid namespaces. Trusted host/full-path parsing prevents substring/truncated-ID matches; DOI resolver identities fold case while generic URL keys retain path/query case, content parameters, scheme, ports, fragments and retained query encoding. Strong identifiers precede weak title keys; incoming conflicting strong IDs do not acquire a title candidate. Exact original story_links URLs preserve legacy replays; existing mappings are not rewritten or split. `idx_links_url` supports that lookup. PostgreSQL grouping admission uses transaction advisory lock(606,4), deliberately serializing ingest transactions; SQLite already serializes writers. Analysis weights remain unchanged; coverage derives from corrected source associations, with all reader-submitted URL variants pooled into one provenance class per story. Existing cached analyses are not retroactively rewritten. Static vocabulary resolution reports resolved/ambiguous/unresolved and retains candidate IDs rather than merging aliases. Offline resolve/dictionary tools expose reviewable provenance and graph pointers, with no new HTTP route, public UI or publication action. Generic title-only grouping remains heuristic, and arXiv/DOI equivalence is not inferred without an existing explicit bridge.
+
+- **1.20, Nov 8, 2026 — tracker metadata cleanup (002/REQ-030).** Delivery task labels follow declared requirements; phase, scope and requirement labels are source-owned on delivery tasks while freeform custom labels and human progress remain preserved. Source context includes full spec-qualified requirement pointers. Validation checks requirement references against actual spec files before opening the database and rejects missing acceptance context, malformed/empty references, empty/duplicate linked ideas, and missing review/completion evidence before importing. No route or table changes; tracker state still does not approve publication.
+
+- **1.19, Nov 7, 2026 — backend vocabulary integrity (REQ-005/007; extended002/REQ-027/031).** Schema1.2.0 aligns the existing document, event, outlet and lab identities with the runtime parser. Outlet host IDs retain dots/IPv6 brackets; no stored identities are renamed. Existing protobuf namespace numbers are preserved and additions are appended. Tag qualified-ID constraints now follow the runtime grammar; lexical validity remains separate from vocabulary membership and record existence. Backend adapter outputs are checked before merge/persistence. A deterministic offline data dictionary joins canonical schema fields, controlled terms and provenance; preflight detects namespace, pointer and generated-document drift. Protobuf and Arrow remain structural formats; backend admission enforces lexical constraints. Existing graph/chunk ID queries preserve complete identities up to320 characters and reject overlong input instead of silently truncating at80. No new route, table, navigation, main-site feature or publication action.
+
+- **1.18, Nov 7, 2026 — product backlog and bounded dossier workflow (REQ-018; extended 002/REQ-030/031).** Project sync imports a validated, versioned registry of 200 proposed ideas plus separately scoped delivery tasks. Stable `product-idea:NNN` and `product-slice:SLICE-NNN` markers refresh source context without following over human status, title, priority or notes. New ideas start in Backlog; related requirement pointers are not approvals. `/m/project#/product` filters existing issue APIs by `product-backlog`. The dossier adds a per-user, per-topic browser-session question and a deterministic copyable brief containing existing evidence, limits and source records. It neither saves a monitor nor generates a new answer. Existing tables, routes, response shapes, publication policy and default profile are unchanged.
+
+- **1.17, Nov 7, 2026 — reliable research navigation (REQ-018; extended REQ-023/025/027).** Graph selection updates `qid`, supports Back/Forward and an All nodes reset; Learn rejects stale route responses and reports broken pointers. Glossary search preserves Greek mathematical case. Directory active links distinguish Feed and Saved. Public RSS now links to `/m/published-explainer?id=<id>` and `GET /api/learn/published/:id` returns `{post:{id,concept_id,output,published_at}}` only for published post jobs; all other records return 404. Existing `/api/learn/posts/:id` keeps authentication. The public reader escapes output as text and links to glossary, RSS, feed and the signed-in concept workspace. No table, score, shared-spec or publication-policy changes.
+
+- **1.16, Nov 7, 2026 — spec alignment and research foundations (REQ-001/003/005; extended REQ-023).** Four Learn concepts and matching glossary entries add JEPA, recurrent depth, latent reasoning and world models with primary-paper links and evaluation caveats. Concept detail may carry optional `sources` and `glossary` pointers for those entries. Concept registry version is 3; glossary version is 1.1.0. New mention tags/curated relationships use the existing shape and never override feed relevance or scores. The fixed nine topics, scope policy, shared spec and publication gates are unchanged.
+- Two targeted arXiv searches join the candidate catalog, explicitly marked unverified after 15-second timeouts. They are not enabled on any hosted site. The status generator retains a warning about the unresolved REQ-003 one-topic versus strong-term/two-root interpretation. Spec acceptance now also checks glossary/editorial APIs and static pages remain unavailable in spec mode. No new table or API route.
+
+
+- **1.15, Nov 7, 2026 — sourced term pointers and numerical teaching functions (REQ-005/007/018, existing extended REQ-023/027).** `GET /api/learn/glossary` is a public, static registry `{version,about,entries}` when Learn is enabled. Entries carry stable ID, kind, literal aliases, definition, formula, properties, caveat, related concept, related entries, notation pointers and HTTPS sources. `term:<id>` joins the qualified-ID registry; a Learn tagger emits `glossary-mention` matches and curated `related` and `uses-notation` edges. These are textual mentions, never evidence-quality judgments. Canonical schema version 1.1 adds Namespace `term` and TagMethod `glossary-mention`; generated runtime representations are refreshed. No ranking weights or shared specs change.
+- `/m/glossary#<id>` is guest-readable with name/symbol search, kind filtering, source links, related concepts/graph pointers and bounded softmax/sigmoid examples. `GET /api/me.publicNav` adds Glossary when Learn is enabled. Reading pages optionally load one term registry and annotate at most 60 first mentions per page, skipping links, code, navigation, headings and editing controls. Definitions use author-dependent notation caveats; Greek mathematical case remains significant (Σ is not σ). The same literal matcher and numeric functions run in browser and Node. Numeric inputs are 1–32 finite values in [−1000,1000]; no eval or remote model calls.
+- Related stories in `GET /api/learn/concepts/:id` now require explicit `in_scope=1` and nonhidden state, matching feed admission. Existing Knowledge rebuild refreshes stored term tags/edges after registry changes; no hosted index or content was mutated in this pass.
+
+
+- **1.14, Nov 7, 2026 — connected navigation and content management (REQ-002/004/005/007/018 and existing extended REQ-023/027/031/032).** Shared navigation adds registry-derived breadcrumbs and a searchable, role-filtered page directory. `GET /api/me` adds `publicNav` with the Journal destination only when the editorial module is enabled; guests receive no admin destinations. `GET /api/admin/stories` adds exact `id`, `source`, `state=visible|hidden|excluded`, `offset` filters and `{total,limit,offset}` alongside `stories`; unclassified relevance fails closed. `GET /api/admin/content/:id` returns an admin-only story preview, at most 100 source links and 30 targeted audit entries; no private reader notes. Moderation `PUT` requires boolean `hidden`, optionally compares `expected_hidden`, and commits its visibility update with its audit receipt atomically; stale state returns 400. No imported publisher content is rewritten.
+- Extended-only editorial module: `editorial_posts(id,slug,title,summary,body,status,revision,published_revision,published_title,published_summary,published_body,published_at,updated_at,created_by,updated_by)` and `editorial_revisions(post_id,revision,title,summary,body,status,actor_id,action,at)`, with status and revision indexes. Original plain-text posts are capped at 200, bodies at 20,000 characters, and history at the latest 20 snapshots per post. The live published snapshot remains independent of draft edits and restores.
+- Public `GET /api/editorial/posts` returns up to 200 published summaries; `GET /api/editorial/posts/:slug` returns only a published snapshot. Admin list/detail/create/update routes use `/api/admin/editorial/posts` and `/:id`; `POST /:id/restore` restores a retained revision into a new draft. Create admission serializes the quota check with a Postgres advisory transaction lock (SQLite already serializes transactions). Updates require integer `expected_revision`; publish also requires `original:true`, summary and body. All mutations transactionally write the post, snapshot and admin audit receipt. Unpublish removes public access; there is no hard-delete or automatic deployment. Pages: `/m/editorial` (admin authoring) and `/m/journal` (guest reading), enabled only in the extended profile. Shared specs and the research-only opt-in site are unchanged.
+- Review catalog `GET /api/review/docs?qid=` resolves one exact saved qualified ID under existing authentication, so graph evidence opens `/m/review?qid=` at the matching numeric review. Knowledge accepts `/m/knowledge?qid=` for a selected node. Story detail links existing coverage, explanation, topic feed, dossier, graph and admin record based on available navigation. Source-management and harvest-history deep links retain source IDs.
+
+
+- **1.13, Nov 7, 2026 — graph assertion explanations (existing extended REQ-023/027).** Graph edges add `meaning: {kind, directed, weight_unit, explanation}`. `kind` is `co-occurrence`, `review-derived`, `curated` or `recorded`, based on the stored relation/evidence origin. This is provenance classification, not truth or confidence. Co-occurrence weight counts indexed passages, with up to five example-story references; other edge weights remain explicitly labeled stored relationship weights. Graph limits normalize to finite integers in 1–60. No authorization, table or shared-spec changes.
+
+
+- **1.12, Nov 7, 2026 — shared query and analysis alignment (REQ-002, REQ-003, REQ-005; existing research REQ-031/033).** No new tables or columns. Newest/votes/significance sorts now order and paginate in SQL with a descending-ID tie break. Guest queries omit personal-state subqueries. Top retains the existing computed rank. Story payload shapes remain unchanged; missing source names now say “Uncatalogued source” rather than inventing a reader attribution. Ingestion bounds external attention to finite nonnegative 32-bit integer counts and normalizes valid publication timestamps to UTC, retaining date-only precision and using null for invalid dates. Rising attention on an existing link triggers a rescore.
+- Analysis now adds all topic ancestors, treats coverage as linked-source count rather than proven independence, and requires affirmative venue context without common negations for the existing preprint evidence upgrade. These are deterministic cues, not independent verification of peer review. Dossiers use stored feed significance, the same fail-closed story admission, and source identities rather than display names. Buzz counts valid dated records within the requested UTC calendar-day window; invalid/future/missing dates are excluded, and hype averages finite scores bounded to 0–100.
+- Knowledge chunk/search/JSON-LD reads exclude hidden, unclassified and off-topic stories. Graph responses add **`stale: boolean`**: co-occurrence edges are withheld when indexed chunks no longer meet admission. Build refreshes changed tag metadata even when text hashes match, purges ineligible chunks and finalizes graph replacement transactionally, retaining reviewed-document and forecast-event edges. Postgres takes share locks on participating story rows during finalization. Pruning transactionally recomputes co-occurrence from remaining admitted chunks and preserves other edge types. Graph UI presents the stale state; existing route authorization is unchanged.
+
+- Nov 7, 2026 — Public reading, explicitly requested by John (REQ-002, REQ-007, REQ-013–018): `GET /api/stories` and `GET /api/stories/:id` allow guests. Existing hidden/in-scope admission remains. Guests have `voted:false`, `saved:false`; detail `notes`, `lists` and `inPublicLists` are empty. `saved=1` still requires a session. All writes, private list APIs and administration retain their authorization. `/` shows the actual feed to guests; `/?signin=1` opens sign-in, as do existing `next` and `mode` entry links. Shared spec and agreements unchanged.
+
+- Nov 7, 2026 — Account access usability (REQ-009–012, REQ-018): `/welcome` is a static public overview with labeled synthetic samples. Existing data and admin authorization is unchanged. `GET /api/me` may include optional `demo: {accounts:[{role,username,password}]}` only when the dedicated local fixture runner sets it, fixture feeds are enabled and NODE_ENV is not production. `npm run demo` uses a dedicated local SQLite database by default, or a fresh temporary database with `DEMO_FRESH=1`, binds to loopback, creates synthetic reader/admin users and refuses production mode. Normal servers omit this field; sign-up/sign-in/session contracts are unchanged. `node test/demo-access.js` checks demo roles, logout and production refusal.
+
+
+Every interface change gets a row here. Breaking changes bump the major version (1.0 → 2.0).
+
+| Version | Date | Change | Approved by |
+| --- | --- | --- | --- |
+| 0.1 | Nov 4, 2026 | First draft: data models, API, auth, rules, milestones | John ☐ · Matt ☐ |
+| 0.2 | Nov 4, 2026 | Project choice is now a mix: split base (accounts, data, API, deploy) plus a bake-off on the homepage experience, judged by CLEF or JEV and signed off by both. Roles table to revisit for the bake-off parts. | John ☐ · Matt ☐ |
+| 0.3 | Nov 4, 2026 | Bake-off tools: John on v0, Matt on Claude. Hosting moves to Vercel (John's account) from Matt's GitHub repo, so data moves from SQLite to hosted Postgres and the 30-minute feed fetch becomes a Vercel Cron Job. | John ☐ · Matt ☐ |
+| 0.4 | Nov 4, 2026 | **Proposed by John, needs Matt's approval.** Harvesting and admin layer. Adds tables `fetch_runs` and `admin_audit`; adds columns to `sources` (interval_minutes, max_items, etag, last_modified, failures, next_due_at, verified, from_catalog), `users` (disabled) and `stories` (hidden, hidden_reason); new source kinds `news`, `policy` and formats `jsonfeed`, `hn-algolia`, `semantic-scholar`; new `/api/admin/*` routes. Additive only: existing routes keep their shapes, except that `/api/stories` no longer returns hidden stories and `/api/cron/fetch` now returns a run summary around the same `report`. | John ☐ · Matt ☐ |
+| 0.5 | Nov 5, 2026 | **Proposed by John, needs Matt's approval.** Project workspace for running the project (Linear-style, admins only). Adds tables `project_issues`, `project_milestones`, `project_comments`, `project_activity` and routes under `/api/admin/project/*`. Free-tier tuning: four daily Vercel crons instead of one (`/api/cron/fetch?slot=0..3`, same response), smaller Postgres pool that closes idle connections, log pruning, story summaries capped at 1,500 characters. No existing route or shape changes. | John ☐ · Matt ☐ |
+| 0.6 | Nov 5, 2026 | **Proposed by John, needs Matt's approval.** Capability analysis. `stories` gains `significance` (0–100) and `analysis` (JSON: type, evidence, benchmarks with reported scores, people, frontier claims, and the `why` lines that add up to the score); new table `story_entities`; source kinds `journal` and `people`; ontology v2 (new topics, `benchmarks`, `people`). Story objects in every response gain `significance` and `analysis`; `GET /api/stories` accepts `sort=signal`, `benchmark`, `person`, `min`; `GET /api/ontology` adds `benchmarks` and `people`; new `GET /api/capabilities`. Additive: existing fields unchanged. | John ☐ · Matt ☐ |
+| 0.7 | Nov 5, 2026 | **Proposed by John, needs Matt's approval.** Modular monolith: features become plug-in modules loaded by `kernel/` (see `modules/README.md`). No table changes (project tables now declared by the project module, same shapes). Admin, project and capabilities pages move to `/m/admin`, `/m/project`, `/m/capabilities` (old paths redirect). `GET /api/me` adds `user.nav`. New routes: `GET /api/modules` (admins), `GET /api/ui/catalog`, `POST /api/ui/validate`, `GET /api/ui/views`, `GET /api/ui/views/:name`, `GET /api/judges` and `POST /api/judges/:id/run` (admins). JEV and CLEF are external judges: the app records and cross-checks their results and doesn't define them. | John ☐ · Matt ☐ |
+| 0.8 | Nov 6, 2026 | **Proposed by John, needs Matt's approval.** Align with the shared spec (Matt's `specs/001-superintelligence-homepage`): superintelligence-only feed (REQ-003: `stories.in_scope`, rule in `lib/ontology.json` → `scope`; off-topic stories are stored but left out of `/api/stories`), the seven spec topics as the top level (finer topics become children), newest first by default (`/api/stories` default `sort=new`, REQ-002), Twitter/X links dropped at ingestion (REQ-006), superintelligence-focused default sources (REQ-001). `story.analysis.scope` = `{in, reason, rule}`; `/api/admin/stories?scope=out`. Trace: `docs/SPEC_TRACE.md`. | John ☐ · Matt ☐ |
+| 0.9 | Nov 6, 2026 | Codebase map module (developer tooling): `GET /api/codemap`, `GET /api/codemap/trace?id=`, `GET /api/codemap/ask?q=` (admins only); nav entries with `admin: true` now render in one Admin menu. No table changes. | logged by John |
+| 1.0 | Nov 6, 2026 | Project module 1.1.0: dependency timeline. New table `project_deps(issue_id, depends_on)`, new column `project_issues.start_date`. `GET /api/admin/project/issues` returns `{issues, conflicts}` (each issue carries `blocked_by`; a conflict is a task that starts before something it depends on ends); `GET …/issues/:n` adds `blocked_by` and `blocks`; `POST …/issues/:n/deps {depends_on}` (refuses self-links and loops) and `DELETE …/issues/:n/deps/:m`. Start after due is refused with 400. Process tooling, no product REQ. | logged by John |
+| 1.1 | Nov 6, 2026 | **Proposed (REQ-021, REQ-023-025 below are not in the spec yet).** Learn module 0.1.0: table `learn_jobs(id, kind, concept_id, story_id, note, status, output, files, error, created_by, created_at, updated_at, published_at)`. Signed in: `GET /api/learn/concepts`, `GET /api/learn/concepts/:id`, `GET /api/learn/story/:id`, `POST /api/learn/teardown {title, summary, url, kind}` → `{steps:[{id,name,what,input,output}]}` (writes nothing), `GET /api/learn/posts/:id`. Public: `GET /api/learn/explainer/:id` (storyboard), `GET /api/learn/feed.xml` (published explainers, RSS 2.0). Admins: `GET|POST /api/admin/learn/jobs`, `GET|PUT|DELETE /api/admin/learn/jobs/:id`. Pages `/m/learn`, `/m/explainer`. Worker `npm run learn:worker`. Also: motion tokens in `app.css` and the unslop preflight check (tooling). | logged by John |
+| 1.2 | Nov 7, 2026 | Sync with Matt's main and the naming convention (docs/NAMING.md).
+- **REQ-020:** the in-app agent log is removed. `GET/POST/PUT/DELETE /api/agent-log*` and `/api/agent-log-view` are gone; `/agent-log` redirects to `AGENT_LOG.md`; there's a one-time admin export at `GET /api/admin/agent-log.md`. The `agent_log` tables are kept untouched.
+- **Nine top-level topics:** `ai-rnd` became `automating-ai-research`, and `recursive-self-improvement` was added (ontology v4).
+- **Two versions:** `SITE_PROFILE=spec` (the default) or `extended`. In `spec`, `/api/lists*`, `/api/stories/:id/notes`, `/api/notes/:id`, `/api/brief`, `/api/sources/suggest` and the extended modules' routes and pages answer 404. `/api/me` adds `user.profile` and `user.features`.
+- **Weekly brief:** `GET /api/brief` without `week` shows last week when the current week has no stories yet (early on a Monday); the response's `week` says which week it shows.
+- **Admin routes moved under `/api/admin/`:**
+  - `GET /api/modules` became `GET /api/admin/modules`;
+  - `/api/codemap*` became `/api/admin/codemap*`;
+  - `/api/judges*` became `/api/admin/decision/judges*`;
+  - `PUT /api/sources/:id` and `POST /api/sources/fetch` are removed; use `PUT /api/admin/sources/:id` and `POST /api/admin/harvest`.
+- **RSS:** `/learn/feed.xml` became `/api/learn/feed.xml`, so it works on Vercel.
+- **Tags:** every tag carries `qid` (`topic:alignment`, `org:openai`). `GET /api/stories?tag=` takes qualified ids, and all of them must match. | logged by John |
+| 1.3 | Nov 7, 2026 | Portable rules, schema registry and the knowledge module (extended version; tooling and proposed REQ-023).
+- **Rules:** REQ-003's scope rule is now data, `lib/rules/scope.json` (si-expr, `lib/expr`), with the same results in Node, Python and Rust.
+- **Types:** `schema/types.json` generates `schema/gen/` (JSON Schema, zod, pydantic, proto3 with gRPC `Knowledge`, Arrow, JSON-LD context, OpenRPC, Rust serde, vocabulary).
+- **Extension point:** kernel `knowledge.taggers` (`{id, about, namespace, tag(text), edges?()}`).
+- **Knowledge module tables:** `knowledge_chunks(story_id, ord, text, hash, tags, model, vector)` and `knowledge_edges(src, rel, dst, weight, evidence)`.
+- **Routes for admins:** `POST /api/admin/knowledge/build {limit?}` returns `{stories, chunks_changed, chunks_kept, edges, taggers, embedder}`; `GET /api/admin/knowledge/stats`.
+- **Routes for signed-in users:**
+  - `GET /api/knowledge/graph?qid=&limit=`;
+  - `GET /api/knowledge/chunks?tag=`;
+  - `GET /api/knowledge/similar?q=`;
+  - `GET /api/knowledge/export.jsonld`;
+  - `POST /api/knowledge/rpc` (JSON-RPC 2.0, methods `knowledge.tag` and `knowledge.evaluate`, batches up to 20).
+- **Public:** `GET /api/knowledge/context.jsonld`.
+- **Page:** `/m/knowledge` (admins). | logged by John |
+| 1.4 | Nov 7, 2026 | Spec acceptance suite and the Lab (extended version; proposed REQ-026).
+- **Spec version:** sign-up ignores `displayName` (REQ-012); `/api/me` returns top-level `profile` and `features`.
+- **Lab module:** table `lab_runs(id, example_id, kind, proposer, metric, value, result, created_by, created_at)`.
+- **Lab routes (signed in):**
+  - `GET /api/lab/examples`;
+  - `GET /api/lab/examples/:id` returns `{idea, expect, hypothesis, verdict, runner, baseline, variant, judgeInput, scorecard, runs, program}`;
+  - `POST /api/lab/examples/:id/run {params}`;
+  - `GET /api/lab/runs/:id`;
+  - `POST /api/lab/intent {text}` returns `{action, why, plan, spec?, valid?}`;
+  - `GET /api/lab/policy`.
+- **Page:** `/m/lab`.
+- **Worker:** `npm run lab`.
+- **Library:** `lib/providers.js` (OpenAI-compatible presets: ollama, lmstudio, openrouter, vercel-ai-gateway, cloudflare, groq).
+- **Embedder:** the `embeddinggemma` adapter. | logged by John |
+| 1.5 | Nov 7, 2026 | Lab Arena and the Review desk (extended version; proposed REQ-026 and REQ-027).
+- **Arena:** table `lab_policies(id, policy, accuracy, properties, note, active, created_by, created_at)`.
+  - `GET /api/lab/policy` returns `{id, source, policy, score}`; `GET /api/lab/policies`.
+  - `POST /api/admin/lab/policy {policy, note}` (refused unless every safety property holds and held-out accuracy is no worse than the live policy); `POST /api/admin/lab/policy/reset {id?}`.
+  - `POST /api/lab/examples/:id/variants {name, params}`, `GET /api/lab/examples/:id/variants`.
+  - Page `/m/arena`; browser sandbox bundle `public/m/lab-sandbox.js` (built from `modules/lab/client/`).
+- **Review module:** table `review_docs(id, qid, kind, title, authors, url, excerpt, score, naive, credibility, verdict, needs_person, result, label, label_note, labelled_by, created_by, created_at)`; stores a 400-character excerpt, never the full text (REQ-007).
+  - New id namespace `doc:` (a hash of title and text). Its edges (`about`, `explains`, `evaluates-on`, `mentions`) live in `knowledge_edges`, and a knowledge rebuild keeps them.
+  - Signed in: `GET /api/review/samples`; `POST /api/review/check` (judge, don't save); `POST /api/review/stress {steps?}` returns `{naiveAttack, whiteBox, summary}`; `POST /api/review/arxiv {id}` (`ARXIV_API` overrides the base URL); `POST /api/review/docs`; `GET /api/review/docs?topic=&verdict=`; `GET /api/review/docs/:id`; `GET /api/review/metrics`; `GET /api/review/map`.
+  - Admins: `POST /api/admin/review/docs/:id/label {label: agree|disagree, note}`.
+  - Pages `/m/review` and `/m/map`. | logged by John |
+| 1.6 | Nov 7, 2026 | Daily paper watcher and paper-to-code toys (extended version; proposed REQ-027 and REQ-028).
+- **Worker:** `node scripts/watch.js [--from file] [--people] [--dry] [--max N]` (config `modules/review/watch.json`). It queries arXiv at most once a day, 3 s between requests; judges each paper with the Review desk; stores it through `modules/review/store.js` (`saveReview`, shared with `POST /api/review/docs`); queues `learn_jobs` of kind `paper-to-code`; and writes `out/watch/<date>.md` and `.json`. With `--from`, it also saves the day's entries to `modules/review/history/<date>.json` (no paper authors) and replays earlier days' files first, so a fresh database keeps past reviews; `--no-history` turns this off and `WATCH_HISTORY` moves the folder. Paper-to-code jobs whose paper already has a Lab example (`modules/lab/built.js`) are closed as done and not queued again. `ARXIV_API` and `WATCH_DELAY_MS` exist for tests.
+- **Review result** gains `survey` (bool); `kindLabel` can be "Survey".
+- **Lab examples** gain an optional `source {title, url, via}`, returned by `GET /api/lab/examples` and `GET /api/lab/examples/:id`.
+- **New Lab runners:** `self-improve-selection` and `research-oversight` (`modules/lab/papers.js`). The `sparse-autoencoder` runner gains `cosine` and `norm_spread`. | logged by John |
+| 1.7 | Nov 7, 2026 | Topic dossiers and precomputed Lab results (extended version; proposed REQ-031).
+- **Dossier routes:** `GET /api/review/dossier/:topic` (signed in) returns `{dossier, blog, posts, storyboard}`; `GET /api/review/dossier/:topic/storyboard` is public, for the explainer player and recorder.
+- **Bound views:** json-render specs may carry `state`; the browser renderer passes it as `initialState` and registers the operators in `views/operators.js` (`str`, `fixed`, `percent`, `ratio`, `plural`, `capitalize`, `rule` for si-expr) for `$computed`. `GET /api/ui/catalog` adds `operators` and binding help to `prompt`. New block `Ladder` (`label?`, `levels[]`, `value`, `hint?`). New views: `topic-<id>` for each top-level topic (live, `modules/review/topic-view.js`) and `example-bindings` (static, synthetic data).
+- **Evidence index:** `GET /api/review/evidence-index` (signed in) returns `{at, levels, buzzLevels, topics: [{id, label, strength, why, buzz: {level, items, hype, gap}, counts: {papers, articles, credible, checks, supported, stories}, top}]}`, one row per top-level topic, sorted with the topics talked about furthest ahead of their evidence first. Page `/m/evidence` (in the top bar as Evidence).
+- **Pages:** `/m/dossier#<topic>`; `/m/explainer?d=<topic>` plays a dossier. The player gains a `bars` scene and an optional `kicker` on `say` scenes.
+- **Worker:** Learn job kind `dossier` (note `topic:<id>`) writes `post.md`, `social.md`, `dossier.json`, `storyboard.json` and a recorded `explainer.mp4`.
+- **Lab:** `modules/lab/results.json` (generated by `npm run lab:results`; preflight checks it is current) answers default runs; runs with custom parameters still compute live. | logged by John |
+| 1.8 | Nov 7, 2026 | Research site that feeds the feed (proposed REQ-032; not part of the bake-off build).
+- **Profile:** `SITE_PROFILE=research` runs admin, knowledge, learn, the Lab (with blocks-core, generative-ui and decision) and review, plus the new `research` module. The `extended` profile includes it too.
+- **Routes (server-rendered, no nav entry):** `GET /research` (index), `GET /research/paper/:id` (write-up of one publishable review), `GET /research/topic/:topic` (a topic dossier as a page), `GET /research/feed.xml` (RSS 2.0 of publishable reviews and rated topic dossiers). All send `X-Robots-Tag: noindex, nofollow`; pages carry a "Research preview" tag and a robots noindex meta.
+- **Gate:** served when `RESEARCH_PUBLIC=1`, or to a signed-in admin; otherwise 404.
+- **Publishable:** papers and articles (never comments) not judged doubtful and not sent to a person, or a person agreed; never one a person disagreed with. RSS items keep the paper's own title so the reading site groups the write-up with the paper's story. | logged by John |
+| 1.9 | Nov 7, 2026 | Source grades, forecasts as events, buzz versus evidence, published criteria (proposed REQ-033; extended and research versions only).
+- **Review result** gains `source {grade A-E, kind, outlet {id, label, kind, personal}, cites, sells, why[]}`, `forecasts [{qid: event:<hash>, sentence, due, horizon}]` and `verdictRule`. New knowledge-graph edges: `published-by` (doc to `outlet:<host>` or the pooled `outlet:class-<kind>` for personal blogs and newsletters), `predicts` (doc to `event:`), `about` (event to topic). Review input accepts `sourceKind` and `at`.
+- **Table:** `review_events(id, qid UNIQUE, doc_qid, outlet, outlet_label, sentence, due, status pending|happened|did-not|unclear, note, resolved_by, resolved_at, created_at)`, pruned with its review.
+- **Routes:** signed in: `GET /api/review/outlets` (track records), `GET /api/review/events?status=`; admins: `POST /api/admin/review/events/:id {status, note}`; public when the research site is: `GET /research/criteria`.
+- **Exports:** `CRITERIA` and `VERDICTS` from `modules/review/review.js` (the judge uses them; pages print them). Dossiers gain `buzz`, `grades`, `forecasts`; evidence counts papers only.
+- **Watcher:** `--from` entries may carry `kind`, `sourceKind` and `published`; only papers (not surveys or position papers) are queued for paper-to-code.
+- **Agent check-in:** `npm run checkin` (`scripts/checkin.js`) writes `out/checkin/<date>.md`: proposals awaiting both partners, people checks, forecasts due, reviews sent to a person, unreviewed paper-watch branches, queued agent jobs. `scripts/project-sync.js` adds two follow-on issues (`research:forecasts-due`, `research:reviews-for-a-person`) and the scheduled check-in. | logged by John |
+| 2.0 | Nov 7, 2026 | Two-model judge panel with bias masking (proposed REQ-034; background workers only).
+- **Module:** `modules/review/panel.js`: `panel({text, rules, models})` returns `{status agreed|disagreed|incomplete, credibility, verdict, verdictRule, rule, needsPerson, judges[], setAside[], errors[], limits}`. The watcher stores it as `result.panel` and updates the review's `credibility`, `verdict` and `needs_person`.
+- **Environment:** `PANEL_MODELS=provider:model,provider:model` (lib/providers.js presets; empty means the rules judge stands alone and the panel is marked incomplete).
+- **Criteria:** `CRITERIA.panel` (printed on `/research/criteria`); write-ups show each judge's credibility and the rule that chose.
+- **Track records page:** `GET /research/outlets` (same gate as `/research`): publishable reviews pooled by outlet, forecasts happened / not / pending, hit rate from 3 resolved.
+- **Workflow:** `.github/workflows/paper-watch.yml` passes `PANEL_MODELS` (repository variable) and provider keys (secrets) to the watcher, runs `scripts/checkin.js` after it and keeps both reports.
+- **Rigor in the feed:** each `/research/feed.xml` item carries `<category domain="si:verdict|si:credibility|si:grade|si:panel">` (papers) or `si:evidence` (topics). Readers that don't know them ignore them; the spec version parses the feed unchanged.
+- **Article rubric and verdict:** articles are judged on reporting (`CRITERIA.reporting`: cites the study, gives its numbers or size, says what was not shown, keeps forecasts apart) when that scores higher; review results gain `rubric` (paper, survey, reporting). New verdict `plausible, worth checking` (credibility 55 or more, below big-if-true). Unsupported assertions in articles count as unbacked claims.
+- **Quality report:** `npm run quality` (`scripts/quality.js`) writes `out/quality/<date>.md` from real reviews: verdict spread, article spread, grade versus credibility, hype versus credibility, papers judged minor, panel coverage. The watcher workflow runs it.
+- **Buzz feeds in the research version:** at start, the research module adds the catalog's checked buzz feeds (entries marked "(buzz)") as active sources if missing, only when `SITE_PROFILE=research`. | logged by John |
+| 2.2 | Nov 7, 2026 | Research control room (REQ-030, REQ-033; extended and research versions).
+- **Route:** `GET /api/admin/research/status` (admins) returns `{today, waiting, proposals, specStatus, people, forecasts[], flagged[], quality[], panel {models, ready}, public}`.
+- **Page:** `/m/control`, nav entry "Research" (admins): forecasts due with outcome buttons, flagged reviews with agree/disagree, quality checks, proposals, people checks, links.
+- **Forecast outcomes:** `annulled` added beside `unclear` (both count for neither side); `POST /api/admin/review/events/:id` accepts it.
+- **Open data:** `GET /research/data.json` (same gate as `/research`): `{about, generated, pieces[{id, title, url, kind, reviewed, verdict, verdictRule, credibility, significance, rigor, hype, rubric, grade, outlet, code, panel, forecasts[], writeup}], topics[]}`; no excerpts, no writer names.
+- **Code link:** review results gain `code` (first GitHub, GitLab or Hugging Face repository link in the text); shown on the write-up and sent as `si:code` in the feed.
+- **Withdrawn verdict:** a text saying it was withdrawn or retracted gets verdict `withdrawn` (first rule in `VERDICTS`), credibility and significance capped at 10, `withdrawn: true` and a reason sending it to a person. The benchmark counts `doubtful` and `withdrawn` as the not-credible verdicts.
+- **Advisor tier:** `ADVISOR_MODEL` (one bigger model via `lib/providers.js`). `panel()` takes `advisor` and returns `advice {id, model, prefer, quotes[], quotesDropped, advice, ruleIdea}` when the models disagree or agree more than 25 from the rules judge; never a score. `npm run advise` (`scripts/advise.js`) writes `out/advice/<date>.md` and `.json`: vetted proposals (labelled test data only) and rule ideas, or the prompt to paste when no advisor is set. The status call adds `panel.advisor` and flagged items gain `advice` and `judges`.
+- **Forecast probabilities:** `review_events` gains `probability REAL` (module column); forecasts carry `probability` (0 to 1) when their sentence states one. Track records gain `brier` (from 3 scored forecasts) and `scored`; `/research/outlets` shows a Brier column; the control room shows the stated probability.
+- **Contested concepts:** dossiers gain `contested[]` (a concept two or more reviewed papers explain, judged 30 or more apart or doubtful beside credible) and a "Where papers disagree" blog section. | logged by John |
+| 2.3 | Nov 9, 2026 | Verification module (beyond the spec; extended and research versions). No routes, pages or tables.
+- **Tag adapter:** `machine-checked` (extension point `knowledge.taggers`) tags `topic:formal-verification` with method `rule` from the same rules, for the Review desk and the knowledge graph.
+- **Story analysis:** `why[]` may carry a "Machine-checked" line (3 claimed, 5 statement checked against a reference, 7 checked outside the authors; max 7); a fidelity gap is named in its `detail`. No new fields.
+- **Ontology:** topic `formal-verification` (parent `math`) and organisation `axiom-math`. Learn concept `statement-fidelity` (topic `safety`; gains an optional `sources[{title, url}]` field; other concepts unchanged).
+- **Tooling:** `npm run verification:ratchet` (research loop over `modules/verification/rules.json`, tuned on the train split of `bench/verification-set.json`, gated by held-out). Bench metrics `verification.heldout_rung_accuracy`, `verification.heldout_gap_accuracy`, `verification.false_formal`, `verification.topic_agreement`, `verification.invariance`, `papers.comparator_weakening_drop`. Lab runners `autoformalize-gate`, `recursive-drift`, `library-fidelity` (and `comparatorThreshold` exported from `modules/lab/papers.js`); examples `autoformalize-statement-gate`, `recursive-drift-below-threshold`, `recursive-drift-above-threshold`, `library-foundations-first`; bench metrics `papers.comparator_threshold_error`, `papers.self_reference_leak`, `papers.foundations_first_gain`. Analysis: `docs/RESEARCH_FORMAL_VERIFICATION.md`. Research loop: `npm run research:loop` (`--shard i/n`, `--seeds N`, `--every MIN`, `--introspection N`, `LOOP_DIR`) and `npm run research:merge`; macOS launch agent `scripts/launchd/ai.superintelligence.research-loop.plist`. Writes only to `LOOP_DIR` (default `out/loop`, git-ignored). `library-fidelity` gains `infra` and strategy 3 (raw centrality); Lab example `library-infrastructure-hubs`. Introspection toy (Python 3 + NumPy, optional): `research/introspection/`.
+- **Test servers:** `test/sample-clock.js` starts the sample servers' clock at `SAMPLE_NOW` (default 2026-11-06T12:00Z; `real` turns it off). The browser block bundle now registers every module's blocks whatever the build's site profile.
+
+| 1.8 | Nov 7, 2026 | Review desk text layer (extended version; proposed REQ-032, REQ-034..REQ-036, spec 003 tasks T010-T012, T030-T036, T040).
+- **Review result** gains `truncated` (null or `[{field, length, kept}]`, with a reason per cut), `claimCount` (every claim; `claims` still lists the first 12), `notClaims` (`[{sentence, why: hedged|negated|a question}]`), `paperKind` (null or `{id: survey|position|dataset|negative, label, why, canShow}`; `kindLabel` uses its label); the rigor judge gains `notCounted` (negated markers, 0 points); the prompt-injection guard may carry a `note` (an attack described, not addressed to the judge). `qid` is a hash of the canonical title and text, so a text that differed only in spacing or Unicode form gets one id.
+- **Library** (`modules/review/review.js` exports): `canonical`, `fold`, `clauses`, `negatedAt`, `markersIn`, `injection`, `isClaim`, `paperKind`; `hype(text, claims, survey, title)` takes the title separately. | logged by an agent (feature/judge-rules-text); a person confirms on merge |
+| 1.9 | Nov 7, 2026 | Score the abstract, check the paraphrase (extended version; proposed REQ-033, spec 003 T020/T021).
+- **Library:** `modules/review/fidelity.js`: `fidelity(source, paraphrase)` returns `{pass, failed:[check ids], checks:[{id, pass, detail, sentence, source}], summary, alignment:[{sentence, source, overlap}], version}`; check ids `numbers`, `units`, `hedges`, `negation`, `claims-added`, `claims-dropped`, `entities`, `limitations` (as in `bench/fidelity-cases.json`). No routes.
+- **Watcher input** (`scripts/watch.js --from <file>.json`): `[{title, url, abstract?, summary?, authors[], published?}]`. `abstract` is the arXiv abstract (CC0 metadata) and is what gets scored; `summary` is an agent's paraphrase, checked by `fidelity()`, shown in the digest only if it passes and never stored or scored. An entry with only `summary` is scored from it as before. arXiv Atom input: `<summary>` is the abstract.
+- **Digest** `out/watch/<date>.json` papers gain `read` (`abstract`|`paraphrase`), `note`, `abstractSha256`, `summary` (shown paraphrase or null), `summaryWithheld` (first failed check or null), `fidelity {pass, failed, version}`; the `.md` table gains a "Read from" column and an "Agent summaries" section.
+- **Stored review result** (`review_docs.result`, watcher rows with an abstract) gains `input {read, abstractSha256, fidelity}`; `saveReview(db, x, userId, extra?)` merges `extra` into it. The excerpt stays the first 400 characters of the scored text (REQ-007). | logged by thread B (agent) for John |
+| 1.10 | Nov 7, 2026 | Score bands (extended version; proposed REQ-037, spec 003 T041/T042).
+- **Library:** `modules/review/bands.js`: `band(score, T, m)` is "low", "border" or "high" (half-open: Low below T − m, Border from T − m up to T + m, High from T + m); margin m = 5; `judge(score, credibility)`, `describe()`, `digest()`.
+- **Review result** gains `bands {credibility: {"35", "60", "70"}, score: {"40", "55"}}`, `borderline` (bool), `borderlineReasons [{field, cutoff, value, margin, side, affects: ["verdict" and/or "dossier"], reason}]` and `verdictNote` (string or null). `verdict` is unchanged.
+- **Dossier:** a paper is credible only in the High band around 60 (credibility 65 or more). Papers gain `band`; the dossier gains `borderline [{id, title, url, credibility, n}]` and `credibleAt {cutoff, margin, from}`; counts gain `borderline` and `linkedOther`; checks gain `tests` ("credible", "not credible" or null). `linked` counts only held-up checks of a credible paper (T042).
+- **Watcher digest:** the Markdown table gains a Band column, e.g. "Border (60)". | logged by Claude, for the humans to confirm |
+| 1.11 | Nov 7, 2026 | Specs view in the Project module (extended version; proposed REQ-030). Additive, no table changes.
+- **Route:** `GET /api/admin/project/specs` (admins only, 403 otherwise) → `{specs: [{id, dir, title, status: "approved"\|"proposed", statusLine, totals: {reqs, must, should, traced, tasks, open, done}, unlinkedTasks}], reqs: [{id, spec, text, level: "MUST"\|"SHOULD"\|"MAY", status, trace: {code, check}\|null, tasks: [{id, who: "agent"\|"rules"\|"people", done, text}], open, done, people: text\|null, measured: "Pass"\|"People check"\|…\|null, issues: [issue numbers]}], issues: {"<n>": {key, title, status}}, status: {measured, summary: [{part, passing, people, open}], left}\|null, people: [{id, text}] (people checks that aren't REQs), source: "files"\|"snapshot"\|"missing", sync: {command: "node scripts/project-sync.js", inProcess: false}}`. Status comes from each spec's `**Status**:` line (the shared 001 reads as approved, the rest proposed). Issues are the `project_issues` whose labels carry the REQ id (project-sync labels approvals, people checks and spec tasks that way). Reads `specs/<nnn>/spec.md`, `tasks.md`, `docs/SPEC_TRACE.md`, `docs/SPEC_STATUS.md` and `modules/project/sync.json` on each request.
+- **Vercel:** the function bundle holds only `{lib,views,kernel,modules,schema}/**`, so `npm run build` runs `scripts/spec-index.js`, which writes the same data (without issues) to `modules/project/data/specs.json` (git-ignored, regenerated every build); the route uses it when `specs/` isn't there (`source: "snapshot"`).
+- **Page:** `/m/project#/specs`: a table per spec with status chips, trace code and check, open/done tasks, linked SI-n issues, and filters for spec, status, who (agent, rules, people) and has open tasks. No "Sync now" button: the sync runs outside the web server, so the page shows the command. | logged by thread W (agent) for John |
+
+**Done means:** a classmate can sign up on the live site, see a grouped, tagged feed from at least 8 sources, and vote on and save stories that are still there the next time they sign in.
+
+## Phases and gates
+
+1. **Plan:** working agreement, spec and contract emailed to Paul by Nov 11. *Gate: Paul OKs the spec.*
+2. **Core build:** accounts, sources, grouping and tags, votes, saves, agent log. *Gate: must-haves pass.*
+3. **Deploy and share:** live URL with class accounts open, at least 2 weeks before our presentation. *Gate: class feedback in.*
+4. **Polish and present:** weekly brief, lists, fixes from feedback, agent log complete.
+
+The presentation date sets phases 3 and 4; we'll fill in exact dates once Paul confirms it.
+
+## Acceptance criteria (the must-haves)
+
+- [ ] A visitor can create an account; passwords are hashed; a session lasts across visits.
+- [ ] At least 8 sources across at least 5 kinds (papers, lab, research org, forum, newsletter, academic, community) are fetched on a schedule. None are Twitter/X.
+- [ ] One paper or announcement seen in several sources shows as one story listing every source.
+- [ ] Every story has at least one topic tag or is marked untagged; each tag shows the words that matched.
+- [ ] Votes and saves are stored per user and survive sign-out and redeploys.
+- [ ] Users only edit or delete what they created; the server enforces it, not just the UI.
+- [ ] The Agent log page lets each partner add, edit and export their own entries.
+- [ ] The app is live at a public URL and shared with the class at least 2 weeks before our presentation.
+
+## Integration milestones (decision points)
+
+| # | Milestone | Proves the parts fit when | Decision |
+| --- | --- | --- | --- |
+| M1 | Contract approved | Both boxes in the change log are ticked | Freeze v1.0; build starts |
+| M2 | Ingestion writes to the shared schema | The sample feeds load and `GET /api/stories` returns grouped, tagged stories | Build the UI against real data, not mocks |
+| M3 | UI on the live API | Two test users vote and save, and see each other's votes counted | Cut should-haves if behind |
+| M4 | Deployed and shared | A classmate signs up on the public URL | Open to the class |
+
+## Data models
+
+Hosted Postgres in production (Vercel functions can't keep a SQLite file between requests); SQLite locally and in tests, through the same queries (`lib/db.js`). Matt owns the schema. Ingestion code writes only to the three story tables.
+
+| Table | Fields (type) | Written by |
+| --- | --- | --- |
+| users | id int, username text unique (case-insensitive), display_name text, pass_hash text, is_admin bool, disabled bool | API |
+| sessions | token text, user_id int, expires_at bigint (ms) | API |
+| sources | id, name, kind (papers, lab, research-org, forum, newsletter, academic, community, news, policy), format (rss, arxiv, hf-daily, jsonfeed, hn-algolia, semantic-scholar), url unique, status (active, paused, pending, rejected), last_ok, last_error; harvest settings and state: interval_minutes (default 360), max_items (default 50), etag, last_modified, failures, next_due_at, verified, from_catalog | API (admin); the harvester updates fetch state |
+| stories | id, title, url, summary, authors, published_at ISO, first_seen ISO, topics JSON, orgs JSON, hidden bool, hidden_reason, significance int 0–100, analysis JSON | Ingestion (`lib/analysis.js` computes significance and analysis); `hidden` by admins only |
+| story_keys | key text (arxiv:…, url:…, title:…), story_id | Ingestion |
+| story_links | story_id, source_id, url, title, published_at | Ingestion |
+| votes, saves | user_id, story_id | API |
+| notes | id, user_id, story_id, text, private bool | API |
+| lists, list_items, follows | list: id, owner_id, title, public bool; items: list_id, story_id, note | API |
+| agent_log, agent_log_saves | entry: author_id, session_date, went_wrong, caught_how, fix, link, status; saves: chars typed, pasted, active ms | API |
+| fetch_runs | id, source_id, trigger (cron, schedule, admin), started_at, finished_at, status (ok, not_modified, error), items, stored, error, duration_ms; newest 2000 kept | Harvester |
+| admin_audit | id, admin_id, action, target, detail, at | Admin API |
+| project_issues | id, number unique (shown as SI-n), title, description, status (backlog, todo, in_progress, in_review, done, canceled), priority 0–4 (none, urgent, high, medium, low), assignee_id (admins only), creator_id, milestone_id, labels JSON, due_date YYYY-MM-DD, sort_order, created_at, updated_at, completed_at | Project API |
+| project_milestones, project_comments, project_activity | milestone: name, description, target_date; comment: issue_id, author_id, body; activity: issue_id, actor_id, action, detail, at | Project API |
+| story_entities | story_id, kind (benchmark, person), entity (ontology id), value real (reported score), unit (% or hours) | Ingestion |
+
+All timestamps are ISO 8601 UTC strings (`2026-11-04T19:30:00Z`). A story's `topics` field is a list of `{"id":"reasoning","label":"Reasoning","matched":["chain of thought"]}`, so the UI can always show why a tag was applied.
+
+**Ingestion interface.** Each feed item is normalized to `{title, url, summary, published, authors[], score?}` and stored with `addItem(item, sourceId)`. That function owns grouping: an arXiv id beats a URL, and a URL beats a normalized title.
+
+## API
+
+JSON over HTTPS. Requests send `Content-Type: application/json`.
+
+| Method and path | Request | Response (200) |
+| --- | --- | --- |
+| POST /api/signup | `{username, password, displayName}` | `{user:{id, username, name, admin}}` + session cookie |
+| POST /api/login, /api/logout | `{username, password}` | `{user}` / `{ok:true}` |
+| GET /api/me | none | `{user,profile,features}`; optional local-fixture-only `demo` as logged above |
+| GET /api/stories (public; saved=1 requires session) | query: `topic, kind, org, q, days, saved=1, sort=top\|new\|votes\|signal, benchmark, person, min, offset` | `{stories:[{id, title, url, summary, topics, orgs, votes, voted, saved, notes, sources:[{name, kind, url}], nsources, significance, analysis}]}`, 40 per page |
+| GET /api/stories/:id (public) | none | `{story, notes:[…], lists:[…], inPublicLists:[…]}` |
+| POST /api/stories/:id/vote, /save | none | `{voted, votes}` / `{saved}` (toggles) |
+| POST /api/stories/:id/notes | `{text, private}` | `{ok:true}` |
+| POST /api/stories | `{url, title, summary?}` (submit a link) | `{id}` |
+| GET, POST /api/lists; GET /api/lists/:id | `{title, description, public}` | `{lists}` / `{id}` / `{list, stories}` |
+| PUT /api/lists/:id/items/:storyId | `{note}` or `{remove:true}` | `{ok:true}` |
+| GET /api/sources; POST /api/sources/suggest | `{name, url, kind, format}` | `{sources}` / `{ok, status}` |
+| GET /api/brief | query: `week=YYYY-MM-DD` | `{spec, week}`: a json-render spec |
+| GET /api/capabilities | query: `days=7\|30\|90` | `{areas:[{id,label,now,prev,top}], benchmarks:[{id,label,measures,mentions,best,latest}], people, orgs, signals:[story], watchlist}` |
+| GET /api/modules (admins) | none | `{modules:[{id, version, description, requires, contributes}], points:[{id, owner, contributions}], views}` |
+| GET /api/ui/catalog · POST /api/ui/validate | `{spec}` (validate) | `{blocks, actions, prompt, jsonSchema}` · `{ok, issues:[{path, message}], elements}` |
+| GET /api/ui/views · GET /api/ui/views/:name | query passed to the view's builder | `{views:[{name, title, description, admin, module}]}` · `{view, spec}` (validated json-render spec) |
+| GET /api/judges · POST /api/judges/:id/run (admins) | `{title, criteria:[{id,label,weight}], entries:[{id,label,link?}], scores:{entry:{criterion:{score 0-10, evidence}}}, external?:{recommendation, rationale, ranBy, runAt}}` | `{judges, sample}` · `{result:{judge, method, criteria, totals, ranking, margin, warnings, recommendation, agreement?}, spec}` |
+| GET, POST /api/agent-log; PUT /api/agent-log/:id | `{went_wrong, caught_how, fix, link, typedDelta, pastedDelta, activeDeltaMs, submit?}` | `{entries}` / `{entry}` |
+| GET /api/cron/fetch | header `Authorization: Bearer $CRON_SECRET` (sent by Vercel Cron) | `{trigger, sources, ok, errors, stored, notReached, ms, report:[…]}`; harvests only sources that are due |
+| `/api/admin/*` (admins only, 403 otherwise) | overview; sources (list, test, discover, add, edit, delete, harvest one); harvest (due or all); runs; catalog and catalog/enable; opml export and import; users (admin, disabled); stories (hide, unhide); shared notes (delete); ontology; retag; audit | See `lib/admin.js`. Every change writes an `admin_audit` row. Admins can't read others' agent log drafts. |
+| `/api/admin/project/*` (admins only) | meta; issues (list with filters `status, assignee=me\|none\|id, priority, label, milestone, q, sort=manual`; create; get by number; update; delete); comments; milestones; activity; specs (every REQ with trace, tasks and linked issues; change log 1.11); starter (loads lib/project-starter.json into an empty tracker) | See `lib/project.js`. Field changes are written to `project_activity`. |
+
+## Auth
+
+Passwords are hashed with scrypt; sign-in sets an httpOnly session cookie that lasts 30 days. The actual feed, story detail, ontology and account entry routes allow guests. Saved-only queries, mutations, account collections and administration require their existing session and role checks. The first account becomes the admin, who approves sources. Users can change only what they created (notes, lists, their own agent log entries), and the server checks this on every write.
+
+## Rules
+
+- **Errors:** every failure returns `{"error":"<a sentence a person can act on>"}` with 400 (bad input), 401 (not signed in), 403 (not yours), 404 (not found) or 429 (too many requests). 500 never includes internal details.
+- **Mock data:** both of us develop against the synthetic sample feeds in `test/fixtures` and made-up users. Mock records are labelled "Sample" and never reach the live site.
+- **Schema ownership:** Matt owns the schema. Changing a table or an API response shape means a pull request both of us approve, plus a new row in the change log above.
+- **Twitter/X:** not a source, and submitted links to it are refused.
+
+## Changes
+
+Both partners approve every change, and each one gets a row in the change log with its date. Breaking changes bump the major version (1.0 → 2.0).
+
+## Mini bake-offs
+
+For a choice with two candidate builds:
+
+1. Write a one-paragraph shared spec and its acceptance tests.
+2. Agree on the comparison criteria and their weights before either of us builds (for example correctness on the tests, speed, code size, how well it fits the API above).
+3. Both builds must meet this contract's API and data models; only the internals may differ.
+4. CLEF or JEV scores both and recommends one, or a merge.
+5. We both approve or override, and log the decision, its scores and our reason as a new version row.
+
+## Combined build integration (2026-11-07)
+
+- Proposed REQ-030: approval sync keys and labels include the spec number for new proposal sets. Existing spec-002 approval keys remain stable. Specs traces use `trace-spec` scope markers so colliding REQ-032..034 never borrow another spec's evidence; linked issue lists use `spec:<nnn>` labels.
+- Proposed rigor badge (REQ-035 on the badge branch; numbering pending): `story_links.rigor TEXT DEFAULT ''` is an additive boot migration. Feed parsers retain research categories; extended stories expose the research source's rigor; the spec profile omits it. See `test/rigor-badge.js`.
+- Judge bands include credibility cutoff 55 for the retained “plausible, worth checking” verdict. `verdictOf` reads published verdict rules. The watcher stores panel verdict, credibility and freshly computed bands together; withdrawn reviews retain their cap and human-review flag through the panel.
+- Existing interface history from both lines is retained above; duplicated historical version labels identify parallel changes, not sequential releases. Proposed requirement numbering remains unchanged pending both partners.
+
+- Control-room proposal rows add `spec` (three-digit spec number); check-in and control room enumerate proposals across all specs. Both retain original REQ IDs.
+
+## Logic and readiness audit (2026-11-07)
+
+- REQ-003: story feed/detail/list/brief queries require `in_scope = 1`; NULL legacy classifications are withheld until assessed. No route or response shape changes.
+- Proposed REQ-030: Specs tasks gain optional `blockedBy` (`spec/task` or null); totals gain `blocked`; unlinked tasks retain their gate. Only an explicit gate in tasks.md blocks work. Spec 004's T000 is pending; no approval is inferred.
+- Project sync matches an entire sync-key line, rejects ambiguous or duplicate identities, refreshes generated context and scope labels, and preserves titles, priorities, assignments and notes. The description's source block is shown separately from editable notes in the issue drawer. Existing table/route shapes are unchanged.
+- Status generation gives failing checks precedence over passes and exits nonzero on failed, uncovered or malformed evidence. A real local process-restart acceptance check covers session/vote/save persistence; it does not assert a production redeployment.
+
+- REQ-010: browser sign-in retains local query and fragment destinations. Return paths are canonicalized against the application origin; account API shapes and permissions are unchanged.

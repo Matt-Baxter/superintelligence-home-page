@@ -1,0 +1,54 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build",
+  "outputDirectory": "public",
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api"
+    }
+  ],
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 60,
+      "includeFiles": "{lib,views,kernel,modules,schema}/**"
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/fetch?slot=0",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/fetch?slot=1",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/fetch?slot=2",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/fetch?slot=3",
+      "schedule": "0 18 * * *"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(js|css)/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600, stale-while-revalidate=86400"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/agent-log",
+      "destination": "https://github.com/Matt-Baxter/superintelligence-home-page/blob/main/AGENT_LOG.md",
+      "permanent": false
+    }
+  ]
+}

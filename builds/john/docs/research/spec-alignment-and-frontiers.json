@@ -1,0 +1,148 @@
+{
+  "version": "1.0.0",
+  "checked_at": "2026-11-08T04:35:15.942679+00:00",
+  "original_spec": {
+    "path": "specs/001-superintelligence-homepage/spec.md",
+    "sha256": "f414be40143245fed2de8e2db7d180289e51252560dfdaa7df49649d665f81c0",
+    "requirement_ids": [
+      "REQ-001",
+      "REQ-002",
+      "REQ-003",
+      "REQ-004",
+      "REQ-005",
+      "REQ-006",
+      "REQ-007",
+      "REQ-008",
+      "REQ-009",
+      "REQ-010",
+      "REQ-011",
+      "REQ-012",
+      "REQ-013",
+      "REQ-014",
+      "REQ-015",
+      "REQ-016",
+      "REQ-017",
+      "REQ-018",
+      "REQ-019",
+      "REQ-020"
+    ],
+    "upstream_main_commit": "3d24937ca17e742aeb69bbc9ec10a4a4687f663f",
+    "matches_fetched_origin_main": true
+  },
+  "scope_policy": {
+    "status": "unresolved_interpretation",
+    "spec_wording": "at least one superintelligence topic",
+    "implementation": "strong term OR at least two distinct top-level topics",
+    "note": "The spec also excludes weak borderline matches. John and Matt should resolve the interpretation before claiming complete alignment; this pass does not change the shared spec, scope threshold or scoring weights."
+  },
+  "delivery_limits": [
+    "REQ-019 needs an actual public deployment and class sharing; no hosted deployment was verified.",
+    "REQ-020 remains a human-written repository log.",
+    "Local synthetic acceptance checks do not prove live source availability, human relevance calibration or redeploy persistence."
+  ],
+  "papers": [
+    {
+      "id": "2301.08243",
+      "title": "Self-Supervised Learning from Images with a Joint-Embedding Predictive Architecture",
+      "url": "https://arxiv.org/abs/2301.08243",
+      "latest_date_observed": "2023-04-13",
+      "concept": "jepa",
+      "review_level": "abstract_and_metadata_only",
+      "summary": "Predicts image target representations from context.",
+      "next_check": "Check collapse prevention, mask design and transfer beyond reported image tasks.",
+      "superintelligence_claim": "Related research mechanism; not evidence that superintelligence has been achieved."
+    },
+    {
+      "id": "2506.09985",
+      "title": "V-JEPA 2: Self-Supervised Video Models Enable Understanding, Prediction and Planning",
+      "url": "https://arxiv.org/abs/2506.09985",
+      "latest_date_observed": "2025-06-11",
+      "concept": "world-models",
+      "review_level": "abstract_and_metadata_only",
+      "summary": "Studies video representation learning and an action-conditioned planning extension.",
+      "next_check": "Separate action-free pretraining from action-conditioned data and closed-loop robot evaluation.",
+      "superintelligence_claim": "Related research mechanism; not evidence that superintelligence has been achieved."
+    },
+    {
+      "id": "2603.14482",
+      "title": "V-JEPA 2.1: Unlocking Dense Features in Video Self-Supervised Learning",
+      "url": "https://arxiv.org/abs/2603.14482",
+      "latest_date_observed": "2026-06-11",
+      "concept": "jepa",
+      "review_level": "abstract_and_metadata_only",
+      "summary": "Studies dense image/video features, hierarchical supervision and scaling.",
+      "next_check": "Check whether gains transfer across environments and whether baselines receive comparable data/compute.",
+      "superintelligence_claim": "Related research mechanism; not evidence that superintelligence has been achieved."
+    },
+    {
+      "id": "2511.08544",
+      "title": "LeJEPA: Provable and Scalable Self-Supervised Learning Without the Heuristics",
+      "url": "https://arxiv.org/abs/2511.08544",
+      "latest_date_observed": "2025-11-14",
+      "concept": "jepa",
+      "review_level": "abstract_and_metadata_only",
+      "summary": "Proposes a JEPA objective using isotropic Gaussian regularization.",
+      "next_check": "Separate theorem assumptions from empirical behavior and avoid claiming all JEPA training is proved reliable.",
+      "superintelligence_claim": "Related research mechanism; not evidence that superintelligence has been achieved."
+    },
+    {
+      "id": "2502.05171",
+      "title": "Scaling up Test-Time Compute with Latent Reasoning: A Recurrent Depth Approach",
+      "url": "https://arxiv.org/abs/2502.05171",
+      "latest_date_observed": "2025-02-17",
+      "concept": "recurrent-depth",
+      "review_level": "abstract_and_metadata_only",
+      "summary": "Refines latent state by repeating shared computation at inference.",
+      "next_check": "Compare accuracy at matched compute, latency, memory and training conditions; extra depth is not weight self-modification.",
+      "superintelligence_claim": "Related research mechanism; not evidence that superintelligence has been achieved."
+    },
+    {
+      "id": "2601.21582",
+      "title": "Depth-Recurrent Attention Mixture (Dreamer): Giving Latent Reasoning the Attention it Deserves",
+      "url": "https://arxiv.org/abs/2601.21582",
+      "latest_date_observed": "2026-11-05",
+      "concept": "recurrent-depth",
+      "review_level": "abstract_and_metadata_only",
+      "summary": "Explores attention for depth-recurrent latent reasoning.",
+      "next_check": "Inspect the November 5 revision, architecture-specific ablations and compute accounting before comparing claims.",
+      "superintelligence_claim": "Related research mechanism; not evidence that superintelligence has been achieved."
+    },
+    {
+      "id": "2602.07845",
+      "title": "Recurrent-Depth VLA: Implicit Test-Time Compute Scaling of Vision-Language-Action Models via Latent Iterative Reasoning",
+      "url": "https://arxiv.org/abs/2602.07845",
+      "latest_date_observed": "2026-02-08",
+      "concept": "recurrent-depth",
+      "review_level": "abstract_and_metadata_only",
+      "summary": "Explores adaptive latent refinement for robot action prediction.",
+      "next_check": "Treat reported success rates and speedups as task-specific author claims until evaluation conditions are checked.",
+      "superintelligence_claim": "Related research mechanism; not evidence that superintelligence has been achieved."
+    },
+    {
+      "id": "2412.06769",
+      "title": "Training Large Language Models to Reason in a Continuous Latent Space",
+      "url": "https://arxiv.org/abs/2412.06769",
+      "latest_date_observed": "2026-08-23",
+      "concept": "latent-reasoning",
+      "review_level": "abstract_and_metadata_only",
+      "summary": "Studies continuous hidden-state reasoning under the Coconut paradigm.",
+      "next_check": "Check training supervision, task coverage and matched-compute baselines; hidden trajectories are not automatically faithful explanations.",
+      "superintelligence_claim": "Related research mechanism; not evidence that superintelligence has been achieved."
+    }
+  ],
+  "candidate_feeds": [
+    {
+      "name": "JEPA",
+      "url": "https://export.arxiv.org/api/query?search_query=all%3AJEPA+OR+all%3A%22joint-embedding+predictive%22&sortBy=submittedDate&sortOrder=descending&max_results=15",
+      "status": "unverified",
+      "error": "Timed out after 15s"
+    },
+    {
+      "name": "Recurrent depth",
+      "url": "https://export.arxiv.org/api/query?search_query=all%3A%22recurrent+depth%22+OR+all%3A%22depth-recurrent%22+OR+all%3A%22latent+reasoning%22&sortBy=submittedDate&sortOrder=descending&max_results=15",
+      "status": "unverified",
+      "error": "Timed out after 15s"
+    }
+  ],
+  "governance_note": "Existing branch changes to constitution 1.2.0 / contract 0.6 are explicitly proposed and await partner confirmation; this pass does not ratify or edit them."
+}

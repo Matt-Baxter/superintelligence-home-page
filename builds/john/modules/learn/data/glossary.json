@@ -1,0 +1,784 @@
+{
+  "version": "1.1.0",
+  "about": "Conventional terms and notation with source pointers. A mention is not a verified paper claim. Formulas use their stated assumptions; author notation takes precedence.",
+  "entries": [
+    {
+      "id": "softmax",
+      "label": "Softmax",
+      "kind": "function",
+      "aliases": [
+        "softmax",
+        "soft-max"
+      ],
+      "plain": "Converts a list of scores into nonnegative weights that total one.",
+      "formula": "softmax(z)ᵢ = exp(zᵢ) / Σⱼ exp(zⱼ)",
+      "properties": [
+        "Outputs total one.",
+        "Adding the same constant to every input leaves the result unchanged."
+      ],
+      "caveat": "Large weights are not evidence of calibrated confidence.",
+      "concept": "neural-network",
+      "related": [
+        "sigmoid",
+        "attention"
+      ],
+      "sources": [
+        {
+          "title": "Deep Learning, chapter 6: feedforward networks",
+          "url": "https://www.deeplearningbook.org/contents/mlp.html"
+        }
+      ],
+      "function_id": "softmax",
+      "notation": [
+        "exponential",
+        "summation"
+      ]
+    },
+    {
+      "id": "sigmoid",
+      "label": "Sigmoid",
+      "kind": "function",
+      "aliases": [
+        "sigmoid",
+        "logistic sigmoid"
+      ],
+      "plain": "Maps one real number to a value between zero and one.",
+      "formula": "σ(x) = 1 / (1 + exp(−x))",
+      "properties": [
+        "Increasing input never decreases output.",
+        "σ(−x) = 1 − σ(x)."
+      ],
+      "caveat": "The output is not automatically a trustworthy probability.",
+      "concept": "neural-network",
+      "related": [
+        "softmax",
+        "sigma"
+      ],
+      "sources": [
+        {
+          "title": "Deep Learning, chapter 6: feedforward networks",
+          "url": "https://www.deeplearningbook.org/contents/mlp.html"
+        }
+      ],
+      "function_id": "sigmoid",
+      "notation": [
+        "exponential",
+        "sigma"
+      ]
+    },
+    {
+      "id": "gradient",
+      "label": "Gradient",
+      "kind": "symbol",
+      "aliases": [
+        "gradient",
+        "gradients",
+        "∇"
+      ],
+      "plain": "Collects the partial derivatives of a scalar function.",
+      "formula": "∇f(x) = (∂f/∂x₁, …, ∂f/∂xₙ)",
+      "properties": [
+        "Its coordinates describe local first-order change."
+      ],
+      "caveat": "A local direction does not guarantee finding the best solution.",
+      "concept": "neural-network",
+      "related": [
+        "parameters",
+        "loss"
+      ],
+      "sources": [
+        {
+          "title": "Stanford CS229: linear algebra and matrix calculus",
+          "url": "https://cs229.stanford.edu/section/cs229-linalg.pdf"
+        }
+      ],
+      "notation": [
+        "partial-derivative",
+        "vectors"
+      ]
+    },
+    {
+      "id": "parameters",
+      "label": "Parameters θ",
+      "kind": "symbol",
+      "aliases": [
+        "model parameters",
+        "θ"
+      ],
+      "plain": "The letter theta often names adjustable model parameters.",
+      "formula": "f(x; θ)",
+      "properties": [
+        "A model can have many parameter coordinates."
+      ],
+      "caveat": "Theta can mean something else; check the paper’s definitions.",
+      "concept": "neural-network",
+      "related": [
+        "gradient",
+        "loss"
+      ],
+      "sources": [
+        {
+          "title": "Deep Learning, chapter 6: feedforward networks",
+          "url": "https://www.deeplearningbook.org/contents/mlp.html"
+        }
+      ],
+      "notation": [
+        "vectors"
+      ]
+    },
+    {
+      "id": "loss",
+      "label": "Loss function",
+      "kind": "term",
+      "aliases": [
+        "loss function",
+        "training loss"
+      ],
+      "plain": "Measures an error or objective that training tries to reduce.",
+      "formula": "L(θ)",
+      "properties": [
+        "The definition determines what counts as a better fit."
+      ],
+      "caveat": "Lower training loss alone does not establish safety or generalization.",
+      "concept": "neural-network",
+      "related": [
+        "gradient",
+        "parameters"
+      ],
+      "sources": [
+        {
+          "title": "Deep Learning, chapter 6: feedforward networks",
+          "url": "https://www.deeplearningbook.org/contents/mlp.html"
+        }
+      ],
+      "notation": []
+    },
+    {
+      "id": "expectation",
+      "label": "Expectation 𝔼",
+      "kind": "symbol",
+      "aliases": [
+        "expected value",
+        "expectation",
+        "𝔼",
+        "E[X]"
+      ],
+      "plain": "A probability-weighted average of a random quantity.",
+      "formula": "E[X] = Σₓ x p(x) (discrete case)",
+      "properties": [
+        "Expectation is linear when the expectations exist."
+      ],
+      "caveat": "The average need not be an outcome you actually observe.",
+      "concept": "neural-network",
+      "related": [
+        "variance",
+        "probability"
+      ],
+      "sources": [
+        {
+          "title": "Stanford CS229: probability review",
+          "url": "https://cs229.stanford.edu/section/cs229-prob.pdf"
+        }
+      ],
+      "notation": [
+        "summation",
+        "probability"
+      ]
+    },
+    {
+      "id": "variance",
+      "label": "Variance",
+      "kind": "term",
+      "aliases": [
+        "variance",
+        "Var(X)"
+      ],
+      "plain": "Measures expected squared distance from a mean.",
+      "formula": "Var(X) = E[(X − E[X])²]",
+      "properties": [
+        "Nonnegative when defined."
+      ],
+      "caveat": "Small variance does not establish a correct mean or an unbiased measurement.",
+      "concept": "neural-network",
+      "related": [
+        "expectation",
+        "sigma"
+      ],
+      "sources": [
+        {
+          "title": "Stanford CS229: probability review",
+          "url": "https://cs229.stanford.edu/section/cs229-prob.pdf"
+        }
+      ],
+      "notation": [
+        "expectation"
+      ]
+    },
+    {
+      "id": "probability",
+      "label": "Conditional probability",
+      "kind": "symbol",
+      "aliases": [
+        "conditional probability",
+        "P(A|B)"
+      ],
+      "plain": "Probability of an event after conditioning on another event.",
+      "formula": "P(A|B) = P(A ∩ B) / P(B)",
+      "properties": [
+        "The event B must have positive probability in this formula."
+      ],
+      "caveat": "Conditioning does not by itself establish causation.",
+      "concept": "neural-network",
+      "related": [
+        "expectation"
+      ],
+      "sources": [
+        {
+          "title": "Stanford CS229: probability review",
+          "url": "https://cs229.stanford.edu/section/cs229-prob.pdf"
+        }
+      ],
+      "notation": [
+        "intersection"
+      ]
+    },
+    {
+      "id": "entropy",
+      "label": "Entropy",
+      "kind": "term",
+      "aliases": [
+        "entropy",
+        "Shannon entropy"
+      ],
+      "plain": "Summarizes uncertainty in a probability distribution.",
+      "formula": "H(p) = −Σᵢ pᵢ log pᵢ",
+      "properties": [
+        "The logarithm base sets the unit."
+      ],
+      "caveat": "Higher uncertainty is not the same as more useful knowledge.",
+      "concept": "neural-network",
+      "related": [
+        "kl-divergence",
+        "probability"
+      ],
+      "sources": [
+        {
+          "title": "Deep Learning, chapter 3: probability and information",
+          "url": "https://www.deeplearningbook.org/contents/prob.html"
+        }
+      ],
+      "notation": [
+        "summation",
+        "logarithm"
+      ]
+    },
+    {
+      "id": "kl-divergence",
+      "label": "KL divergence",
+      "kind": "term",
+      "aliases": [
+        "KL divergence",
+        "Kullback-Leibler divergence"
+      ],
+      "plain": "Compares two distributions through expected log probability ratios.",
+      "formula": "D_KL(p || q) = Σᵢ pᵢ log(pᵢ/qᵢ)",
+      "properties": [
+        "Generally asymmetric.",
+        "Nonnegative when defined; can be infinite."
+      ],
+      "caveat": "It is not a symmetric distance metric.",
+      "concept": "rlhf",
+      "related": [
+        "entropy",
+        "probability"
+      ],
+      "sources": [
+        {
+          "title": "Deep Learning, chapter 3: probability and information",
+          "url": "https://www.deeplearningbook.org/contents/prob.html"
+        }
+      ],
+      "notation": [
+        "summation",
+        "logarithm"
+      ]
+    },
+    {
+      "id": "attention",
+      "label": "Attention",
+      "kind": "term",
+      "aliases": [
+        "attention mechanism",
+        "scaled dot-product attention",
+        "self-attention"
+      ],
+      "plain": "Combines value vectors using weights derived from query–key scores.",
+      "formula": "Attention(Q,K,V) = softmax(QKᵀ / √dₖ)V",
+      "properties": [
+        "The scale uses the key dimension in the original formulation."
+      ],
+      "caveat": "Attention weights alone are not a causal explanation of a model.",
+      "concept": "attention",
+      "related": [
+        "softmax",
+        "transformer"
+      ],
+      "sources": [
+        {
+          "title": "Attention Is All You Need, original paper",
+          "url": "https://arxiv.org/abs/1706.03762"
+        }
+      ],
+      "notation": [
+        "query-key-value",
+        "transpose",
+        "square-root",
+        "softmax"
+      ]
+    },
+    {
+      "id": "transformer",
+      "label": "Transformer",
+      "kind": "term",
+      "aliases": [
+        "transformer",
+        "transformers"
+      ],
+      "plain": "An architecture built around attention and other neural-network components.",
+      "formula": "token representations → attention and feedforward blocks",
+      "properties": [
+        "The original model uses multiple attention heads."
+      ],
+      "caveat": "An architecture label alone does not establish capabilities or safety.",
+      "concept": "transformer",
+      "related": [
+        "attention",
+        "softmax"
+      ],
+      "sources": [
+        {
+          "title": "Attention Is All You Need, original paper",
+          "url": "https://arxiv.org/abs/1706.03762"
+        }
+      ],
+      "notation": []
+    },
+    {
+      "id": "sigma",
+      "label": "Sigma σ",
+      "kind": "symbol",
+      "aliases": [
+        "σ"
+      ],
+      "plain": "An overloaded symbol: it can indicate standard deviation or a sigmoid function.",
+      "formula": "Meaning depends on the surrounding definition.",
+      "properties": [
+        "No single meaning is safe to infer from the symbol alone."
+      ],
+      "caveat": "Follow the author’s notation rather than choosing a meaning automatically.",
+      "concept": "neural-network",
+      "related": [
+        "sigmoid",
+        "variance"
+      ],
+      "sources": [
+        {
+          "title": "Stanford CS229: probability review",
+          "url": "https://cs229.stanford.edu/section/cs229-prob.pdf"
+        }
+      ],
+      "notation": []
+    },
+    {
+      "id": "summation",
+      "label": "Summation Σ",
+      "kind": "symbol",
+      "aliases": [
+        "summation",
+        "Σ",
+        "∑"
+      ],
+      "plain": "Adds the terms indexed below and above a sum sign.",
+      "formula": "Σᵢ aᵢ",
+      "properties": [
+        "The index tells you which terms are added."
+      ],
+      "caveat": "A finite sum and an infinite series have different assumptions.",
+      "concept": "neural-network",
+      "related": [
+        "expectation"
+      ],
+      "sources": [
+        {
+          "title": "Stanford CS229: linear algebra and matrix calculus",
+          "url": "https://cs229.stanford.edu/section/cs229-linalg.pdf"
+        }
+      ],
+      "notation": []
+    },
+    {
+      "id": "partial-derivative",
+      "label": "Partial derivative ∂",
+      "kind": "symbol",
+      "aliases": [
+        "partial derivative",
+        "partial derivatives",
+        "∂"
+      ],
+      "plain": "Rate of change in one input coordinate while holding the other coordinates fixed.",
+      "formula": "∂f / ∂xᵢ",
+      "properties": [
+        "Requires the relevant derivative to exist."
+      ],
+      "caveat": "A partial derivative is a local quantity, not a causal effect.",
+      "concept": "neural-network",
+      "related": [
+        "gradient"
+      ],
+      "sources": [
+        {
+          "title": "Stanford CS229: linear algebra and matrix calculus",
+          "url": "https://cs229.stanford.edu/section/cs229-linalg.pdf"
+        }
+      ],
+      "notation": []
+    },
+    {
+      "id": "exponential",
+      "label": "Exponential exp",
+      "kind": "function",
+      "aliases": [
+        "exponential function",
+        "exp("
+      ],
+      "plain": "The natural exponential raises the constant e to a real-valued input.",
+      "formula": "exp(x) = eˣ",
+      "properties": [
+        "Positive for finite real inputs in exact arithmetic."
+      ],
+      "caveat": "Direct floating-point evaluation can overflow; the explorer uses stable formulas.",
+      "concept": "neural-network",
+      "related": [
+        "softmax",
+        "logarithm"
+      ],
+      "sources": [
+        {
+          "title": "Deep Learning, chapter 6: feedforward networks",
+          "url": "https://www.deeplearningbook.org/contents/mlp.html"
+        }
+      ],
+      "notation": []
+    },
+    {
+      "id": "logarithm",
+      "label": "Logarithm",
+      "kind": "function",
+      "aliases": [
+        "logarithm",
+        "natural logarithm"
+      ],
+      "plain": "The inverse of exponentiation for a specified base.",
+      "formula": "ln(exp(x)) = x",
+      "properties": [
+        "The real natural logarithm needs a positive argument."
+      ],
+      "caveat": "The base determines the scale; do not assume every paper uses the same base.",
+      "concept": "neural-network",
+      "related": [
+        "exponential",
+        "entropy"
+      ],
+      "sources": [
+        {
+          "title": "Deep Learning, chapter 6: feedforward networks",
+          "url": "https://www.deeplearningbook.org/contents/mlp.html"
+        }
+      ],
+      "notation": []
+    },
+    {
+      "id": "square-root",
+      "label": "Square root √",
+      "kind": "symbol",
+      "aliases": [
+        "square root",
+        "√"
+      ],
+      "plain": "The nonnegative real root whose square equals a nonnegative input.",
+      "formula": "(√x)² = x, x ≥ 0",
+      "properties": [
+        "The displayed principal real root is nonnegative."
+      ],
+      "caveat": "Negative real inputs require a different number system or convention.",
+      "concept": "neural-network",
+      "related": [
+        "attention"
+      ],
+      "sources": [
+        {
+          "title": "Stanford CS229: linear algebra and matrix calculus",
+          "url": "https://cs229.stanford.edu/section/cs229-linalg.pdf"
+        }
+      ],
+      "notation": []
+    },
+    {
+      "id": "transpose",
+      "label": "Matrix transpose",
+      "kind": "symbol",
+      "aliases": [
+        "matrix transpose",
+        "transpose"
+      ],
+      "plain": "Swaps a matrix’s row and column indices.",
+      "formula": "(Aᵀ)ᵢⱼ = Aⱼᵢ",
+      "properties": [
+        "Transposing twice returns the original matrix."
+      ],
+      "caveat": "Transpose is different from inverse and from conjugate transpose.",
+      "concept": "neural-network",
+      "related": [
+        "vectors"
+      ],
+      "sources": [
+        {
+          "title": "Stanford CS229: linear algebra and matrix calculus",
+          "url": "https://cs229.stanford.edu/section/cs229-linalg.pdf"
+        }
+      ],
+      "notation": []
+    },
+    {
+      "id": "vectors",
+      "label": "Vectors and matrices",
+      "kind": "term",
+      "aliases": [
+        "vector",
+        "vectors",
+        "matrix",
+        "matrices"
+      ],
+      "plain": "A vector holds indexed values; a matrix arranges indexed values in rows and columns.",
+      "formula": "x ∈ ℝⁿ; A ∈ ℝᵐˣⁿ",
+      "properties": [
+        "Matrix multiplication requires compatible inner dimensions."
+      ],
+      "caveat": "A representation’s shape does not tell you what its values mean.",
+      "concept": "neural-network",
+      "related": [
+        "transpose",
+        "attention"
+      ],
+      "sources": [
+        {
+          "title": "Stanford CS229: linear algebra and matrix calculus",
+          "url": "https://cs229.stanford.edu/section/cs229-linalg.pdf"
+        }
+      ],
+      "notation": []
+    },
+    {
+      "id": "query-key-value",
+      "label": "Queries, keys and values",
+      "kind": "term",
+      "aliases": [
+        "query-key-value",
+        "query–key",
+        "Q,K,V"
+      ],
+      "plain": "Attention compares queries with keys to weight the corresponding value representations.",
+      "formula": "QKᵀ scores → softmax weights → weighted V",
+      "properties": [
+        "Query and key inner dimensions must agree."
+      ],
+      "caveat": "These are representation roles, not a guarantee of a faithful database lookup.",
+      "concept": "attention",
+      "related": [
+        "attention",
+        "vectors"
+      ],
+      "sources": [
+        {
+          "title": "Attention Is All You Need, original paper",
+          "url": "https://arxiv.org/abs/1706.03762"
+        }
+      ],
+      "notation": []
+    },
+    {
+      "id": "intersection",
+      "label": "Event intersection ∩",
+      "kind": "symbol",
+      "aliases": [
+        "set intersection",
+        "event intersection",
+        "∩"
+      ],
+      "plain": "The outcomes shared by two events.",
+      "formula": "A ∩ B",
+      "properties": [
+        "An outcome belongs to both events."
+      ],
+      "caveat": "The intersection is an event, not a probability until a probability measure is applied.",
+      "concept": "neural-network",
+      "related": [
+        "probability"
+      ],
+      "sources": [
+        {
+          "title": "Stanford CS229: probability review",
+          "url": "https://cs229.stanford.edu/section/cs229-prob.pdf"
+        }
+      ],
+      "notation": []
+    },
+    {
+      "id": "jepa",
+      "label": "Joint-embedding predictive architecture",
+      "kind": "term",
+      "aliases": [
+        "jepa",
+        "i-jepa",
+        "v-jepa",
+        "lejepa",
+        "joint-embedding predictive architecture",
+        "v-jepa2",
+        "v-jepa2.1"
+      ],
+      "plain": "A JEPA predicts a target representation from a representation of context, rather than rebuilding raw pixels. The representation is a learned collection of numbers, not a guarantee of understanding.",
+      "formula": "context embedding → predictor → target embedding",
+      "properties": [
+        "JEPA objectives compare predicted and target embeddings. Avoiding representation collapse and choosing informative context/targets are important design issues; image representation learning, action-free video prediction and action-conditioned planning are different evaluations."
+      ],
+      "caveat": "A research mechanism, not a demonstration of superintelligence. Check the original paper and its evaluation conditions.",
+      "concept": "jepa",
+      "related": [
+        "attention",
+        "transformer"
+      ],
+      "notation": [],
+      "sources": [
+        {
+          "title": "I-JEPA: original paper",
+          "url": "https://arxiv.org/abs/2301.08243"
+        },
+        {
+          "title": "V-JEPA 2",
+          "url": "https://arxiv.org/abs/2506.09985"
+        },
+        {
+          "title": "V-JEPA 2.1",
+          "url": "https://arxiv.org/abs/2603.14482"
+        },
+        {
+          "title": "LeJEPA",
+          "url": "https://arxiv.org/abs/2511.08544"
+        }
+      ]
+    },
+    {
+      "id": "recurrent-depth",
+      "label": "Recurrent depth",
+      "kind": "term",
+      "aliases": [
+        "recurrent depth",
+        "recurrent-depth",
+        "depth-recurrent",
+        "depth recurrent"
+      ],
+      "plain": "A model can apply a shared processing block repeatedly to refine its hidden state. Extra passes spend inference compute without necessarily writing a longer reasoning trace.",
+      "formula": "hₖ₊₁ = Fθ(hₖ, context), with shared θ",
+      "properties": [
+        "Weight-tied depth recurrence refines latent states. It is distinct from recurrence across sequence time and from modifying learned weights. Compare accuracy at matched compute, latency and memory, and evaluate stopping criteria and out-of-distribution behavior."
+      ],
+      "caveat": "A research mechanism, not a demonstration of superintelligence. Check the original paper and its evaluation conditions.",
+      "concept": "recurrent-depth",
+      "related": [
+        "parameters",
+        "vectors"
+      ],
+      "notation": [
+        "parameters"
+      ],
+      "sources": [
+        {
+          "title": "Recurrent depth: original paper",
+          "url": "https://arxiv.org/abs/2502.05171"
+        },
+        {
+          "title": "Depth-Recurrent Attention Mixture (Dreamer)",
+          "url": "https://arxiv.org/abs/2601.21582"
+        },
+        {
+          "title": "Recurrent-Depth VLA",
+          "url": "https://arxiv.org/abs/2602.07845"
+        }
+      ]
+    },
+    {
+      "id": "latent-reasoning",
+      "label": "Latent reasoning",
+      "kind": "term",
+      "aliases": [
+        "latent reasoning",
+        "continuous thought",
+        "continuous latent space"
+      ],
+      "plain": "Some systems keep intermediate computation in hidden vectors instead of spelling every step as text. That can change how compute is used, but does not automatically make the result correct or interpretable.",
+      "formula": "intermediate hidden states → task output",
+      "properties": [
+        "Continuous hidden-state computation differs from a visible chain of thought. Claims need task-specific and compute-matched evaluation; an internal trajectory should not be assumed to be a faithful explanation, nor all latent methods assumed to use recurrent depth."
+      ],
+      "caveat": "A research mechanism, not a demonstration of superintelligence. Check the original paper and its evaluation conditions.",
+      "concept": "latent-reasoning",
+      "related": [
+        "attention",
+        "transformer"
+      ],
+      "notation": [],
+      "sources": [
+        {
+          "title": "Continuous latent reasoning (Coconut)",
+          "url": "https://arxiv.org/abs/2412.06769"
+        },
+        {
+          "title": "Recurrent depth",
+          "url": "https://arxiv.org/abs/2502.05171"
+        }
+      ]
+    },
+    {
+      "id": "world-models",
+      "label": "World models",
+      "kind": "term",
+      "aliases": [
+        "world model",
+        "world models",
+        "action-conditioned prediction"
+      ],
+      "plain": "A world model predicts selected aspects of an environment and its changes. It may help planning, but can be wrong when actions or situations differ from training.",
+      "formula": "state representation + action → predicted next representation",
+      "properties": [
+        "Separate observational representation learning from action-conditioned dynamics and closed-loop control. Check interventions, rollout error, distribution shift, safety constraints and whether planning results transfer beyond the evaluated environments."
+      ],
+      "caveat": "A research mechanism, not a demonstration of superintelligence. Check the original paper and its evaluation conditions.",
+      "concept": "world-models",
+      "related": [
+        "attention",
+        "transformer"
+      ],
+      "notation": [],
+      "sources": [
+        {
+          "title": "V-JEPA 2",
+          "url": "https://arxiv.org/abs/2506.09985"
+        },
+        {
+          "title": "V-JEPA 2.1",
+          "url": "https://arxiv.org/abs/2603.14482"
+        }
+      ]
+    }
+  ]
+}

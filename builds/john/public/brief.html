@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weekly brief · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css"></head>
+<body>
+<main>
+  <div class="pagehead">
+    <div><h1>Weekly brief</h1><p class="muted" id="sub">What moved this week, by topic, with the change from last week.</p></div>
+    <div class="actions"><button class="btn" id="prev" type="button">← Previous week</button><button class="btn" id="next" type="button">Next week →</button></div>
+  </div>
+  <div id="brief"></div>
+  <p class="small muted">This page is a <a href="/api/catalog" target="_blank" rel="noopener">json-render</a> spec built on the server from the week's stories, so it can only use approved components.</p>
+</main>
+<script src="/js/api.js"></script>
+<script src="/js/jr.js"></script>
+<script>
+let week = params.get("week") || "";
+async function load() {
+  const r = await api("/api/brief" + (week ? `?week=${week}` : "")); week = r.week;
+  const d = new Date(week + "T00:00:00Z"), e = new Date(d.getTime() + 6 * 864e5), f = (x) => x.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+  $("#sub").textContent = `Week of ${f(d)} to ${f(e)}`;
+  history.replaceState(null, "", `/brief?week=${week}`);
+  JR.render($("#brief"), r.spec, jrHandlers());
+  $("#next").disabled = d.getTime() + 7 * 864e5 > Date.now();
+}
+const shift = (n) => { const d = new Date(week + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + n); week = d.toISOString().slice(0, 10); load(); };
+$("#prev").onclick = () => shift(-7); $("#next").onclick = () => shift(7);
+requireUser().then(load);
+</script>
+</body></html>

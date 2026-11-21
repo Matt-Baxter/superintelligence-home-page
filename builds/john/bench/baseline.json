@@ -1,0 +1,230 @@
+{
+  "about": "Accepted benchmark numbers (scripts/bench.js). Update only for an uplift or an explained trade-off.",
+  "updated": "2026-11-10",
+  "metrics": {
+    "review.credibility_auc": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "credible items out-rank doubtful ones on credibility"
+    },
+    "review.score_auc": {
+      "value": 0.711,
+      "better": "higher",
+      "tol": 0.02,
+      "about": "...on the guarded score"
+    },
+    "review.naive_score_auc": {
+      "value": 0.336,
+      "better": "info",
+      "about": "...on the unguarded score (for comparison)"
+    },
+    "review.verdict_accuracy": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "'doubtful' or 'withdrawn' exactly when the label says not credible"
+    },
+    "review.flag_recall": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "share of non-credible items sent to a person"
+    },
+    "review.flag_false_rate": {
+      "value": 0,
+      "better": "lower",
+      "tol": 0,
+      "about": "share of credible items sent to a person"
+    },
+    "review.invariance": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "padding, stuffing, checklists, name-dropping, unbacked claims and injection don't raise the score (96 edits)"
+    },
+    "review.adversary_gain_guarded": {
+      "value": 0,
+      "better": "lower",
+      "tol": 0.5,
+      "about": "points the guarded score gains under the attack on the unguarded judge"
+    },
+    "review.whitebox_gain": {
+      "value": 0.25,
+      "better": "lower",
+      "tol": 0.5,
+      "about": "points an adversary attacking the guarded score gains"
+    },
+    "review.adversary_gain_naive": {
+      "value": 33.875,
+      "better": "info",
+      "about": "points the same attack gains on the unguarded judge (the attack is real)"
+    },
+    "review.ms_per_doc": {
+      "value": 9.1,
+      "better": "info",
+      "about": "time to review one item"
+    },
+    "review.fidelity_accuracy": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "paraphrase-fidelity checks right on bench/fidelity-cases.json (52 synthetic pairs: pass/fail and the expected check)"
+    },
+    "lab.intent_accuracy": {
+      "value": 0.993,
+      "better": "higher",
+      "tol": 0.005,
+      "about": "the learned intent policy on held-out requests (seed 77)"
+    },
+    "lab.intent_accuracy_seed2": {
+      "value": 0.988,
+      "better": "higher",
+      "tol": 0.01,
+      "about": "...on a second held-out draw (seed 1234), so tuning to one seed shows"
+    },
+    "lab.safety_properties": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "share of the 4 safety properties that hold"
+    },
+    "interp.superposition_phases": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "the toy reproduces the paper's three regimes: dedicated (S=0), antipodal pairs (S=0.7), pentagon (S=0.9)"
+    },
+    "interp.sae_recovery": {
+      "value": 0.778,
+      "better": "higher",
+      "tol": 0.03,
+      "about": "share of the toy's 12 true features an SAE recovers (cosine > 0.9), mean of 3 seeds"
+    },
+    "interp.steering_selectivity": {
+      "value": 8.28,
+      "better": "higher",
+      "tol": 0.5,
+      "about": "target gain / collateral change when clamping one SAE latent to 4x"
+    },
+    "interp.steering_exactness": {
+      "value": 0,
+      "better": "lower",
+      "tol": 0,
+      "about": "output error on unedited inputs with the SAE error added back (0 = exact)"
+    },
+    "papers.verdict_seed_stability": {
+      "value": 0.9,
+      "better": "higher",
+      "tol": 0,
+      "about": "share of paper-example verdicts that hold on 3 other seed blocks (10 examples)"
+    },
+    "papers.slowest_example_ms": {
+      "value": 1420,
+      "better": "info",
+      "about": "slowest paper example (baseline and variant); each toy must stay under 2 seconds"
+    },
+    "papers.hidden_eval_hack_drop": {
+      "value": 0.185,
+      "better": "higher",
+      "tol": 0.02,
+      "about": "drop in the quirk share when a self-improving agent is judged on hidden evaluations (arXiv 2609.26457 toy)"
+    },
+    "papers.recompute_evasion": {
+      "value": 0,
+      "better": "lower",
+      "tol": 0,
+      "about": "undetected exploits with independent recomputation (arXiv 2609.28614 toy)"
+    },
+    "papers.cosine_sae_gain": {
+      "value": 8,
+      "better": "higher",
+      "tol": 1,
+      "about": "extra true features a cosine-scored SAE recovers when input sizes vary (arXiv 2606.15054 toy)"
+    },
+    "papers.roleplay_meta_bad_drop": {
+      "value": 0.231,
+      "better": "higher",
+      "tol": 0.02,
+      "about": "drop in the bad-reply rate when a role-play updater refines its own repair rules (arXiv 2611.07469 toy)"
+    },
+    "papers.moe_contrib_advantage": {
+      "value": 0.288,
+      "better": "higher",
+      "tol": 0.05,
+      "about": "how much more often crediting SAE latents by per-expert contribution, rather than gate weight, names the owning expert (arXiv 2611.08089 toy)"
+    },
+    "papers.causal_check_decoy_drop": {
+      "value": 0.18,
+      "better": "higher",
+      "tol": 0.02,
+      "about": "drop in claims naming a co-occurring decoy feature when features are credited by ablation instead of correlation (arXiv 2611.08438 toy)"
+    },
+    "papers.monitor_leak_evasion_rise": {
+      "value": 0.35,
+      "better": "higher",
+      "tol": 0.02,
+      "about": "rise in the share of hacks a monitor misses when its verdict is fed into the RL reward instead of only watching (arXiv 2611.09828 toy)"
+    },
+    "papers.comparator_threshold_error": {
+      "value": 0.049,
+      "better": "lower",
+      "tol": 0.05,
+      "about": "largest gap between the closed-form comparator threshold, 1 - P(claim compiles) / P(easiest weakening compiles), and the simulated one at difficulties 0.4, 0.6, 0.8 (grid 0.05)"
+    },
+    "papers.self_reference_leak": {
+      "value": 0.049,
+      "better": "higher",
+      "tol": 0.01,
+      "about": "claim strength lost over 12 generations of self-improvement when each generation checks against its own output instead of the original claim, comparator above threshold (recursive-drift toy)"
+    },
+    "papers.foundations_first_gain": {
+      "value": 0.086,
+      "better": "higher",
+      "tol": 0.01,
+      "about": "less of a formal library resting on a wrong statement when a 10% review budget checks foundations first instead of the last results (library-fidelity toy)"
+    },
+    "papers.comparator_weakening_drop": {
+      "value": 0.999,
+      "better": "higher",
+      "tol": 0.02,
+      "about": "drop in the share of accepted proofs that prove a weaker statement when a comparator checks the statement, versus rewarding compiling alone (autoformalize-gate toy; arXiv 2610.08144)"
+    },
+    "verification.heldout_rung_accuracy": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "rung (none, claimed, statement checked, checked outside) on the held-out split (26 items)"
+    },
+    "verification.heldout_gap_accuracy": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "fidelity gap flagged or not, held-out split"
+    },
+    "verification.false_formal": {
+      "value": 0,
+      "better": "lower",
+      "tol": 0,
+      "about": "share of sentences with no proof claim that get credit for one (\"a lean team\", \"the deal was formalized\"), all 47 items"
+    },
+    "verification.topic_agreement": {
+      "value": 0.936,
+      "better": "higher",
+      "tol": 0,
+      "about": "share of labelled items where the feed's Formal verification topic (lib/ontology.json terms) agrees with the Machine-checked rules (47 items)"
+    },
+    "verification.invariance": {
+      "value": 0.956,
+      "better": "higher",
+      "tol": 0.01,
+      "about": "share of harmless rewordings (case, spacing, synonyms) that keep the judgement, all items"
+    },
+    "analysis.scope_accuracy": {
+      "value": 1,
+      "better": "higher",
+      "tol": 0,
+      "about": "scope decisions on the labelled spec fixtures (10 items)"
+    }
+  }
+}
