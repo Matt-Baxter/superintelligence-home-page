@@ -133,6 +133,7 @@ const ADDED_COLUMNS = [
   ["stories", "analysis", "TEXT DEFAULT '{}'"],
   ["stories", "in_scope", "INTEGER"],
   ["story_links", "rigor", "TEXT DEFAULT ''"],
+  ["stories", "papers", "TEXT DEFAULT '[]'"],
 ];
 async function migrate() {
   for (const [table, col, type] of ADDED_COLUMNS) {

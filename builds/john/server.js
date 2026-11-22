@@ -133,15 +133,20 @@ async function storyRows(where, args, uid, { sort = "top", limit = 40, offset = 
   if (!uid) page.forEach((r) => { r.nnotes = 0; });
   const byStory = new Map();
   for (const link of links) { if (!byStory.has(link.story_id)) byStory.set(link.story_id, []); byStory.get(link.story_id).push(link); }
-  return page.map((r) => shapeStory(r, byStory.get(r.id) || []));
+  // Cited papers that are also stories here link to that story, so readers stay on the evidence trail.
+  const papersOf = new Map(page.map((r) => { let p; try { p = JSON.parse(r.papers || "[]"); } catch { p = []; } return [r.id, Array.isArray(p) ? p : []]; }));
+  const paperKeys = [...new Set([...papersOf.values()].flat().map((p) => p.key).filter(Boolean))];
+  const local = new Map(paperKeys.length ? (await db.all(`SELECT k.key, k.story_id FROM story_keys k JOIN stories st ON st.id = k.story_id
+    WHERE k.key IN (${paperKeys.map(() => "?").join(",")}) AND COALESCE(st.hidden, 0) = 0 AND COALESCE(st.in_scope, 0) = 1`, ...paperKeys)).map((x) => [x.key, x.story_id]) : []);
+  return page.map((r) => shapeStory(r, byStory.get(r.id) || [], papersOf.get(r.id).map((p) => ({ key: p.key, url: p.url, story_id: local.get(p.key) || null }))));
 }
-function shapeStory(r, links) {
+function shapeStory(r, links, papers = []) {
   return {
     id: r.id, title: r.title, url: r.url, summary: r.summary, authors: r.authors, published_at: r.published_at, first_seen: r.first_seen,
     topics: JSON.parse(r.topics || "[]"), orgs: JSON.parse(r.orgs || "[]"), votes: r.votes, voted: bool(r.voted), saved: bool(r.saved), notes: r.nnotes,
     sources: links.map((l) => ({ name: l.source || "Uncatalogued source", kind: l.kind || "submitted", url: l.url, title: l.title,
       ...(profile.has("rigor-badges") && l.rigor ? { rigor: (() => { try { return JSON.parse(l.rigor); } catch { return undefined; } })() } : {}) })),
-    nsources: r.nsources, significance: r.significance || 0, analysis: JSON.parse(r.analysis || "{}"),
+    nsources: r.nsources, significance: r.significance || 0, analysis: JSON.parse(r.analysis || "{}"), papers,
   };
 }
 app.get("/api/stories", wrap(async (req) => {

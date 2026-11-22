@@ -139,6 +139,15 @@ function evidenceBreakdown(s) {
   const factors = s.analysis?.why || [];
   return `<p class="small muted">Rule-based significance: a reading aid, not confidence or scientific validity.</p>${factors.length ? `<ul class="evidence-factors">${factors.map((f) => `<li><span>${esc(f.factor)} <b>+${esc(f.points)}</b></span><meter min="0" max="100" value="${Math.max(0, Math.min(100, Number(f.points) || 0))}" aria-label="${esc(f.factor)}: ${esc(f.points)} points out of 100">${esc(f.points)} points</meter><small class="muted">${esc(f.detail || "")}</small></li>`).join("")}</ul>` : '<p class="small">No factor breakdown is available for this story.</p>'}`;
 }
+const paperLabel = (key) => key.startsWith("arxiv:") ? `arXiv ${key.slice(6)}` : `DOI ${key.slice(4, 30)}${key.length > 30 ? "…" : ""}`;
+// Original papers a blog or newsletter post cites. One already in the feed opens its story; others open the paper.
+function papersRow(s) {
+  const papers = (s.papers || []).slice(0, 3);
+  if (!papers.length) return "";
+  return `<p class="papers small"><span class="muted">Original paper${papers.length > 1 ? "s" : ""}:</span> ${papers.map((p) => p.story_id
+    ? `<a class="paper-link" href="/story?id=${encodeURIComponent(p.story_id)}" title="This paper is also in the feed">${esc(paperLabel(p.key))}</a>`
+    : `<a class="paper-link" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">${esc(paperLabel(p.key))}<span class="sr-only"> (opens in a new tab)</span></a>`).join(" ")}</p>`;
+}
 let cardSequence = 0;
 // One story card, used by the feed, lists and saved views.
 function storyCard(s, opts = {}) {
@@ -157,6 +166,7 @@ function storyCard(s, opts = {}) {
     <div class="meta">${sigBadge}${rigorBadge}${an.type ? `<span class="utype">${esc(an.type.label)}</span>` : ""}<span>${esc(s.sources[0]?.name || "")}${s.nsources > 1 ? ` <span class="multi">+ ${s.nsources - 1} more source${s.nsources > 2 ? "s" : ""}</span>` : ""}</span><span>${kinds.map(esc).join(" · ")}</span>${storyDate(s)}</div>
     <section class="evidence-panel" id="${evidenceId}" aria-label="Significance explanation" hidden></section>
     ${s.summary && !opts.compact ? `<p class="sum">${esc(s.summary.slice(0, 260))}${s.summary.length > 260 ? "…" : ""}</p>` : ""}
+    ${papersRow(s)}
     ${opts.listNote ? `<p class="listnote">“${esc(opts.listNote)}”</p>` : ""}
     <div class="row2"><div class="tags">${bench}${tags}${orgs}</div><div class="acts"><a href="/story?id=${s.id}">${s.notes ? `${s.notes} note${s.notes > 1 ? "s" : ""}` : "Notes"}</a><button type="button" class="save linkish" aria-pressed="${s.saved}">${s.saved ? "Saved ✓" : "Save"}</button></div></div><p class="action-feedback small" role="status" aria-live="polite" hidden></p></div>`;
   const dateDetails = li.querySelector(".story-date");

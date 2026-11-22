@@ -20,6 +20,18 @@ function atomLink(block) {
   return href ? decode(href[1]) : "";
 }
 const cut = (s, n) => (s.length > n ? s.slice(0, n - 1).replace(/\s+\S*$/, "") + "…" : s);
+// Papers a post cites (arXiv / DOI links in its body), resolved to the same keys stories are grouped by.
+const PAPER_URL = /https?:\/\/(?:www\.|export\.)?(?:arxiv\.org\/(?:abs|pdf|html)\/[^\s"'<>)\]]+|(?:dx\.)?doi\.org\/10\.[^\s"'<>)\]]+)/gi;
+function citedPapers(block, ownUrl) {
+  const own = publicationIdentity.resolve(ownUrl).key, seen = new Set(own ? [own] : []), out = [];
+  for (const m of decode(decode(block)).matchAll(PAPER_URL)) {
+    const id = publicationIdentity.resolve(m[0].replace(/[.,;:]+$/, ""));
+    if ((id.kind !== "arxiv" && id.kind !== "doi") || !id.key || seen.has(id.key)) continue;
+    seen.add(id.key); out.push({ key: id.key, url: id.canonical_url });
+    if (out.length >= 5) break;
+  }
+  return out;
+}
 function isoDate(s) { const t = Date.parse(s); return Number.isFinite(t) ? new Date(t).toISOString() : null; }
 
 function parseXml(xml) {
@@ -37,7 +49,9 @@ function parseXml(xml) {
     // Rigor a research feed publishes as <category domain="si:..."> (verdict, credibility, grade, panel, evidence): kept
     // only when present and only these keys; the site shows it where the "rigor-badges" feature is on.
     const rigor = {}; for (const m of b.matchAll(/<category\s+domain="si:(verdict|credibility|grade|panel|evidence)"\s*>([\s\S]*?)<\/category>/gi)) rigor[m[1].toLowerCase()] = cut(stripHtml(m[2]), 40);
-    if (title && /^https?:\/\//.test(url)) items.push({ title: cut(title, 300), url, summary: cut(summary, 700), published, authors: authors.slice(0, 4), ...(Object.keys(rigor).length ? { rigor } : {}) });
+    if (!title || !/^https?:\/\//.test(url)) continue;
+    const papers = citedPapers(b, url);
+    items.push({ title: cut(title, 300), url, summary: cut(summary, 700), published, authors: authors.slice(0, 4), ...(Object.keys(rigor).length ? { rigor } : {}), ...(papers.length ? { papers } : {}) });
   }
   return items;
 }
@@ -141,7 +155,9 @@ async function fetchText(url, { timeoutMs = 15000, etag, lastModified, accept } 
   } finally { clearTimeout(t); }
 }
 async function fetchSource(src, opts = {}) {
-  const r = await fetchText(src.url, { ...opts, etag: opts.conditional ? src.etag : null, lastModified: opts.conditional ? src.last_modified : null });
+  // arXiv's query API routinely takes 15–25s; other feeds keep the 15s default.
+  const timeoutMs = opts.timeoutMs || (src.format === "arxiv" ? 30000 : undefined);
+  const r = await fetchText(src.url, { ...opts, ...(timeoutMs ? { timeoutMs } : {}), etag: opts.conditional ? src.etag : null, lastModified: opts.conditional ? src.last_modified : null });
   if (r.notModified) return { notModified: true, items: [] };
   let items;
   try { items = parse(src.format, r.body); } catch (e) { throw new Error(`Couldn't parse as ${src.format}: ${e.message}`); }

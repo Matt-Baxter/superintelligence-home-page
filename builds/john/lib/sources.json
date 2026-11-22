@@ -54,7 +54,7 @@
       "name": "Epoch AI",
       "kind": "research-org",
       "format": "rss",
-      "url": "https://epoch.ai/blog/rss.xml",
+      "url": "https://epoch.ai/atom.xml",
       "home": "https://epoch.ai/blog"
     },
     {

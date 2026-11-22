@@ -11,6 +11,23 @@ const { rescore } = require("./analysis");
 
 const now = () => db.now();
 
+const MAX_PAPERS = 6;
+// Cited papers are references, not coverage: they never merge stories or count as sources.
+async function mergePapers(t, sid, papers) {
+  const row = await t.get("SELECT papers FROM stories WHERE id = ?", sid);
+  let list; try { list = JSON.parse(row?.papers || "[]"); } catch { list = []; }
+  if (!Array.isArray(list)) list = [];
+  const own = new Set((await t.all("SELECT key FROM story_keys WHERE story_id = ?", sid)).map((r) => r.key));
+  const have = new Set(list.map((p) => p.key));
+  let changed = false;
+  for (const p of papers) {
+    if (list.length >= MAX_PAPERS) break;
+    if (!p?.key || have.has(p.key) || own.has(p.key)) continue;
+    list.push({ key: p.key, url: p.url }); have.add(p.key); changed = true;
+  }
+  if (changed) await t.run("UPDATE stories SET papers = ? WHERE id = ?", JSON.stringify(list), sid);
+}
+
 const SOCIAL = /^https?:\/\/([^/]*\.)?(twitter\.com|x\.com|nitter\.[^/]+)(\/|$)/i;
 async function addItem(t, item, sourceId, submittedBy = null) {
   if (SOCIAL.test(item.url || "")) return null; // REQ-006: never show or accept Twitter/X links
@@ -58,6 +75,7 @@ async function addItem(t, item, sourceId, submittedBy = null) {
     isNew = true;
   } else if (item.score) attentionChanged = !!(await t.run("UPDATE stories SET ext_score = ? WHERE id = ? AND COALESCE(ext_score, 0) < ?", item.score, sid, item.score)).changes;
   for (const k of keys) await t.run("INSERT OR IGNORE INTO story_keys (key, story_id) VALUES (?, ?)", k, sid);
+  if (item.papers?.length) await mergePapers(t, sid, item.papers);
   const linked = await t.run("INSERT OR IGNORE INTO story_links (story_id, source_id, url, title, published_at, seen_at) VALUES (?, ?, ?, ?, ?, ?)", sid, sourceId, item.url, item.title, item.published, now());
   if (item.rigor) await t.run("UPDATE story_links SET rigor = ? WHERE story_id = ? AND url = ?", JSON.stringify(item.rigor), sid, item.url);
   // Score new stories, and re-score old ones when another source picks them up (coverage counts).
