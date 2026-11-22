@@ -10,6 +10,7 @@ made the change. The contract also keeps its own version history in
 
 | Date | Person | Change | Commit(s) |
 |------|--------|--------|-----------|
+| 2026-11-22 | Matt (with Claude Code) | Build A history fill: stories back to January 2023 from Google News, OpenAI, arXiv, the Alignment Forum, LessWrong, five newsletters and MIRI, through the same AI judge and daily cap; resumable via `/api/cron/history` and a nightly job. Fixed a flaky account test. | `8ba6b97` |
 | 2026-11-21 | Matt (with Claude Code) | Build A: AI significance scores now have one decimal place (e.g. 8.2) for finer ranking within a day. | `6104ad7` |
 | 2026-11-21 | Matt (with Claude Code) | Build A daily cap: with the AI judge on, at most 5 stories per day (the top-scoring 8+ stories), so the bar is relative to each day's news. | `f90ab81` |
 | 2026-11-21 | Matt (with Claude Code) | Build A: AI significance judge (Claude Haiku 5.5 scores stories 1–10; only 8+ shown, with a labelled one-line reason; off until an API key is added) and five Google News search feeds for more outlets. Build A only; shared spec unchanged. | `6a084f7` |
