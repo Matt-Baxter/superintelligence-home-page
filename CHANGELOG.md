@@ -10,6 +10,7 @@ made the change. The contract also keeps its own version history in
 
 | Date | Person | Change | Commit(s) |
 |------|--------|--------|-----------|
+| 2026-11-22 | Matt (with Claude Code) | Build A: more frontier labs (Anthropic News and Research, Meta AI, xAI, Microsoft AI; DeepMind history) and a "How stories are chosen" page (`/review`) showing every story's AI score, reason and whether it's on the feed. Fixed the history fill doing only one month on a real run. Matt's agent log entry on changing sources. | `36081a7` |
 | 2026-11-22 | Matt (with Claude Code) | Build A history fill: stories back to January 2023 from Google News, OpenAI, arXiv, the Alignment Forum, LessWrong, five newsletters and MIRI, through the same AI judge and daily cap; resumable via `/api/cron/history` and a nightly job. Fixed a flaky account test. | `8ba6b97` |
 | 2026-11-21 | Matt (with Claude Code) | Build A: AI significance scores now have one decimal place (e.g. 8.2) for finer ranking within a day. | `6104ad7` |
 | 2026-11-21 | Matt (with Claude Code) | Build A daily cap: with the AI judge on, at most 5 stories per day (the top-scoring 8+ stories), so the bar is relative to each day's news. | `f90ab81` |

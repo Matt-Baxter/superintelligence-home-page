@@ -34,8 +34,8 @@ they keep changing.
 **What I did about it:**
 
 **Related:** Build A source changes in commits `0f1ef7e` (arXiv narrowed), `6a084f7` (Google News
-searches), `8ba6b97` (history fill), and the 2026-11-22 lab sources commit (Anthropic, Meta, xAI,
-Microsoft AI, DeepMind history)
+searches), `8ba6b97` (history fill), `36081a7` (Anthropic, Meta, xAI, Microsoft AI,
+DeepMind history)
 
 ### 2026-11-06 · Matt · Build: Matt / Claude Code
 
