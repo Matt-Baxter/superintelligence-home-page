@@ -106,3 +106,13 @@ CREATE INDEX IF NOT EXISTS stories_unjudged ON stories (published_at DESC) WHERE
 ALTER TABLE stories DROP CONSTRAINT IF EXISTS stories_ai_score_check;
 ALTER TABLE stories ALTER COLUMN ai_score TYPE numeric(3,1);
 ALTER TABLE stories ADD CONSTRAINT stories_ai_score_check CHECK (ai_score BETWEEN 0 AND 10);
+
+-- 2026-11-22: history fill progress (Build A research §16). One row per history task.
+CREATE TABLE IF NOT EXISTS history_progress (
+  task_id    text PRIMARY KEY,
+  cursor     text,
+  done       boolean NOT NULL DEFAULT false,
+  items      integer NOT NULL DEFAULT 0,
+  last_error text,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);

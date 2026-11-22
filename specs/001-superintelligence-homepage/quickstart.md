@@ -66,6 +66,7 @@ BASE_URL=https://<build-a-url> npm run test:acceptance
 | Sample item with script and image tags | Nothing runs or loads | AT-15 |
 | Any page | "Not investment advice" notice | AT-16 |
 | Keyboard only: filter, sign in, vote, save | Everything works, focus always visible | AT-17 |
+| Call `/api/cron/history` with sample archives | Sample stories from 2023–2024 appear; pre-2023 and minor ones don't; a second call adds nothing | Build A only |
 
 ## Deploy
 
@@ -75,4 +76,6 @@ BASE_URL=https://<build-a-url> npm run test:acceptance
 3. Deploy. The build runs `npm run db:migrate` against the live database automatically.
 4. Call `/api/cron/fetch` once with the secret to load stories right away (after that the daily
    cron job takes over).
-5. Run the acceptance tests against the deployed URL (AT-14 is checked by a classmate).
+5. Optional: call `/api/cron/history` with the secret until it returns `"finished": true` to fill
+   in stories back to January 2023 (otherwise the nightly history job finishes it over a few days).
+6. Run the acceptance tests against the deployed URL (AT-14 is checked by a classmate).

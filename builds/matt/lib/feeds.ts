@@ -58,7 +58,7 @@ function atomLink(entry: Raw): string {
   return typeof chosen === "string" ? chosen : text(chosen["@_href"]);
 }
 
-export function parseFeed(xml: string): FeedItem[] {
+export function parseFeed(xml: string, maxItems: number = MAX_ITEMS_PER_SOURCE): FeedItem[] {
   const doc = parser.parse(xml) as Raw;
 
   const rss = doc.rss as Raw | undefined;
@@ -100,15 +100,16 @@ export function parseFeed(xml: string): FeedItem[] {
   return items
     .filter((i) => i.title && i.link)
     .sort((a, b) => (b.published?.getTime() ?? 0) - (a.published?.getTime() ?? 0))
-    .slice(0, MAX_ITEMS_PER_SOURCE);
+    .slice(0, maxItems);
 }
 
-export async function fetchFeed(url: string): Promise<FeedItem[]> {
+export async function fetchText(url: string, init?: RequestInit): Promise<string> {
   let res: Response;
   try {
     res = await fetch(url, {
+      ...init,
       signal: AbortSignal.timeout(TIMEOUT_MS),
-      headers: { "User-Agent": "SuperintelligenceHomepage/1.0 (class project feed reader)" },
+      headers: { "User-Agent": "SuperintelligenceHomepage/1.0 (class project feed reader)", ...(init?.headers ?? {}) },
       cache: "no-store",
     });
   } catch (err) {
@@ -118,5 +119,9 @@ export async function fetchFeed(url: string): Promise<FeedItem[]> {
   if (!res.ok) {
     throw new Error(`HTTP ${res.status}`);
   }
-  return parseFeed(await res.text());
+  return res.text();
+}
+
+export async function fetchFeed(url: string, maxItems?: number): Promise<FeedItem[]> {
+  return parseFeed(await fetchText(url), maxItems);
 }

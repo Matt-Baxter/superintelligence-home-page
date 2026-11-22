@@ -249,3 +249,15 @@ unchanged (research §14–15).
 - [X] T070 Decimal scores (one decimal place, e.g. 8.2): scoring guide, `ai_score` as `numeric(3,1)` (ALTER for existing databases), display "8.2/10"; tests updated
 - [ ] T067 **MANUAL (Matt)**: create an Anthropic API key at console.anthropic.com, set a monthly spending limit there, and add it in Vercel as `ANTHROPIC_API_KEY` (all environments); then redeploy
 - [ ] T068 After the first judged run, review the kept and dropped stories; tune `SCORING_GUIDE` or switch `JUDGE_MODEL` to `claude-sonnet-5-5` if Haiku's calls are poor
+
+### History fill (2026-11-22)
+
+Requested by Matt after the first judged run kept only stories from November 2026 (research §16).
+
+- [X] T071 `history_progress` table in `builds/matt/db/schema.sql`; `fetchText()` and an unlimited `parseFeed()` in `lib/feeds.ts`; a deadline for `judgePending()` in `lib/judge.ts`
+- [X] T072 `builds/matt/lib/history.ts` and `lib/history-helpers.ts`: history tasks for Google News month searches, OpenAI's full feed, arXiv by month, Alignment Forum and LessWrong top posts by month, Substack archives and MIRI's paged feed; resumable runner
+- [X] T073 `GET /api/cron/history` (secret required; fetch then judge within 5 minutes) and a second daily cron job in `builds/matt/vercel.json`
+- [X] T074 Tests: sample archives in `tests/fixtures/history/`; unit tests `tests/unit/history.test.ts`; `tests/acceptance/build-a-history.spec.ts` (3 tests: every archive kind, nothing added twice, secret required)
+- [X] T075 Fixed a flaky account test: Next.js's page-change announcer also has `role="alert"`, so the tests now look for the form's own error message
+- [ ] T076 **MANUAL (Matt)**: after the deploy, call `/api/cron/history` until it returns `"finished": true` (or let the nightly job finish it over a few days), then review the score distribution with T068
+

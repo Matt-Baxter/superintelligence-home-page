@@ -7,9 +7,10 @@ import { expect, type APIRequestContext, type Page } from "@playwright/test";
 // saved sample feeds (constitution IV).
 
 const root = join(__dirname, "..", "..");
-const sources: { id: string; name: string; kind: string; feedUrl: string }[] = JSON.parse(
-  readFileSync(join(root, "tests/fixtures/sources.json"), "utf8"),
-);
+const sources: { id: string; name: string; kind: string; feedUrl: string }[] = [
+  ...JSON.parse(readFileSync(join(root, "tests/fixtures/sources.json"), "utf8")),
+  ...JSON.parse(readFileSync(join(root, "tests/fixtures/history-sources.json"), "utf8")),
+];
 
 let db: ReturnType<typeof postgres> | undefined;
 export function testDb() {
@@ -21,7 +22,7 @@ export function testDb() {
 // sample sources.
 export async function resetDatabase() {
   const sql = testDb();
-  await sql`TRUNCATE users, sessions, sources, stories, story_topics, story_sources, story_keys, votes, saves RESTART IDENTITY CASCADE`;
+  await sql`TRUNCATE users, sessions, sources, stories, story_topics, story_sources, story_keys, votes, saves, history_progress RESTART IDENTITY CASCADE`;
   for (const s of sources) {
     await sql`INSERT INTO sources (id, name, kind, feed_url) VALUES (${s.id}, ${s.name}, ${s.kind}, ${s.feedUrl})`;
   }

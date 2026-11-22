@@ -20,6 +20,10 @@ const sql = postgres(url, { max: 1, ssl: local ? false : "require", onnotice: ()
 
 const sourcesFile = process.env.SOURCES === "fixtures" ? "tests/fixtures/sources.json" : "lib/sources.json";
 const sources = JSON.parse(readFileSync(join(root, sourcesFile), "utf8"));
+// Test fixtures keep the history fill's sample archives in a separate list.
+if (process.env.SOURCES === "fixtures") {
+  sources.push(...JSON.parse(readFileSync(join(root, "tests/fixtures/history-sources.json"), "utf8")));
+}
 
 try {
   await sql.unsafe(readFileSync(join(root, "db/schema.sql"), "utf8"));

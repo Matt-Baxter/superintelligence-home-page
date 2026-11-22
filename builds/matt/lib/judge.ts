@@ -112,7 +112,8 @@ export type JudgeSummary = { mode: JudgeMode; judged: number; failed: number; re
 
 // Scores stories that haven't been judged yet, newest first. A story that fails to be judged
 // (network error, rate limit) is left for the next run; it stays hidden until it has a score.
-export async function judgePending(): Promise<JudgeSummary> {
+// `deadline` (ms since epoch) stops it from starting new judgments late in a run.
+export async function judgePending(deadline: number = Infinity): Promise<JudgeSummary> {
   const mode = judgeMode();
   if (mode === "off") return { mode, judged: 0, failed: 0, remaining: 0 };
 
@@ -128,7 +129,7 @@ export async function judgePending(): Promise<JudgeSummary> {
   const model = judgeModel();
   let next = 0;
   async function worker() {
-    while (next < pending.length) {
+    while (next < pending.length && Date.now() < deadline) {
       const row = pending[next++];
       try {
         const j = await judgeStory({ title: row.title, summary: row.summary, sources: row.sources, published: new Date(row.published_at) });

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Sample data for tests only: a month of a news search, shaped like Google News. -->
+<rss version="2.0"><channel>
+  <title>Sample History News Search</title>
+  <item>
+    <title>Sample: Senate Hearing on Superintelligence Risk - Sample Gazette</title>
+    <link>https://news.example.com/rss/articles/history-senate-hearing</link>
+    <description>Sample: Senate Hearing on Superintelligence Risk</description>
+    <pubDate>Mon, 10 Jun 2024 14:00:00 GMT</pubDate>
+    <source url="https://gazette.example.com">Sample Gazette</source>
+  </item>
+  <item>
+    <title>Sample: City Council Approves Budget - Sample Gazette</title>
+    <link>https://news.example.com/rss/articles/history-budget</link>
+    <description>Mentions AI safety only in passing. Sample test data.</description>
+    <pubDate>Tue, 11 Jun 2024 14:00:00 GMT</pubDate>
+    <source url="https://gazette.example.com">Sample Gazette</source>
+  </item>
+</channel></rss>

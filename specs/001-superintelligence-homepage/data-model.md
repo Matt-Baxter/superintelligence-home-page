@@ -98,6 +98,19 @@ or deletes the row for the signed-in user only.
 
 Same shape as `votes`.
 
+### history_progress — Build A history fill (research §16)
+
+| Field | Type | Rules |
+|-------|------|-------|
+| task_id | text, primary key | e.g. `gnews-agi:2023-07`, `openai:full-feed`, `zvi:archive` |
+| cursor | text, nullable | where a paged archive stopped (page number or Substack cursor) |
+| done | boolean | true once the task needs no more requests |
+| items | integer | new stories this task created, summed across runs |
+| last_error | text, nullable | the last failure, cleared on success |
+| updated_at | timestamptz | last run |
+
+Not linked to other tables; history items become ordinary `stories`.
+
 ## Relationships
 
 ```text

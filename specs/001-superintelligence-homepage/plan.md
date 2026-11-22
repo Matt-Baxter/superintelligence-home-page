@@ -142,6 +142,9 @@ nothing outside that folder is deployed for Build A.
 - **Google News search feeds:** five news searches for a wider range of outlets.
   ([research §15](research.md#15-google-news-search-feeds-added-2026-11-21))
 - **Dark theme.**
+- **History fill (2026-11-22):** reads each source's archive back to January 2023 through the same
+  filter, judge and daily cap, in resumable steps (`/api/cron/history`).
+  ([research §16](research.md#16-history-fill-back-to-2023-added-2026-11-22))
 
 These are Build A choices. The shared spec is unchanged: REQ-003 already requires that only
 superintelligence stories appear, and the contract lets each build choose its own sources.

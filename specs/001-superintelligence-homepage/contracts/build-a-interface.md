@@ -37,6 +37,7 @@ is met: a request can only ever change the sender's own vote or save.
 | Method and path | Caller | Behavior |
 |-----------------|--------|----------|
 | `GET /api/cron/fetch` | Vercel Cron, daily | Requires header `Authorization: Bearer <CRON_SECRET>`; otherwise 401. Runs one fetch of all sources, then judges new stories, and returns `{ "fetched": n, "failed": n, "stories": n, "judge": { "mode", "judged", "failed", "remaining" } }`. |
+| `GET /api/cron/history` | Vercel Cron, daily; or Matt by hand | Same secret rule. Runs the history fill for up to 150 s, then judges for up to 120 s, and returns `{ "history": { "tasksRun", "tasksFailed", "tasksRemaining", "storiesAdded" }, "judge": { ... }, "finished": true/false }`. Safe to repeat; does nothing once finished. |
 
 ## Error messages
 

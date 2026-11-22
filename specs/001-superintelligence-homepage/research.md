@@ -171,3 +171,38 @@ Technical Context. Versions were checked against the npm registry on 2026-11-13.
 - **Check (2026-11-21):** one real fetch returned 50 items from 41 outlets across the five searches,
   mixed in quality, which is why these items rely on the AI judge.
 - **Alternatives considered:** Google's Custom Search API (closed to new users) and paid news APIs.
+
+## 16. History fill back to 2023 (added 2026-11-22)
+
+- **Why:** the daily feeds only reach back days or weeks, so the live feed began in November 2026.
+  Matt wants the feed to cover 2023 onward from all sources, not one lab's blog.
+- **Decision:** a resumable history fill (`lib/history.ts`, `GET /api/cron/history`). Every
+  historical item goes through the same pipeline as daily news: keyword filter, grouping, the AI
+  judge (8.0+) and the daily cap of 5. Nothing new is shown that today's rules would hide.
+- **How each source's archive is read** (each checked by hand on 2026-11-21):
+
+  | Source | Archive | Requests |
+  |--------|---------|----------|
+  | Google News searches (5) | Search limited to one month (`after:` / `before:`); only items with a key phrase in the headline are kept, since month searches match loosely | 5 per month |
+  | OpenAI | The full feed (reaches 2015) | 1 |
+  | arXiv | API search limited to papers submitted that month | 1 per month |
+  | Alignment Forum, LessWrong | GraphQL: the 15 top-voted posts of each month | 2 per month |
+  | Import AI, Zvi, Epoch AI, Redwood Research, AI Impacts | Substack archive API, 12 posts per page, until a post before 2023 | 1 per page |
+  | MIRI | The blog feed's numbered pages until a post before 2023 | 1 per page |
+  | Google DeepMind and the rest | No archive reachable (DeepMind's feed starts late 2025) | none |
+
+- **Resumable:** the work is split into tasks (one per source per month, or one per archive); each
+  finished task is saved in `history_progress`, so every call picks up where the last stopped and
+  a repeat adds nothing. Each call fetches for up to 150 seconds, then judges for the rest of the
+  5-minute limit. A failed task records its error and is retried on the next call.
+- **Order:** whole-archive sources first, then month by month, newest month first, so recent
+  history fills in first.
+- **Polite:** a pause between requests (3 s for arXiv, which rate-limits; 1 s for Google News).
+- **Scheduling:** a second daily cron job (`/api/cron/history`, 07:30 UTC) keeps working until
+  every task is done, then does nothing. Matt can also call it repeatedly to finish sooner.
+- **Cost:** a few thousand stories to judge once; roughly $1–3 on Haiku.
+- **Not covered:** 2012–2022 (to be a hand-picked milestone list, reviewed by Matt and John).
+- **Alternatives considered:** the Wayback Machine (slow, gaps); paid news archives; a one-off
+  local script (would need the live database's secret on an agent's machine, which the
+  constitution rules out).
+

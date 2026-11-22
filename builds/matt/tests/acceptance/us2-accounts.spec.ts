@@ -25,7 +25,7 @@ test.describe("User Story 2: accounts", () => {
       await page.getByRole("button", { name: "Sign out" }).click();
       await signUp(page, "SAMPLE_BOB", "another-password-2");
       await expect(page).toHaveURL(/\/signup/);
-      await expect(page.getByRole("alert")).toHaveText("That username is taken.");
+      await expect(page.locator("p.form-error[role=alert]")).toHaveText("That username is taken.");
       const [{ count }] = await testDb()`SELECT count(*)::int AS count FROM users WHERE lower(username) = 'sample_bob'`;
       expect(count).toBe(1);
     });
@@ -41,7 +41,7 @@ test.describe("User Story 2: accounts", () => {
       test(`${field.toLowerCase()} rule: "${username.slice(0, 12)}" / ${password.length}-character password`, async ({ page }) => {
         await signUp(page, username, password);
         await expect(page).toHaveURL(/\/signup/);
-        await expect(page.getByRole("alert")).toContainText(field);
+        await expect(page.locator("p.form-error[role=alert]")).toContainText(field);
         const [{ count }] = await testDb()`SELECT count(*)::int AS count FROM users`;
         expect(count).toBe(0);
       });
@@ -100,7 +100,7 @@ test.describe("User Story 2: accounts", () => {
         await page.getByLabel("Password").fill(password);
         await page.getByRole("button", { name: "Sign in" }).click();
         await expect(page).toHaveURL(/\/signin/);
-        await expect(page.getByRole("alert")).toHaveText("Username or password is incorrect.");
+        await expect(page.locator("p.form-error[role=alert]")).toHaveText("Username or password is incorrect.");
       }
     });
   });

@@ -36,6 +36,7 @@
 
 import realSources from "./sources.json";
 import fixtureSources from "../tests/fixtures/sources.json";
+import fixtureHistorySources from "../tests/fixtures/history-sources.json";
 
 export type SourceKind = "papers" | "frontier-lab" | "safety-group" | "research-org" | "forum" | "newsletter" | "news";
 
@@ -44,8 +45,15 @@ export type Source = {
   name: string;
   kind: SourceKind;
   feedUrl: string;
+  // Test fixtures only: how the history fill reads this source (lib/history.ts).
+  history?: "full-feed" | "paged-feed" | "substack" | "news-month" | "forum-month";
 };
 
 export function getSources(): Source[] {
   return (process.env.SOURCES === "fixtures" ? fixtureSources : realSources) as Source[];
+}
+
+// Sources whose archives the history fill reads. In tests, a separate set of sample archives.
+export function getHistorySources(): Source[] {
+  return (process.env.SOURCES === "fixtures" ? fixtureHistorySources : realSources) as Source[];
 }
