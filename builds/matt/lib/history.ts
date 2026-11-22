@@ -109,11 +109,10 @@ function monthUrlTask(source: Source, month: string, url: string, pauseMs: numbe
   };
 }
 
-// How each source's archive is read. Sources not listed here (e.g. Google DeepMind, whose feed
-// only reaches back to late 2025) have no history task.
+// How each source's archive is read. Sources with no reachable archive have no history task.
 export function historyTasks(now: Date = new Date()): Task[] {
   const sources = getHistorySources();
-  const fixtures = sources.some((s) => s.history);
+  const fixtures = process.env.SOURCES === "fixtures";
   const tasks: Task[] = [];
 
   // Whole-archive tasks first: a few requests each, and they cover every month at once.
@@ -129,8 +128,11 @@ export function historyTasks(now: Date = new Date()): Task[] {
   // Test fixtures cover one month, so only one month's tasks are made for them.
   for (const month of fixtures ? historyMonths(now).slice(0, 1) : historyMonths(now)) {
     for (const s of sources) {
-      if (s.kind === "news" || s.history === "news-month") {
-        tasks.push(monthUrlTask(s, month, s.history === "news-month" ? s.feedUrl : googleNewsMonthUrl(s.feedUrl, month), 1000, keepHistoryNewsItem));
+      const isNewsSearch = s.kind === "news" || new URL(s.feedUrl).hostname === "news.google.com";
+      if (s.history === "news-month") {
+        tasks.push(monthUrlTask(s, month, s.feedUrl, 1000, keepHistoryNewsItem));
+      } else if (isNewsSearch || s.historySearch) {
+        tasks.push(monthUrlTask(s, month, googleNewsMonthUrl(s.historySearch ?? s.feedUrl, month), 1000, keepHistoryNewsItem));
       } else if (s.id === "arxiv-ai") {
         tasks.push(monthUrlTask(s, month, arxivMonthUrl(s.feedUrl, month), 3000));
       } else if (s.id === "alignment-forum" || s.id === "lesswrong" || s.history === "forum-month") {

@@ -66,6 +66,7 @@ BASE_URL=https://<build-a-url> npm run test:acceptance
 | Sample item with script and image tags | Nothing runs or loads | AT-15 |
 | Any page | "Not investment advice" notice | AT-16 |
 | Keyboard only: filter, sign in, vote, save | Everything works, focus always visible | AT-17 |
+| Open `/review` after a fetch | The sample minor story is listed as "4.2/10 Hidden: scored below 8"; search finds it | Build A only |
 | Call `/api/cron/history` with sample archives | Sample stories from 2023–2024 appear; pre-2023 and minor ones don't; a second call adds nothing | Build A only |
 
 ## Deploy

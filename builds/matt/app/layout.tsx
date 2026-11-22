@@ -42,6 +42,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </nav>
         </header>
         <main>{children}</main>
+        <footer className="site-footer">
+          <Link href="/review">How stories are chosen</Link>: every story the AI judge reviewed, with its score.
+        </footer>
       </body>
     </html>
   );

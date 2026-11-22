@@ -100,3 +100,27 @@ test.describe("Build A: Google News sources", () => {
     await expect(page.getByText("Post About AGI Timelines")).toHaveCount(0);
   });
 });
+
+test.describe("Build A: judge review page", () => {
+  test("lists hidden stories with their score and why they are hidden, and can be searched", async ({ page, request }) => {
+    await resetDatabase();
+    await runFetch(request);
+    await page.goto("/");
+    await page.getByRole("link", { name: "How stories are chosen" }).click();
+    await expect(page).toHaveURL(/\/review$/);
+    await expect(page.locator(".review-summary")).toContainText("Hidden: scored below 8: 1");
+
+    const minor = page.locator(".review-item").filter({ hasText: "Minor Note Mentioning AI Safety" });
+    await expect(minor).toHaveCount(1);
+    await expect(minor.locator(".review-status")).toHaveText("4.2/10 Hidden: scored below 8");
+
+    await page.getByLabel("Title contains").fill("minor note");
+    await page.getByRole("button", { name: "Search" }).click();
+    await expect(page.locator(".review-item")).toHaveCount(1);
+
+    await page.goto("/review?status=shown");
+    const statuses = await page.locator(".review-status").allTextContents();
+    expect(statuses.length).toBeGreaterThan(0);
+    expect(statuses.every((s) => s.endsWith("On the feed"))).toBe(true);
+  });
+});

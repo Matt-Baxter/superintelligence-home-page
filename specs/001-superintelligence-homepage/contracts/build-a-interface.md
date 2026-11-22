@@ -13,6 +13,7 @@ from. The user is always taken from the session cookie, never from the request (
 | Path | Who | Shows | Requirements |
 |------|-----|-------|--------------|
 | `/` | Anyone | Superintelligence feed, newest first, 40 stories per page. Each story: title (link to original), summary, AI significance score and reason labelled as an AI assessment (when judging is on; only 8+ shown), every source (news-search items show "Outlet (via Google News)"), topics with matched words, vote count; vote and save buttons. Topic filter links. | REQ-002 to REQ-007, REQ-013, REQ-014, REQ-017, REQ-018 |
+| `/review` | Anyone | How stories are chosen: totals (on the feed, hidden by the daily cap, scored below 8, not judged yet), score breakdown, history progress, and every stored story with its score, the AI's reason and its status, newest 100 matching; search by title, source and status (GET form). Linked from every page's footer. | Build A only (research §17) |
 | `/?topic=<topic-id>` | Anyone | Feed filtered to one topic; "No stories yet" message if empty. | REQ-017 |
 | `/saved` | Signed in | The user's saved stories. Signed-out visitors are sent to `/signin`. | REQ-014 |
 | `/signup` | Anyone | Username and password form. | REQ-009 |

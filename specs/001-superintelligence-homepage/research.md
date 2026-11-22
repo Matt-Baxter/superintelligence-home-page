@@ -189,7 +189,9 @@ Technical Context. Versions were checked against the npm registry on 2026-11-13.
   | Alignment Forum, LessWrong | GraphQL: the 15 top-voted posts of each month | 2 per month |
   | Import AI, Zvi, Epoch AI, Redwood Research, AI Impacts | Substack archive API, 12 posts per page, until a post before 2023 | 1 per page |
   | MIRI | The blog feed's numbered pages until a post before 2023 | 1 per page |
-  | Google DeepMind and the rest | No archive reachable (DeepMind's feed starts late 2025) | none |
+  | Anthropic News, Anthropic Research (added 2026-11-22) | Community feeds that hold the full archive | 1 each |
+  | Google DeepMind (added 2026-11-22) | Its own feed starts Dec 2025, so a Google News search of deepmind.google and deepmind.com, by month | 1 per month |
+  | Meta AI, xAI, Microsoft AI (added 2026-11-22) | Google News search of the lab's own site, by month | 1 per month each |
 
 - **Resumable:** the work is split into tasks (one per source per month, or one per archive); each
   finished task is saved in `history_progress`, so every call picks up where the last stopped and
@@ -205,4 +207,35 @@ Technical Context. Versions were checked against the npm registry on 2026-11-13.
 - **Alternatives considered:** the Wayback Machine (slow, gaps); paid news archives; a one-off
   local script (would need the live database's secret on an agent's machine, which the
   constitution rules out).
+
+## 17. More frontier labs and the judge review page (added 2026-11-22)
+
+- **Why:** Matt noticed the feed had nothing from Anthropic, Google DeepMind's history or Meta,
+  and that OpenAI's superintelligence posts (e.g. "Governance of superintelligence") weren't
+  showing, with no way to tell why.
+- **New sources (checked by hand 2026-11-22):**
+  - **Anthropic News and Anthropic Research:** anthropic.com has no feed (404). A community
+    project on GitHub (Olshansk/rss-feeds) rebuilds both from the site; each holds the whole
+    archive back to 2021. Risk: a third party; if it stops updating, the source goes quiet.
+  - **Meta AI, xAI, Microsoft AI:** no working feeds (404 or 403; Meta's community feed stopped in
+    July 2026). Each is a Google News search of the lab's own site, last 7 days. Plain
+    `site:meta.com` returned product pages, so Meta's search covers `ai.meta.com` and
+    `about.fb.com`. Examples found: Microsoft AI's "Towards Humanist Superintelligence", xAI's risk
+    management framework.
+  - **Google DeepMind history:** a site search of `deepmind.google` and `deepmind.com` (its
+    address before 2024), month by month.
+  - Google News items have no real summary, so for the site searches only the headline is matched
+    against key phrases; posts like "Claude 2" don't match and are left out (REQ-003).
+- **Finding on OpenAI's posts:** a real run (2026-11-22) showed the keyword filter keeps all of
+  them ("Planning for AGI and beyond", "Governance of superintelligence", "Weak-to-strong
+  generalization", ...). So on the live site they are either scored below 8 or not judged yet
+  (the judge works newest first, so 2023 is judged last).
+- **Judge review page (`/review`):** lists every stored story with its score, the AI's reason and
+  its status (on the feed; 8+ but not in that day's top 5; below 8; not judged yet), totals, a
+  score breakdown and history progress, searchable by title, source and status. Public and
+  read-only: it shows only what the sources already publish. Linked from every page's footer.
+  This is how T068 (reviewing the judge) is done.
+- **Bug found and fixed:** the history fill detected test runs by "some source has a `history`
+  setting"; once real sources had one, a real run did only one month. It now checks
+  `SOURCES=fixtures`.
 

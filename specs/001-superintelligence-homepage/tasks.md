@@ -261,3 +261,13 @@ Requested by Matt after the first judged run kept only stories from November 202
 - [X] T075 Fixed a flaky account test: Next.js's page-change announcer also has `role="alert"`, so the tests now look for the form's own error message
 - [ ] T076 **MANUAL (Matt)**: after the deploy, call `/api/cron/history` until it returns `"finished": true` (or let the nightly job finish it over a few days), then review the score distribution with T068
 
+### More labs and the judge review page (2026-11-22)
+
+Requested by Matt: include DeepMind, Anthropic, Meta and other labs, and find out why OpenAI's superintelligence posts weren't showing (research §17).
+
+- [X] T077 Add Anthropic News, Anthropic Research, Meta AI, xAI and Microsoft AI to `builds/matt/lib/sources.json`; DeepMind history through a site search (`historySearch`); `history: "full-feed"` for OpenAI and Anthropic
+- [X] T078 History fill reads month by month for any Google News address or `historySearch`; fix test-run detection (`SOURCES=fixtures`)
+- [X] T079 Judge review page `builds/matt/app/review/page.tsx` and `lib/review.ts` (totals, score breakdown, history progress, every story's score, reason and status; search by title, source, status); footer link; shared ranking `rankedInDay()` in `lib/stories.ts`
+- [X] T080 Acceptance test for the review page in `tests/acceptance/build-a-judge.spec.ts`
+- [ ] T081 **MANUAL (Matt)**: after the deploy, run the history loop again (the new sources add new steps), then open `/review`, search "superintelligence" with status "scored below 8", and decide with Claude whether to adjust the scoring guide (T068)
+

@@ -83,6 +83,20 @@ function storyColumns(userId: string) {
     EXISTS (SELECT 1 FROM saves sv WHERE sv.story_id = s.id AND sv.user_id = ${userId}) AS saved`;
 }
 
+// Stories scoring 8+, each with its rank among that day's 8+ stories (Central time): by score,
+// then by how many sources covered it, then newest. The feed shows ranks 1 to dailyCap().
+export function rankedInDay() {
+  return sql`
+    SELECT st.id, row_number() OVER (
+      PARTITION BY (st.published_at AT TIME ZONE ${FEED_TIME_ZONE})::date
+      ORDER BY st.ai_score DESC,
+        (SELECT count(*) FROM story_sources c WHERE c.story_id = st.id) DESC,
+        st.published_at DESC, st.id DESC
+    ) AS rank_in_day
+    FROM stories st
+    WHERE st.ai_score >= ${JUDGE_MIN_SCORE}`;
+}
+
 export async function listStories({ page = 1, userId }: { page?: number; userId?: string } = {}): Promise<{ stories: Story[]; hasMore: boolean }> {
   const offset = (Math.max(1, Math.floor(page)) - 1) * PAGE_SIZE;
   // With judging on: only stories scoring 8+, and at most dailyCap() per day, chosen by score,
@@ -90,18 +104,7 @@ export async function listStories({ page = 1, userId }: { page?: number; userId?
   const visible =
     judgeMode() === "off"
       ? sql`SELECT id FROM stories`
-      : sql`
-          SELECT id FROM (
-            SELECT st.id, row_number() OVER (
-              PARTITION BY (st.published_at AT TIME ZONE ${FEED_TIME_ZONE})::date
-              ORDER BY st.ai_score DESC,
-                (SELECT count(*) FROM story_sources c WHERE c.story_id = st.id) DESC,
-                st.published_at DESC, st.id DESC
-            ) AS rank_in_day
-            FROM stories st
-            WHERE st.ai_score >= ${JUDGE_MIN_SCORE}
-          ) ranked
-          WHERE rank_in_day <= ${dailyCap()}`;
+      : sql`SELECT id FROM (${rankedInDay()}) ranked WHERE rank_in_day <= ${dailyCap()}`;
   const rows = await sql<Row[]>`
     SELECT ${storyColumns(userId ?? "0")}
     FROM stories s

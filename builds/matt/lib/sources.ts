@@ -1,4 +1,4 @@
-// Build A's sources (REQ-001): 11 public feeds across 6 kinds. The list itself is in
+// Build A's sources (REQ-001): 21 public feeds across 7 kinds. The list itself is in
 // sources.json so the migration script can read it too.
 //
 // Feed check, 2026-11-13 (T013). Each URL was fetched and confirmed to return RSS or Atom with
@@ -32,6 +32,17 @@
 // outlets. Checked: each returns up to 100 recent articles from dozens of outlets. They are noisy
 // (e.g. "AGI" is also a stock ticker), so their items rely on the AI judge (lib/judge.ts).
 //
+// 2026-11-22: added the other frontier labs (Matt's request). Checked by hand:
+// - Anthropic has no feed of its own. Its News and Research feeds come from a community project
+//   on GitHub (Olshansk/rss-feeds) that rebuilds them from anthropic.com; both hold the full
+//   archive back to 2021. Risk: if that project stops updating, these sources go quiet (the fetch
+//   still works; the source's last success date shows it).
+// - Meta AI, xAI and Microsoft AI have no working feeds (404, or a stale community feed for Meta),
+//   so each is a Google News search of the lab's own site (e.g. "site:x.ai"). Plain "site:meta.com"
+//   returned product pages, so Meta's search covers ai.meta.com and about.fb.com only.
+// - Google DeepMind's own feed only reaches December 2025, so the history fill uses a search of
+//   deepmind.google and deepmind.com (its address before 2024) instead.
+//
 // When SOURCES=fixtures (tests only), the saved sample feeds in tests/fixtures/ are used instead.
 
 import realSources from "./sources.json";
@@ -45,8 +56,12 @@ export type Source = {
   name: string;
   kind: SourceKind;
   feedUrl: string;
-  // Test fixtures only: how the history fill reads this source (lib/history.ts).
+  // How the history fill reads this source's archive, when it can't tell from the address
+  // (lib/history.ts). "full-feed": the feed itself holds the whole archive.
   history?: "full-feed" | "paged-feed" | "substack" | "news-month" | "forum-month";
+  // A Google News search used only for the history fill, month by month, for a source whose own
+  // feed doesn't reach back far enough (Google DeepMind).
+  historySearch?: string;
 };
 
 export function getSources(): Source[] {

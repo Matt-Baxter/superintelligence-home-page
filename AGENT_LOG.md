@@ -24,6 +24,19 @@ Add a new entry at the top of the Entries section within a day of the session. C
 
 ## Entries
 
+### 2026-11-22 · Matt · Build: Matt / Claude Code
+
+**What the agent got wrong:** There has been a lot of confusion about what sources to use and
+they keep changing.
+
+**How I caught it:**
+
+**What I did about it:**
+
+**Related:** Build A source changes in commits `0f1ef7e` (arXiv narrowed), `6a084f7` (Google News
+searches), `8ba6b97` (history fill), and the 2026-11-22 lab sources commit (Anthropic, Meta, xAI,
+Microsoft AI, DeepMind history)
+
 ### 2026-11-06 · Matt · Build: Matt / Claude Code
 
 **What the agent got wrong:** The initial spec was about general AI news, but this website is

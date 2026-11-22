@@ -145,6 +145,10 @@ nothing outside that folder is deployed for Build A.
 - **History fill (2026-11-22):** reads each source's archive back to January 2023 through the same
   filter, judge and daily cap, in resumable steps (`/api/cron/history`).
   ([research §16](research.md#16-history-fill-back-to-2023-added-2026-11-22))
+- **More frontier labs and the judge review page (2026-11-22):** Anthropic, Meta AI, xAI and
+  Microsoft AI added, DeepMind history filled in; `/review` shows every story's score and why it
+  is or isn't on the feed.
+  ([research §17](research.md#17-more-frontier-labs-and-the-judge-review-page-added-2026-11-22))
 
 These are Build A choices. The shared spec is unchanged: REQ-003 already requires that only
 superintelligence stories appear, and the contract lets each build choose its own sources.
