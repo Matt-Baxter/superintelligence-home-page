@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic forum feed for the spec acceptance suite (test data). category = whether it is about superintelligence. -->
+<rss version="2.0"><channel><title>Sample alignment forum (test data)</title><link>https://example.org/forum</link><description>Test data.</description>
+<item><title>Sample post: Can a model recursively self-improve its own training code? (test data)</title><link>https://example.org/forum/rsi-training-code</link><category>about-superintelligence: yes</category><pubDate>Fri, 06 Nov 2026 09:00:00 GMT</pubDate><description>Synthetic discussion of recursive self-improvement when an agent edits the code that trains its successor.</description></item>
+<item><title>Sample post: Our community meetup photos (test data)</title><link>https://example.org/forum/meetup</link><category>about-superintelligence: no</category><pubDate>Fri, 06 Nov 2026 08:00:00 GMT</pubDate><description>Made-up photos from a social event.</description></item>
+<item><title>Sample thread mirrored from a social network about AGI (test data)</title><link>https://twitter.com/sample/status/1</link><category>about-superintelligence: twitter</category><pubDate>Fri, 06 Nov 2026 07:00:00 GMT</pubDate><description>Synthetic item whose link points at Twitter/X; it must never be shown.</description></item>
+</channel></rss>

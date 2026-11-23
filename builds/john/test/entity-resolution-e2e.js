@@ -1,0 +1,12 @@
+// REQ-004/005/007: real HTTP admission -> SQL identity -> analysis -> original hyperlink.
+// Run only against disposable fixture servers after the full suite seeds reader accounts.
+const {request}=require('playwright'),assert=require('node:assert/strict'),B=process.env.BASE||'http://localhost:3201';
+(async()=>{const api=await request.newContext({baseURL:B});let n=0;const check=(v,label)=>{assert.ok(v,label);n++;console.log('✓ '+label);};assert.ok((await api.post('/api/login',{data:{username:'matt',password:'correct-horse-9'}})).ok());
+const submit=async(url,title)=>{const r=await api.post('/api/stories',{data:{url,title,summary:'Sample AGI alignment and interpretability record (test data).'}});assert.equal(r.status(),200,await r.text());return (await r.json()).id;};
+const title='Sample: identical AGI alignment paper headline (test data)',a=await submit('https://arxiv.org/abs/2611.92001v1',title),b=await submit('https://arxiv.org/abs/2611.92002',title);check(a!==b,'same headline cannot join different authoritative paper IDs');
+const repeated=await submit('https://arxiv.org/pdf/2611.92001v2.pdf','Sample: another headline for the same AGI paper (test data)');check(repeated===a,'same paper version follows its authoritative ID');
+const story=async id=>(await (await api.get('/api/stories/'+id)).json()).story;
+for(const [id,key] of [[a,'2611.92001'],[b,'2611.92002']]){const s=await story(id);check(s.url==='https://arxiv.org/abs/'+key,'story hyperlink retains its canonical publication identity');check((s.analysis.why.find(w=>w.factor==='Coverage')?.points||0)===0,'reader URL variants do not inflate coverage');check(s.analysis.why.reduce((sum,w)=>sum+w.points,0)===s.significance,'analysis points still equal their explanation');}
+const d1=await submit('https://doi.org/10.5555/SAMPLE-AGI-A','Sample: DOI AGI safety evidence (test data)'),d2=await submit('https://dx.doi.org/10.5555/sample-agi-a','Sample: changed DOI AGI headline (test data)');check(d1===d2&&(await story(d1)).url==='https://doi.org/10.5555/sample-agi-a','DOI case variants preserve one story and canonical link');
+const guest=await request.newContext({baseURL:B});check((await guest.post('/api/stories',{data:{url:'https://example.test/sample',title}})).status()===401,'existing sign-in requirement is preserved');await guest.dispose();await api.dispose();console.log(`Entity resolution HTTP: ${n} passed, 0 failed.`);
+})().catch(e=>{console.error(e);process.exit(1)});

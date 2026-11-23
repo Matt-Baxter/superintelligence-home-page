@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic forecasting / research organisation feed (test data). -->
+<rss version="2.0"><channel><title>Sample forecasting org (test data)</title><link>https://example.org/forecast</link><description>Test data.</description>
+<item><title>Sample report: training compute for frontier models keeps doubling (test data)</title><link>https://example.org/forecast/compute-trend</link><category>about-superintelligence: yes</category><pubDate>Fri, 06 Nov 2026 11:00:00 GMT</pubDate><description>Synthetic analysis of scaling laws and frontier compute trends and what they imply for AGI timelines.</description></item>
+<item><title>Sample note: we're hiring a research assistant (test data)</title><link>https://example.org/forecast/hiring</link><category>about-superintelligence: no</category><pubDate>Fri, 06 Nov 2026 05:00:00 GMT</pubDate><description>A made-up job posting.</description></item>
+</channel></rss>

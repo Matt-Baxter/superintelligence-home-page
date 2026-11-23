@@ -1,0 +1,4 @@
+{
+ "about": "Proposed benchmark items for the Review desk: synthetic, labelled test data (no real papers, posts or people), each reproducing a misjudgement an unattended run found. Scored by npm run bench as an info metric that never fails the check. A person moves an item into review-set.json together with the rule change that fixes it.",
+ "items": []
+}

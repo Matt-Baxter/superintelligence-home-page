@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>View · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css"></head>
+<body>
+<main>
+  <div class="pagehead"><div><h1 id="title">View</h1><p class="muted" id="desc"></p></div></div>
+  <div id="view"></div>
+</main>
+<script src="/js/api.js"></script>
+<script src="/js/jr.js"></script>
+<script>
+requireUser().then(async () => {
+  const name = params.get("name");
+  if (!name) { const v = await api("/api/ui/views"); $("#title").textContent = "Views"; $("#view").innerHTML = `<ul>${v.views.map((x) => `<li><a href="/m/view?name=${encodeURIComponent(x.name)}">${esc(x.title)}</a> <span class="small muted">${esc(x.description || "")}</span></li>`).join("")}</ul>`; return; }
+  try {
+    const r = await api(`/api/ui/views/${encodeURIComponent(name)}${location.search.replace(/^\?/, "&").replace(/&?name=[^&]*/, "").replace(/^&/, "?")}`);
+    document.title = r.view.title + " · Superintelligence Homepage"; if (typeof setPageContext === "function") setPageContext(r.view.title); $("#title").textContent = r.view.title; $("#desc").textContent = r.view.description || "";
+    JR.render($("#view"), r.spec, jrHandlers());
+  } catch (e) { $("#view").innerHTML = `<p class="err">${esc(e.message)}</p>`; }
+});
+</script>
+</body></html>
