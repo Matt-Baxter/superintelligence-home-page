@@ -175,8 +175,10 @@ async function storyRows(where, args, uid, { sort = "top", limit = 40, offset = 
   const rows = await db.all(`SELECT s.*, (SELECT COUNT(*) FROM votes v WHERE v.story_id = s.id) AS votes,
       (SELECT COUNT(DISTINCT COALESCE(l.source_id, -l.id)) FROM story_links l WHERE l.story_id = s.id) AS nsources,
       ${personalFields},
-      COALESCE(s.published_at, s.first_seen) AS t
-    FROM stories s WHERE COALESCE(s.hidden, 0) = 0 AND COALESCE(s.in_scope, 0) = 1 AND (${where})${order ? ` ORDER BY ${order} LIMIT ? OFFSET ?` : ""}`, ...(uid ? [uid, uid, uid] : []), ...args, ...(order ? [pageLimit, pageOffset] : []));
+      COALESCE(s.published_at, s.first_seen) AS t,
+      asm.tier AS j_tier, asm.verdict AS j_verdict, asm.confidence AS j_confidence, asm.model AS j_model, asm.reason AS j_reason,
+      asm.trail AS j_trail, asm.checks AS j_checks, asm.rules_version AS j_rules, asm.created_at AS j_at
+    FROM stories s LEFT JOIN assessments asm ON asm.story_id = s.id WHERE COALESCE(s.hidden, 0) = 0 AND COALESCE(s.in_scope, 0) = 1 AND (${where})${order ? ` ORDER BY ${order} LIMIT ? OFFSET ?` : ""}`, ...(uid ? [uid, uid, uid] : []), ...args, ...(order ? [pageLimit, pageOffset] : []));
   const t0 = Date.now();
   rows.forEach((r) => {
     const time = parseTime(r.t), hours = Number.isFinite(time) ? Math.max(0, (t0 - time) / 36e5) : Infinity;
@@ -205,6 +207,18 @@ function shapeStory(r, links, papers = []) {
     sources: links.map((l) => ({ name: l.source || "Uncatalogued source", kind: l.kind || "submitted", url: l.url, title: l.title,
       ...(profile.has("rigor-badges") && l.rigor ? { rigor: (() => { try { return JSON.parse(l.rigor); } catch { return undefined; } })() } : {}) })),
     nsources: r.nsources, significance: r.significance || 0, analysis: JSON.parse(r.analysis || "{}"), papers,
+    judging: publicJudging(r),
+  };
+}
+// The assessment trail (lib/assess.js) is public: which tier decided, which model, and why. The raw-reply Blob path stays private.
+function publicJudging(r) {
+  if (!r.j_verdict) return null;
+  const parse = (v) => { try { const x = JSON.parse(v || "[]"); return Array.isArray(x) ? x : []; } catch { return []; } };
+  return {
+    verdict: r.j_verdict, tier: Number(r.j_tier) || 0, confidence: r.j_confidence == null ? null : Number(r.j_confidence),
+    model: r.j_model || null, reason: r.j_reason || "", rules_version: r.j_rules || null, judged_at: r.j_at || null,
+    trail: parse(r.j_trail).map((t) => ({ tier: t.tier, model: t.model || null, verdict: t.verdict || null, confidence: t.confidence ?? null, skipped: t.skipped ? String(t.skipped).split(":")[0] : null, disagrees: !!t.disagrees })),
+    checks: parse(r.j_checks).map((c) => ({ id: c.id, pass: !!c.pass, detail: c.detail || "" })),
   };
 }
 app.get("/api/stories", wrap(async (req) => {
@@ -224,7 +238,11 @@ app.get("/api/stories", wrap(async (req) => {
   if (req.query.checked === "1") w.push("s.id IN (SELECT story_id FROM assessments WHERE verdict = 'relevant')");
   // Live feed: only stories newer than the newest one the reader already has.
   if (Number(req.query.since) > 0) { w.push("s.id > ?"); a.push(Math.trunc(Number(req.query.since))); }
-  if (days) { w.push("COALESCE(s.published_at, s.first_seen) >= ?"); a.push(new Date(Date.now() - days * 864e5).toISOString()); }
+  // Timeline look-back: ?before=YYYY-MM-DD ends the window at that date, so ?days=7&before=… is any earlier week.
+  const beforeMs = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.before || "")) ? Date.parse(req.query.before + "T00:00:00Z") : NaN;
+  const end = Number.isFinite(beforeMs) && beforeMs < Date.now() ? beforeMs : Date.now();
+  if (end < Date.now()) { w.push("COALESCE(s.published_at, s.first_seen) < ?"); a.push(new Date(end).toISOString()); }
+  if (days) { w.push("COALESCE(s.published_at, s.first_seen) >= ?"); a.push(new Date(end - days * 864e5).toISOString()); }
   if (req.query.benchmark) { w.push("s.id IN (SELECT story_id FROM story_entities WHERE kind = 'benchmark' AND entity = ?)"); a.push(str(req.query.benchmark, 40)); }
   if (req.query.person) { w.push("s.id IN (SELECT story_id FROM story_entities WHERE kind = 'person' AND entity = ?)"); a.push(str(req.query.person, 60)); }
   // ?tag=topic:alignment,org:openai,benchmark:swe-bench,person:<id>: qualified ids (lib/ids.js), all must match.

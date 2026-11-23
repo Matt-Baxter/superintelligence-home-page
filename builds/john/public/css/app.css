@@ -388,6 +388,21 @@ code, .mono, pre { font-family: var(--mono); }
 .evidence-factors li small { grid-column: 1 / -1; } .evidence-factors b { font-variant-numeric: tabular-nums; }
 .evidence-factors meter { width: 100%; align-self: center; accent-color: var(--fg); }
 .applied-filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.time-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 10px 0; padding: 8px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.time-nav .btn:disabled { opacity: .45; cursor: not-allowed; }
+.time-range { font: 600 14px/1.2 var(--mono); min-width: 13ch; text-align: center; }
+.time-toggle { margin-left: auto; font-size: 14px; }
+@media (max-width: 520px) { .time-toggle { margin-left: 0; flex-basis: 100%; } }
+.day-head { list-style: none; padding: 18px 0 6px; border-bottom: 1px solid var(--line-strong); }
+.day-head h3 { margin: 0; font: 600 13px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.judged { font-size: 12px; padding: 1px 7px; border: 1px solid var(--line-strong); border-radius: var(--radius); white-space: nowrap; color: var(--fg); }
+.judged[data-verdict="irrelevant"], .judged[data-verdict="reject"] { border-style: dashed; color: var(--muted); }
+.judging { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.judging h4 { margin: 0 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.judge-verdict { margin: 0 0 6px; }
+.judge-reason { margin: 0 0 8px; font-family: var(--serif); font-size: 15px; line-height: 1.45; }
+.judge-trail { margin: 0 0 8px; padding-left: 20px; display: grid; gap: 3px; }
+.judging code { font: 12px var(--mono); }
 .filter-chip { font-size: 13px; min-height: 36px; padding: 6px 10px; max-width: 100%; overflow-wrap: anywhere; }
 #feed[aria-busy=true] { opacity: .65; }
 @media (prefers-reduced-motion: no-preference) {

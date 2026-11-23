@@ -65,6 +65,13 @@
     <div class="actions"><button class="btn primary" type="submit">Submit</button><button class="btn" type="button" id="sCancel">Cancel</button></div><!-- unslop-ok: submit form shows only when signed in; the sign-in form only when signed out -->
     <p class="err" id="sErr" role="alert"></p>
   </form>
+  <nav class="time-nav" id="timeNav" aria-label="Timeline">
+    <button class="btn" id="timeEarlier" type="button">← Earlier</button>
+    <span id="timeRange" class="time-range" aria-live="polite"></span>
+    <button class="btn" id="timeLater" type="button">Later →</button>
+    <button class="linkish" id="timeNow" type="button" hidden>Back to now</button>
+    <label class="check-filter time-toggle"><input type="checkbox" id="timelineView"> Timeline view</label>
+  </nav>
   <div id="appliedFilters" class="applied-filters" aria-label="Applied filters" hidden></div>
   <p id="laterPage" class="small muted" hidden>You’re viewing a later results page. <button class="linkish" id="showFirst" type="button">Show first results</button></p>
   <div class="feed-results"><p id="feedStatus" class="small muted" role="status" aria-live="polite">Loading stories…</p><button class="linkish" id="sortInfo" type="button" aria-expanded="false" aria-controls="sortHelp">Explain sort</button><button class="btn" id="clearFilters" type="button" hidden>Clear filters</button></div>
@@ -140,8 +147,28 @@ function showAccess(demo, access = {}) {
   }
   (demo?.accounts?.some((account) => account.role === params.get("demoRole")) ? $("#authBtn") : $("#username")).focus();
 }
-function state() { return { topic: params.get("topic") || "", org: params.get("org") || "", benchmark: params.get("benchmark") || "", person: params.get("person") || "", kind: $("#kind").value, days: $("#days").value, q: $("#q").value.trim(), saved: $("#savedOnly").checked ? "1" : "", checked: $("#checkedOnly").checked ? "1" : "", expand: params.get("expand") === "0" && $("#q").value.trim() ? "0" : "" }; }
-function activeFilters(s = state()) { return !!(s.topic || s.org || s.benchmark || s.person || s.kind || s.q || s.saved || s.checked || s.days !== "7" || sort !== "new"); }
+function state() { return { topic: params.get("topic") || "", org: params.get("org") || "", benchmark: params.get("benchmark") || "", person: params.get("person") || "", kind: $("#kind").value, days: $("#days").value, q: $("#q").value.trim(), saved: $("#savedOnly").checked ? "1" : "", checked: $("#checkedOnly").checked ? "1" : "", expand: params.get("expand") === "0" && $("#q").value.trim() ? "0" : "", before: /^\d{4}-\d{2}-\d{2}$/.test(params.get("before") || "") ? params.get("before") : "", view: $("#timelineView").checked ? "timeline" : "" }; }
+function activeFilters(s = state()) { return !!(s.topic || s.org || s.benchmark || s.person || s.kind || s.q || s.saved || s.checked || s.before || s.days !== "7" || sort !== "new"); }
+// Timeline: ?before=YYYY-MM-DD ends the window (exclusive); Earlier/Later step it by the window length.
+const DAY = 864e5, isoDay = (ms) => new Date(ms).toISOString().slice(0, 10);
+const fmtDay = (ms, year) => new Date(ms).toLocaleDateString("en-US", { month: "short", day: "numeric", ...(year ? { year: "numeric" } : {}), timeZone: "UTC" });
+function stepTime(dir) {
+  const s = state(), span = (Number(s.days) || 7) * DAY, end = s.before ? Date.parse(s.before + "T00:00:00Z") : Date.parse(isoDay(Date.now()) + "T00:00:00Z") + DAY;
+  const next = end + dir * span;
+  if (next > Date.now()) params.delete("before"); else params.set("before", isoDay(next));
+  if (!s.days) $("#days").value = "7";
+  refresh();
+}
+function renderTimeNav(s) {
+  const days = Number(s.days) || 0, endEx = s.before ? Date.parse(s.before + "T00:00:00Z") : null;
+  const last = endEx ? endEx - DAY : Date.now(), first = days ? (endEx ?? Date.now()) - days * DAY : null;
+  $("#timeRange").textContent = first == null ? (endEx ? `Everything before ${fmtDay(endEx, true)}` : "All time")
+    : days === 1 ? (endEx ? fmtDay(last, true) : "Last 24 hours") : `${fmtDay(first)} – ${endEx ? fmtDay(last, true) : "today"}`;
+  $("#timeLater").disabled = !s.before; $("#timeNow").hidden = !s.before;
+  $("#timeEarlier").textContent = `← Earlier ${days === 1 ? "day" : days === 30 ? "month" : "week"}`;
+  $("#timeLater").textContent = `Later ${days === 1 ? "day" : days === 30 ? "month" : "week"} →`;
+  $("#timelineView").title = sort === "new" ? "Group stories under the day they were published" : "Day headings appear with the Newest sort";
+}
 function updateAddress(replace = false) {
   const s = state(), next = new URLSearchParams();
   for (const [key, value] of Object.entries(s)) if (value || key === "days") next.set(key, value);
@@ -155,6 +182,7 @@ function setControlsFromAddress() {
   sort = SORTS.includes(params.get("sort")) ? params.get("sort") : "new";
   $("#kind").value = params.get("kind") || ""; $("#days").value = params.has("days") ? params.get("days") : (params.get("topic") || params.get("org") || params.get("benchmark") || params.get("person") ? "" : "7");
   $("#q").value = params.get("q") || ""; $("#savedOnly").checked = params.get("saved") === "1"; $("#checkedOnly").checked = params.get("checked") === "1";
+  $("#timelineView").checked = params.get("view") === "timeline";
   $$(".seg-btns button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.sort === sort)));
   header(); $("#clearFilters").hidden = !activeFilters();
 }
@@ -176,7 +204,16 @@ async function load(append = false) {
     if (!append) { showExpansion(s, expanded); $("#liveNew").hidden = true; newestId = stories.reduce((m, x) => Math.max(m, x.id), 0); }
     const feed = $("#feed"); if (!append) feed.replaceChildren(); else feed.querySelectorAll(".empty").forEach((el) => el.remove());
     const fragment = document.createDocumentFragment();
+    const grouped = s.view === "timeline" && sort === "new";
+    if (!append) lastDayHeading = "";
     for (const story of stories) {
+      const day = String(story.published_at || story.first_seen || "").slice(0, 10);
+      if (grouped && /^\d{4}-\d{2}-\d{2}$/.test(day) && day !== lastDayHeading) {
+        lastDayHeading = day; const head = document.createElement("li"); head.className = "day-head"; head.setAttribute("role", "presentation");
+        const ms = Date.parse(day + "T00:00:00Z"), today = isoDay(Date.now()), yesterday = isoDay(Date.now() - DAY);
+        head.innerHTML = `<h3><time datetime="${day}">${day === today ? "Today" : day === yesterday ? "Yesterday" : new Date(ms).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" })}</time></h3>`;
+        fragment.append(head);
+      }
       const returnURL = new URL(location.href); returnURL.searchParams.delete("offset"); if (start) returnURL.searchParams.set("offset", String(start)); returnURL.hash = `story-${story.id}`;
       fragment.append(storyCard(story, { returnTo: returnURL.pathname + returnURL.search + returnURL.hash, onChange: (updated, kind) => {
       if (kind === "save" && state().saved && !updated.saved) { const card = feed.querySelector(`[data-id="${updated.id}"]`); if (card) { card.remove(); offset = Math.max(0, offset - 1); if (!feed.querySelector(".story")) feed.innerHTML = $("#more").hidden ? emptyFeed(state()) : '<li class="empty">No saved stories on this page. Load more to keep reading.</li>'; } }
@@ -200,7 +237,7 @@ function header() {
   const bm = (ONT.benchmarks || []).find((x) => x.id === s.benchmark), pp = (ONT.people || []).find((x) => x.id === s.person);
   $("#feedTitle").textContent = bm ? `Benchmark: ${bm.label}` : pp ? `Mentions of ${pp.label}` : t ? t.label : o ? o.label : s.saved ? "Saved for later" : "The path to superintelligence";
   $("#filterSummary").textContent = [s.kind ? KIND[s.kind] : "All sources", $("#days").selectedOptions[0]?.textContent || "Any time", ...(s.saved ? ["Saved"] : [])].join(" · ");
-  renderAppliedFilters(s);
+  renderAppliedFilters(s); renderTimeNav(s);
   const descriptions = { new: "Newest uses publication time, or first-seen time when publication time is missing.", top: "Top combines votes, source coverage and configured signals, with older stories gradually weighted lower.", votes: "Most voted orders by the total vote count, then newer stories.", signal: "Significance uses the explained rule-based score. It is not a confidence estimate." };
   $("#sortHelp").textContent = `${descriptions[sort]} Time window: ${$("#days").selectedOptions[0]?.textContent || "Any time"}.`;
   for (const link of $$("#siteNav a")) if (new URL(link.href).pathname === "/") {
@@ -222,13 +259,13 @@ function header() {
   if (changed) requestAnimationFrame(() => { const bar = $("#topicbar"), active = bar.querySelector('[aria-current="true"]'); if (!active) return; const r = active.getBoundingClientRect(), bounds = bar.getBoundingClientRect(); bar.scrollLeft += r.left < bounds.left ? r.left - bounds.left : r.right > bounds.right ? r.right - bounds.right : 0; });
 }
 function renderAppliedFilters(s) {
-  const labels = { topic: ONT.topics.find((x) => x.id === s.topic)?.label || s.topic, org: ONT.orgs.find((x) => x.id === s.org)?.label || s.org, benchmark: ONT.benchmarks?.find((x) => x.id === s.benchmark)?.label || s.benchmark, person: ONT.people?.find((x) => x.id === s.person)?.label || s.person, kind: KIND[s.kind], q: s.q ? `Search: ${s.q}` : "", days: $("#days").selectedOptions[0]?.textContent, saved: "Saved stories", checked: "Assessed on topic" };
-  const items = activeFilters(s) ? Object.entries(s).filter(([key, value]) => value && key !== "expand").map(([key]) => `<button class="btn filter-chip" type="button" data-remove-filter="${key}" aria-label="Remove filter: ${esc(labels[key])}">${esc(labels[key])} <span aria-hidden="true">×</span></button>`) : [];
+  const labels = { topic: ONT.topics.find((x) => x.id === s.topic)?.label || s.topic, org: ONT.orgs.find((x) => x.id === s.org)?.label || s.org, benchmark: ONT.benchmarks?.find((x) => x.id === s.benchmark)?.label || s.benchmark, person: ONT.people?.find((x) => x.id === s.person)?.label || s.person, kind: KIND[s.kind], q: s.q ? `Search: ${s.q}` : "", days: $("#days").selectedOptions[0]?.textContent, saved: "Saved stories", checked: "Assessed on topic", before: s.before ? `Before ${fmtDay(Date.parse(s.before + "T00:00:00Z"), true)}` : "" };
+  const items = activeFilters(s) ? Object.entries(s).filter(([key, value]) => value && key !== "expand" && key !== "view").map(([key]) => `<button class="btn filter-chip" type="button" data-remove-filter="${key}" aria-label="Remove filter: ${esc(labels[key])}">${esc(labels[key])} <span aria-hidden="true">×</span></button>`) : [];
   if (sort !== "new") items.push('<button class="btn filter-chip" type="button" data-remove-filter="sort" aria-label="Remove sort filter">Sort: ' + esc($(".seg-btns [aria-pressed=true]").textContent) + ' ×</button>');
   $("#appliedFilters").innerHTML = items.join(""); $("#appliedFilters").hidden = !items.length;
 }
 function removeFilter(key) {
-  if (["topic", "org", "benchmark", "person"].includes(key)) params.delete(key);
+  if (["topic", "org", "benchmark", "person", "before"].includes(key)) params.delete(key);
   else if (key === "q") { $("#q").value = ""; params.delete("expand"); }
   else if (key === "saved") $("#savedOnly").checked = false;
   else if (key === "checked") $("#checkedOnly").checked = false;
@@ -240,7 +277,10 @@ $("#feedView").addEventListener("click", (e) => { const remove = e.target.closes
 function refresh(replace = false) { restoreOffset = 0; clearTimeout(tmr); header(); updateAddress(replace); load(); }
 $$(".seg-btns button").forEach((b) => b.onclick = () => { sort = b.dataset.sort; $$(".seg-btns button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); refresh(); });
 let tmr; $("#q").oninput = () => { clearTimeout(tmr); $("#more").hidden = true; feedController?.abort(); ++feedRequest; tmr = setTimeout(() => refresh(true), 250); };
-["#kind", "#days", "#savedOnly", "#checkedOnly"].forEach((id) => $(id).onchange = () => refresh());
+["#kind", "#days", "#savedOnly", "#checkedOnly", "#timelineView"].forEach((id) => $(id).onchange = () => refresh());
+let lastDayHeading = "";
+$("#timeEarlier").onclick = () => stepTime(-1); $("#timeLater").onclick = () => stepTime(1);
+$("#timeNow").onclick = () => { params.delete("before"); refresh(); };
 // Search expansion: say which ontology topics widened the search, with a one-click way back to exact words.
 function showExpansion(s, expanded) {
   const note = $("#expandNote");
@@ -253,7 +293,7 @@ $("#expandNote").addEventListener("click", (e) => { const b = e.target.closest("
 // a button offers the new ones instead. Paused while the tab is hidden.
 let newestId = 0;
 async function pollNew() {
-  if (document.hidden || !newestId || sort !== "new" || offset > 40) return;
+  if (document.hidden || !newestId || sort !== "new" || offset > 40 || state().before) return;
   try {
     const { stories = [] } = await api("/api/stories?" + new URLSearchParams({ ...state(), sort, since: newestId }));
     const n = stories.length; if (!n) return;
@@ -265,7 +305,7 @@ $("#liveNew").onclick = () => { $("#liveNew").hidden = true; refresh(); $("#feed
 $("#sortInfo").onclick = () => { const open = $("#sortInfo").getAttribute("aria-expanded") !== "true"; $("#sortInfo").setAttribute("aria-expanded", String(open)); $("#sortHelp").hidden = !open; };
 $("#feedView").addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#sortHelp").hidden) { $("#sortHelp").hidden = true; $("#sortInfo").setAttribute("aria-expanded", "false"); $("#sortInfo").focus(); } });
 $("#more").onclick = () => load(true); $("#retryFeed").onclick = () => load(failedAppend);
-function resetFilters() { for (const key of [...params.keys()]) params.delete(key); sort = "new"; $("#kind").value = ""; $("#days").value = "7"; $("#q").value = ""; $("#savedOnly").checked = false; $("#checkedOnly").checked = false; $$(".seg-btns button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.sort === sort))); refresh(); }
+function resetFilters() { for (const key of [...params.keys()]) params.delete(key); sort = "new"; $("#kind").value = ""; $("#days").value = "7"; $("#q").value = ""; $("#savedOnly").checked = false; $("#checkedOnly").checked = false; $("#timelineView").checked = false; $$(".seg-btns button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.sort === sort))); refresh(); }
 $("#showFirst").onclick = () => refresh();
 $("#clearFilters").onclick = resetFilters;
 $("#feed").addEventListener("click", (e) => { if (e.target.closest("[data-reset-filters]")) resetFilters(); });

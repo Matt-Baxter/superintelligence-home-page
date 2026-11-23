@@ -178,9 +178,24 @@ function scoreBlock(c, opts = {}) {
     ${c.salt.length ? `<p class="salt small"><b>Grain of salt:</b> ${c.salt.map(esc).join(" ")}</p>` : ""}
   </div>`;
 }
+// Public judging trail from the assessment layer (lib/assess.js): rule checks first, models only when rules are unsure.
+const VERDICT = { relevant: "On topic", irrelevant: "Off topic", reject: "Rejected", unsure: "Undecided" };
+const TIER = ["Rule checks", "Fast model", "Larger model"];
+const pct = (c) => c == null ? "" : `${Math.round(Number(c) * 100)}% confident`;
+function judgingBlock(j) {
+  if (!j) return `<div class="judging"><h4>How it was judged</h4><p class="small muted">Not assessed yet. The assessment layer runs in batches and this story is waiting its turn. Until then it is shown because its source and topic terms put it in scope.</p></div>`;
+  const step = (t) => `<li><b>${esc(TIER[t.tier] || `Tier ${t.tier}`)}</b>${t.model ? ` <code>${esc(t.model)}</code>` : ""}: ${t.skipped ? `skipped (${esc(t.skipped)})` : `${esc(VERDICT[t.verdict] || t.verdict || "no answer")}${t.confidence != null ? `, ${pct(t.confidence)}` : ""}${t.disagrees ? ". Disagreed with the rule checks, so it escalated" : ""}`}</li>`;
+  const checks = (j.checks || []).map((c) => `<li class="check ${c.pass ? "pass" : "fail"}"><span class="mark">${c.pass ? "Pass" : "Fail"}</span><b>${esc(String(c.id).replace(/_/g, " "))}</b><span class="muted">${esc(c.detail)}</span></li>`).join("");
+  return `<div class="judging"><h4>How it was judged</h4>
+    <p class="judge-verdict" data-verdict="${esc(j.verdict)}"><b>${esc(VERDICT[j.verdict] || j.verdict)}</b> · decided by ${esc(TIER[j.tier] || `tier ${j.tier}`)}${j.model ? ` (<code>${esc(j.model)}</code>)` : ""}${j.confidence != null ? ` · ${pct(j.confidence)}` : ""}</p>
+    ${j.reason ? `<p class="judge-reason small"><span class="muted">Reasoning:</span> “${esc(j.reason)}”</p>` : ""}
+    ${j.trail?.length ? `<ol class="judge-trail small" aria-label="Judging steps">${j.trail.map(step).join("")}</ol>` : ""}
+    ${checks ? `<ul class="checks">${checks}</ul>` : ""}
+    <p class="small muted">Rules ${esc(j.rules_version || "?")}${j.judged_at ? ` · judged ${esc(ago(j.judged_at))}` : ""}. Models answer only inside the topic ontology; raw replies are archived for audit.</p></div>`;
+}
 function evidenceBreakdown(s) {
   const factors = s.analysis?.why || [];
-  return scoreBlock(s.card) + `<p class="small muted">Rule-based significance: a reading aid, not confidence or scientific validity.</p>${factors.length ? `<ul class="evidence-factors">${factors.map((f) => `<li><span>${esc(f.factor)} <b>+${esc(f.points)}</b></span><meter min="0" max="100" value="${Math.max(0, Math.min(100, Number(f.points) || 0))}" aria-label="${esc(f.factor)}: ${esc(f.points)} points out of 100">${esc(f.points)} points</meter><small class="muted">${esc(f.detail || "")}</small></li>`).join("")}</ul>` : '<p class="small">No factor breakdown is available for this story.</p>'}`;
+  return judgingBlock(s.judging) + scoreBlock(s.card) + `<p class="small muted">Rule-based significance: a reading aid, not confidence or scientific validity.</p>${factors.length ? `<ul class="evidence-factors">${factors.map((f) => `<li><span>${esc(f.factor)} <b>+${esc(f.points)}</b></span><meter min="0" max="100" value="${Math.max(0, Math.min(100, Number(f.points) || 0))}" aria-label="${esc(f.factor)}: ${esc(f.points)} points out of 100">${esc(f.points)} points</meter><small class="muted">${esc(f.detail || "")}</small></li>`).join("")}</ul>` : '<p class="small">No factor breakdown is available for this story.</p>'}`;
 }
 const paperLabel = (key) => key.startsWith("arxiv:") ? `arXiv ${key.slice(6)}` : `DOI ${key.slice(4, 30)}${key.length > 30 ? "…" : ""}`;
 // Original papers a blog or newsletter post cites. One already in the feed opens its story; others open the paper.
@@ -206,8 +221,8 @@ function storyCard(s, opts = {}) {
   const bench = (an.benchmarks || []).slice(0, 3).map((b) => `<a class="tag bench" href="/?benchmark=${esc(b.id)}" title="Benchmark${b.score ? `: reported ${esc(b.score.raw)}` : ""}">${esc(b.label)}${b.score ? ` <b>${esc(fmtScore(b.score))}</b>` : ""}</a>`).join("");
   li.innerHTML = `<button class="vote ${s.voted ? "on" : ""}" type="button" aria-pressed="${s.voted}" aria-label="Upvote"><span aria-hidden="true">▲</span><b>${s.votes}</b></button>
     <div class="body"><a class="title" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.title)}</a>
-    <div class="meta">${sigBadge}${rigorBadge}${an.type ? `<span class="utype">${esc(an.type.label)}</span>` : ""}<span>${esc(s.sources[0]?.name || "")}${s.nsources > 1 ? ` <span class="multi">+ ${s.nsources - 1} more source${s.nsources > 2 ? "s" : ""}</span>` : ""}</span><span>${kinds.map(esc).join(" · ")}</span>${storyDate(s)}</div>
-    <section class="evidence-panel" id="${evidenceId}" aria-label="Significance explanation" hidden></section>
+    <div class="meta">${sigBadge}${rigorBadge}${s.judging ? `<span class="judged" data-verdict="${esc(s.judging.verdict)}" title="Assessment: ${esc(VERDICT[s.judging.verdict] || s.judging.verdict)} by ${esc(TIER[s.judging.tier] || "tier " + s.judging.tier)}${s.judging.reason ? ". " + esc(s.judging.reason) : ""}. Select the score to see the full trail.">${esc(VERDICT[s.judging.verdict] || s.judging.verdict)} · ${s.judging.tier ? "model" : "rules"}</span>` : ""}${an.type ? `<span class="utype">${esc(an.type.label)}</span>` : ""}<span>${esc(s.sources[0]?.name || "")}${s.nsources > 1 ? ` <span class="multi">+ ${s.nsources - 1} more source${s.nsources > 2 ? "s" : ""}</span>` : ""}</span><span>${kinds.map(esc).join(" · ")}</span>${storyDate(s)}</div>
+    <section class="evidence-panel" id="${evidenceId}" aria-label="Judging and significance explanation" hidden></section>
     ${s.summary && !opts.compact ? `<p class="sum">${esc(s.summary.slice(0, 260))}${s.summary.length > 260 ? "…" : ""}</p>` : ""}
     ${papersRow(s)}
     ${opts.listNote ? `<p class="listnote">“${esc(opts.listNote)}”</p>` : ""}

@@ -12,6 +12,10 @@
         <p class="small muted">Grounded comes from rule checks that run on every story. Buzz comes from votes and public notes, weighted by how active each person is. The two are kept apart.</p>
         <div id="scorecard"></div>
       </section>
+      <section aria-labelledby="judgeHeading">
+        <h2 id="judgeHeading">Judging and reasoning</h2>
+        <div id="judging"></div>
+      </section>
       <section aria-labelledby="scoreHeading">
         <h2 id="scoreHeading">Significance and evidence</h2>
         <div id="analysis"></div>
@@ -51,6 +55,7 @@ async function load() {
   $("#card").innerHTML = ""; $("#card").append(storyCard(s, { detail: true }));
   $("#backToResults").href = localReturnPath(params.get("from"));
   $("#scorecard").innerHTML = scoreBlock(s.card);
+  $("#judging").innerHTML = judgingBlock(s.judging).replace("<h4>How it was judged</h4>", "");
   $("#why").innerHTML = (s.topics.length ? s.topics.map((t) => `<p><a class="tag" href="/?topic=${t.id}">${esc(t.label)}</a> ${t.via ? `<span class="small muted">because it's tagged ${esc(s.topics.find((x) => x.id === t.via)?.label || t.via)}</span>` : `<span class="small muted">matched “${t.matched.map(esc).join("”, “")}”</span>`}</p>`).join("") : `<p class="muted">No topic in the ontology matched this story's title or summary.</p>`)
     + (s.orgs.length ? `<p class="small muted">Organizations: ${s.orgs.map((o) => `${esc(o.label)} (“${o.matched.map(esc).join("”, “")}”)`).join(", ")}</p>` : "");
   const an = s.analysis || {};
