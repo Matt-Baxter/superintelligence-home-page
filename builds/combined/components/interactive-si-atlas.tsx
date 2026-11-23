@@ -347,15 +347,17 @@ export function InteractiveSiAtlas({
   };
   const activePt = stagePoint(activePillarIdx);
 
+  const activeLevelMeta = LEVEL_META.find((l) => l.id === level) ?? LEVEL_META[0];
+
   return (
     <section className="atlas-plate" aria-labelledby="atlas-figure-title">
       {/* Top Figure Masthead */}
       <div className="atlas-plate-header">
         <div className="atlas-plate-title-group">
           <div className="atlas-kicker-row">
-            <span className="mono-kicker brass-dot">FIGURE 01 · INTERACTIVE RESEARCH PRIMER</span>
+            <span className="figure-index-label">Figure 1</span>
             <span className="atlas-divider-dot" aria-hidden="true">·</span>
-            <span className="mono-kicker muted">EXPLAINED AT THREE INSTITUTIONAL LEVELS</span>
+            <span className="editorial-section-meta">Interactive Research Primer</span>
           </div>
           <h2 id="atlas-figure-title" className="atlas-heading">
             The Architecture of Bounded Superintelligence
@@ -371,7 +373,7 @@ export function InteractiveSiAtlas({
               className={`seg-btn${mode === "atlas" ? " is-active" : ""}`}
               onClick={() => setMode("atlas")}
             >
-              6-Pillar Interactive Atlas
+              Six-Pillar Atlas
             </button>
             <button
               type="button"
@@ -380,18 +382,18 @@ export function InteractiveSiAtlas({
               className={`seg-btn${mode === "emblem" ? " is-active" : ""}`}
               onClick={() => setMode("emblem")}
             >
-              Brand Mark
+              Colophon
             </button>
           </div>
 
           <button
             type="button"
-            className="btn-secondary btn-small"
+            className="btn-ghost btn-small"
             onClick={() => setCollapsed(true)}
             aria-expanded="true"
             title="Collapse primer to jump straight to feed"
           >
-            Minimize
+            Hide figure
           </button>
         </div>
       </div>
@@ -400,31 +402,33 @@ export function InteractiveSiAtlas({
         <InteractiveEmblemPlate />
       ) : (
         <>
-          {/* Reading Altitude Selector */}
+          {/* Compact Inline Reading Depth Strip (replaces nested 3-card row) */}
           <div className="altitude-bar" role="radiogroup" aria-label="Explanation depth level">
-            <span className="altitude-label">Explanation Lens:</span>
-            <div className="altitude-options">
-              {LEVEL_META.map((item) => {
-                const active = level === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={active}
-                    className={`altitude-card${active ? " is-active" : ""}`}
-                    onClick={() => setLevel(item.id)}
-                  >
-                    <span className="altitude-badge">{item.badge}</span>
-                    <span className="altitude-name">{item.label}</span>
-                    <span className="altitude-desc">{item.desc}</span>
-                  </button>
-                );
-              })}
+            <div className="altitude-tabs-group">
+              <span className="altitude-label">Reading lens</span>
+              <div className="altitude-inline-tabs">
+                {LEVEL_META.map((item) => {
+                  const active = level === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      className={`altitude-tab${active ? " is-active" : ""}`}
+                      onClick={() => setLevel(item.id)}
+                    >
+                      <span className="altitude-tab-idx">{item.badge.replace("Level ", "")}</span>
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+            <span className="altitude-active-desc">{activeLevelMeta.desc}</span>
           </div>
 
-          {/* 6-Pillar Interactive Selector Rail */}
+          {/* Flush 6-Column Hairline Pillar Ledger */}
           <div className="pillar-rail" role="tablist" aria-label="Six pillars of superintelligence">
             {PILLARS.map((p, idx) => {
               const isSelected = idx === activePillarIdx;
@@ -438,20 +442,22 @@ export function InteractiveSiAtlas({
                   className={`pillar-step${isSelected ? " is-active" : ""}`}
                   onClick={() => setActivePillarIdx(idx)}
                 >
-                  <span className="pillar-num">{p.index}</span>
+                  <span className="pillar-top-meta">
+                    <span className="pillar-num">{p.index}</span>
+                    <span className="pillar-count">{cnt}</span>
+                  </span>
                   <span className="pillar-name">{p.shortTitle}</span>
-                  <span className="pillar-count">{cnt} papers</span>
                 </button>
               );
             })}
           </div>
 
-          {/* Split Anthropic-Style Figure + Annotated Explanation */}
+          {/* Flush Hairline-Divided Figure + Annotated Reading Column */}
           <div className="atlas-body-grid">
             {/* Left: Interactive SVG Phase Curve + Horizon Scrubber */}
             <div className="atlas-figure-box">
               <div className="figure-box-top">
-                <span className="mono-kicker">PHASE DIAGRAM · CAPABILITY C(t) VS. VERIFIABLE OVERSIGHT V(t)</span>
+                <span className="figure-caption-lead">Phase trajectory · Capability C(t) vs. verifiable oversight V(t)</span>
                 <span className="figure-metric-tag">{pillar.keyMetric}</span>
               </div>
 
@@ -612,32 +618,36 @@ export function InteractiveSiAtlas({
               </div>
             </div>
 
-            {/* Right: 3-Level Annotated Manuscript Card */}
+            {/* Right: 3-Level Annotated Manuscript Column */}
             <div className="atlas-reading-card">
-              <div className="reading-card-kicker">
-                <span className="pillar-badge-pill">Pillar {pillar.index} · {pillar.title}</span>
-                <span className="mono-kicker muted">
-                  {LEVEL_META.find((l) => l.id === level)?.badge} — {LEVEL_META.find((l) => l.id === level)?.label}
-                </span>
-              </div>
+              <div>
+                <div className="reading-card-kicker">
+                  <span className="pillar-kicker-line">
+                    <span className="mono">{pillar.index}</span> · {pillar.title}
+                  </span>
+                  <span className="editorial-section-meta">
+                    {activeLevelMeta.badge} · {activeLevelMeta.label}
+                  </span>
+                </div>
 
-              <h3 className="reading-card-headline">{content.headline}</h3>
-              <p className="reading-card-body">{content.explanation}</p>
+                <h3 className="reading-card-headline">{content.headline}</h3>
+                <p className="reading-card-body">{content.explanation}</p>
 
-              <div className="reading-callout">
-                <span className="mono-kicker">
-                  {level === "intuitive"
-                    ? "MENTAL MODEL & INTUITION"
-                    : level === "technical"
-                      ? "EMPIRICAL MECHANISM & BENCHMARKS"
-                      : "INSTITUTIONAL & AUDIT INVARIANT"}
-                </span>
-                <p>{content.exampleOrMechanism}</p>
-              </div>
+                <div className="reading-callout">
+                  <span className="reading-note-label">
+                    {level === "intuitive"
+                      ? "Intuition & mental model"
+                      : level === "technical"
+                        ? "Empirical mechanism & benchmarks"
+                        : "Institutional & audit invariant"}
+                  </span>
+                  <p>{content.exampleOrMechanism}</p>
+                </div>
 
-              <div className="reading-question-row">
-                <span className="mono-kicker">OPEN FRONTIER QUESTION</span>
-                <p>{content.openQuestion}</p>
+                <div className="reading-question-row">
+                  <span className="reading-note-label">Open frontier question</span>
+                  <p className="reading-question-copy">{content.openQuestion}</p>
+                </div>
               </div>
 
               <div className="reading-card-footer">

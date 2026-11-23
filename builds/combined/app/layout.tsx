@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono, Newsreader } from "next/font/google";
+import { Geist, Geist_Mono, Newsreader } from "next/font/google";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
@@ -7,9 +7,14 @@ import { normalizeTheme, THEME_SPECS } from "@/lib/theme";
 import { getCurrentUser } from "@/lib/auth";
 import "./globals.css";
 
-const display = Newsreader({ subsets: ["latin"], weight: ["300", "400"], variable: "--font-display" });
-const sans = Inter({ subsets: ["latin"], variable: "--font-sans" });
-const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono" });
+const display = Newsreader({
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  axes: ["opsz"],
+  variable: "--font-display",
+});
+const sans = Geist({ subsets: ["latin"], variable: "--font-sans" });
+const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
   title: {

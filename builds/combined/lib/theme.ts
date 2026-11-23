@@ -100,25 +100,25 @@ export const EMBLEM_LAYERS: readonly EmblemLayerSpec[] = [
   {
     id: "containment-ring",
     index: "01",
-    name: "Containment Ring",
-    geometry: "Unbroken circular boundary (r = 9.5)",
+    name: "Containment Seal",
+    geometry: "Lamé superellipse boundary (n = 3.6)",
     meaning:
-      "Institutional governance, reproducible verification, and constitutional safety bounds enclosing every advance.",
+      "Institutional governance, reproducible auditability, and constitutional safety bounds enclosing the entire intelligence phase space.",
   },
   {
     id: "alignment-horizon",
     index: "02",
-    name: "Verification Frame",
-    geometry: "Inscribed 45° Euclidean diamond",
+    name: "Bounded Asymptote",
+    geometry: "Horizontal ceiling & logistic S-trajectory",
     meaning:
-      "Four-axis empirical audit—capability, alignment, rigor, and multi-source corroboration—anchoring claims inside the outer ring.",
+      "Capability growth rising along an S-curve and converging cleanly beneath a verified alignment and oversight ceiling.",
   },
   {
     id: "zenith-point",
     index: "03",
-    name: "Aligned Core",
-    geometry: "Centered brass focal point (r = 2.05)",
+    name: "Equilibrium Beacon",
+    geometry: "Burnished brass horizon node (23.4, 10.5)",
     meaning:
-      "Frontier intelligence held in symmetrical equilibrium at the center of verification and governance.",
+      "Frontier intelligence held in stable, inspectable equilibrium along the bounded verification horizon.",
   },
 ];

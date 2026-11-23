@@ -46,9 +46,9 @@ export default async function HomePage({
       <div className="feed-banner">
         <div className="feed-banner-copy">
           <div className="banner-eyebrow-row">
-            <span className="mono-kicker brass-dot">OPEN RESEARCH OBSERVATORY · 2015–PRESENT</span>
-            <span className="atlas-divider-dot" aria-hidden="true">·</span>
-            <span className="mono-kicker muted">DETERMINISTIC ONTOLOGY &amp; RIGOR VERIFICATION</span>
+            <span className="editorial-section-tag">Open Research Observatory</span>
+            <span className="atlas-divider-dot" aria-hidden="true">/</span>
+            <span className="editorial-section-meta">2015–Present · Reproducible Ontology &amp; Rigor Audit</span>
           </div>
           <h1 className="feed-heading">
             {activeTopicLabel
@@ -64,19 +64,19 @@ export default async function HomePage({
 
         <dl className="masthead-telemetry" aria-label="Live corpus telemetry">
           <div className="telemetry-cell">
-            <dt>Public Feeds</dt>
+            <dt>Public feeds</dt>
             <dd>{activeSourceCount}</dd>
           </div>
           <div className="telemetry-cell">
-            <dt>Source Classes</dt>
+            <dt>Source classes</dt>
             <dd>{activeKindCount}</dd>
           </div>
           <div className="telemetry-cell">
-            <dt>In-Scope Corpus</dt>
+            <dt>In-scope corpus</dt>
             <dd>{totalMatching}</dd>
           </div>
           <div className="telemetry-cell">
-            <dt>Social Noise</dt>
+            <dt>Social noise</dt>
             <dd>0</dd>
           </div>
         </dl>

@@ -4,14 +4,14 @@ import { useState } from "react";
 import { EMBLEM_LAYERS } from "@/lib/theme";
 
 /**
- * Symmetrical 3-primitive Euclidean Bounded Intelligence Mark:
- * 01. Containment Ring — outer circular governance boundary
- * 02. Verification Frame — inscribed 45° four-axis diamond ("squaring the circle")
- * 03. Aligned Core — poised central brass focal point
- * Purely consumes slotted CSS tokens (`currentColor` -> `--text` / `--aui-ink`, `var(--brass)` -> `--aui-accent`).
+ * The Bounded Asymptote Colophon (`viewBox="0 0 32 32"`):
+ * 01. Containment Seal (`containment-ring`) — Lamé superellipse architectural frame
+ * 02. Bounded Asymptote (`alignment-horizon`) — horizontal verification ceiling + logistic S-curve converging cleanly beneath it
+ * 03. Equilibrium Beacon (`zenith-point`) — burnished brass focal node anchoring the horizon datum
+ * Consumes exclusively slotted CSS tokens (`currentColor` -> `--text` / `--aui-ink`, `var(--brass)` -> `--aui-accent`).
  */
 export function BrandEmblem({
-  size = 26,
+  size = 24,
   activeLayer = null,
   className = "",
 }: {
@@ -22,43 +22,60 @@ export function BrandEmblem({
   const layerClass = (id: string) =>
     `emblem-layer-group${activeLayer && activeLayer !== id ? " is-dimmed" : ""}`;
   const highlight = (id: string) => activeLayer === id;
-  const ringStroke = size <= 28 ? 1.75 : 1.55;
-  const frameStroke = size <= 28 ? 1.5 : 1.35;
+
+  const isCompact = size <= 28;
+  const frameWeight = isCompact ? 1.95 : 1.6;
+  const curveWeight = isCompact ? 2.05 : 1.75;
+  const datumWeight = isCompact ? 1.4 : 1.2;
 
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 24 24"
+      viewBox="0 0 32 32"
       fill="none"
       aria-hidden="true"
       focusable="false"
       className={`brand-emblem-svg ${className}`.trim()}
     >
+      {/* 01 · Lamé Superellipse Containment Seal */}
       <g className={layerClass("containment-ring")}>
-        <circle
-          cx="12"
-          cy="12"
-          r="9.5"
+        <path
+          d="M16 3C24.8 3 29 7.2 29 16C29 24.8 24.8 29 16 29C7.2 29 3 24.8 3 16C3 7.2 7.2 3 16 3Z"
           stroke={highlight("containment-ring") ? "var(--brass)" : "currentColor"}
-          strokeWidth={highlight("containment-ring") ? ringStroke + 0.3 : ringStroke}
+          strokeWidth={highlight("containment-ring") ? frameWeight + 0.35 : frameWeight}
         />
       </g>
 
+      {/* 02 · Bounded Horizon Ceiling + Logistic S-Trajectory + Phase Baseline */}
       <g className={layerClass("alignment-horizon")}>
         <path
-          d="M 12 5 L 19 12 L 12 19 L 5 12 Z"
+          d="M8.2 22.4H24.2"
           stroke={highlight("alignment-horizon") ? "var(--brass)" : "currentColor"}
-          strokeWidth={highlight("alignment-horizon") ? frameStroke + 0.3 : frameStroke}
-          strokeLinejoin="round"
+          strokeOpacity={highlight("alignment-horizon") ? 0.65 : 0.28}
+          strokeWidth={datumWeight}
+          strokeLinecap="round"
+        />
+        <path
+          d="M8.2 10.5H19.4"
+          stroke={highlight("alignment-horizon") ? "var(--brass)" : "currentColor"}
+          strokeWidth={highlight("alignment-horizon") ? curveWeight + 0.3 : curveWeight}
+          strokeLinecap="round"
+        />
+        <path
+          d="M8.2 22.4C13.8 22.4 14.8 14.8 24.2 14.8"
+          stroke={highlight("alignment-horizon") ? "var(--brass)" : "currentColor"}
+          strokeWidth={highlight("alignment-horizon") ? curveWeight + 0.3 : curveWeight}
+          strokeLinecap="round"
         />
       </g>
 
+      {/* 03 · Burnished Brass Equilibrium Beacon on the Horizon */}
       <g className={layerClass("zenith-point")}>
         <circle
-          cx="12"
-          cy="12"
-          r={highlight("zenith-point") ? 2.4 : 2.05}
+          cx="23.2"
+          cy="10.5"
+          r={highlight("zenith-point") ? 2.55 : isCompact ? 2.2 : 2.05}
           fill="var(--brass)"
         />
       </g>
@@ -67,7 +84,8 @@ export function BrandEmblem({
 }
 
 /**
- * Interactive Brand Mark Plate — isolates each of the 3 Euclidean primitives.
+ * Architectural Colophon Specimen — demonstrates optical scaling from 16px seal to 116px plate
+ * and isolates each of the 3 structural layers without nested card clutter.
  */
 export function EmblemAnatomyExplorer() {
   const [activeLayer, setActiveLayer] = useState<string | null>(null);
@@ -75,11 +93,27 @@ export function EmblemAnatomyExplorer() {
   return (
     <div className="emblem-anatomy-grid">
       <div className="emblem-stage" onMouseLeave={() => setActiveLayer(null)}>
-        <div className="emblem-medallion">
-          <BrandEmblem size={132} activeLayer={activeLayer} />
+        <div className="emblem-drafting-frame">
+          <BrandEmblem size={112} activeLayer={activeLayer} />
         </div>
+
+        <div className="emblem-scale-row" aria-label="Optical scale specimens">
+          <span className="emblem-scale-item">
+            <BrandEmblem size={16} activeLayer={activeLayer} />
+            <span className="mono">16px</span>
+          </span>
+          <span className="emblem-scale-item">
+            <BrandEmblem size={24} activeLayer={activeLayer} />
+            <span className="mono">24px</span>
+          </span>
+          <span className="emblem-scale-item">
+            <BrandEmblem size={36} activeLayer={activeLayer} />
+            <span className="mono">36px</span>
+          </span>
+        </div>
+
         <p className="emblem-stage-caption">
-          Three-primitive Euclidean mark · Hover or select a layer to isolate
+          Optical colophon · Select a structural layer to inspect its geometry
         </p>
       </div>
 
@@ -94,11 +128,11 @@ export function EmblemAnatomyExplorer() {
               className={`emblem-layer-card${isSelected ? " active" : ""}`}
               onMouseEnter={() => setActiveLayer(layer.id)}
               onFocus={() => setActiveLayer(layer.id)}
-              onClick={() => setActiveLayer((prev) => (prev) === layer.id ? null : layer.id)}
+              onClick={() => setActiveLayer((prev) => (prev === layer.id ? null : layer.id))}
               aria-pressed={isSelected}
             >
               <div className="emblem-layer-head">
-                <span className="mono-kicker">{layer.index}</span>
+                <span className="emblem-layer-idx">{layer.index}</span>
                 <span className="emblem-layer-geom">{layer.geometry}</span>
               </div>
               <div className="emblem-layer-title">{layer.name}</div>

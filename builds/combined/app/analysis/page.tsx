@@ -91,9 +91,9 @@ export default async function AnalysisLabPage({
       <div className="feed-banner">
         <div className="feed-banner-copy">
           <div className="banner-eyebrow-row">
-            <span className="mono-kicker brass-dot">INTERACTIVE METHODOLOGY &amp; RIGOR WORKBENCH</span>
-            <span className="atlas-divider-dot" aria-hidden="true">·</span>
-            <span className="mono-kicker muted">REPRODUCIBLE · URL-STATEFUL · JSON TWIN</span>
+            <span className="editorial-section-tag">Methodology &amp; Rigor Workbench</span>
+            <span className="atlas-divider-dot" aria-hidden="true">/</span>
+            <span className="editorial-section-meta">Reproducible · URL-Stateful · JSON Twin</span>
           </div>
           <h1 className="feed-heading">Analysis, Paper Rigor &amp; Self-Improvement Memory Lab</h1>
           <p className="feed-subtitle">

@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   applyDocumentTheme,
@@ -33,13 +32,6 @@ const PILLAR_ITEMS: { id: string; label: string; sub: string }[] = [
   { id: "governance-policy", label: "Governance & Policy", sub: "Compute verification, standards & institutional oversight" },
 ];
 
-const WORKFLOW_STEPS = [
-  { href: "/", step: "01", label: "Research Feed", match: (p: string) => p === "/" || p.startsWith("/stories/") },
-  { href: "/analysis", step: "02", label: "Scoring Lab", match: (p: string) => p.startsWith("/analysis") },
-  { href: "/brief", step: "03", label: "14-Day Brief", match: (p: string) => p.startsWith("/brief") },
-  { href: "/review", step: "04", label: "Audit Ledger", match: (p: string) => p.startsWith("/review") || p.startsWith("/queue") },
-];
-
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   const tag = target.tagName;
@@ -57,7 +49,7 @@ export function CommandTriggerButton() {
       aria-label="Open command and ontology jump menu (Command K)"
       onClick={() => window.dispatchEvent(new CustomEvent("si:open-command"))}
     >
-      <span>Jump</span>
+      <span>Search</span>
       <kbd className="cmd-kbd">
         <svg
           width="9"
@@ -68,7 +60,7 @@ export function CommandTriggerButton() {
           className="cmd-kbd-icon"
         >
           <path
-            d="M6 6V3.5a2 2 0 1 0-2 2H6Zm0 0h4m-4 0v4m4-4V3.5a2 2 0 1 1 2 2H10Zm0 0v4m0 0h2.5a2 2 0 1 1-2 2V10Zm0 0H6m0 0v2.5a2 2 0 1 1-2-2H6Z"
+            d="M6 6V3.5a2 2 0 1 0-2 2H6Zm0 0h4m-4 0v4m4-4V3.5a2 2 0 1 1 2 2H10Zm0 0v4m0 0h2.5a2 2 0 1 1-2 2V10Zm0 0H6m0 0v2.5a2 2 0 1 1-2 2H6Z"
             stroke="currentColor"
             strokeWidth="1.45"
             strokeLinecap="round"
@@ -81,12 +73,7 @@ export function CommandTriggerButton() {
   );
 }
 
-/**
- * Guided Observatory Workflow Strip + JIT-mounted Command Palette + J/K Feed Keyboard Navigation.
- * Modal DOM is mounted strictly Just-In-Time (`open === true`) so initial DOM weight stays minimal.
- */
 export function CommandWayfinding({ isSignedIn }: { isSignedIn: boolean }) {
-  const pathname = usePathname() || "/";
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -236,122 +223,88 @@ export function CommandWayfinding({ isSignedIn }: { isSignedIn: boolean }) {
     return groups;
   }, [filtered]);
 
-  return (
-    <>
-      <div className="wayfinding-strip" role="navigation" aria-label="Research observatory workflow">
-        <div className="wayfinding-inner">
-          <div className="wayfinding-steps">
-            {WORKFLOW_STEPS.map((ws, idx) => {
-              const active = ws.match(pathname);
-              return (
-                <span key={ws.href} className="wayfinding-step-wrap">
-                  {idx > 0 && (
-                    <span className="wayfinding-arrow" aria-hidden="true">
-                      →
-                    </span>
-                  )}
-                  <Link
-                    href={ws.href}
-                    className="wayfinding-step"
-                    aria-current={active ? "step" : undefined}
-                  >
-                    <span>{ws.step}</span>
-                    <span>{ws.label}</span>
-                  </Link>
-                </span>
-              );
-            })}
-          </div>
+  if (!open) return null;
 
-          <Link href="/limits" className="wayfinding-jit-pill" title="Bounded spend & Just-In-Time audit architecture">
-            <span className="jit-live-dot" aria-hidden="true" />
-            <span>JIT Audit · Bounded Spend · J/K Nav</span>
-          </Link>
+  return (
+    <div
+      className="cmd-backdrop"
+      role="presentation"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) setOpen(false);
+      }}
+    >
+      <div
+        className="cmd-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Jump to section, ontology pillar, or theme slot"
+      >
+        <div className="cmd-search-bar">
+          <span className="mono-kicker">Jump</span>
+          <input
+            ref={inputRef}
+            type="search"
+            className="cmd-search-input"
+            placeholder="Search pages, 9 ontology pillars, or theme presets…"
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setActiveIdx(0);
+            }}
+            onKeyDown={(e) => {
+              if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setActiveIdx((i) => (filtered.length > 0 ? (i + 1) % filtered.length : 0));
+              } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setActiveIdx((i) => (filtered.length > 0 ? (i - 1 + filtered.length) % filtered.length : 0));
+              } else if (e.key === "Enter" && filtered[activeIdx]) {
+                e.preventDefault();
+                executeAction(filtered[activeIdx]);
+              }
+            }}
+          />
+          <button type="button" className="btn-ghost btn-small" onClick={() => setOpen(false)}>
+            Esc
+          </button>
+        </div>
+
+        <div className="cmd-list" role="listbox" aria-label="Matching destinations">
+          {grouped.length === 0 ? (
+            <div className="cmd-group-label">No matching routes, ontology pillars, or theme slots.</div>
+          ) : (
+            grouped.map((group) => (
+              <div key={group.name}>
+                <div className="cmd-group-label">{group.name}</div>
+                {group.items.map(({ item, flatIndex }) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    role="option"
+                    aria-selected={flatIndex === activeIdx}
+                    data-active={flatIndex === activeIdx ? "true" : undefined}
+                    className="cmd-item"
+                    onMouseEnter={() => setActiveIdx(flatIndex)}
+                    onClick={() => executeAction(item)}
+                  >
+                    <span className="cmd-item-main">
+                      <strong>{item.label}</strong>
+                      <span className="cmd-item-sub">{item.subtitle}</span>
+                    </span>
+                    <span className="cmd-kbd">{item.theme ? "Theme" : "Go ↵"}</span>
+                  </button>
+                ))}
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="cmd-footer">
+          <span>↑↓ Navigate · ↵ Select · Esc Close</span>
+          <span>J / K traverses feed · T cycles theme</span>
         </div>
       </div>
-
-      {open && (
-        <div
-          className="cmd-backdrop"
-          role="presentation"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setOpen(false);
-          }}
-        >
-          <div
-            className="cmd-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Jump to section, ontology pillar, or theme slot"
-          >
-            <div className="cmd-search-bar">
-              <span className="mono-kicker">JUMP</span>
-              <input
-                ref={inputRef}
-                type="search"
-                className="cmd-search-input"
-                placeholder="Search pages, 9 ontology pillars, or theme presets…"
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setActiveIdx(0);
-                }}
-                onKeyDown={(e) => {
-                  if (e.nativeEvent.isComposing || e.keyCode === 229) return;
-                  if (e.key === "ArrowDown") {
-                    e.preventDefault();
-                    setActiveIdx((i) => (filtered.length > 0 ? (i + 1) % filtered.length : 0));
-                  } else if (e.key === "ArrowUp") {
-                    e.preventDefault();
-                    setActiveIdx((i) => (filtered.length > 0 ? (i - 1 + filtered.length) % filtered.length : 0));
-                  } else if (e.key === "Enter" && filtered[activeIdx]) {
-                    e.preventDefault();
-                    executeAction(filtered[activeIdx]);
-                  }
-                }}
-              />
-              <button type="button" className="btn-ghost btn-small" onClick={() => setOpen(false)}>
-                Esc
-              </button>
-            </div>
-
-            <div className="cmd-list" role="listbox" aria-label="Matching destinations">
-              {grouped.length === 0 ? (
-                <div className="cmd-group-label">No matching routes, ontology pillars, or theme slots.</div>
-              ) : (
-                grouped.map((group) => (
-                  <div key={group.name}>
-                    <div className="cmd-group-label">{group.name}</div>
-                    {group.items.map(({ item, flatIndex }) => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        role="option"
-                        aria-selected={flatIndex === activeIdx}
-                        data-active={flatIndex === activeIdx ? "true" : undefined}
-                        className="cmd-item"
-                        onMouseEnter={() => setActiveIdx(flatIndex)}
-                        onClick={() => executeAction(item)}
-                      >
-                        <span className="cmd-item-main">
-                          <strong>{item.label}</strong>
-                          <span className="cmd-item-sub">{item.subtitle}</span>
-                        </span>
-                        <span className="cmd-kbd">{item.theme ? "Theme" : "Go ↵"}</span>
-                      </button>
-                    ))}
-                  </div>
-                ))
-              )}
-            </div>
-
-            <div className="cmd-footer">
-              <span>↑↓ Navigate · ↵ Select · Esc Close</span>
-              <span>J / K traverses feed cards</span>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+    </div>
   );
 }
