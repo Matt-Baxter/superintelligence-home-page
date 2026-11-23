@@ -64,7 +64,8 @@ ok(JSON.parse(sg.result).input.abstractSha256 === pg.abstractSha256 && JSON.pars
 ok(!sb && pb.qid === pg.qid && !pb.isNew, "the second paraphrase of the same abstract adds no row: the document id comes from the abstract");
 
 // History: a --from run saves the day's entries without paper authors; a fresh database replays earlier days first.
-const today = new Date().toISOString().slice(0, 10), saved = JSON.parse(fs.readFileSync(path.join(HIST, `${today}.json`), "utf8"));
+// The run names its file by its own UTC day; read that file rather than recomputing "today" (a run that crosses midnight would miss it).
+const today = fs.readdirSync(HIST).filter((f) => /^\d{4}-\d{2}-\d{2}\.json$/.test(f)).sort().at(-1).slice(0, 10), saved = JSON.parse(fs.readFileSync(path.join(HIST, `${today}.json`), "utf8"));
 ok(saved.length === 2 && saved.every((e) => e.title && e.url && e.authors.length === 0), "a --from run saves the day's entries to the history folder, without paper authors");
 fs.renameSync(path.join(HIST, `${today}.json`), path.join(HIST, "2000-01-01.json"));
 const DATA3 = fs.mkdtempSync(path.join(os.tmpdir(), "si-watch-")), empty = path.join(OUT, "empty.json"); fs.writeFileSync(empty, "[]");

@@ -13,6 +13,9 @@
   .nums { font-size: 13px; color: var(--muted); margin-top: 6px; font-variant-numeric: tabular-nums; }
   .top { font-size: 13px; color: var(--muted); margin-top: 4px; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .key { display: grid; gap: 2px; margin: -8px 0 0; }
+  #spot { margin-top: 24px; } #spot h2 { font-size: 18px; margin: 0 0 4px; }
+  .spots { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 10px; } .spots li { line-height: 1.5; overflow-wrap: anywhere; }
+  .spots blockquote { margin: 4px 0 0; padding-left: 10px; border-left: 2px solid var(--line-strong); color: var(--muted); }
   @media (max-width: 860px) { .row { grid-template-columns: 1fr 1fr; } .row .what { grid-column: 1 / -1; } .row .go { grid-column: 1 / -1; justify-self: start; } }
   @media (max-width: 420px) { .row { grid-template-columns: 1fr; } }
 </style></head>
@@ -23,12 +26,23 @@
   <p class="key small muted"><span><b>Evidence</b>: reviewed papers and our own toy checks, never rated stronger than abstracts allow.</span><span><b>Buzz</b>: news, newsletters, blogs and forums in the last 30 days; it never changes the evidence.</span></p>
   <div class="ix" id="ix" aria-busy="true"><p class="muted">Loading the index…</p></div>
   <p class="small muted" id="foot"></p>
+  <section class="panel" id="spot" aria-live="polite"></section>
 </main>
 <script src="/js/api.js"></script>
 <script>
 const ladder = (levels, on) => `<div class="ladder" role="img" aria-label="${esc(on)}">${levels.map((l) => `<span class="${l === on ? "on" : ""}">${esc(l)}</span>`).join("")}</div>`;
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
-requireUser().then(async () => {
+const STATUS_TEXT = { agreed: "agreed with the verdict", flagged: "disagreed and quoted why: sent to a person", unsupported: "disagreed without quoting the text: ignored", unreadable: "reply was unreadable: ignored", error: "could not be reached" };
+async function spotChecks() {
+  try {
+    const r = await api("/api/review/spotchecks"), box = $("#spot");
+    const lead = `<h2>Final safety check</h2><p class="small muted">Everyday judging uses published rules and small free models. Once a day a larger model re-reads up to ${r.dailyMax} saved reviews and says whether the text supports the verdict. It never sets a score; a disagreement only counts when it quotes the text.</p>`;
+    if (!r.checks.length) { box.innerHTML = lead + `<p class="empty">${r.configured ? "No spot checks have run yet." : "Spot checks are switched off on this site, so no larger model is called."}</p>`; return; }
+    box.innerHTML = lead + `<ul class="spots">${r.checks.slice(0, 12).map((c) => `<li><span class="small muted">${esc(c.day)}</span> <a href="/m/review#/doc/${c.doc_id}">${esc(c.title || "Removed review")}</a> <span class="small">(${esc(c.verdict || "")}, ${c.credibility ?? "?"}/100): the larger model ${esc(STATUS_TEXT[c.status] || c.status)}.</span>${c.status === "flagged" && c.quotes[0] ? `<blockquote class="small">${esc(c.quotes[0])}</blockquote>` : ""}</li>`).join("")}</ul>`;
+  } catch { $("#spot").hidden = true; }
+}
+currentUser().then(async () => {
+  spotChecks();
   try {
     const r = await api("/api/review/evidence-index");
     $("#ix").innerHTML = r.topics.map((t) => `<article class="row">

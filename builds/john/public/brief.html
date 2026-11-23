@@ -24,6 +24,6 @@ async function load() {
 }
 const shift = (n) => { const d = new Date(week + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + n); week = d.toISOString().slice(0, 10); load(); };
 $("#prev").onclick = () => shift(-7); $("#next").onclick = () => shift(7);
-requireUser().then(load);
+currentUser().then(load);
 </script>
 </body></html>

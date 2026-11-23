@@ -74,10 +74,22 @@ app.use(async (req, res, next) => {
 const auth = (req, res, next) => (req.user ? next() : res.status(401).json({ error: "Please sign in first." }));
 const admin = (req, res, next) => (req.user?.admin ? next() : res.status(403).json({ error: "Only an admin can do this." }));
 const hits = new Map();
+// Guests get a per-IP read budget on the heavier open endpoints; members are not throttled here.
+const guestRead = (req, res, next) => (req.user ? next() : limit(120, 6e4)(req, res, next));
+// Cost guard for open read routes: guests share one cached answer per URL for `ms`, so a crowd of anonymous readers
+// costs one query per window per instance. Members always get a fresh answer (theirs can carry per-user fields).
+const guestCache = (ms) => { const m = new Map(); return (req, res, next) => {
+  if (req.user) return next();
+  const k = req.originalUrl, h = m.get(k);
+  if (h && Date.now() - h.at < ms) { res.set("X-Guest-Cache", "hit"); return res.json(h.body); }
+  const send = res.json.bind(res);
+  res.json = (body) => { if (res.statusCode < 400) { if (m.size > 200) m.clear(); m.set(k, { at: Date.now(), body }); } res.set("X-Guest-Cache", "miss"); return send(body); };
+  next();
+}; };
 const limit = (n, ms) => (req, res, next) => {
   const k = req.path + req.ip, t = Date.now(), l = (hits.get(k) || []).filter((x) => t - x < ms);
   if (l.length >= n) return res.status(429).json({ error: "Too many requests. Wait a few minutes and try again." });
-  l.push(t); hits.set(k, l); next();
+  l.push(t); if (hits.size > 5000) hits.clear(); hits.set(k, l); next();
 };
 
 /* accounts — the first account becomes the admin */
@@ -99,7 +111,7 @@ app.post("/api/login", limit(30, 6e5), wrap(async (req, res) => {
   await startSession(res, u.id); return { user: { id: u.id, username: u.username, name: u.display_name, admin: bool(u.is_admin) } };
 }));
 app.post("/api/logout", wrap(async (req, res) => { const t = cookie(req, "sid"); if (t) await db.run("DELETE FROM sessions WHERE token = ?", t); res.clearCookie("sid"); return { ok: true }; }));
-app.get("/api/me", wrap((req) => { const pr = profile.current(); return { user: req.user ? { ...req.user, nav: kernel.nav(req.user), profile: pr.name, features: [...pr.features] } : null, profile: pr.name, features: [...pr.features], publicNav: [...(kernel.modules.some(m=>m.id==="editorial") ? [{href:"/m/journal",label:"Journal"}] : []), ...(kernel.modules.some(m=>m.id==="learn") ? [{href:"/m/glossary",label:"Glossary"}] : [])], ...(process.env.ALLOW_FIXTURE_FEEDS === "1" && process.env.NODE_ENV !== "production" && app.locals.demo ? { demo: app.locals.demo } : {}) }; }));
+app.get("/api/me", wrap((req) => { const pr = profile.current(); return { user: req.user ? { ...req.user, nav: kernel.nav(req.user), profile: pr.name, features: [...pr.features] } : null, profile: pr.name, features: [...pr.features], publicNav: [...(kernel.modules.some(m=>m.id==="review") ? [{href:"/m/evidence",label:"Evidence"}] : []), ...(kernel.modules.some(m=>m.id==="editorial") ? [{href:"/m/journal",label:"Journal"}] : []), ...(kernel.modules.some(m=>m.id==="learn") ? [{href:"/m/glossary",label:"Glossary"}] : [])], ...(process.env.ALLOW_FIXTURE_FEEDS === "1" && process.env.NODE_ENV !== "production" && app.locals.demo ? { demo: app.locals.demo } : {}) }; }));
 app.get("/api/ontology", wrap(() => ({ topics: tagger.topicList(), orgs: tagger.orgList(), about: tagger.ontology.about,
   benchmarks: (tagger.ontology.benchmarks || []).map(({ id, label, measures }) => ({ id, label, measures })), people: (tagger.ontology.people || []).map(({ id, label }) => ({ id, label })) })));
 
@@ -255,10 +267,13 @@ app.delete("/api/lists/:id", auth, feature("lists"), wrap(async (req) => {
 }));
 
 /* ------------------------------------------------------------------ sources */
-app.get("/api/sources", auth, wrap(async (req) => ({
-  sources: await db.all(`SELECT s.*, u.display_name AS suggested_by_name, (SELECT COUNT(DISTINCT story_id) FROM story_links l WHERE l.source_id = s.id) AS stories
-    FROM sources s LEFT JOIN users u ON u.id = s.suggested_by ORDER BY CASE WHEN s.status = 'active' THEN 0 ELSE 1 END, s.kind, s.name`),
-  kinds: KINDS.filter((k) => k !== "submitted"), fetching: harvester.isRunning(), fetchMinutes: process.env.VERCEL ? null : FETCH_MINUTES, schedule: process.env.VERCEL ? "daily (Vercel Cron)" : null, isAdmin: req.user.admin,
+// Reading the source list is open to guests (REQ: browse without an account). Guests see active sources only,
+// without who suggested them; pending/rejected suggestions and member names stay behind sign-in.
+app.get("/api/sources", guestRead, wrap(async (req) => ({
+  sources: (await db.all(`SELECT s.*, u.display_name AS suggested_by_name, (SELECT COUNT(DISTINCT story_id) FROM story_links l WHERE l.source_id = s.id) AS stories
+    FROM sources s LEFT JOIN users u ON u.id = s.suggested_by ${req.user ? "" : "WHERE s.status = 'active'"} ORDER BY CASE WHEN s.status = 'active' THEN 0 ELSE 1 END, s.kind, s.name`))
+    .map((r) => (req.user ? r : { ...r, suggested_by: null, suggested_by_name: null, note: null })),
+  kinds: KINDS.filter((k) => k !== "submitted"), fetching: harvester.isRunning(), fetchMinutes: process.env.VERCEL ? null : FETCH_MINUTES, schedule: process.env.VERCEL ? "daily (Vercel Cron)" : null, isAdmin: !!req.user?.admin, signedIn: !!req.user,
   formats: Object.entries(feeds.FORMATS).map(([id, f]) => ({ id, label: f.label })),
 })));
 app.post("/api/sources/suggest", auth, feature("suggest-sources"), limit(10, 36e5), wrap(async (req) => {
@@ -291,13 +306,23 @@ function weekBounds(weekStart) {
   const day = (d.getUTCDay() + 6) % 7; const start = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - (weekStart ? 0 : day)));
   return { start, end: new Date(start.getTime() + 7 * 864e5) };
 }
-app.get("/api/brief", auth, feature("brief"), wrap(async (req) => {
+// Open to guests. A guest brief has no per-user fields, so it is cached per week (cost guard: one 1000-row
+// query per week per instance per 10 minutes, however many anonymous readers arrive).
+const guestBriefCache = new Map(); const GUEST_BRIEF_MS = 10 * 6e4;
+app.get("/api/brief", guestRead, feature("brief"), wrap(async (req) => {
+  const cacheKey = req.user ? null : str(req.query.week, 10) || "current", hit = cacheKey && guestBriefCache.get(cacheKey);
+  if (hit && Date.now() - hit.at < GUEST_BRIEF_MS) return hit.body;
+  const body = await buildBrief(req, req.user?.id ?? null);
+  if (cacheKey) { if (guestBriefCache.size > 60) guestBriefCache.clear(); guestBriefCache.set(cacheKey, { at: Date.now(), body }); }
+  return body;
+}));
+async function buildBrief(req, uid) {
   let { start, end } = weekBounds(str(req.query.week, 10));
   const inRange = "COALESCE(s.published_at, s.first_seen) >= ? AND COALESCE(s.published_at, s.first_seen) < ?";
-  let stories = await storyRows(inRange, [start.toISOString(), end.toISOString()], req.user.id, { sort: "top", limit: 1000 });
+  let stories = await storyRows(inRange, [start.toISOString(), end.toISOString()], uid, { sort: "top", limit: 1000 });
   // Early in a week nothing may be collected yet: without a chosen week, show last week rather than an empty brief.
   if (!stories.length && !req.query.week) {
-    const ps = new Date(start.getTime() - 7 * 864e5), last = await storyRows(inRange, [ps.toISOString(), start.toISOString()], req.user.id, { sort: "top", limit: 1000 });
+    const ps = new Date(start.getTime() - 7 * 864e5), last = await storyRows(inRange, [ps.toISOString(), start.toISOString()], uid, { sort: "top", limit: 1000 });
     if (last.length) { end = start; start = ps; stories = last; }
   }
   const prevStart = new Date(start.getTime() - 7 * 864e5);
@@ -306,13 +331,13 @@ app.get("/api/brief", auth, feature("brief"), wrap(async (req) => {
   const kinds = {}; stories.forEach((s) => new Set(s.sources.map((x) => x.kind)).forEach((k) => (kinds[k] = (kinds[k] || 0) + 1)));
   const v = await views();
   return { spec: v.weeklyBrief({ start, end, stories, topics: tagger.topicList(), prevCounts: prevMap, kinds }), week: start.toISOString().slice(0, 10) };
-}));
+}
 app.get("/api/catalog", wrap(async () => { const { catalog } = await views(); return { components: Object.keys(catalog.data?.components ?? {}), prompt: catalog.prompt(), jsonSchema: catalog.jsonSchema() }; }));
 
 /* -------------------------------------------------------------------- admin */
 // Everything modules need from the core, passed to their routes and start hooks (never imported directly).
 function moduleDeps() {
-  return { app, db, auth, admin, wrap, str, bad, forbid, notFound, bool, now, KINDS, FORMAT_IDS, harvester, audit, tagger, feeds, analysis, storyRows, views, kernel };
+  return { app, db, auth, admin, guestRead, guestCache, wrap, str, bad, forbid, notFound, bool, now, KINDS, FORMAT_IDS, harvester, audit, tagger, feeds, analysis, storyRows, views, kernel };
 }
 kernel.mount(app, moduleDeps());
 app.get("/api/admin/modules", auth, admin, wrap(() => kernel.describe()));

@@ -31,7 +31,7 @@
 <script>
 const pl = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
 const chip = (href, label, n) => `<a class="sub${n ? "" : " zero"}" href="${href}">${esc(label)}<b>${n}</b></a>`;
-requireUser().then(async () => {
+currentUser().then(async () => {
   const m = await api("/api/review/map");
   $("#totals").innerHTML = `<span><b>${m.totals.stories}</b>stories in scope</span><span><b>${m.totals.docs}</b>reviewed docs</span><span><b>${m.totals.concepts}</b>concepts</span>`;
   $("#map").innerHTML = m.topics.map((t) => `<section class="area">

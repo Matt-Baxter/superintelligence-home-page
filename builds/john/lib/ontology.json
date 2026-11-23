@@ -404,6 +404,195 @@
         "improves itself",
         "improve themselves"
       ]
+    },
+    {
+      "id": "scalable-oversight",
+      "label": "Scalable oversight",
+      "parent": "alignment",
+      "terms": [
+        "scalable oversight",
+        "weak-to-strong",
+        "debate protocol*",
+        "ai debate",
+        "recursive reward modeling",
+        "superalignment"
+      ]
+    },
+    {
+      "id": "reward-hacking",
+      "label": "Reward hacking & specification gaming",
+      "parent": "alignment",
+      "terms": [
+        "reward hacking",
+        "reward hack*",
+        "specification gaming",
+        "goal misgeneralization",
+        "goodhart*",
+        "sycophan*"
+      ]
+    },
+    {
+      "id": "deception",
+      "label": "Deception & scheming",
+      "parent": "safety",
+      "terms": [
+        "scheming",
+        "deceptive alignment",
+        "alignment faking",
+        "sandbagging",
+        "situational awareness",
+        "sleeper agent*",
+        "strategic deception"
+      ]
+    },
+    {
+      "id": "ai-control",
+      "label": "AI control",
+      "parent": "safety",
+      "terms": [
+        "ai control",
+        "control evaluation*",
+        "untrusted model*",
+        "trusted monitoring",
+        "control protocol*"
+      ]
+    },
+    {
+      "id": "bio-chem-risk",
+      "label": "Bio & chemical risk",
+      "parent": "safety",
+      "terms": [
+        "biosecurity",
+        "bioweapon*",
+        "biological risk",
+        "pandemic pathogen*",
+        "chemical weapon*",
+        "cbrn",
+        "uplift study",
+        "uplift studies"
+      ]
+    },
+    {
+      "id": "cot-monitoring",
+      "label": "Chain-of-thought monitoring",
+      "parent": "interpretability",
+      "terms": [
+        "chain-of-thought monitor*",
+        "cot monitor*",
+        "faithful reasoning",
+        "reasoning faithfulness",
+        "monitorability"
+      ]
+    },
+    {
+      "id": "chips",
+      "label": "Chips & hardware",
+      "parent": "compute",
+      "terms": [
+        "gpu*",
+        "tpu*",
+        "h100*",
+        "b200*",
+        "gb200",
+        "accelerator*",
+        "semiconductor*",
+        "tsmc",
+        "export control*",
+        "chip*"
+      ]
+    },
+    {
+      "id": "energy",
+      "label": "Energy & data centers",
+      "parent": "compute",
+      "terms": [
+        "data center*",
+        "datacenter*",
+        "gigawatt*",
+        "power grid",
+        "nuclear power",
+        "energy demand",
+        "stargate"
+      ]
+    },
+    {
+      "id": "national-security",
+      "label": "National security & geopolitics",
+      "parent": "policy",
+      "terms": [
+        "national security",
+        "military",
+        "defense department",
+        "pentagon",
+        "geopolitic*",
+        "us-china",
+        "arms race",
+        "nationaliz*"
+      ]
+    },
+    {
+      "id": "lab-safety-policies",
+      "label": "Lab safety frameworks",
+      "parent": "policy",
+      "terms": [
+        "responsible scaling polic*",
+        "frontier safety framework",
+        "preparedness framework",
+        "safety case*",
+        "system card*",
+        "model card*"
+      ]
+    },
+    {
+      "id": "takeoff",
+      "label": "Takeoff speeds",
+      "parent": "forecasting",
+      "terms": [
+        "takeoff speed*",
+        "fast takeoff",
+        "slow takeoff",
+        "hard takeoff",
+        "soft takeoff",
+        "software intelligence explosion"
+      ]
+    },
+    {
+      "id": "synthetic-data",
+      "label": "Synthetic data & self-play",
+      "parent": "recursive-self-improvement",
+      "terms": [
+        "synthetic data",
+        "self-play",
+        "self-generated data",
+        "self-training",
+        "bootstrapp*",
+        "model collapse"
+      ]
+    },
+    {
+      "id": "ai-scientists",
+      "label": "AI scientists & research agents",
+      "parent": "automating-ai-research",
+      "terms": [
+        "ai scientist*",
+        "research agent*",
+        "autonomous research",
+        "automated discovery",
+        "ml engineering agent*"
+      ]
+    },
+    {
+      "id": "continual-learning",
+      "label": "Memory & continual learning",
+      "parent": "capabilities",
+      "terms": [
+        "continual learning",
+        "continual-learning",
+        "lifelong learning",
+        "long-term memory",
+        "test-time training",
+        "catastrophic forgetting"
+      ]
     }
   ],
   "organizations": [

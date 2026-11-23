@@ -108,7 +108,7 @@ async function load() {
     ${d.checks.length ? `<section class="panel"><h2>Our own checks</h2><table class="t"><thead><tr><th>Experiment</th><th>Result</th><th>Tests a reviewed paper?</th><th>Ref.</th></tr></thead><tbody>${d.checks.map((x) => `<tr><td><a href="/m/lab#/x/${esc(x.id)}">${esc(x.title)}</a></td><td><span class="tag ${x.supported ? "yes" : "no"}">${x.supported ? "held up" : "did not hold up"}</span></td><td>${x.tests === "credible" ? "yes" : x.tests ? "yes, but not a credible one (not counted)" : "no, a general check"}</td><td>[${x.n}]</td></tr>`).join("")}</tbody></table></section>` : ""}
     ${(d.forecasts || []).length ? `<section class="panel"><h2>Forecasts on the record</h2><p class="small muted">Dated predictions in the pieces above. Once due, a person marks each one; outlets build a track record (<a href="/research/criteria">rules</a>). Names are removed: no forecast is attributed to a person.</p>
       <table class="t"><thead><tr><th>Due</th><th>Forecast</th><th>From</th><th>Status</th></tr></thead><tbody>${d.forecasts.map((f) => `<tr><td class="n">${esc(f.due)}${f.overdue ? "<br><span class=\"small\">overdue</span>" : ""}</td><td>${esc(f.sentence)} ${f.n ? `[${f.n}]` : ""}</td><td>${esc(f.outlet)}</td>
-        <td>${user.admin && f.id ? `<select data-ev="${f.id}" aria-label="Status">${["pending", "happened", "did-not", "unclear", "annulled"].map((x) => `<option ${x === f.status ? "selected" : ""}>${x}</option>`).join("")}</select>` : esc(f.status)}</td></tr>`).join("")}</tbody></table></section>` : ""}
+        <td>${user?.admin && f.id ? `<select data-ev="${f.id}" aria-label="Status">${["pending", "happened", "did-not", "unclear", "annulled"].map((x) => `<option ${x === f.status ? "selected" : ""}>${x}</option>`).join("")}</select>` : esc(f.status)}</td></tr>`).join("")}</tbody></table></section>` : ""}
     <div class="cols">
       <section class="panel" id="evidence-gaps"><h2>Where the evidence is thin</h2>${d.weak.length ? `<ul class="small">${d.weak.map((w) => `<li>${esc(w.text)} [${w.n}]</li>`).join("")}</ul>` : '<p class="small muted">Nothing flagged.</p>'}</section>
       <section class="panel"><h2>Who is being talked about</h2><p class="small muted">Mention counts in the papers and stories above. A mention isn't an endorsement, and no claims are attributed to anyone.</p>
@@ -128,14 +128,14 @@ async function load() {
   finally { if(request===dossierRequest)$("#out").setAttribute("aria-busy", "false"); }
 }
 function copy(text, b) { navigator.clipboard.writeText(text).then(() => { b.textContent = "Copied"; setTimeout(() => (b.textContent = b.dataset.copy ? "Copy" : "Copy as Markdown"), 1500); }, () => { b.textContent = "Select and copy"; }); }
-requireUser().then(async (u) => {
+currentUser().then(async (u) => {
   user = u;
   const m = await api("/api/review/map");
   for(const t of m.topics){knownTopics.add(t.id);for(const child of t.children)knownTopics.add(child.id);}
   $("#topic").innerHTML = '<option value="">Choose a topic…</option>' + m.topics.map((t) => `<option value="${esc(t.id)}">${esc(t.label)} (${t.docs} docs)</option>${t.children.map((c) => `<option value="${esc(c.id)}">  · ${esc(c.label)}</option>`).join("")}`).join("");
   $("#topic").value = m.topics[0]?.id || "";
   $("#topic").onchange = () => { location.hash = $("#topic").value; };
-  if (u.admin) { $("#publishingTools").hidden = false; $("#queue").hidden = false; $("#queue").onclick = async () => { if(!currentDossier)return;const request=dossierRequest,topic=currentDossier.topic;$("#queue").disabled=true;try { const j = await api("/api/admin/learn/jobs", { body: { kind: "dossier", note: `topic:${topic}` } }); if(request===dossierRequest)$("#status").textContent = `Queued job #${j.id || (j.job && j.job.id) || ""}: the worker writes the blog draft and posts and records the video (npm run learn:worker).`; } catch (e) { if(request===dossierRequest)showErr($("#status"), e); } finally { if(request===dossierRequest)$("#queue").disabled=!currentDossier; } }; }
+  if (u?.admin) { $("#publishingTools").hidden = false; $("#queue").hidden = false; $("#queue").onclick = async () => { if(!currentDossier)return;const request=dossierRequest,topic=currentDossier.topic;$("#queue").disabled=true;try { const j = await api("/api/admin/learn/jobs", { body: { kind: "dossier", note: `topic:${topic}` } }); if(request===dossierRequest)$("#status").textContent = `Queued job #${j.id || (j.job && j.job.id) || ""}: the worker writes the blog draft and posts and records the video (npm run learn:worker).`; } catch (e) { if(request===dossierRequest)showErr($("#status"), e); } finally { if(request===dossierRequest)$("#queue").disabled=!currentDossier; } }; }
   $("#researchQuestion").oninput = rememberQuestion;
   $("#clearQuestion").onclick = () => { $("#researchQuestion").value = ""; rememberQuestion(); $("#briefStatus").textContent = "Question cleared for this topic."; };
   $("#copyBrief").onclick = async () => {

@@ -51,6 +51,21 @@ async function requireUser() {
   if (need && !(user.features || []).includes(need)) { const m = document.querySelector("main"); if (m) m.innerHTML = `<div class="panel"><h1>Not in this version</h1><p class="muted">This page is an extra beyond the shared spec. It runs when the site uses the extended profile (SITE_PROFILE=extended).</p><p><a href="/">Back to the feed</a></p></div>`; return new Promise(() => {}); } // stop here: the page stays on the notice
   return user;
 }
+// Pages that guests may read: draw the bar for whoever is here and resolve with the user, or null for a guest.
+// Feature gating matches requireUser; only actions (vote, save, suggest) still ask for sign-in.
+async function currentUser() {
+  const me = await api("/api/me", { allow401: true });
+  const user = me.user || null;
+  topbar(user);
+  const need = PAGE_FEATURE[location.pathname.replace(/\.html$/, "")];
+  if (need && !(me.features || []).includes(need)) { const m = document.querySelector("main"); if (m) m.innerHTML = `<div class="panel"><h1>Not in this version</h1><p class="muted">This page is not part of this version of the site.</p><p><a href="/">Go to the feed</a></p></div>`; return new Promise(() => {}); }
+  return user;
+}
+function signInHint(target, what) {
+  if (!target) return;
+  target.hidden = false;
+  target.innerHTML = `<a href="/?next=${encodeURIComponent(location.pathname + location.search)}">Sign in</a> to ${what}.`;
+}
 function workspaceNavigation(user, current) {
   const nav = user?.nav || [], available = [...(user ? NAV.filter(([, , f]) => !f || user.features?.includes(f)).map(([href,label])=>({href,label})) : [{href:"/",label:"Feed"},{href:"/welcome",label:"About"}]), ...nav, ...(!user ? (window.SI_PUBLIC_NAV || []) : [])];
   const known = {"/story":"Story", "/m/content":"Content desk"};
