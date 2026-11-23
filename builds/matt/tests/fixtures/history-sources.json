@@ -1,0 +1,7 @@
+[
+  { "id": "hist-lab", "name": "Sample History Lab", "kind": "frontier-lab", "feedUrl": "http://localhost:4100/history/lab-full.xml", "history": "full-feed" },
+  { "id": "hist-blog", "name": "Sample History Blog", "kind": "safety-group", "feedUrl": "http://localhost:4100/history/blog-paged.xml", "history": "paged-feed" },
+  { "id": "hist-newsletter", "name": "Sample History Newsletter", "kind": "newsletter", "feedUrl": "http://localhost:4100/history/newsletter/feed", "history": "substack" },
+  { "id": "hist-forum", "name": "Sample History Forum", "kind": "forum", "feedUrl": "http://localhost:4100/history/forum-graphql.json", "history": "forum-month" },
+  { "id": "hist-news", "name": "Sample History News Search", "kind": "news", "feedUrl": "http://localhost:4100/history/news-month.xml", "history": "news-month" }
+]

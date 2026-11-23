@@ -1,0 +1,23 @@
+[
+  {"id": "arxiv-ai", "name": "arXiv (superintelligence papers)", "kind": "papers", "feedUrl": "https://export.arxiv.org/api/query?search_query=cat:cs.AI+AND+(ti:superintelligence+OR+ti:superintelligent+OR+ti:AGI+OR+ti:%22artificial+general+intelligence%22+OR+ti:%22AI+safety%22+OR+ti:%22AI+alignment%22+OR+ti:%22scalable+oversight%22+OR+ti:%22existential+risk%22+OR+ti:%22loss+of+control%22+OR+ti:%22recursive+self-improvement%22+OR+ti:%22intelligence+explosion%22+OR+ti:%22deceptive+alignment%22)&sortBy=submittedDate&sortOrder=descending&max_results=20"},
+  {"id": "openai", "name": "OpenAI News", "kind": "frontier-lab", "feedUrl": "https://openai.com/news/rss.xml", "history": "full-feed"},
+  {"id": "google-deepmind", "name": "Google DeepMind Blog", "kind": "frontier-lab", "feedUrl": "https://deepmind.google/blog/rss.xml", "historySearch": "https://news.google.com/rss/search?q=site%3Adeepmind.google+OR+site%3Adeepmind.com+when%3A7d&hl=en-US&gl=US&ceid=US:en"},
+  {"id": "anthropic-news", "name": "Anthropic News", "kind": "frontier-lab", "feedUrl": "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_anthropic_news.xml", "history": "full-feed"},
+  {"id": "anthropic-research", "name": "Anthropic Research", "kind": "frontier-lab", "feedUrl": "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_anthropic_research.xml", "history": "full-feed"},
+  {"id": "meta-ai", "name": "Meta AI", "kind": "frontier-lab", "feedUrl": "https://news.google.com/rss/search?q=site%3Aai.meta.com+OR+site%3Aabout.fb.com+when%3A7d&hl=en-US&gl=US&ceid=US:en"},
+  {"id": "xai", "name": "xAI", "kind": "frontier-lab", "feedUrl": "https://news.google.com/rss/search?q=site%3Ax.ai+when%3A7d&hl=en-US&gl=US&ceid=US:en"},
+  {"id": "microsoft-ai", "name": "Microsoft AI", "kind": "frontier-lab", "feedUrl": "https://news.google.com/rss/search?q=site%3Amicrosoft.ai+when%3A7d&hl=en-US&gl=US&ceid=US:en"},
+  {"id": "miri", "name": "MIRI", "kind": "safety-group", "feedUrl": "https://intelligence.org/feed/"},
+  {"id": "redwood", "name": "Redwood Research", "kind": "safety-group", "feedUrl": "https://blog.redwoodresearch.org/feed"},
+  {"id": "epoch-ai", "name": "Epoch AI", "kind": "research-org", "feedUrl": "https://epochai.substack.com/feed"},
+  {"id": "ai-impacts", "name": "AI Impacts", "kind": "research-org", "feedUrl": "https://blog.aiimpacts.org/feed"},
+  {"id": "alignment-forum", "name": "AI Alignment Forum", "kind": "forum", "feedUrl": "https://www.alignmentforum.org/feed.xml"},
+  {"id": "lesswrong", "name": "LessWrong", "kind": "forum", "feedUrl": "https://www.lesswrong.com/feed.xml"},
+  {"id": "import-ai", "name": "Import AI", "kind": "newsletter", "feedUrl": "https://importai.substack.com/feed"},
+  {"id": "zvi", "name": "Don't Worry About the Vase", "kind": "newsletter", "feedUrl": "https://thezvi.substack.com/feed"},
+  {"id": "gnews-superintelligence", "name": "Google News: superintelligence", "kind": "news", "feedUrl": "https://news.google.com/rss/search?q=superintelligence+when%3A2d&hl=en-US&gl=US&ceid=US:en"},
+  {"id": "gnews-artificial-general-intelligence", "name": "Google News: artificial general intelligence", "kind": "news", "feedUrl": "https://news.google.com/rss/search?q=%22artificial+general+intelligence%22+when%3A2d&hl=en-US&gl=US&ceid=US:en"},
+  {"id": "gnews-ai-safety", "name": "Google News: AI safety", "kind": "news", "feedUrl": "https://news.google.com/rss/search?q=%22AI+safety%22+when%3A2d&hl=en-US&gl=US&ceid=US:en"},
+  {"id": "gnews-ai-alignment", "name": "Google News: AI alignment", "kind": "news", "feedUrl": "https://news.google.com/rss/search?q=%22AI+alignment%22+when%3A2d&hl=en-US&gl=US&ceid=US:en"},
+  {"id": "gnews-frontier-ai", "name": "Google News: frontier AI", "kind": "news", "feedUrl": "https://news.google.com/rss/search?q=%22frontier+AI%22+when%3A2d&hl=en-US&gl=US&ceid=US:en"}
+]

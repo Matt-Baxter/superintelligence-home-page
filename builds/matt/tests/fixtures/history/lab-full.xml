@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Sample data for tests only: a full lab feed reaching back before 2023. -->
+<rss version="2.0"><channel>
+  <title>Sample History Lab</title>
+  <item>
+    <title>Sample: Introducing a Historical Frontier Model</title>
+    <link>https://lab.example.com/history/frontier-model</link>
+    <description>Our most capable frontier model so far. Sample test data.</description>
+    <pubDate>Tue, 14 Mar 2023 17:00:00 GMT</pubDate>
+  </item>
+  <item>
+    <title>Sample: Historical Minor Update on AI Safety Docs</title>
+    <link>https://lab.example.com/history/minor-docs</link>
+    <description>Small documentation changes. Sample test data.</description>
+    <pubDate>Sun, 02 Apr 2023 17:00:00 GMT</pubDate>
+  </item>
+  <item>
+    <title>Sample: Planning for AGI Before the History Window</title>
+    <link>https://lab.example.com/history/before-2023</link>
+    <description>Published before 2023, so the history fill skips it. Sample test data.</description>
+    <pubDate>Wed, 30 Nov 2022 17:00:00 GMT</pubDate>
+  </item>
+</channel></rss>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Sample data for tests only. -->
+<rss version="2.0"><channel>
+  <title>Sample Frontier Lab</title>
+  <item>
+    <title>Sample: Our View on AGI Timelines</title>
+    <link>https://lab.example.com/blog/agi-timelines?utm_source=rss</link>
+    <description>How we think about AGI timelines and what they mean for planning. Sample test data.</description>
+    <pubDate>Thu, 12 Nov 2026 15:00:00 GMT</pubDate>
+  </item>
+  <item>
+    <title>Sample: Introducing a New AI Photo-Editing App</title>
+    <link>https://lab.example.com/blog/photo-app</link>
+    <description>Edit your photos with one tap using our latest features. Sample test data.</description>
+    <pubDate>Wed, 11 Nov 2026 15:00:00 GMT</pubDate>
+  </item>
+  <item>
+    <title>Sample: Notes on AI Safety Evaluations</title>
+    <link>https://lab.example.com/blog/safety-evals</link>
+    <description><![CDATA[<p>How we run <b>AI safety</b> evaluations before release.</p><script>alert(1)</script><img src="http://localhost:4100/pixel.png" alt=""> Sample test data.]]></description>
+    <pubDate>Mon, 09 Nov 2026 15:00:00 GMT</pubDate>
+  </item>
+</channel></rss>

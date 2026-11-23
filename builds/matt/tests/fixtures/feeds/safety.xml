@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Sample data for tests only. -->
+<rss version="2.0"><channel>
+  <title>Sample Safety Group</title>
+  <item>
+    <title>Sample: A Thread on Alignment Research</title>
+    <link>https://x.com/sample_account/status/1234567890</link>
+    <description>A short thread about alignment research. Sample test data.</description>
+    <pubDate>Thu, 12 Nov 2026 12:00:00 GMT</pubDate>
+  </item>
+  <item>
+    <title>Sample: Loss of Control Scenarios, Revisited</title>
+    <link>https://safety.example.org/posts/loss-of-control</link>
+    <description>Thinking through loss of control scenarios for advanced systems. Sample test data.</description>
+    <pubDate>Sat, 07 Nov 2026 12:00:00 GMT</pubDate>
+  </item>
+</channel></rss>

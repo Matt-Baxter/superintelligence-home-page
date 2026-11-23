@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Sample data for tests only: one page of a paged blog feed that reaches back past 2023. -->
+<rss version="2.0"><channel>
+  <title>Sample History Blog</title>
+  <item>
+    <title>Sample: Interpretability Research Update, Early 2023</title>
+    <link>https://blog.example.org/history/interpretability-2023</link>
+    <description>New mechanistic interpretability results. Sample test data.</description>
+    <pubDate>Wed, 01 Feb 2023 12:00:00 GMT</pubDate>
+  </item>
+  <item>
+    <title>Sample: Older Blog Post on Alignment</title>
+    <link>https://blog.example.org/history/older</link>
+    <description>From 2022. Sample test data.</description>
+    <pubDate>Thu, 01 Dec 2022 12:00:00 GMT</pubDate>
+  </item>
+</channel></rss>
