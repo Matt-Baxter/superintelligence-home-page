@@ -287,3 +287,40 @@ export function analyzeStory(opts: {
     people,
   };
 }
+
+// Calibrated conversion from deterministic significance (0–100), empirical rigor (0–100), and hype (0–100)
+// into a 1.0–10.0 score so deterministic mode, Tier-0 settlement, and client-side interactive figures share one pure formula.
+export function deterministicScoreFromSignals(opts: {
+  significanceScore: number;
+  rigorScore: number;
+  hypeScore: number;
+  inScope: boolean;
+  promptInjection?: boolean;
+}): number {
+  if (opts.promptInjection) return 1.0;
+  if (!opts.inScope) return 2.4;
+
+  const sigPart = 6.5 + (opts.significanceScore / 100) * 3.2;
+  const rigorBonus = (opts.rigorScore / 100) * 0.55;
+  const hypeDiscount = opts.hypeScore >= 30 ? ((opts.hypeScore - 20) / 100) * 1.1 : 0;
+  const raw = sigPart + rigorBonus - hypeDiscount;
+  return Math.min(9.9, Math.max(4.5, Math.round(raw * 10) / 10));
+}
+
+// Calibrated 0–100 composite Best-Story score combining judge rating, significance, empirical rigor,
+// multi-source corroboration, and hype discount without penalizing historical era.
+export function computeBestStoryScore(opts: {
+  aiScore: number | null;
+  significanceScore: number;
+  rigorScore: number;
+  hypeScore: number;
+  sourceCount: number;
+}): number {
+  const judge = opts.aiScore ?? 7.8;
+  const judgePts = Math.max(0, Math.min(44, ((judge - 4.0) / 6.0) * 44));
+  const sigPts = (opts.significanceScore / 100) * 32;
+  const rigorPts = (opts.rigorScore / 100) * 14;
+  const corrPts = Math.min(10, Math.max(0, opts.sourceCount - 1) * 4);
+  const hypePen = opts.hypeScore >= 30 ? ((opts.hypeScore - 25) / 75) * 18 : 0;
+  return Math.max(0, Math.min(100, Math.round(judgePts + sigPts + rigorPts + corrPts - hypePen)));
+}

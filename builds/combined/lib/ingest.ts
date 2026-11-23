@@ -3,6 +3,7 @@ import { assessStory } from "./assess";
 import { readSpendSettings } from "./limits";
 import { ensureSchema, S, sql } from "./db";
 import { fetchFeed, type ParsedFeedItem } from "./feeds";
+import { invalidateJitSchema } from "./jit";
 import { tagText } from "./ontology";
 import type { SourceKind } from "./schemas";
 import { DEFAULT_SOURCES, type SourceCatalogEntry } from "./sources-data";
@@ -37,6 +38,7 @@ export async function seedDefaultSources(customSources?: SourceCatalogEntry[]): 
         provenance_note = EXCLUDED.provenance_note
     `;
   }
+  invalidateJitSchema();
 }
 
 export async function ingestFeedItem(
@@ -196,6 +198,7 @@ export async function ingestFeedItem(
     return { outcome, storyId };
   });
 
+  invalidateJitSchema();
   return txResult;
 }
 

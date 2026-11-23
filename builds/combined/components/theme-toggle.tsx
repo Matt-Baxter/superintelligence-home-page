@@ -1,29 +1,42 @@
 "use client";
 
-import { useState } from "react";
-import type { ThemeMode } from "@/lib/theme";
-
-export type { ThemeMode };
+import { useEffect, useState } from "react";
+import { applyDocumentTheme, nextThemeMode, THEME_SPECS, type ThemeMode } from "@/lib/theme";
 
 export function ThemeToggle({ initialTheme }: { initialTheme: ThemeMode }) {
   const [theme, setTheme] = useState<ThemeMode>(initialTheme);
-  const next: ThemeMode = theme === "light" ? "dark" : "light";
+  const next = nextThemeMode(theme);
+  const currentSpec = THEME_SPECS[theme];
+  const nextSpec = THEME_SPECS[next];
 
-  function toggleTheme() {
+  useEffect(() => {
+    const onExternalTheme = (ev: Event) => {
+      const custom = ev as CustomEvent<ThemeMode>;
+      if (custom.detail) setTheme(custom.detail);
+    };
+    window.addEventListener("si:theme-change", onExternalTheme);
+    return () => window.removeEventListener("si:theme-change", onExternalTheme);
+  }, []);
+
+  function cycleTheme() {
     setTheme(next);
-    document.documentElement.setAttribute("data-theme", next);
-    document.cookie = `si_theme=${next}; path=/; max-age=31536000; samesite=lax`;
+    applyDocumentTheme(next);
   }
 
   return (
     <button
       type="button"
-      onClick={toggleTheme}
-      className="nav-link"
-      style={{ background: "none", border: 0, cursor: "pointer" }}
-      aria-label={`Switch to ${next} theme`}
+      onClick={cycleTheme}
+      className="theme-toggle-btn"
+      title={`Current theme: ${currentSpec.label}. Click or press T for ${nextSpec.label}.`}
+      aria-label={`Theme: ${currentSpec.shortLabel}. Switch to ${nextSpec.label}`}
     >
-      {theme === "light" ? "Dark" : "Light"}
+      <span
+        className="theme-swatch-dot"
+        data-mode={theme}
+        aria-hidden="true"
+      />
+      <span>{currentSpec.shortLabel}</span>
     </button>
   );
 }

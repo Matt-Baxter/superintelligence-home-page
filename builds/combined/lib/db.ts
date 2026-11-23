@@ -30,6 +30,7 @@ export function resolveSchemaName(): string {
 declare global {
   var __siCombinedSql: ReturnType<typeof postgres> | undefined;
   var __siCombinedBootstrapped: Set<string> | undefined;
+  var __siCombinedBootstrapInflight: Map<string, Promise<void>> | undefined;
 }
 
 function createClient(): ReturnType<typeof postgres> {
@@ -68,8 +69,19 @@ export async function ensureSchema(): Promise<void> {
   globalThis.__siCombinedBootstrapped ??= new Set<string>();
   if (globalThis.__siCombinedBootstrapped.has(schemaName)) return;
 
-  const schemaPath = join(process.cwd(), "db", "schema.sql");
-  const ddl = readFileSync(schemaPath, "utf8").replaceAll("__SCHEMA__", schemaName);
-  await sql.unsafe(ddl);
-  globalThis.__siCombinedBootstrapped.add(schemaName);
+  globalThis.__siCombinedBootstrapInflight ??= new Map<string, Promise<void>>();
+  const inflight = globalThis.__siCombinedBootstrapInflight.get(schemaName);
+  if (inflight) return inflight;
+
+  const task = (async () => {
+    const schemaPath = join(process.cwd(), "db", "schema.sql");
+    const ddl = readFileSync(schemaPath, "utf8").replaceAll("__SCHEMA__", schemaName);
+    await sql.unsafe(ddl);
+    globalThis.__siCombinedBootstrapped?.add(schemaName);
+  })().finally(() => {
+    globalThis.__siCombinedBootstrapInflight?.delete(schemaName);
+  });
+
+  globalThis.__siCombinedBootstrapInflight.set(schemaName, task);
+  return task;
 }

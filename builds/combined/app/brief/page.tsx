@@ -64,19 +64,19 @@ export default async function BriefPage() {
           <ul className="stack-list">
             {brief.landmarks.map((item) => (
               <li key={item.id} className="stack-row highlighted">
-                <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: "0.5rem" }}>
+                <div className="stack-row-head">
                   <span className="sig-badge landmark">Significance {item.significanceScore}/100</span>
-                  <span style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
+                  <span className="stack-row-meta">
                     {item.sourceCount} {item.sourceCount === 1 ? "source" : "sources"} ·{" "}
                     {dateFormat.format(new Date(item.publishedAt))}
                   </span>
                 </div>
-                <h3 style={{ margin: "0.35rem 0 0.25rem", fontSize: "1.025rem" }}>
+                <h3 className="stack-row-title">
                   <a href={item.url} target="_blank" rel="noopener noreferrer">
                     {item.title}
                   </a>
                 </h3>
-                <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: "0.5rem", fontSize: "0.8125rem", color: "var(--muted)" }}>
+                <div className="stack-row-foot">
                   <span>{item.topics.join(" · ")}</span>
                   <Link href={`/stories/${item.id}`}>Provenance →</Link>
                 </div>
@@ -95,15 +95,14 @@ export default async function BriefPage() {
             <Link
               key={t.id}
               href={`/?topic=${encodeURIComponent(t.id)}`}
-              className="panel-card"
-              style={{ textDecoration: "none", color: "inherit" }}
+              className="panel-card velocity-card"
             >
-              <div style={{ fontWeight: 600, fontSize: "0.925rem" }}>{t.label}</div>
-              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginTop: "0.4rem" }}>
-                <span className="stat-value" style={{ fontSize: "1.25rem" }}>
+              <div className="velocity-card-title">{t.label}</div>
+              <div className="velocity-card-row">
+                <span className="stat-value velocity-card-val">
                   {t.thisWeek}
                 </span>
-                <span style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
+                <span className={t.delta > 0 ? "velocity-delta-pos" : "velocity-delta-neg"}>
                   {t.delta > 0 ? `+${t.delta}` : t.delta} vs prior ({t.prevWeek})
                 </span>
               </div>
@@ -114,19 +113,19 @@ export default async function BriefPage() {
 
       <div className="panel-grid">
         <section className="panel-card" aria-labelledby="singles-heading">
-          <h2 id="singles-heading" style={{ margin: "0 0 0.5rem", fontSize: "1.05rem" }}>
+          <h2 id="singles-heading" className="panel-card-heading">
             Single-Source High-Significance Finds
           </h2>
-          <p style={{ margin: "0 0 0.75rem", color: "var(--muted)", fontSize: "0.825rem" }}>
+          <p className="panel-card-lede">
             High-scoring technical posts or papers that only a single source covered—often overlooked by mainstream aggregators.
           </p>
           <ul className="stack-list">
             {brief.singleSourceFinds.map((s) => (
               <li key={s.id} className="stack-row">
-                <a href={s.url} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600, fontSize: "0.9rem" }}>
+                <a href={s.url} target="_blank" rel="noopener noreferrer" className="source-link-title">
                   {s.title}
                 </a>
-                <div style={{ marginTop: "0.25rem", fontSize: "0.78rem", color: "var(--muted)" }}>
+                <div className="stack-row-submeta">
                   {s.sourceName} · {s.significanceScore}/100 · <Link href={`/stories/${s.id}`}>Breakdown</Link>
                 </div>
               </li>
@@ -135,20 +134,20 @@ export default async function BriefPage() {
         </section>
 
         <section className="panel-card" aria-labelledby="bench-heading">
-          <h2 id="bench-heading" style={{ margin: "0 0 0.5rem", fontSize: "1.05rem" }}>
+          <h2 id="bench-heading" className="panel-card-heading">
             Tracked Evaluation Benchmarks
           </h2>
-          <p style={{ margin: "0 0 0.75rem", color: "var(--muted)", fontSize: "0.825rem" }}>
+          <p className="panel-card-lede">
             Frontier capability and safety benchmarks cited in recent stories, with extracted numeric or time-horizon scores.
           </p>
           {brief.benchmarkMentions.length === 0 ? (
-            <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>No benchmark citations in current window.</p>
+            <p className="stack-row-note">No benchmark citations in current window.</p>
           ) : (
             <ul className="stack-list">
               {brief.benchmarkMentions.map((b) => (
-                <li key={b.id} className="stack-row" style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem" }}>
+                <li key={b.id} className="stack-row bench-row">
                   <strong>{b.label}</strong>
-                  <span style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>
+                  <span className="stack-row-meta">
                     {b.mentions} {b.mentions === 1 ? "story" : "stories"}
                     {b.bestRawScore ? ` · ${b.bestRawScore}` : ""}
                   </span>

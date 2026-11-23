@@ -60,10 +60,10 @@ export default async function ReviewPage({
         </div>
       </section>
 
-      <div className="panel-card" style={{ marginBottom: "1.25rem", fontSize: "0.875rem" }}>
+      <div className="panel-card dist-bands-card">
         <strong>Score distribution bands: </strong>
         {ledger.bands.map((b, idx) => (
-          <span key={b.label} style={{ color: "var(--text-secondary)" }}>
+          <span key={b.label} className="dist-band-item">
             {idx > 0 ? " · " : ""}
             {b.label}: <strong>{b.count}</strong>
           </span>
@@ -118,26 +118,26 @@ export default async function ReviewPage({
               key={s.id}
               className={`stack-row${s.status === "shown" ? " highlighted" : ""}`}
             >
-              <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: "0.5rem" }}>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", alignItems: "center" }}>
+              <div className="stack-row-head">
+                <div className="stack-row-badges">
                   <span className="sig-badge">Det {s.significanceScore}/100</span>
                   {s.rigorScore > 0 && <span className="sig-badge">Rigor {s.rigorScore}/100</span>}
                   {s.hypeScore >= 35 && <span className="sig-badge warn">Hype {s.hypeScore}</span>}
                   {s.aiScore !== null && <span className="sig-badge">Rating {s.aiScore.toFixed(1)}/10</span>}
-                  <span style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
+                  <span className="stack-row-meta">
                     {AUDIT_STATUS_LABEL[s.status]}
                   </span>
                 </div>
-                <span style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
+                <span className="stack-row-meta">
                   {dateFormat.format(s.publishedAt)} · {s.sources.join(", ")}
                 </span>
               </div>
-              <h3 style={{ margin: "0.35rem 0 0.25rem", fontSize: "1rem" }}>
+              <h3 className="stack-row-title">
                 <a href={s.url} target="_blank" rel="noopener noreferrer">
                   {s.title}
                 </a>
               </h3>
-              <p style={{ margin: 0, fontSize: "0.825rem", color: "var(--muted)" }}>
+              <p className="stack-row-note tight">
                 {s.aiReason || s.scopeReason} · <Link href={`/stories/${s.id}`}>Inspect provenance →</Link>
               </p>
             </li>

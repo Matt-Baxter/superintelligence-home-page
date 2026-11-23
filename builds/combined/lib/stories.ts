@@ -1,6 +1,9 @@
+import { computeBestStoryScore } from "./analysis";
 import { dailyCap, FEED_TIME_ZONE, JUDGE_MIN_SCORE } from "./assess";
+export { computeBestStoryScore };
 import { ensureSchema, S, sql } from "./db";
 import { buildHistoryTasks } from "./history";
+import { getOrComputeJit, scopedJitKey } from "./jit";
 import { expandSearchToTopicIds, ROOT_TOPICS, TOPIC_LABEL_BY_ID } from "./ontology";
 import { evaluatePaperRigor } from "./paper-rigor";
 import {
@@ -145,24 +148,6 @@ function parseJsonColumn<T>(val: T | string | null | undefined, fallback: T): T 
     }
   }
   return val as T;
-}
-
-// Calibrated 0–100 composite Best-Story score combining judge rating, significance, empirical rigor,
-// multi-source corroboration, and hype discount without penalizing historical era.
-export function computeBestStoryScore(opts: {
-  aiScore: number | null;
-  significanceScore: number;
-  rigorScore: number;
-  hypeScore: number;
-  sourceCount: number;
-}): number {
-  const judge = opts.aiScore ?? 7.8;
-  const judgePts = Math.max(0, Math.min(44, ((judge - 4.0) / 6.0) * 44));
-  const sigPts = (opts.significanceScore / 100) * 32;
-  const rigorPts = (opts.rigorScore / 100) * 14;
-  const corrPts = Math.min(10, Math.max(0, opts.sourceCount - 1) * 4);
-  const hypePen = opts.hypeScore >= 30 ? ((opts.hypeScore - 25) / 75) * 18 : 0;
-  return Math.max(0, Math.min(100, Math.round(judgePts + sigPts + rigorPts + corrPts - hypePen)));
 }
 
 function hydrateStory(r: RawStoryRow): StoryView {
@@ -490,7 +475,7 @@ export async function listStories(
               ? sql`(SELECT count(*) FROM ${S()}.votes vc WHERE vc.story_id = s.id) DESC, s.significance_score DESC, s.published_at DESC`
               : sql`s.published_at DESC, s.id DESC`;
 
-  const [rows, countRows, topicCountRows, sourceStatsRows] = await Promise.all([
+  const [rows, countRows, corpusMeta] = await Promise.all([
     sql<RawStoryRow[]>`
       SELECT ${selectStoryColumns(viewerId)}
       FROM ${S()}.stories s
@@ -513,38 +498,45 @@ export async function listStories(
         ${evidenceClause}
         ${searchClause}
     `,
-    sql<{ topic_id: string; n: string }[]>`
-      SELECT st.topic_id, count(DISTINCT s.id)::text AS n
-      FROM ${S()}.story_topics st
-      JOIN ${S()}.stories s ON s.id = st.story_id
-      WHERE s.in_scope = true AND st.is_root = true
-      GROUP BY st.topic_id
-    `,
-    sql<{ sources: string; kinds: string }[]>`
-      SELECT
-        count(DISTINCT src.id)::text AS sources,
-        count(DISTINCT src.kind)::text AS kinds
-      FROM ${S()}.story_sources ss
-      JOIN ${S()}.sources src ON src.id = ss.source_id
-      JOIN ${S()}.stories s ON s.id = ss.story_id
-      WHERE s.in_scope = true
-    `,
+    getOrComputeJit(scopedJitKey("corpus-telemetry"), 15_000, async () => {
+      const [topicCountRows, sourceStatsRows] = await Promise.all([
+        sql<{ topic_id: string; n: string }[]>`
+          SELECT st.topic_id, count(DISTINCT s.id)::text AS n
+          FROM ${S()}.story_topics st
+          JOIN ${S()}.stories s ON s.id = st.story_id
+          WHERE s.in_scope = true AND st.is_root = true
+          GROUP BY st.topic_id
+        `,
+        sql<{ sources: string; kinds: string }[]>`
+          SELECT
+            count(DISTINCT src.id)::text AS sources,
+            count(DISTINCT src.kind)::text AS kinds
+          FROM ${S()}.story_sources ss
+          JOIN ${S()}.sources src ON src.id = ss.source_id
+          JOIN ${S()}.stories s ON s.id = ss.story_id
+          WHERE s.in_scope = true
+        `,
+      ]);
+      const countMap = new Map(topicCountRows.map((r) => [r.topic_id, Number(r.n)]));
+      return {
+        topicCounts: ROOT_TOPICS.map((rt) => ({
+          id: rt.id,
+          label: rt.label,
+          count: countMap.get(rt.id) ?? 0,
+        })),
+        activeSourceCount: Number(sourceStatsRows[0]?.sources ?? 0),
+        activeKindCount: Number(sourceStatsRows[0]?.kinds ?? 0),
+      };
+    }),
   ]);
-
-  const countMap = new Map(topicCountRows.map((r) => [r.topic_id, Number(r.n)]));
-  const topicCounts: TopicCount[] = ROOT_TOPICS.map((rt) => ({
-    id: rt.id,
-    label: rt.label,
-    count: countMap.get(rt.id) ?? 0,
-  }));
 
   return {
     stories: rows.slice(0, PAGE_SIZE).map(hydrateStory),
     hasMore: rows.length > PAGE_SIZE,
     totalMatching: Number(countRows[0]?.n ?? 0),
-    topicCounts,
-    activeSourceCount: Number(sourceStatsRows[0]?.sources ?? 0),
-    activeKindCount: Number(sourceStatsRows[0]?.kinds ?? 0),
+    topicCounts: corpusMeta.topicCounts,
+    activeSourceCount: corpusMeta.activeSourceCount,
+    activeKindCount: corpusMeta.activeKindCount,
   };
 }
 

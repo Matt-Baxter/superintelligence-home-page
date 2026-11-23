@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ensureSchema, S, sql } from "@/lib/db";
+import { invalidateJitSchema } from "@/lib/jit";
 
 // Human-in-the-loop review. The machine routes uncertain stories here; any signed-in reader can also flag one.
 // Three agreeing human verdicts resolve an item and adjust the published rating.
@@ -181,5 +182,6 @@ export async function recordVerdict(opts: {
     WHERE id = ${opts.storyId}::bigint
   `;
   await sql`UPDATE ${S()}.review_queue SET status = 'resolved' WHERE id = ${open.id}`;
+  invalidateJitSchema();
   return { ok: true, consensus };
 }

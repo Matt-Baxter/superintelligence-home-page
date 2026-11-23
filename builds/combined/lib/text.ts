@@ -142,3 +142,73 @@ export function extractCodeUrls(text: string | null | undefined): string[] {
     .filter((u) => !isTwitterUrl(u));
   return [...new Set(clean)].slice(0, 4);
 }
+
+// Cleans scraped Table-of-Contents / navigation chrome (e.g. "Contents Overview 1 Background 2 Methodology...")
+// for clean editorial card presentation while keeping underlying stored text untouched.
+export function cleanDisplaySummary(raw: string | null | undefined): {
+  text: string;
+  wasTocBoilerplate: boolean;
+} {
+  if (!raw) return { text: "", wasTocBoilerplate: false };
+  const s = raw.trim();
+  if (!s) return { text: "", wasTocBoilerplate: false };
+
+  // Detect scraped TOC sequences like "Contents Overview 1 Background 2 Methodology 3 Results..."
+  const tocNumberedSections = (s.match(/\b\d+\s+[A-Z][A-Za-z-]{2,}/g) ?? []).length;
+  const startsWithToc = /^(?:table\s+of\s+contents|contents)\b/i.test(s);
+  if ((startsWithToc && tocNumberedSections >= 2) || tocNumberedSections >= 4) {
+    // Extract readable section names as a structured outline instead of raw concatenated TOC soup
+    const stripped = s
+      .replace(/^(?:table\s+of\s+contents|contents)\s*/i, "")
+      .replace(/\bAppendices\b[\s\S]*$/i, "")
+      .trim();
+    const parts = stripped
+      .split(/\s+(?=\d+(?:\.\d+)?\s+[A-Z]|[A-Z]\s+[A-Z][a-z])/)
+      .map((p) => p.replace(/^\d+(?:\.\d+)?\s+/, "").trim())
+      .filter((p) => p.length > 2 && p.length < 48);
+    if (parts.length >= 3) {
+      return {
+        text: `Structured technical report covering: ${parts.slice(0, 5).join(" · ")}.`,
+        wasTocBoilerplate: true,
+      };
+    }
+    return { text: "", wasTocBoilerplate: true };
+  }
+
+  // Strip arXiv prefix boilerplate such as "arXiv:2503.12345v1 Announce Type: new Abstract: "
+  const cleaned = s
+    .replace(/^arXiv:\S+\s+Announce Type:\s*\w+\s*Abstract:\s*/i, "")
+    .replace(/^Abstract[:\s—-]+/i, "")
+    .trim();
+
+  return { text: cleaned, wasTocBoilerplate: false };
+}
+
+export function domainOf(rawUrl: string | null | undefined): string {
+  if (!rawUrl) return "";
+  try {
+    return new URL(rawUrl).hostname.replace(/^www\./i, "");
+  } catch {
+    return "";
+  }
+}
+
+const shortUtcDate = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+export function formatRelativeTime(publishedAt: Date, nowMs = Date.now()): string {
+  const diffMs = nowMs - publishedAt.getTime();
+  if (!Number.isFinite(diffMs) || diffMs < 0) {
+    return shortUtcDate.format(publishedAt);
+  }
+  const hours = Math.floor(diffMs / 3_600_000);
+  if (hours < 1) return "just now";
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 14) return `${days}d ago`;
+  return shortUtcDate.format(publishedAt);
+}

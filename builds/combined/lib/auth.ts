@@ -1,5 +1,6 @@
 import { createHash, randomBytes, scrypt as scryptCb, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
+import { cache } from "react";
 import { ensureSchema, S, sql } from "./db";
 import { isReservedUsername } from "./guards";
 import { EmailSchema } from "./limits";
@@ -95,7 +96,7 @@ export type SessionUser = {
   hasEmail: boolean;
 };
 
-export async function getCurrentUser(): Promise<SessionUser | null> {
+const readSessionUserUncached = async (): Promise<SessionUser | null> => {
   const { cookies } = await import("next/headers");
   const cookieStore = await cookies();
   const rawToken = cookieStore.get(SESSION_COOKIE)?.value;
@@ -118,7 +119,11 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     tier: r.tier === "reviewer" ? "reviewer" : "free",
     hasEmail: r.has_email,
   };
-}
+};
+
+// Per-request memoized session lookup via React 19 `cache()` so RootLayout + RSC pages
+// never issue duplicate session SQL queries within the same render pass.
+export const getCurrentUser: () => Promise<SessionUser | null> = cache(readSessionUserUncached);
 
 export async function destroyCurrentSession(): Promise<void> {
   const { cookies } = await import("next/headers");

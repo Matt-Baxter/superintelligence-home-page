@@ -116,7 +116,7 @@ export function AuthForm({
           </span>
         )}
 
-        <button type="submit" className="btn-primary" style={{ marginTop: "0.875rem" }}>
+        <button type="submit" className="btn-primary auth-submit-btn">
           {isSignUp ? "Create free account" : "Sign in"}
         </button>
 

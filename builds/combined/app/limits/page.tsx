@@ -81,7 +81,7 @@ export default async function LimitsPage() {
           </div>
           <div className="stat-label">AI units used today, site-wide</div>
           <div className="bar-track" aria-hidden="true">
-            <div className="bar-fill" style={{ width: `${aiPct}%` }} />
+            <div className="bar-fill" data-pct-decile={Math.round(aiPct / 10)} />
           </div>
         </div>
         <div className="stat-card">

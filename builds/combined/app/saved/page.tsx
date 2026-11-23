@@ -40,7 +40,7 @@ export default async function SavedStoriesPage() {
 
       {stories.length === 0 ? (
         <div className="empty-state">
-          <p style={{ margin: "0 0 0.75rem" }}>You have not saved any superintelligence stories yet.</p>
+          <p className="empty-copy">You have not saved any superintelligence stories yet.</p>
           <Link href="/" className="btn-primary">
             Browse the feed
           </Link>

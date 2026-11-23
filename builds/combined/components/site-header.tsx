@@ -1,27 +1,9 @@
 import Link from "next/link";
+import { BrandEmblem } from "@/components/brand-emblem";
+import { CommandTriggerButton, CommandWayfinding } from "@/components/command-wayfinding";
+import { ThemeToggle } from "@/components/theme-toggle";
 import type { SessionUser } from "@/lib/auth";
-import { NavLinks, type NavItem } from "./nav-links";
-import { ThemeToggle, type ThemeMode } from "./theme-toggle";
-
-const PRIMARY_NAV: NavItem[] = [
-  { href: "/", label: "Feed" },
-  { href: "/analysis", label: "Lab" },
-  { href: "/brief", label: "Brief" },
-  { href: "/sources", label: "Sources" },
-  { href: "/review", label: "Method" },
-  { href: "/compare", label: "Compare" },
-];
-
-function BrandMark() {
-  return (
-    <svg viewBox="0 0 24 24" className="brand-mark" aria-hidden="true">
-      <rect width="24" height="24" rx="6" fill="currentColor" />
-      <rect x="6" y="6.5" width="12" height="2.5" rx="1.25" fill="var(--bg)" />
-      <rect x="6" y="10.75" width="8.5" height="2.5" rx="1.25" fill="var(--bg)" />
-      <rect x="6" y="15" width="5" height="2.5" rx="1.25" fill="var(--bg)" />
-    </svg>
-  );
-}
+import type { ThemeMode } from "@/lib/theme";
 
 export function SiteHeader({
   user,
@@ -30,36 +12,64 @@ export function SiteHeader({
   user: SessionUser | null;
   initialTheme: ThemeMode;
 }) {
-  const items: NavItem[] = user
-    ? [...PRIMARY_NAV, { href: "/queue", label: "Queue" }, { href: "/saved", label: "Saved" }]
-    : [...PRIMARY_NAV, { href: "/queue", label: "Queue" }];
-
   return (
     <header className="site-header">
       <div className="site-header-inner">
-        <Link href="/" className="brand-group" style={{ textDecoration: "none" }}>
-          <BrandMark />
+        <Link href="/" className="brand-group" aria-label="Superintelligence Index — Home">
+          <BrandEmblem size={26} />
           <span className="site-title">Superintelligence</span>
         </Link>
 
-        <nav className="nav-row nav-primary" aria-label="Primary">
-          <NavLinks items={items} />
+        <nav className="nav-primary" aria-label="Primary sections">
+          <Link href="/" className="nav-link">
+            Feed
+          </Link>
+          <Link href="/analysis" className="nav-link">
+            Scoring Lab
+          </Link>
+          <Link href="/brief" className="nav-link">
+            Brief
+          </Link>
+          <Link href="/sources" className="nav-link">
+            Sources
+          </Link>
+          <Link href="/review" className="nav-link">
+            Method
+          </Link>
+          <Link href="/queue" className="nav-link">
+            Queue
+          </Link>
+          <Link href="/compare" className="nav-link">
+            Compare
+          </Link>
+          <Link href="/limits" className="nav-link">
+            Limits
+          </Link>
+          {user && (
+            <Link href="/saved" className="nav-link">
+              Saved
+            </Link>
+          )}
         </nav>
 
-        <div className="nav-row" aria-label="Account and theme">
+        <div className="nav-actions">
+          <CommandTriggerButton />
           <ThemeToggle initialTheme={initialTheme} />
+
           {user ? (
             <>
-              <span className="nav-user">{user.username}</span>
-              <form method="post" action="/api/auth/signout" style={{ margin: 0 }}>
-                <button type="submit" className="btn-secondary btn-small">
+              <span className="user-pill" title={`Signed in as ${user.username}`}>
+                {user.username}
+              </span>
+              <form method="post" action="/api/auth/signout">
+                <button type="submit" className="btn-ghost btn-small">
                   Sign out
                 </button>
               </form>
             </>
           ) : (
             <>
-              <Link href="/signin" className="btn-secondary btn-small">
+              <Link href="/signin" className="btn-ghost btn-small">
                 Sign in
               </Link>
               <Link href="/signup" className="btn-primary btn-small">
@@ -69,6 +79,8 @@ export function SiteHeader({
           )}
         </div>
       </div>
+
+      <CommandWayfinding isSignedIn={Boolean(user)} />
     </header>
   );
 }

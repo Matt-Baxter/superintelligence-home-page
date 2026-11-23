@@ -54,16 +54,16 @@ export default async function SourcesPage() {
             <ul className="stack-list">
               {group.map((s) => (
                 <li key={s.id} className="stack-row">
-                  <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: "0.5rem" }}>
+                  <div className="stack-row-head">
                     <div>
-                      <a href={s.homeUrl || s.feedUrl} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600 }}>
+                      <a href={s.homeUrl || s.feedUrl} target="_blank" rel="noopener noreferrer" className="source-link-title">
                         {s.name} ↗
                       </a>
-                      <span style={{ marginLeft: "0.5rem", fontSize: "0.78rem", color: "var(--muted)" }}>
+                      <span className="source-role-meta">
                         [{s.roleLabel} · {s.reviewLabel} · {s.independence}]
                       </span>
                     </div>
-                    <span style={{ fontSize: "0.8rem", color: s.lastError ? "var(--status-warn)" : "var(--status-ok)" }}>
+                    <span className={s.lastError ? "source-status-warn" : "source-status-ok"}>
                       {s.lastError
                         ? `Last fetch warning: ${s.lastError}`
                         : s.lastOkAt
@@ -71,7 +71,7 @@ export default async function SourcesPage() {
                           : `Configured · ${s.storyCount} stories`}
                     </span>
                   </div>
-                  <p style={{ margin: "0.25rem 0 0", fontSize: "0.84rem", color: "var(--muted)" }}>
+                  <p className="stack-row-note">
                     {s.provenanceNote}
                   </p>
                 </li>

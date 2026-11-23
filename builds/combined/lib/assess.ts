@@ -1,7 +1,8 @@
 import { generateText, Output } from "ai";
 import { reserveAiUnits } from "./usage";
 import { z } from "zod";
-import { analyzeStory } from "./analysis";
+import { analyzeStory, deterministicScoreFromSignals } from "./analysis";
+export { deterministicScoreFromSignals };
 import { tagText } from "./ontology";
 import { ROOT_TOPIC_IDS, type AssessmentTrailStep, type SourceKind } from "./schemas";
 import { isTwitterUrl } from "./text";
@@ -65,26 +66,6 @@ export type AssessmentOutput = {
   confidence: number;
   trail: AssessmentTrailStep[];
 };
-
-// Calibrated conversion from deterministic significance (0–100), empirical rigor (0–100), and hype (0–100)
-// into a 1.0–10.0 score so deterministic mode and Tier-0 settlement distinguish landmark empirical papers from thin commentary.
-export function deterministicScoreFromSignals(opts: {
-  significanceScore: number;
-  rigorScore: number;
-  hypeScore: number;
-  inScope: boolean;
-  promptInjection?: boolean;
-}): number {
-  if (opts.promptInjection) return 1.0;
-  if (!opts.inScope) return 2.4;
-
-  // Base from significance [0..100] -> [6.5..9.7], refined by empirical rigor (+0..0.55) and hype discount (-0..1.1)
-  const sigPart = 6.5 + (opts.significanceScore / 100) * 3.2;
-  const rigorBonus = (opts.rigorScore / 100) * 0.55;
-  const hypeDiscount = opts.hypeScore >= 30 ? ((opts.hypeScore - 20) / 100) * 1.1 : 0;
-  const raw = sigPart + rigorBonus - hypeDiscount;
-  return Math.min(9.9, Math.max(4.5, Math.round(raw * 10) / 10));
-}
 
 // Backwards-compatible helper preserved for unit tests
 export function deterministicScoreFromSignificance(sig0to100: number, inScope: boolean): number {

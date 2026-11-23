@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FeedToolbar } from "@/components/feed-toolbar";
+import { InteractiveSiAtlas } from "@/components/interactive-si-atlas";
 import { StoryCard } from "@/components/story-card";
 import { getCurrentUser } from "@/lib/auth";
 import { TOPIC_LABEL_BY_ID } from "@/lib/ontology";
@@ -30,49 +31,77 @@ export default async function HomePage({
   const activeTopicLabel = activeTopicId ? TOPIC_LABEL_BY_ID.get(activeTopicId) : null;
   const returnTo = serializeFeedQuery(query);
 
+  const isFilteredView =
+    Boolean(activeTopicId) ||
+    Boolean(query.q) ||
+    Boolean(query.preset && query.preset !== "all-si") ||
+    query.page > 1 ||
+    query.window !== "all" ||
+    query.evidence !== "all" ||
+    query.curation !== "all";
+
   return (
     <>
+      {/* Institutional Editorial Masthead */}
       <div className="feed-banner">
-        <div>
+        <div className="feed-banner-copy">
+          <div className="banner-eyebrow-row">
+            <span className="mono-kicker brass-dot">OPEN RESEARCH OBSERVATORY · 2015–PRESENT</span>
+            <span className="atlas-divider-dot" aria-hidden="true">·</span>
+            <span className="mono-kicker muted">DETERMINISTIC ONTOLOGY &amp; RIGOR VERIFICATION</span>
+          </div>
           <h1 className="feed-heading">
-            {activeTopicLabel ? `${activeTopicLabel} — Superintelligence Feed` : "Superintelligence Feed"}
+            {activeTopicLabel
+              ? `${activeTopicLabel}`
+              : "Tracking the Trajectory Toward Bounded Superintelligence"}
           </h1>
           <p className="feed-subtitle">
             {activeTopicLabel
-              ? `Showing verified superintelligence research, lab releases, evaluations and policy developments tagged under ${activeTopicLabel}.`
-              : "Progress toward AGI and superintelligence, alignment, interpretability, forecasting, scaling and frontier governance—grouped across sources with every tag and score explained."}
+              ? `Verified empirical papers, frontier safety evaluations, and governance developments indexed under ${activeTopicLabel}—with every score, matched phrase, and rigor claim audited in the open.`
+              : "A calm, reproducible research index synthesizing capabilities, automated AI R&D, alignment, mechanistic interpretability, scaling laws, and governance—explained from first principles to formal verification."}
           </p>
         </div>
-        <div className="feed-stats-strip" aria-label="Feed coverage summary">
-          <span>
-            <strong>{activeSourceCount}</strong> active sources
-          </span>
-          <span>·</span>
-          <span>
-            <strong>{activeKindCount}</strong> source kinds
-          </span>
-          <span>·</span>
-          <span>
-            <strong>{totalMatching}</strong> {totalMatching === 1 ? "story" : "stories"}
-          </span>
-        </div>
+
+        <dl className="masthead-telemetry" aria-label="Live corpus telemetry">
+          <div className="telemetry-cell">
+            <dt>Public Feeds</dt>
+            <dd>{activeSourceCount}</dd>
+          </div>
+          <div className="telemetry-cell">
+            <dt>Source Classes</dt>
+            <dd>{activeKindCount}</dd>
+          </div>
+          <div className="telemetry-cell">
+            <dt>In-Scope Corpus</dt>
+            <dd>{totalMatching}</dd>
+          </div>
+          <div className="telemetry-cell">
+            <dt>Social Noise</dt>
+            <dd>0</dd>
+          </div>
+        </dl>
       </div>
 
+      {/* Anthropic-Style Interactive Multi-Level Field Guide & Sacred-Geometry Emblem Explorer */}
+      <InteractiveSiAtlas topicCounts={topicCounts} defaultCollapsed={isFilteredView} />
+
+      {/* Clean Progressive-Disclosure Research Workspace Toolbar */}
       <FeedToolbar query={query} topicCounts={topicCounts} totalMatching={totalMatching} />
 
+      {/* Feed Corpus */}
       {stories.length === 0 ? (
         <div className="empty-state">
           {activeTopicLabel || query.q ? (
             <>
-              <p style={{ margin: "0 0 0.75rem" }}>
-                No superintelligence stories match that filter yet.
+              <p className="empty-state-copy">
+                No superintelligence stories match that filter combination yet.
               </p>
               <Link href="/" className="btn-secondary">
-                Show all superintelligence stories
+                Reset to full research corpus
               </Link>
             </>
           ) : (
-            <p style={{ margin: 0 }}>
+            <p className="slot-m-0">
               No superintelligence stories yet. Check back soon after the scheduled source harvest runs.
             </p>
           )}
@@ -97,7 +126,7 @@ export default async function HomePage({
           ) : (
             <span />
           )}
-          <span style={{ color: "var(--muted)", fontSize: "0.85rem" }}>Page {query.page}</span>
+          <span className="mono-kicker">Page {query.page}</span>
           {hasMore ? (
             <Link
               href={serializeFeedQuery({ ...query, page: query.page + 1 })}
