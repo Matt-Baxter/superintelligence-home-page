@@ -17,9 +17,15 @@
   --radius: 4px; --font: "IBM Plex Sans", -apple-system, "Segoe UI", system-ui, Helvetica, Arial, sans-serif;
   --serif: "Newsreader", "Iowan Old Style", Georgia, serif; --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
 }
-@media (prefers-color-scheme: dark) { :root {
+/* Theme: "auto" follows the OS; the top-bar Theme button pins light or dark via html[data-theme]. */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #0e0e0e; --surface: #171717; --fg: #ededed; --muted: #a0a0a0; --line: #303030; --line-strong: #5c5c5c;
   --accent: #ffffff; --accent-soft: #262626; --good: #ffffff; --good-soft: #2e2e2e; --warn: #cfcfcf; --warn-soft: #222222; --bad: #ffffff; --bad-soft: #171717; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0e0e0e; --surface: #171717; --fg: #ededed; --muted: #a0a0a0; --line: #303030; --line-strong: #5c5c5c;
+  --accent: #ffffff; --accent-soft: #262626; --good: #ffffff; --good-soft: #2e2e2e; --warn: #cfcfcf; --warn-soft: #222222; --bad: #ffffff; --bad-soft: #171717; color-scheme: dark; }
+:root[data-theme="light"] { color-scheme: light; }
+.theme-toggle { min-width: 4.5em; }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 var(--font); }
@@ -148,12 +154,12 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, .btn:focus-vi
 .story .vote { display: grid; justify-items: center; gap: 0; align-self: start; font: inherit; font-size: 13px; color: var(--muted); background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 0; cursor: pointer; }
 .story .vote.on { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
 .story .vote b { font-size: 15px; color: var(--fg); font-variant-numeric: tabular-nums; }
-.story .body { display: grid; gap: 6px; min-width: 0; }
+.story .body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; min-width: 0; }
 .story .title { font-size: 17px; font-weight: 600; color: var(--fg); text-decoration: none; line-height: 1.35; overflow-wrap: anywhere; }
 .story .title:hover { color: var(--accent); text-decoration: underline; }
 .story .meta { display: flex; gap: 6px 14px; flex-wrap: wrap; align-items: center; font-size: 13px; color: var(--muted); }
 .story .meta .multi { color: var(--accent); font-weight: 600; }
-.story .sum { font-size: 14px; color: var(--muted); }
+.story .sum { font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
 .story .listnote { font-size: 14px; font-style: italic; }
 .story .row2 { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: center; }
 .tags { display: flex; gap: 6px; flex-wrap: wrap; }

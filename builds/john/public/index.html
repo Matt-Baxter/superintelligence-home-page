@@ -92,20 +92,32 @@ function setAuthMode(nextMode) {
   $("#freePerks").hidden = mode !== "signup" || paused; $("#signupPaused").hidden = !paused; $("#authBtn").disabled = paused;
   $("#authErr").textContent = ""; $("#authStatus").textContent = "";
 }
-let ACCESS = {};
+let ACCESS = {}, ACCESS_AT = Date.now();
+const FILL_WINDOW_MS = 2000, TOKEN_RENEW_MS = 20 * 36e5, BOT_REFUSAL = /couldn.t create the account/i;
+const waitForFillWindow = () => new Promise((r) => setTimeout(r, Math.max(0, FILL_WINDOW_MS - (Date.now() - ACCESS_AT))));
+async function renewAccess() { const me = await api("/api/me", { allow401: true }); if (me?.access) { ACCESS = me.access; ACCESS_AT = Date.now(); } }
 $$(".tabs button").forEach((b) => b.onclick = () => setAuthMode(b.dataset.mode));
 $("#showPassword").onclick = () => { const show = $("#password").type === "password"; $("#password").type = show ? "text" : "password"; $("#showPassword").textContent = show ? "Hide" : "Show"; $("#showPassword").setAttribute("aria-pressed", String(show)); $("#showPassword").setAttribute("aria-label", show ? "Hide password" : "Show password"); };
 for (const event of ["keydown", "keyup"]) $("#password").addEventListener(event, (e) => { $("#capsWarning").hidden = !e.getModifierState("CapsLock"); });
 $("#authForm").onsubmit = async (e) => {
   e.preventDefault(); if ($("#authBtn").disabled) return;
   const action = mode; $("#authBtn").disabled = true; $$(".tabs button").forEach((b) => b.disabled = true); $("#authErr").textContent = ""; $("#authStatus").textContent = action === "signup" ? "Creating your account…" : "Signing in…";
-  try { await api(action === "signup" ? "/api/signup" : "/api/login", { body: { username: $("#username").value.trim(), password: $("#password").value, displayName: $("#displayName").value, ...(action === "signup" ? { website: $("#website").value, formToken: ACCESS.formToken } : {}) }, allow401: true });
+  const body = () => ({ username: $("#username").value.trim(), password: $("#password").value, displayName: $("#displayName").value, ...(action === "signup" ? { website: $("#website").value, formToken: ACCESS.formToken } : {}) });
+  try {
+    if (action === "signup") {
+      // The server refuses forms sent faster than a person fills them, or with a day-old token. Autofill plus Enter
+      // easily beats that window, so wait it out and renew a stale token instead of showing a dead-end error.
+      if (Date.now() - ACCESS_AT > TOKEN_RENEW_MS) await renewAccess();
+      await waitForFillWindow();
+      try { await api("/api/signup", { body: body(), allow401: true }); }
+      catch (err) { if (err.status !== 400 || !BOT_REFUSAL.test(err.message || "")) throw err; await renewAccess(); await waitForFillWindow(); await api("/api/signup", { body: body(), allow401: true }); }
+    } else await api("/api/login", { body: body(), allow401: true });
     location.href = localReturnPath(params.get("next")); }
   catch (err) { showErr($("#authErr"), err); $("#authStatus").textContent = ""; $("#password").focus(); $("#password").select(); }
   finally { $("#authBtn").disabled = false; $$(".tabs button").forEach((b) => b.disabled = false); }
 };
 function showAccess(demo, access = {}) {
-  ACCESS = access; $("#auth").hidden = false; setAuthMode(params.get("mode") === "signup" ? "signup" : "login");
+  ACCESS = access; ACCESS_AT = Date.now(); $("#auth").hidden = false; setAuthMode(params.get("mode") === "signup" ? "signup" : "login");
   if (access.emulator) {
     $("#emulatorAccess").hidden = false; $("#emulatorNote").textContent = `This is a test environment. Sign in as a test account in one click. The session ends after ${access.emulatorHours || 2} hours.`;
     $$("[data-emulate]").forEach((b) => b.onclick = async () => {

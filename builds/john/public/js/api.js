@@ -34,7 +34,7 @@ async function apiCall(path, opts) {
   });
   let data = {}; try { data = await res.json(); } catch (e) {}
   if (res.status === 401 && !opts.allow401) { location.href = "/?next=" + encodeURIComponent(location.pathname + location.search + location.hash); throw new Error("Please sign in."); }
-  if (!res.ok) throw new Error(data.error || `Request failed (${res.status}).`);
+  if (!res.ok) throw Object.assign(new Error(data.error || `Request failed (${res.status}).`), { status: res.status });
   if (path === "/api/me") window.SI_PUBLIC_NAV = data.publicNav || [];
   return data;
 }
@@ -88,6 +88,15 @@ function workspaceNavigation(user, current) {
   search.oninput=()=>{let count=0;for(const li of context.querySelectorAll(".directory-body li")){li.hidden=!li.textContent.toLowerCase().includes(search.value.trim().toLowerCase());if(!li.hidden)count++;}for(const section of context.querySelectorAll("section"))section.hidden=![...section.querySelectorAll("li")].some(x=>!x.hidden);context.querySelector(".directory-count").textContent=`${count} pages match.`;};
   directory.addEventListener("keydown", e=>{if(e.key==="Escape"){directory.open=false;directory.querySelector("summary").focus();}});
 }
+const THEMES = ["auto", "light", "dark"], THEME_LABEL = { auto: "Auto", light: "Light", dark: "Dark" };
+function readTheme() { try { const t = localStorage.getItem("si-theme"); return THEMES.includes(t) ? t : "auto"; } catch { return "auto"; } }
+function applyTheme(t) { if (t === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.dataset.theme = t; }
+if (typeof document !== "undefined") applyTheme(readTheme());
+function wireThemeToggle(btn) {
+  const render = (t) => { const next = THEMES[(THEMES.indexOf(t) + 1) % THEMES.length]; btn.textContent = THEME_LABEL[t]; btn.setAttribute("aria-label", `Theme: ${THEME_LABEL[t]}. Switch to ${THEME_LABEL[next]}`); btn.title = `Theme: ${THEME_LABEL[t]} (click for ${THEME_LABEL[next]})`; };
+  render(readTheme());
+  btn.onclick = () => { const next = THEMES[(THEMES.indexOf(readTheme()) + 1) % THEMES.length]; try { localStorage.setItem("si-theme", next); } catch {} applyTheme(next); render(next); };
+}
 function setPageContext(label) { const el = document.querySelector("#pageContextLabel"); if (el) el.textContent = label; }
 function topbar(user) {
   const here = location.pathname.replace(/\.html$/, "").replace(/\/index$/, "/") || "/";
@@ -105,8 +114,8 @@ function topbar(user) {
   const researchLinks = research.length ? `<div class="nav-tools"><p class="small muted">Research</p>${research.map((n) => `<a href="${esc(n.href)}"${isHere(n.href) ? ' aria-current="page"' : ""}>${esc(n.label)}</a>`).join("")}</div>` : "";
   const toolLinks = tools.length ? `<div class="nav-tools"><p class="small muted">Administration</p>${tools.map((n) => `<a href="${esc(n.href)}"${isHere(n.href) ? ' aria-current="page"' : ""}>${esc(n.label)}</a>`).join("")}</div>` : "";
   bar.innerHTML = `<a class="skip-link" href="#mainContent">Skip to content</a><div class="in"><a class="brand" href="/" aria-label="Superintelligence Homepage"><span class="brand-long">Superintelligence Homepage</span><span class="brand-short">SI Homepage</span></a><button class="btn nav-toggle" id="navToggle" type="button" aria-expanded="false" aria-controls="siteNav">Menu</button><nav class="nav" id="siteNav" aria-label="Main navigation">${links.map(([h, t]) => `<a href="${esc(h)}"${isHere(h) ? ' aria-current="page"' : ""}>${esc(t)}</a>`).join("")}${researchMenu}${researchLinks}${toolLinks}</nav>
-    <div class="who">${menu}${user ? `<span>${esc(user.name)}</span><button class="btn" id="logout" type="button">Sign out</button>` : `<a class="btn" href="/?signin=1">Sign in</a>`}</div></div>`;
-  document.querySelector(".topbar")?.remove(); document.body.prepend(bar);
+    <div class="who">${menu}<button class="btn theme-toggle" id="themeToggle" type="button">Auto</button>${user ? `<span>${esc(user.name)}</span><button class="btn" id="logout" type="button">Sign out</button>` : `<a class="btn" href="/?signin=1">Sign in</a>`}</div></div>`;
+  document.querySelector(".topbar")?.remove(); document.body.prepend(bar); wireThemeToggle(bar.querySelector("#themeToggle"));
   const main = document.querySelector("main") || document.querySelector("#app"); if (main) { if (!main.id) main.id = "mainContent"; bar.querySelector(".skip-link").href = `#${main.id}`; main.setAttribute("tabindex", "-1"); }
   const toggle = bar.querySelector("#navToggle"), setOpen = (open) => { bar.toggleAttribute("data-nav-open", open); toggle.setAttribute("aria-expanded", String(open)); };
   toggle.onclick = () => { const open = toggle.getAttribute("aria-expanded") !== "true"; setOpen(open); const more = bar.querySelector(".nav-more"); if (more) more.open = open; };
