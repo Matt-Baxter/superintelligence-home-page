@@ -31,6 +31,7 @@
     "test:spec": "node test/spec-acceptance.js --browser",
     "test:lineage": "LINEAGE_FULL=1 node --no-warnings test/lineage-unit.js",
     "lab": "node scripts/lab.js",
+    "map:affectui": "node scripts/affectui-map.js",
     "spec:status": "node scripts/spec-status.js",
     "bench": "node scripts/bench.js --record",
     "watch": "node scripts/watch.js",

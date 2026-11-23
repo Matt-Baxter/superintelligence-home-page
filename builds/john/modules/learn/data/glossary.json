@@ -155,7 +155,7 @@
     },
     {
       "id": "expectation",
-      "label": "Expectation 𝔼",
+      "label": "Expectation E[X]",
       "kind": "symbol",
       "aliases": [
         "expected value",

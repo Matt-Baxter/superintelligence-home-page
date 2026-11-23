@@ -33,16 +33,19 @@
 const ladder = (levels, on) => `<div class="ladder" role="img" aria-label="${esc(on)}">${levels.map((l) => `<span class="${l === on ? "on" : ""}">${esc(l)}</span>`).join("")}</div>`;
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 const STATUS_TEXT = { agreed: "agreed with the verdict", flagged: "disagreed and quoted why: sent to a person", unsupported: "disagreed without quoting the text: ignored", unreadable: "reply was unreadable: ignored", error: "could not be reached" };
-async function spotChecks() {
+const spotLead = (max) => `<h2>Final safety check</h2><p class="small muted">Everyday judging uses published rules and small free models. Once a day a larger model re-reads up to ${max} saved reviews and says whether the text supports the verdict. It never sets a score; a disagreement only counts when it quotes the text.</p>`;
+async function spotChecks(user) {
+  const box = $("#spot");
+  if (!user) { box.innerHTML = spotLead("a few") + `<p class="small"><a href="/?signin=1&amp;next=${encodeURIComponent(location.pathname)}">Sign in</a> to read the agents&rsquo; traces: each review&rsquo;s reasoning and what the larger model found.</p>`; return; }
   try {
-    const r = await api("/api/review/spotchecks"), box = $("#spot");
-    const lead = `<h2>Final safety check</h2><p class="small muted">Everyday judging uses published rules and small free models. Once a day a larger model re-reads up to ${r.dailyMax} saved reviews and says whether the text supports the verdict. It never sets a score; a disagreement only counts when it quotes the text.</p>`;
+    const r = await api("/api/review/spotchecks");
+    const lead = spotLead(r.dailyMax);
     if (!r.checks.length) { box.innerHTML = lead + `<p class="empty">${r.configured ? "No spot checks have run yet." : "Spot checks are switched off on this site, so no larger model is called."}</p>`; return; }
     box.innerHTML = lead + `<ul class="spots">${r.checks.slice(0, 12).map((c) => `<li><span class="small muted">${esc(c.day)}</span> <a href="/m/review#/doc/${c.doc_id}">${esc(c.title || "Removed review")}</a> <span class="small">(${esc(c.verdict || "")}, ${c.credibility ?? "?"}/100): the larger model ${esc(STATUS_TEXT[c.status] || c.status)}.</span>${c.status === "flagged" && c.quotes[0] ? `<blockquote class="small">${esc(c.quotes[0])}</blockquote>` : ""}</li>`).join("")}</ul>`;
   } catch { $("#spot").hidden = true; }
 }
-currentUser().then(async () => {
-  spotChecks();
+currentUser().then(async (user) => {
+  spotChecks(user);
   try {
     const r = await api("/api/review/evidence-index");
     $("#ix").innerHTML = r.topics.map((t) => `<article class="row">

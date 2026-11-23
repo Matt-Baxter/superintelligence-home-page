@@ -9,8 +9,9 @@ const feeds = require("../../lib/feeds");
 const CONCEPTS = (() => { try { return JSON.parse(fs.readFileSync(path.join(__dirname, "..", "learn", "data", "concepts.json"), "utf8")).concepts; } catch { return []; } })();
 
 module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, notFound, guestRead = auth, guestCache = () => (q, s, n) => n() }) {
-  // Reading the judges' traces is public and cheap: GET routes only read the database (no model calls), guests are
-  // rate-limited per IP and the computed views are cached for guests. Judging, saving and labelling stay signed-in.
+  // Basics are public and cheap: the review list, the map (knowledge graph), the evidence index, outlets, forecasts and
+  // aggregate metrics only read the database (no model calls); guests are rate-limited per IP and served from a cache.
+  // Agent traces (a review's full reasoning, the spot-check log), judging, saving and labelling need an account.
   const open = (ms) => [guestRead, guestCache(ms)];
   const input = (b = {}) => {
     const x = { kind: str(b.kind, 20), title: str(b.title, 300), text: String(b.text || "").slice(0, 20000), authors: str(b.authors, 600), url: str(b.url, 500) };
@@ -50,7 +51,8 @@ module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, no
     else rows = await db.all("SELECT * FROM review_docs ORDER BY id DESC LIMIT 100");
     return { docs: rows.filter((r) => !verdict || r.verdict === verdict).map(brief) };
   }));
-  app.get("/api/review/docs/:id", ...open(6e4), wrap(async (req) => {
+  // A single review's full trace (every guard, quote and step of the judges' reasoning) needs an account.
+  app.get("/api/review/docs/:id", auth, wrap(async (req) => {
     const r = await db.get("SELECT * FROM review_docs WHERE id = ?", Number(req.params.id)); if (!r) notFound("That review");
     const edges = await db.all("SELECT rel, dst FROM knowledge_edges WHERE src = ? ORDER BY rel, dst", r.qid);
     return { doc: { ...brief(r), authors: r.authors, url: r.url, excerpt: r.excerpt, label_note: req.user ? r.label_note : "" }, review: JSON.parse(r.result), edges };
@@ -152,14 +154,14 @@ module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, no
   }));
 
   // The final safety loop (spotcheck.js): a larger model re-reads a few reviews a day. Vercel Cron calls the run with
-  // "Authorization: Bearer $CRON_SECRET"; the log of what it found is public like the rest of the traces.
+  // "Authorization: Bearer $CRON_SECRET"; the log of what it found is a trace, so it needs an account.
   const SC = require("./spotcheck");
   app.get("/api/cron/spotcheck", wrap(async (req, res) => {
     const secret = process.env.CRON_SECRET;
     if (!secret || req.headers.authorization !== `Bearer ${secret}`) { res.status(401).json({ error: "Not authorized." }); return; }
     return SC.run(db, { model: SC.modelFromEnv() });
   }));
-  app.get("/api/review/spotchecks", ...open(6e4), wrap(async () => {
+  app.get("/api/review/spotchecks", auth, wrap(async () => {
     const rows = await db.all(`SELECT c.id, c.day, c.model, c.status, c.problem, c.quotes, c.at, d.id AS doc_id, d.title, d.verdict, d.credibility
       FROM review_spotchecks c LEFT JOIN review_docs d ON d.qid = c.doc_qid ORDER BY c.id DESC LIMIT 60`);
     const counts = {}; for (const r of rows) counts[r.status] = (counts[r.status] || 0) + 1;
