@@ -156,9 +156,10 @@ $("#f").onsubmit = (e) => { e.preventDefault(); run(false); };
 $("#bSave").onclick = () => run(true);
 $("#bStress").onclick = () => stress().catch((e) => showErr($("#status"), e));
 $("#bArxiv").onclick = async () => { try { st("Asking arXiv…"); const r = await api("/api/review/arxiv", { body: { id: $("#arxiv").value } }); $("#title").value = r.title; $("#authors").value = r.authors; $("#text").value = r.text; document.querySelector('[name=kind][value=paper]').checked = true; st("Filled from arXiv.", "ok"); } catch (e) { showErr($("#status"), e); } };
-requireUser().then(async (u) => {
+currentUser().then(async (u) => {
   user = u;
-  const { samples } = await api("/api/review/samples");
+  if (!u) { $("#f").hidden = true; $("#f").insertAdjacentHTML("afterend", `<p class="panel small" id="guestNote">You are reading as a guest: every saved review, its guards and the reasoning behind each score are open. <a href="/login?next=${encodeURIComponent(location.pathname + location.hash)}">Sign in</a> to judge a new text.</p>`); }
+  const { samples } = u ? await api("/api/review/samples") : { samples: [] };
   $("#samples").innerHTML = samples.map((s) => `<button class="chip" type="button" data-sample="${esc(s.id)}">${esc(s.label)}</button>`).join(" ");
   $$("[data-sample]").forEach((b) => (b.onclick = () => { const s = samples.find((x) => x.id === b.dataset.sample); $("#title").value = s.title; $("#authors").value = s.authors; $("#text").value = s.text; document.querySelector(`[name=kind][value=${s.kind}]`).checked = true; st(`Loaded "${s.label}".`); }));
   window.onhashchange = route;

@@ -187,7 +187,8 @@ function clean(text) {
     const n = norm(s); if (!n) continue;
     if (seen.has(n)) { dropped.push({ sentence: s, why: "repeats an earlier sentence" }); continue; }
     seen.add(n);
-    const w = words(s), tg = taggers.tagAll(s), tagged = tg.flatMap((t) => t.matched || []).join(" ");
+    // Each matched term counts once: a word several taggers match (topic and concept) is still one word of the sentence.
+    const w = words(s), tg = taggers.tagAll(s), tagged = [...new Set(tg.flatMap((t) => (t.matched || []).map((m) => m.toLowerCase())))].join(" ");
     const tw = words(tagged).length;
     if (w.length >= 3 && tw / w.length > 0.6 && !isStatement(w, words(tagged), tg)) { dropped.push({ sentence: s, why: "mostly tag terms (a keyword list)" }); continue; }
     const m = markersIn(s);

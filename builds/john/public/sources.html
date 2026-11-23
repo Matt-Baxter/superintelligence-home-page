@@ -5,6 +5,7 @@
 <main>
   <div class="pagehead">
     <div><h1>Sources</h1><p class="muted" id="sub">Every feed we read, what kind it is, and whether the last fetch worked. No Twitter/X.</p></div>
+    <p class="small muted" id="guestHint" hidden></p>
     <div class="actions"><a class="btn" id="adminLink" href="/m/admin#sources" hidden>Manage in Admin</a><button class="btn" id="fetchAll" type="button" hidden>Fetch all now</button></div>
   </div>
   <p class="err" id="fetchMsg" role="status"></p>
@@ -55,6 +56,10 @@ $("#suggest").onsubmit = async (e) => {
     e.target.reset(); flash($("#sErr"), r.status === "active" ? "Added." : "Thanks. An admin will review it."); load(); }
   catch (err) { showErr($("#sErr"), err); }
 };
-requireUser().then((u) => { $("#suggest").hidden = !(u.features || []).includes("suggest-sources"); return load(); });
+currentUser().then((u) => {
+  $("#suggest").hidden = !u || !(u.features || []).includes("suggest-sources");
+  if (!u) signInHint($("#guestHint"), "suggest a source");
+  return load();
+});
 </script>
 </body></html>

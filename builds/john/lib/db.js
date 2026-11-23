@@ -47,11 +47,17 @@ CREATE TABLE IF NOT EXISTS agent_log_saves (id ${ID}, entry_id INTEGER NOT NULL 
   at TEXT DEFAULT ${T}, total_chars INTEGER NOT NULL, typed_delta INTEGER DEFAULT 0, pasted_delta INTEGER DEFAULT 0, active_delta_ms BIGINT DEFAULT 0);
 CREATE TABLE IF NOT EXISTS fetch_runs (id ${ID}, source_id INTEGER REFERENCES sources(id) ON DELETE CASCADE, trigger TEXT DEFAULT 'cron',
   started_at TEXT, finished_at TEXT, status TEXT, items INTEGER DEFAULT 0, stored INTEGER DEFAULT 0, error TEXT, duration_ms INTEGER DEFAULT 0);
+CREATE TABLE IF NOT EXISTS guard_settings (scope TEXT PRIMARY KEY, settings TEXT NOT NULL, updated_by INTEGER REFERENCES users(id) ON DELETE SET NULL, updated_at TEXT DEFAULT ${T});
 CREATE TABLE IF NOT EXISTS admin_audit (id ${ID}, admin_id INTEGER REFERENCES users(id) ON DELETE SET NULL, action TEXT NOT NULL, target TEXT DEFAULT '',
   detail TEXT DEFAULT '', at TEXT DEFAULT ${T});
 CREATE TABLE IF NOT EXISTS story_entities (story_id INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE, kind TEXT NOT NULL, entity TEXT NOT NULL,
   value REAL, unit TEXT, PRIMARY KEY (story_id, kind, entity));
 CREATE INDEX IF NOT EXISTS idx_entities ON story_entities(kind, entity);
+-- One current assessment per story (lib/assess.js): tier 0 rules, tier 1 small model, tier 2 larger model.
+CREATE TABLE IF NOT EXISTS assessments (story_id INTEGER PRIMARY KEY REFERENCES stories(id) ON DELETE CASCADE, rules_version TEXT NOT NULL,
+  input_hash TEXT NOT NULL, tier INTEGER NOT NULL, verdict TEXT NOT NULL, confidence REAL, topics TEXT DEFAULT '[]', checks TEXT DEFAULT '[]',
+  trail TEXT DEFAULT '[]', model TEXT, reason TEXT DEFAULT '', blob_path TEXT, created_at TEXT DEFAULT ${T});
+CREATE INDEX IF NOT EXISTS idx_assess_verdict ON assessments(verdict);
 CREATE INDEX IF NOT EXISTS idx_runs_source ON fetch_runs(source_id, id);
 CREATE INDEX IF NOT EXISTS idx_links_story ON story_links(story_id);
 CREATE INDEX IF NOT EXISTS idx_links_url ON story_links(url);
@@ -133,6 +139,7 @@ const ADDED_COLUMNS = [
   ["stories", "analysis", "TEXT DEFAULT '{}'"],
   ["stories", "in_scope", "INTEGER"],
   ["story_links", "rigor", "TEXT DEFAULT ''"],
+  ["stories", "papers", "TEXT DEFAULT '[]'"],
 ];
 async function migrate() {
   for (const [table, col, type] of ADDED_COLUMNS) {

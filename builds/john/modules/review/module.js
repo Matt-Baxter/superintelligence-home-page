@@ -7,6 +7,7 @@ module.exports = {
   version: "0.1.0",
   description: "Ingest and judge papers, articles and comments (significance, rigor, hype, anti-Goodhart guards, adversarial stress test), a superintelligence map, and a catalog in the knowledge graph.",
   requires: ["knowledge"],
+  api: ["/api/cron/spotcheck"], // the daily larger-model spot check is a Vercel cron (vercel.json), so it lives under /api/cron
   setup(ctx) {
     ctx.point("db.schema").addSql(`
 CREATE TABLE IF NOT EXISTS review_docs (id \${ID}, qid TEXT NOT NULL UNIQUE, kind TEXT NOT NULL, title TEXT NOT NULL, authors TEXT DEFAULT '',
@@ -18,6 +19,9 @@ CREATE TABLE IF NOT EXISTS review_events (id \${ID}, qid TEXT NOT NULL UNIQUE, d
   sentence TEXT NOT NULL, due TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', note TEXT DEFAULT '',
   resolved_by INTEGER REFERENCES users(id) ON DELETE SET NULL, resolved_at TEXT, created_at TEXT DEFAULT \${T});
 CREATE INDEX IF NOT EXISTS idx_review_events_outlet ON review_events(outlet);
+CREATE TABLE IF NOT EXISTS review_spotchecks (id \${ID}, doc_qid TEXT NOT NULL, day TEXT NOT NULL, model TEXT NOT NULL,
+  status TEXT NOT NULL, problem TEXT DEFAULT '', quotes TEXT DEFAULT '[]', at TEXT DEFAULT \${T});
+CREATE INDEX IF NOT EXISTS idx_review_spotchecks_day ON review_spotchecks(day);
 `);
     // A probability the forecast states (0 to 1), Brier-scored once resolved.
     ctx.point("db.schema").addColumns([["review_events", "probability", "REAL"]]);

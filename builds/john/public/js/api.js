@@ -51,6 +51,21 @@ async function requireUser() {
   if (need && !(user.features || []).includes(need)) { const m = document.querySelector("main"); if (m) m.innerHTML = `<div class="panel"><h1>Not in this version</h1><p class="muted">This page is an extra beyond the shared spec. It runs when the site uses the extended profile (SITE_PROFILE=extended).</p><p><a href="/">Back to the feed</a></p></div>`; return new Promise(() => {}); } // stop here: the page stays on the notice
   return user;
 }
+// Pages that guests may read: draw the bar for whoever is here and resolve with the user, or null for a guest.
+// Feature gating matches requireUser; only actions (vote, save, suggest) still ask for sign-in.
+async function currentUser() {
+  const me = await api("/api/me", { allow401: true });
+  const user = me.user || null;
+  topbar(user);
+  const need = PAGE_FEATURE[location.pathname.replace(/\.html$/, "")];
+  if (need && !(me.features || []).includes(need)) { const m = document.querySelector("main"); if (m) m.innerHTML = `<div class="panel"><h1>Not in this version</h1><p class="muted">This page is not part of this version of the site.</p><p><a href="/">Go to the feed</a></p></div>`; return new Promise(() => {}); }
+  return user;
+}
+function signInHint(target, what) {
+  if (!target) return;
+  target.hidden = false;
+  target.innerHTML = `<a href="/?next=${encodeURIComponent(location.pathname + location.search)}">Sign in</a> to ${what}.`;
+}
 function workspaceNavigation(user, current) {
   const nav = user?.nav || [], available = [...(user ? NAV.filter(([, , f]) => !f || user.features?.includes(f)).map(([href,label])=>({href,label})) : [{href:"/",label:"Feed"},{href:"/welcome",label:"About"}]), ...nav, ...(!user ? (window.SI_PUBLIC_NAV || []) : [])];
   const known = {"/story":"Story", "/m/content":"Content desk"};
@@ -135,9 +150,37 @@ function storyDate(s) {
   return `<details class="story-date"><summary aria-label="${label}: ${esc(ago(iso))}; expand for date details">${esc(ago(iso))}</summary><p>${label}: <time datetime="${dateOnly ? originalDate : iso}">${esc(dateOnly ? originalDate + " (time unavailable)" : iso.replace("T", " ").replace(".000Z", " UTC"))}</time></p></details>`;
 }
 // A view of the existing score factors; meters show points out of the same 100-point scale.
+// Scorecard from lib/score.js: grounded checks and audience buzz side by side, each check marked in words.
+const CHECK_MARK = { pass: "Pass", fail: "Fail", null: "No data" };
+function scoreBlock(c, opts = {}) {
+  if (!c) return "";
+  const who = c.raters.count ? Object.entries(c.raters.byClass).filter(([, n]) => n).map(([k, n]) => `${n} ${k}`).join(", ") : "no reactions yet";
+  // Signal pattern from affectUI Smart Recommendation: how much of this card is decided, not whether the story is true.
+  const decided = c.checks.filter((k) => k.result !== "null").length;
+  const signal = !decided ? 0 : decided / c.checks.length < 0.5 ? 1 : c.buzz === null ? 2 : 3;
+  const signalText = ["No evidence yet", "Thin evidence", "Some evidence", "Well evidenced"][signal];
+  return `<div class="scorecard">
+    <p class="signal small" data-level="${signal}"><span class="bars" aria-hidden="true">${[1, 2, 3].map((n) => `<span${signal >= n ? " data-on" : ""}></span>`).join("")}</span>${signalText} <span class="muted">· ${decided} of ${c.checks.length} checks decided</span></p>
+    <dl class="score-pair">
+      <div><dt>Grounded</dt><dd>${c.grounded ?? "–"}</dd><p class="small muted">${c.grounded === null ? "Too few checks decided" : "Rule checks passed"}</p></div>
+      <div><dt>Buzz</dt><dd>${c.buzz ?? "–"}</dd><p class="small muted">${c.buzz === null ? `Shown after 3 people react (${c.raters.count} so far)` : who}</p></div>
+    </dl>
+    ${opts.compact ? "" : `<ul class="checks">${c.checks.map((k) => `<li class="check ${k.result}"><span class="mark">${CHECK_MARK[k.result]}</span><b>${esc(k.label)}</b><span class="muted">${esc(k.detail)}</span></li>`).join("")}</ul>`}
+    ${c.salt.length ? `<p class="salt small"><b>Grain of salt:</b> ${c.salt.map(esc).join(" ")}</p>` : ""}
+  </div>`;
+}
 function evidenceBreakdown(s) {
   const factors = s.analysis?.why || [];
-  return `<p class="small muted">Rule-based significance: a reading aid, not confidence or scientific validity.</p>${factors.length ? `<ul class="evidence-factors">${factors.map((f) => `<li><span>${esc(f.factor)} <b>+${esc(f.points)}</b></span><meter min="0" max="100" value="${Math.max(0, Math.min(100, Number(f.points) || 0))}" aria-label="${esc(f.factor)}: ${esc(f.points)} points out of 100">${esc(f.points)} points</meter><small class="muted">${esc(f.detail || "")}</small></li>`).join("")}</ul>` : '<p class="small">No factor breakdown is available for this story.</p>'}`;
+  return scoreBlock(s.card) + `<p class="small muted">Rule-based significance: a reading aid, not confidence or scientific validity.</p>${factors.length ? `<ul class="evidence-factors">${factors.map((f) => `<li><span>${esc(f.factor)} <b>+${esc(f.points)}</b></span><meter min="0" max="100" value="${Math.max(0, Math.min(100, Number(f.points) || 0))}" aria-label="${esc(f.factor)}: ${esc(f.points)} points out of 100">${esc(f.points)} points</meter><small class="muted">${esc(f.detail || "")}</small></li>`).join("")}</ul>` : '<p class="small">No factor breakdown is available for this story.</p>'}`;
+}
+const paperLabel = (key) => key.startsWith("arxiv:") ? `arXiv ${key.slice(6)}` : `DOI ${key.slice(4, 30)}${key.length > 30 ? "…" : ""}`;
+// Original papers a blog or newsletter post cites. One already in the feed opens its story; others open the paper.
+function papersRow(s) {
+  const papers = (s.papers || []).slice(0, 3);
+  if (!papers.length) return "";
+  return `<p class="papers small"><span class="muted">Original paper${papers.length > 1 ? "s" : ""}:</span> ${papers.map((p) => p.story_id
+    ? `<a class="paper-link" href="/story?id=${encodeURIComponent(p.story_id)}" title="This paper is also in the feed">${esc(paperLabel(p.key))}</a>`
+    : `<a class="paper-link" href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">${esc(paperLabel(p.key))}<span class="sr-only"> (opens in a new tab)</span></a>`).join(" ")}</p>`;
 }
 let cardSequence = 0;
 // One story card, used by the feed, lists and saved views.
@@ -157,6 +200,7 @@ function storyCard(s, opts = {}) {
     <div class="meta">${sigBadge}${rigorBadge}${an.type ? `<span class="utype">${esc(an.type.label)}</span>` : ""}<span>${esc(s.sources[0]?.name || "")}${s.nsources > 1 ? ` <span class="multi">+ ${s.nsources - 1} more source${s.nsources > 2 ? "s" : ""}</span>` : ""}</span><span>${kinds.map(esc).join(" · ")}</span>${storyDate(s)}</div>
     <section class="evidence-panel" id="${evidenceId}" aria-label="Significance explanation" hidden></section>
     ${s.summary && !opts.compact ? `<p class="sum">${esc(s.summary.slice(0, 260))}${s.summary.length > 260 ? "…" : ""}</p>` : ""}
+    ${papersRow(s)}
     ${opts.listNote ? `<p class="listnote">“${esc(opts.listNote)}”</p>` : ""}
     <div class="row2"><div class="tags">${bench}${tags}${orgs}</div><div class="acts"><a href="/story?id=${s.id}">${s.notes ? `${s.notes} note${s.notes > 1 ? "s" : ""}` : "Notes"}</a><button type="button" class="save linkish" aria-pressed="${s.saved}">${s.saved ? "Saved ✓" : "Save"}</button></div></div><p class="action-feedback small" role="status" aria-live="polite" hidden></p></div>`;
   const dateDetails = li.querySelector(".story-date");

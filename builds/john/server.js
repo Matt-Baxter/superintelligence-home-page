@@ -9,6 +9,8 @@ const feeds = require("./lib/feeds");
 const tagger = require("./lib/tagger");
 const audit = require("./lib/audit");
 const analysis = require("./lib/analysis");
+const score = require("./lib/score");
+const assess = require("./lib/assess");
 
 /* ---------------------------------------------------------------- modules */
 // Features beyond the core are modules (modules/<id>/module.js, enabled in modules/modules.json) that plug into
@@ -34,13 +36,14 @@ const now = () => db.now();
 const bool = (v) => v === true || v === 1 || v === "1" || v === "t";
 
 function hashPassword(pw) { const salt = crypto.randomBytes(16).toString("hex"); return `${salt}:${crypto.scryptSync(pw, salt, 64).toString("hex")}`; }
-function checkPassword(pw, stored) { const [s, h] = stored.split(":"); return crypto.timingSafeEqual(crypto.scryptSync(pw, s, 64), Buffer.from(h, "hex")); }
+function checkPassword(pw, stored) { const [s, h] = String(stored || "").split(":"); if (!s || !h || h.length !== 128) return false; return crypto.timingSafeEqual(crypto.scryptSync(pw, s, 64), Buffer.from(h, "hex")); }
 const SESSION_DAYS = 30;
-async function startSession(res, uid) {
+async function startSession(res, uid, ms = SESSION_DAYS * 864e5) {
   const token = crypto.randomBytes(32).toString("hex");
-  await db.run("INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)", token, uid, Date.now() + SESSION_DAYS * 864e5);
-  res.cookie("sid", token, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production" || !!process.env.VERCEL, maxAge: SESSION_DAYS * 864e5 });
+  await db.run("INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)", token, uid, Date.now() + ms);
+  res.cookie("sid", token, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production" || !!process.env.VERCEL, maxAge: ms });
 }
+const guards = require("./lib/guards");
 const cookie = (req, n) => { const m = (req.headers.cookie || "").split(/;\s*/).find((c) => c.startsWith(n + "=")); return m ? decodeURIComponent(m.slice(n.length + 1)) : null; };
 
 /* ---------------------------------------------------------------- ingestion */
@@ -59,8 +62,10 @@ const boot = () => (bootP ||= db.ready().then(seedSources).then(() => harvester.
 /* ------------------------------------------------------------------- app */
 const app = express();
 app.set("trust proxy", 1);
+app.disable("x-powered-by");
+app.use(guards.headers());
 app.use(express.json({ limit: "256kb" }));
-app.use((req, res, next) => (req.path.startsWith("/api/") ? boot().then(() => next(), next) : next()));
+app.use((req, res, next) => (req.path.startsWith("/api/") ? boot().then(() => guards.refresh(db)).then(() => next(), next) : next()));
 app.use(async (req, res, next) => {
   const t = req.path.startsWith("/api/") && cookie(req, "sid");
   if (!t) return next();
@@ -71,13 +76,26 @@ app.use(async (req, res, next) => {
     next();
   } catch (e) { next(e); }
 });
+app.use((req, res, next) => (req.path.startsWith("/api/") ? guards.budgets(req, res, next) : next()));
 const auth = (req, res, next) => (req.user ? next() : res.status(401).json({ error: "Please sign in first." }));
 const admin = (req, res, next) => (req.user?.admin ? next() : res.status(403).json({ error: "Only an admin can do this." }));
 const hits = new Map();
+// Guests get a per-IP read budget on the heavier open endpoints; members are not throttled here.
+const guestRead = (req, res, next) => (req.user ? next() : limit(120, 6e4)(req, res, next));
+// Cost guard for open read routes: guests share one cached answer per URL for `ms`, so a crowd of anonymous readers
+// costs one query per window per instance. Members always get a fresh answer (theirs can carry per-user fields).
+const guestCache = (ms) => { const m = new Map(); return (req, res, next) => {
+  if (req.user) return next();
+  const k = req.originalUrl, h = m.get(k);
+  if (h && Date.now() - h.at < ms) { res.set("X-Guest-Cache", "hit"); return res.json(h.body); }
+  const send = res.json.bind(res);
+  res.json = (body) => { if (res.statusCode < 400) { if (m.size > 200) m.clear(); m.set(k, { at: Date.now(), body }); } res.set("X-Guest-Cache", "miss"); return send(body); };
+  next();
+}; };
 const limit = (n, ms) => (req, res, next) => {
   const k = req.path + req.ip, t = Date.now(), l = (hits.get(k) || []).filter((x) => t - x < ms);
   if (l.length >= n) return res.status(429).json({ error: "Too many requests. Wait a few minutes and try again." });
-  l.push(t); hits.set(k, l); next();
+  l.push(t); if (hits.size > 5000) hits.clear(); hits.set(k, l); next();
 };
 
 /* accounts — the first account becomes the admin */
@@ -85,21 +103,61 @@ app.post("/api/signup", limit(30, 6e5), wrap(async (req, res) => {
   const u = str(req.body.username, 40), pw = req.body.password || "";
   // REQ-012: only a username and password. A separate display name is an extended-version extra.
   const name = (profile.has("display-name") && str(req.body.displayName, 60)) || u;
+  const bot = guards.signupBotCheck(req.body);
+  if (bot) { guards.note(`signup:${bot}`); bad("We couldn't create the account. Wait a moment and try again."); }
   if (!/^[a-zA-Z0-9_.-]{3,40}$/.test(u)) bad("Usernames are 3–40 letters, numbers, dots, dashes or underscores.");
+  if (guards.isReservedUsername(u)) bad("That username is reserved. Choose another.");
   if (typeof pw !== "string" || pw.length < 8) bad("Passwords need at least 8 characters.");
   if (await db.get("SELECT 1 AS x FROM users WHERE LOWER(username) = LOWER(?)", u)) bad("That username is taken.");
-  const first = (await db.get("SELECT COUNT(*) AS n FROM users")).n === 0;
-  const id = await db.insert("INSERT INTO users (username, display_name, pass_hash, is_admin, created_at) VALUES (?, ?, ?, ?, ?)", u, name, hashPassword(pw), first ? 1 : 0, now());
-  await startSession(res, id); return { user: { id, username: u, name, admin: first } };
+  const first = Number((await db.get("SELECT COUNT(*) AS n FROM users WHERE LOWER(username) NOT LIKE 'emulator.%'")).n) === 0;
+  if (!first && !guards.settings().signupOpen) { guards.note("signup:paused"); forbid("New accounts are paused for now. You can still read everything without one."); }
+  const isAdmin = guards.adminOnSignup(u, first);
+  const id = await db.insert("INSERT INTO users (username, display_name, pass_hash, is_admin, created_at) VALUES (?, ?, ?, ?, ?)", u, name, hashPassword(pw), isAdmin ? 1 : 0, now());
+  await startSession(res, id); return { user: { id, username: u, name, admin: isAdmin } };
 }));
 app.post("/api/login", limit(30, 6e5), wrap(async (req, res) => {
-  const u = await db.get("SELECT * FROM users WHERE LOWER(username) = LOWER(?)", str(req.body.username, 40));
-  if (!u || !checkPassword(String(req.body.password || ""), u.pass_hash)) throw new HttpError(401, "Wrong username or password.");
+  const name = str(req.body.username, 40);
+  if (guards.isLocked(name)) { guards.note("login:locked"); throw new HttpError(429, `Too many wrong passwords for this account. Wait ${guards.settings().lockMinutes} minutes and try again.`); }
+  const u = await db.get("SELECT * FROM users WHERE LOWER(username) = LOWER(?)", name);
+  if (!u || !checkPassword(String(req.body.password || ""), u.pass_hash)) { guards.loginFailed(name); guards.note("login:failed"); throw new HttpError(401, "Wrong username or password."); }
   if (bool(u.disabled)) throw new HttpError(403, "This account has been disabled. Contact the site admin.");
+  guards.loginSucceeded(name);
   await startSession(res, u.id); return { user: { id: u.id, username: u.username, name: u.display_name, admin: bool(u.is_admin) } };
 }));
+// Preview sign-in emulator (REQ-060): one click to a test admin or test reader. lib/guards.js decides where it may run.
+app.post("/api/emulate", limit(20, 6e5), wrap(async (req, res) => {
+  if (!guards.emulatorOn()) notFound("That page");
+  const role = guards.EMULATOR_ROLES[str(req.body?.role, 10)]; if (!role) bad("Choose admin or reader.");
+  let u = await db.get("SELECT * FROM users WHERE LOWER(username) = LOWER(?)", role.username);
+  if (!u) { await db.insert("INSERT INTO users (username, display_name, pass_hash, is_admin, created_at) VALUES (?, ?, ?, ?, ?)", role.username, role.admin ? "Test admin" : "Test reader", hashPassword(crypto.randomBytes(24).toString("hex")), role.admin ? 1 : 0, now());
+    u = await db.get("SELECT * FROM users WHERE LOWER(username) = LOWER(?)", role.username); }
+  if (bool(u.disabled)) forbid("This test account has been disabled by an admin.");
+  guards.note(`emulate:${role.admin ? "admin" : "reader"}`);
+  await startSession(res, u.id, guards.EMULATOR_HOURS * 36e5);
+  return { user: { id: u.id, username: u.username, name: u.display_name, admin: bool(u.is_admin), emulated: true } };
+}));
+// Security settings (REQ-061/062): super admins only, scoped to this environment, every save in the audit log.
+const superAdmin = (req, res, next) => db.get("SELECT MIN(id) AS id FROM users WHERE is_admin = 1 AND LOWER(username) NOT LIKE 'emulator.%'")
+  .then((r) => guards.isSuperAdmin(req.user, r?.id) ? next() : res.status(403).json({ error: "Only a super admin can see or change security settings." }))
+  .catch(next);
+const SA = [auth, admin, superAdmin];
+app.get("/api/admin/security", ...SA, wrap(() => guards.describe()));
+app.post("/api/admin/security/preview", ...SA, wrap((req) => {
+  const v = guards.validate(req.body?.settings, guards.settings()); if (!v.ok) bad(v.error);
+  return { settings: v.value, changed: guards.diff(v.value, guards.settings()), examples: guards.simulate(v.value) };
+}));
+app.put("/api/admin/security/settings", ...SA, wrap(async (req) => {
+  const r = await guards.save(db, req.body?.settings, req.user.id); if (!r.ok) bad(r.error);
+  if (Object.keys(r.changed).length) await audit.log(req.user.id, "security.settings", guards.scopeOf(), JSON.stringify(r.changed));
+  return guards.describe();
+}));
+app.post("/api/admin/security/clear-lock", ...SA, wrap(async (req) => {
+  const u = str(req.body?.username, 40); if (!u) bad("Enter the username to unlock.");
+  guards.loginSucceeded(u); await audit.log(req.user.id, "security.unlock", u, "sign-in lock cleared on this instance");
+  return { ok: true, username: u };
+}));
 app.post("/api/logout", wrap(async (req, res) => { const t = cookie(req, "sid"); if (t) await db.run("DELETE FROM sessions WHERE token = ?", t); res.clearCookie("sid"); return { ok: true }; }));
-app.get("/api/me", wrap((req) => { const pr = profile.current(); return { user: req.user ? { ...req.user, nav: kernel.nav(req.user), profile: pr.name, features: [...pr.features] } : null, profile: pr.name, features: [...pr.features], publicNav: [...(kernel.modules.some(m=>m.id==="editorial") ? [{href:"/m/journal",label:"Journal"}] : []), ...(kernel.modules.some(m=>m.id==="learn") ? [{href:"/m/glossary",label:"Glossary"}] : [])], ...(process.env.ALLOW_FIXTURE_FEEDS === "1" && process.env.NODE_ENV !== "production" && app.locals.demo ? { demo: app.locals.demo } : {}) }; }));
+app.get("/api/me", wrap((req) => { const pr = profile.current(); return { user: req.user ? { ...req.user, nav: kernel.nav(req.user), profile: pr.name, features: [...pr.features] } : null, profile: pr.name, features: [...pr.features], publicNav: [...(kernel.modules.some(m=>m.id==="review") ? [{href:"/m/evidence",label:"Evidence"}] : []), ...(kernel.modules.some(m=>m.id==="editorial") ? [{href:"/m/journal",label:"Journal"}] : []), ...(kernel.modules.some(m=>m.id==="learn") ? [{href:"/m/glossary",label:"Glossary"}] : [])], access: { signupOpen: guards.settings().signupOpen, ...(req.user ? {} : { formToken: guards.formToken() }), emulator: !!guards.emulatorOn(), emulatorHours: guards.EMULATOR_HOURS }, ...(process.env.ALLOW_FIXTURE_FEEDS === "1" && process.env.NODE_ENV !== "production" && app.locals.demo ? { demo: app.locals.demo } : {}) }; }));
 app.get("/api/ontology", wrap(() => ({ topics: tagger.topicList(), orgs: tagger.orgList(), about: tagger.ontology.about,
   benchmarks: (tagger.ontology.benchmarks || []).map(({ id, label, measures }) => ({ id, label, measures })), people: (tagger.ontology.people || []).map(({ id, label }) => ({ id, label })) })));
 
@@ -133,15 +191,20 @@ async function storyRows(where, args, uid, { sort = "top", limit = 40, offset = 
   if (!uid) page.forEach((r) => { r.nnotes = 0; });
   const byStory = new Map();
   for (const link of links) { if (!byStory.has(link.story_id)) byStory.set(link.story_id, []); byStory.get(link.story_id).push(link); }
-  return page.map((r) => shapeStory(r, byStory.get(r.id) || []));
+  // Cited papers that are also stories here link to that story, so readers stay on the evidence trail.
+  const papersOf = new Map(page.map((r) => { let p; try { p = JSON.parse(r.papers || "[]"); } catch { p = []; } return [r.id, Array.isArray(p) ? p : []]; }));
+  const paperKeys = [...new Set([...papersOf.values()].flat().map((p) => p.key).filter(Boolean))];
+  const local = new Map(paperKeys.length ? (await db.all(`SELECT k.key, k.story_id FROM story_keys k JOIN stories st ON st.id = k.story_id
+    WHERE k.key IN (${paperKeys.map(() => "?").join(",")}) AND COALESCE(st.hidden, 0) = 0 AND COALESCE(st.in_scope, 0) = 1`, ...paperKeys)).map((x) => [x.key, x.story_id]) : []);
+  return score.attach(db, page.map((r) => shapeStory(r, byStory.get(r.id) || [], papersOf.get(r.id).map((p) => ({ key: p.key, url: p.url, story_id: local.get(p.key) || null })))));
 }
-function shapeStory(r, links) {
+function shapeStory(r, links, papers = []) {
   return {
     id: r.id, title: r.title, url: r.url, summary: r.summary, authors: r.authors, published_at: r.published_at, first_seen: r.first_seen,
     topics: JSON.parse(r.topics || "[]"), orgs: JSON.parse(r.orgs || "[]"), votes: r.votes, voted: bool(r.voted), saved: bool(r.saved), notes: r.nnotes,
     sources: links.map((l) => ({ name: l.source || "Uncatalogued source", kind: l.kind || "submitted", url: l.url, title: l.title,
       ...(profile.has("rigor-badges") && l.rigor ? { rigor: (() => { try { return JSON.parse(l.rigor); } catch { return undefined; } })() } : {}) })),
-    nsources: r.nsources, significance: r.significance || 0, analysis: JSON.parse(r.analysis || "{}"),
+    nsources: r.nsources, significance: r.significance || 0, analysis: JSON.parse(r.analysis || "{}"), papers,
   };
 }
 app.get("/api/stories", wrap(async (req) => {
@@ -151,7 +214,16 @@ app.get("/api/stories", wrap(async (req) => {
   if (topic) { w.push("s.id IN (SELECT story_id FROM story_topics WHERE topic = ?)"); a.push(topic); }
   if (kind) { w.push("s.id IN (SELECT l.story_id FROM story_links l LEFT JOIN sources src ON src.id = l.source_id WHERE COALESCE(src.kind, 'submitted') = ?)"); a.push(kind); }
   if (org) { w.push("s.orgs LIKE ?"); a.push(`%"id":"${org.replace(/[%_"]/g, "")}"%`); }
-  if (qtext) { w.push("(LOWER(s.title) LIKE ? OR LOWER(s.summary) LIKE ?)"); a.push(`%${qtext}%`, `%${qtext}%`); }
+  // Keyword search, widened to the ontology topics the words name unless ?expand=0 asks for exact words only.
+  const expanded = qtext && req.query.expand !== "0" ? tagger.expandQuery(qtext) : [];
+  if (qtext) {
+    const viaTopic = expanded.length ? ` OR s.id IN (SELECT story_id FROM story_topics WHERE topic IN (${expanded.map(() => "?").join(",")}))` : "";
+    w.push(`(LOWER(s.title) LIKE ? OR LOWER(s.summary) LIKE ?${viaTopic})`); a.push(`%${qtext}%`, `%${qtext}%`, ...expanded.map((t) => t.id));
+  }
+  // Only stories the assessment layer (lib/assess.js) judged on topic.
+  if (req.query.checked === "1") w.push("s.id IN (SELECT story_id FROM assessments WHERE verdict = 'relevant')");
+  // Live feed: only stories newer than the newest one the reader already has.
+  if (Number(req.query.since) > 0) { w.push("s.id > ?"); a.push(Math.trunc(Number(req.query.since))); }
   if (days) { w.push("COALESCE(s.published_at, s.first_seen) >= ?"); a.push(new Date(Date.now() - days * 864e5).toISOString()); }
   if (req.query.benchmark) { w.push("s.id IN (SELECT story_id FROM story_entities WHERE kind = 'benchmark' AND entity = ?)"); a.push(str(req.query.benchmark, 40)); }
   if (req.query.person) { w.push("s.id IN (SELECT story_id FROM story_entities WHERE kind = 'person' AND entity = ?)"); a.push(str(req.query.person, 60)); }
@@ -167,7 +239,7 @@ app.get("/api/stories", wrap(async (req) => {
   if (req.query.saved === "1") { w.push("s.id IN (SELECT story_id FROM saves WHERE user_id = ?)"); a.push((req.user?.id || 0)); }
   const sort = ["top", "new", "votes", "signal"].includes(req.query.sort) ? req.query.sort : "new"; // REQ-002: newest first
   const offset = Math.max(0, Number(req.query.offset) || 0);
-  return { stories: await storyRows(w.join(" AND "), a, (req.user?.id || 0), { sort, offset, limit: 40 }), sort };
+  return { stories: await storyRows(w.join(" AND "), a, (req.user?.id || 0), { sort, offset, limit: 40 }), sort, expanded };
 }));
 app.get("/api/stories/:id", wrap(async (req) => {
   const id = Number(req.params.id); const rows = await storyRows("s.id = ?", [id], (req.user?.id || 0)); if (!rows.length) notFound("That story");
@@ -250,10 +322,13 @@ app.delete("/api/lists/:id", auth, feature("lists"), wrap(async (req) => {
 }));
 
 /* ------------------------------------------------------------------ sources */
-app.get("/api/sources", auth, wrap(async (req) => ({
-  sources: await db.all(`SELECT s.*, u.display_name AS suggested_by_name, (SELECT COUNT(DISTINCT story_id) FROM story_links l WHERE l.source_id = s.id) AS stories
-    FROM sources s LEFT JOIN users u ON u.id = s.suggested_by ORDER BY CASE WHEN s.status = 'active' THEN 0 ELSE 1 END, s.kind, s.name`),
-  kinds: KINDS.filter((k) => k !== "submitted"), fetching: harvester.isRunning(), fetchMinutes: process.env.VERCEL ? null : FETCH_MINUTES, schedule: process.env.VERCEL ? "daily (Vercel Cron)" : null, isAdmin: req.user.admin,
+// Reading the source list is open to guests (REQ: browse without an account). Guests see active sources only,
+// without who suggested them; pending/rejected suggestions and member names stay behind sign-in.
+app.get("/api/sources", guestRead, wrap(async (req) => ({
+  sources: (await db.all(`SELECT s.*, u.display_name AS suggested_by_name, (SELECT COUNT(DISTINCT story_id) FROM story_links l WHERE l.source_id = s.id) AS stories
+    FROM sources s LEFT JOIN users u ON u.id = s.suggested_by ${req.user ? "" : "WHERE s.status = 'active'"} ORDER BY CASE WHEN s.status = 'active' THEN 0 ELSE 1 END, s.kind, s.name`))
+    .map((r) => (req.user ? r : { ...r, suggested_by: null, suggested_by_name: null, note: null })),
+  kinds: KINDS.filter((k) => k !== "submitted"), fetching: harvester.isRunning(), fetchMinutes: process.env.VERCEL ? null : FETCH_MINUTES, schedule: process.env.VERCEL ? "daily (Vercel Cron)" : null, isAdmin: !!req.user?.admin, signedIn: !!req.user,
   formats: Object.entries(feeds.FORMATS).map(([id, f]) => ({ id, label: f.label })),
 })));
 app.post("/api/sources/suggest", auth, feature("suggest-sources"), limit(10, 36e5), wrap(async (req) => {
@@ -271,7 +346,10 @@ app.post("/api/sources/suggest", auth, feature("suggest-sources"), limit(10, 36e
 app.get("/api/cron/fetch", wrap(async (req, res) => {
   const secret = process.env.CRON_SECRET;
   if (!secret || req.headers.authorization !== `Bearer ${secret}`) { res.status(401).json({ error: "Not authorized." }); return; }
-  return harvester.harvest({ trigger: "cron" });
+  const harvest = await harvester.harvest({ trigger: "cron" });
+  // Then assess a small batch of new stories: rules first, a model only for the unsure ones, capped per run.
+  const assessed = await assess.run(db, { limit: Number(process.env.ASSESS_PER_RUN) || 15 }).catch((e) => ({ error: String(e.message).slice(0, 200) }));
+  return { ...harvest, assessed };
 }));
 
 /* ---------------------------------------------------------------- agent log */
@@ -286,13 +364,23 @@ function weekBounds(weekStart) {
   const day = (d.getUTCDay() + 6) % 7; const start = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - (weekStart ? 0 : day)));
   return { start, end: new Date(start.getTime() + 7 * 864e5) };
 }
-app.get("/api/brief", auth, feature("brief"), wrap(async (req) => {
+// Open to guests. A guest brief has no per-user fields, so it is cached per week (cost guard: one 1000-row
+// query per week per instance per 10 minutes, however many anonymous readers arrive).
+const guestBriefCache = new Map(); const GUEST_BRIEF_MS = 10 * 6e4;
+app.get("/api/brief", guestRead, feature("brief"), wrap(async (req) => {
+  const cacheKey = req.user ? null : str(req.query.week, 10) || "current", hit = cacheKey && guestBriefCache.get(cacheKey);
+  if (hit && Date.now() - hit.at < GUEST_BRIEF_MS) return hit.body;
+  const body = await buildBrief(req, req.user?.id ?? null);
+  if (cacheKey) { if (guestBriefCache.size > 60) guestBriefCache.clear(); guestBriefCache.set(cacheKey, { at: Date.now(), body }); }
+  return body;
+}));
+async function buildBrief(req, uid) {
   let { start, end } = weekBounds(str(req.query.week, 10));
   const inRange = "COALESCE(s.published_at, s.first_seen) >= ? AND COALESCE(s.published_at, s.first_seen) < ?";
-  let stories = await storyRows(inRange, [start.toISOString(), end.toISOString()], req.user.id, { sort: "top", limit: 1000 });
+  let stories = await storyRows(inRange, [start.toISOString(), end.toISOString()], uid, { sort: "top", limit: 1000 });
   // Early in a week nothing may be collected yet: without a chosen week, show last week rather than an empty brief.
   if (!stories.length && !req.query.week) {
-    const ps = new Date(start.getTime() - 7 * 864e5), last = await storyRows(inRange, [ps.toISOString(), start.toISOString()], req.user.id, { sort: "top", limit: 1000 });
+    const ps = new Date(start.getTime() - 7 * 864e5), last = await storyRows(inRange, [ps.toISOString(), start.toISOString()], uid, { sort: "top", limit: 1000 });
     if (last.length) { end = start; start = ps; stories = last; }
   }
   const prevStart = new Date(start.getTime() - 7 * 864e5);
@@ -301,13 +389,13 @@ app.get("/api/brief", auth, feature("brief"), wrap(async (req) => {
   const kinds = {}; stories.forEach((s) => new Set(s.sources.map((x) => x.kind)).forEach((k) => (kinds[k] = (kinds[k] || 0) + 1)));
   const v = await views();
   return { spec: v.weeklyBrief({ start, end, stories, topics: tagger.topicList(), prevCounts: prevMap, kinds }), week: start.toISOString().slice(0, 10) };
-}));
+}
 app.get("/api/catalog", wrap(async () => { const { catalog } = await views(); return { components: Object.keys(catalog.data?.components ?? {}), prompt: catalog.prompt(), jsonSchema: catalog.jsonSchema() }; }));
 
 /* -------------------------------------------------------------------- admin */
 // Everything modules need from the core, passed to their routes and start hooks (never imported directly).
 function moduleDeps() {
-  return { app, db, auth, admin, wrap, str, bad, forbid, notFound, bool, now, KINDS, FORMAT_IDS, harvester, audit, tagger, feeds, analysis, storyRows, views, kernel };
+  return { app, db, auth, admin, guestRead, guestCache, wrap, str, bad, forbid, notFound, bool, now, KINDS, FORMAT_IDS, harvester, audit, tagger, feeds, analysis, storyRows, views, kernel };
 }
 kernel.mount(app, moduleDeps());
 app.get("/api/admin/modules", auth, admin, wrap(() => kernel.describe()));

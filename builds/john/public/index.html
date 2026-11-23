@@ -3,14 +3,24 @@
 <title>Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css"></head>
 <body>
 <section class="auth panel access-panel" id="auth" hidden aria-labelledby="authTitle">
-  <a href="/welcome" class="small">← Explore the homepage</a>
+  <div class="access-brand"><a href="/" class="access-logo">Superintelligence Homepage</a><a href="/welcome" class="small">How it works</a></div>
   <div><h1 id="authTitle">Sign in to your workspace</h1><p class="muted" id="authIntro">Read AI-progress stories, save what matters and follow the evidence.</p></div>
   <p class="access-destination small" id="returnHint" hidden></p>
+  <section id="emulatorAccess" class="demo-access emulator-access" hidden aria-labelledby="emulatorTitle"><div><h2 id="emulatorTitle">Test sign-in</h2><p class="small muted" id="emulatorNote">This is a test environment. Sign in as a test account in one click. The session ends after 2 hours.</p></div><div class="actions"><button class="btn primary" type="button" data-emulate="admin">Test admin</button><button class="btn" type="button" data-emulate="reader">Test reader</button></div><p class="err" id="emulatorErr" role="alert"></p></section>
+  <section id="demoAccess" class="demo-access" hidden aria-labelledby="demoTitle"><div><h2 id="demoTitle">Try it in one click</h2><p class="small muted">Local demo with synthetic data. Pick a role and you&apos;re signed in.</p></div><div class="actions" id="demoAccounts"></div></section>
   <div class="tabs" role="group" aria-label="Account access">
     <button aria-pressed="true" data-mode="login" type="button">Sign in</button>
     <button aria-pressed="false" data-mode="signup" type="button">Create account</button>
   </div>
+  <ul class="free-perks small" id="freePerks" hidden aria-label="What a free account adds">
+    <li><b>Save and sort</b> stories into your own lists</li>
+    <li><b>Vote</b> on what matters and see the feed shift</li>
+    <li><b>Private notes</b> on any story, only you can read them</li>
+    <li><b>Submit links</b> and suggest new sources</li>
+  </ul>
+  <p class="small muted" id="signupPaused" role="status" hidden>New accounts are paused for now. Everything stays readable without one.</p>
   <form id="authForm" class="access-form">
+    <div class="hp-field" aria-hidden="true"><label>Website<input id="website" name="website" tabindex="-1" autocomplete="off"></label></div>
     <label>Username<input id="username" autocomplete="username" autocapitalize="none" spellcheck="false" required maxlength="40" aria-describedby="usernameHelp"></label>
     <p class="small muted" id="usernameHelp">Use your username, not an email address.</p>
     <label id="nameWrap" hidden>Display name <span class="muted">(optional)</span><input id="displayName" autocomplete="name" maxlength="60"></label>
@@ -21,8 +31,8 @@
     <button class="btn primary" type="submit" id="authBtn">Sign in</button>
     <p class="err" id="authErr" role="alert"></p><p class="small muted" id="authStatus" role="status"></p>
   </form>
-  <details class="access-help"><summary>Need help signing in?</summary><p class="small muted">Check your username and Caps Lock, or use Show to check your password. Password reset by email is not available. Contact the site owner if you cannot access your account. Do not share your password.</p></details>
-  <section id="demoAccess" class="demo-access" hidden aria-labelledby="demoTitle"><h2 id="demoTitle">Try the local demo</h2><p class="small muted">Synthetic data in a local workspace. Choose a role to fill the form, then sign in.</p><div class="actions" id="demoAccounts"></div><p class="small muted">Use separate browser profiles to test two people at once. Demo changes survive restarts. Run DEMO_FRESH=1 npm run demo for a fresh workspace.</p></section>
+  <p class="small muted access-guest">Just browsing? <a href="/">Read the feed without an account</a>.</p>
+  <details class="access-help"><summary>Need help signing in?</summary><p class="small muted">Check your username and Caps Lock, or use Show to check your password. Password reset by email is not available. Contact the site owner if you cannot access your account. Do not share your password.</p><p class="small muted" id="demoHelp" hidden>Demo tip: use separate browser profiles to test two roles at once. Demo changes survive restarts; run DEMO_FRESH=1 npm run demo for a fresh workspace.</p></details>
 </section>
 
 <section class="auth panel" id="startupError" role="alert" hidden><h1>The homepage could not load</h1><p id="startupMessage" class="muted"></p><button class="btn" id="retryStartup" type="button">Try again</button></section>
@@ -42,6 +52,7 @@
     <select id="kind" aria-label="Source kind"><option value="">All kinds of source</option></select>
     <select id="days" aria-label="Time window"><option value="">Any time</option><option value="1">Last day</option><option value="7" selected>Last week</option><option value="30">Last month</option></select>
     <label style="display:flex;flex-direction:row;gap:6px;align-items:center;color:var(--fg)"><input type="checkbox" id="savedOnly" style="width:auto"> Saved</label>
+    <label class="check-filter"><input type="checkbox" id="checkedOnly"> Assessed on topic</label>
     </div></details>
     <input type="search" id="q" maxlength="100" placeholder="Search titles and summaries" aria-label="Search">
   </div>
@@ -58,6 +69,8 @@
   <p id="laterPage" class="small muted" hidden>You’re viewing a later results page. <button class="linkish" id="showFirst" type="button">Show first results</button></p>
   <div class="feed-results"><p id="feedStatus" class="small muted" role="status" aria-live="polite">Loading stories…</p><button class="linkish" id="sortInfo" type="button" aria-expanded="false" aria-controls="sortHelp">Explain sort</button><button class="btn" id="clearFilters" type="button" hidden>Clear filters</button></div>
   <p id="sortHelp" class="sort-explanation small" hidden></p>
+  <p id="expandNote" class="expand-note small" hidden></p>
+  <button class="btn live-new" id="liveNew" type="button" hidden aria-live="polite"></button>
   <div class="feed-error" id="feedError" role="alert" hidden><span id="feedErrorMessage"></span><button class="btn" id="retryFeed" type="button">Try again</button></div>
   <ol class="feed" id="feed" aria-label="Stories"></ol>
   <div class="actions"><button class="btn" id="more" type="button" hidden>Load more</button></div>
@@ -75,27 +88,48 @@ function setAuthMode(nextMode) {
   $("#password").autocomplete = mode === "signup" ? "new-password" : "current-password";
   $("#username").pattern = mode === "signup" ? "[a-zA-Z0-9_.\\-]{3,40}" : ".*";
   $("#usernameHelp").textContent = mode === "signup" ? "3–40 letters, numbers, dots, dashes or underscores." : "Use your username, not an email address.";
+  const paused = mode === "signup" && ACCESS.signupOpen === false;
+  $("#freePerks").hidden = mode !== "signup" || paused; $("#signupPaused").hidden = !paused; $("#authBtn").disabled = paused;
   $("#authErr").textContent = ""; $("#authStatus").textContent = "";
 }
+let ACCESS = {};
 $$(".tabs button").forEach((b) => b.onclick = () => setAuthMode(b.dataset.mode));
 $("#showPassword").onclick = () => { const show = $("#password").type === "password"; $("#password").type = show ? "text" : "password"; $("#showPassword").textContent = show ? "Hide" : "Show"; $("#showPassword").setAttribute("aria-pressed", String(show)); $("#showPassword").setAttribute("aria-label", show ? "Hide password" : "Show password"); };
 for (const event of ["keydown", "keyup"]) $("#password").addEventListener(event, (e) => { $("#capsWarning").hidden = !e.getModifierState("CapsLock"); });
 $("#authForm").onsubmit = async (e) => {
   e.preventDefault(); if ($("#authBtn").disabled) return;
   const action = mode; $("#authBtn").disabled = true; $$(".tabs button").forEach((b) => b.disabled = true); $("#authErr").textContent = ""; $("#authStatus").textContent = action === "signup" ? "Creating your account…" : "Signing in…";
-  try { await api(action === "signup" ? "/api/signup" : "/api/login", { body: { username: $("#username").value.trim(), password: $("#password").value, displayName: $("#displayName").value }, allow401: true });
+  try { await api(action === "signup" ? "/api/signup" : "/api/login", { body: { username: $("#username").value.trim(), password: $("#password").value, displayName: $("#displayName").value, ...(action === "signup" ? { website: $("#website").value, formToken: ACCESS.formToken } : {}) }, allow401: true });
     location.href = localReturnPath(params.get("next")); }
-  catch (err) { showErr($("#authErr"), err); $("#authStatus").textContent = ""; }
+  catch (err) { showErr($("#authErr"), err); $("#authStatus").textContent = ""; $("#password").focus(); $("#password").select(); }
   finally { $("#authBtn").disabled = false; $$(".tabs button").forEach((b) => b.disabled = false); }
 };
-function showAccess(demo) {
-  $("#auth").hidden = false; setAuthMode(params.get("mode") === "signup" ? "signup" : "login");
+function showAccess(demo, access = {}) {
+  ACCESS = access; $("#auth").hidden = false; setAuthMode(params.get("mode") === "signup" ? "signup" : "login");
+  if (access.emulator) {
+    $("#emulatorAccess").hidden = false; $("#emulatorNote").textContent = `This is a test environment. Sign in as a test account in one click. The session ends after ${access.emulatorHours || 2} hours.`;
+    $$("[data-emulate]").forEach((b) => b.onclick = async () => {
+      $$("[data-emulate]").forEach((x) => x.disabled = true); $("#emulatorErr").textContent = ""; $("#authStatus").textContent = "Signing in as a test account…";
+      try { await api("/api/emulate", { body: { role: b.dataset.emulate } }); location.href = localReturnPath(params.get("next")); }
+      catch (err) { showErr($("#emulatorErr"), err); $("#authStatus").textContent = ""; $$("[data-emulate]").forEach((x) => x.disabled = false); }
+    });
+  }
   const next = localReturnPath(params.get("next")); if (next !== "/") { $("#returnHint").hidden = false; $("#returnHint").textContent = `After signing in, you’ll return to ${next.split(/[?#]/)[0]}.`; }
-  if (demo?.accounts?.length) { $("#demoAccess").hidden = false; for (const account of demo.accounts) { const button = document.createElement("button"); button.type = "button"; button.className = "btn"; button.textContent = `Use ${account.role} account`; button.onclick = () => { setAuthMode("login"); $("#username").value = account.username; $("#password").value = account.password; $("#authStatus").textContent = `${account.role} demo credentials filled. Select Sign in to continue.`; $("#authBtn").focus(); }; $("#demoAccounts").append(button); if (params.get("demoRole") === account.role) button.click(); } }
+  if (demo?.accounts?.length) {
+    $("#demoAccess").hidden = false; $("#demoHelp").hidden = false;
+    const fillDemo = (account) => { setAuthMode("login"); $("#username").value = account.username; $("#password").value = account.password; };
+    for (const account of demo.accounts) {
+      const button = document.createElement("button"); button.type = "button"; button.className = "btn";
+      button.textContent = `Sign in as ${account.role}`;
+      button.onclick = () => { fillDemo(account); $("#authForm").requestSubmit(); };
+      $("#demoAccounts").append(button);
+      if (params.get("demoRole") === account.role) { fillDemo(account); $("#authStatus").textContent = `${account.role} demo account ready. Select Sign in to continue.`; }
+    }
+  }
   (demo?.accounts?.some((account) => account.role === params.get("demoRole")) ? $("#authBtn") : $("#username")).focus();
 }
-function state() { return { topic: params.get("topic") || "", org: params.get("org") || "", benchmark: params.get("benchmark") || "", person: params.get("person") || "", kind: $("#kind").value, days: $("#days").value, q: $("#q").value.trim(), saved: $("#savedOnly").checked ? "1" : "" }; }
-function activeFilters(s = state()) { return !!(s.topic || s.org || s.benchmark || s.person || s.kind || s.q || s.saved || s.days !== "7" || sort !== "new"); }
+function state() { return { topic: params.get("topic") || "", org: params.get("org") || "", benchmark: params.get("benchmark") || "", person: params.get("person") || "", kind: $("#kind").value, days: $("#days").value, q: $("#q").value.trim(), saved: $("#savedOnly").checked ? "1" : "", checked: $("#checkedOnly").checked ? "1" : "", expand: params.get("expand") === "0" && $("#q").value.trim() ? "0" : "" }; }
+function activeFilters(s = state()) { return !!(s.topic || s.org || s.benchmark || s.person || s.kind || s.q || s.saved || s.checked || s.days !== "7" || sort !== "new"); }
 function updateAddress(replace = false) {
   const s = state(), next = new URLSearchParams();
   for (const [key, value] of Object.entries(s)) if (value || key === "days") next.set(key, value);
@@ -108,7 +142,7 @@ function setControlsFromAddress() {
   const requestedOffset = Number(params.get("offset")); restoreOffset = Number.isSafeInteger(requestedOffset) && requestedOffset > 0 && requestedOffset <= 100000 ? requestedOffset : 0;
   sort = SORTS.includes(params.get("sort")) ? params.get("sort") : "new";
   $("#kind").value = params.get("kind") || ""; $("#days").value = params.has("days") ? params.get("days") : (params.get("topic") || params.get("org") || params.get("benchmark") || params.get("person") ? "" : "7");
-  $("#q").value = params.get("q") || ""; $("#savedOnly").checked = params.get("saved") === "1";
+  $("#q").value = params.get("q") || ""; $("#savedOnly").checked = params.get("saved") === "1"; $("#checkedOnly").checked = params.get("checked") === "1";
   $$(".seg-btns button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.sort === sort)));
   header(); $("#clearFilters").hidden = !activeFilters();
 }
@@ -125,8 +159,9 @@ async function load(append = false) {
   const s = state(), start = append ? offset : restoreOffset, qs = new URLSearchParams({ ...s, sort, offset: start });
   $("#feed").setAttribute("aria-busy", "true"); $("#more").disabled = true; $("#feedError").hidden = true; $("#feedStatus").textContent = $$("#feed .story").length ? "Updating stories…" : "Loading stories…";
   try {
-    const { stories } = await api("/api/stories?" + qs, { signal: feedController.signal });
+    const { stories, expanded = [] } = await api("/api/stories?" + qs, { signal: feedController.signal });
     if (request !== feedRequest) return; if (!Array.isArray(stories)) throw new Error("The story list could not be read.");
+    if (!append) { showExpansion(s, expanded); $("#liveNew").hidden = true; newestId = stories.reduce((m, x) => Math.max(m, x.id), 0); }
     const feed = $("#feed"); if (!append) feed.replaceChildren(); else feed.querySelectorAll(".empty").forEach((el) => el.remove());
     const fragment = document.createDocumentFragment();
     for (const story of stories) {
@@ -175,15 +210,16 @@ function header() {
   if (changed) requestAnimationFrame(() => { const bar = $("#topicbar"), active = bar.querySelector('[aria-current="true"]'); if (!active) return; const r = active.getBoundingClientRect(), bounds = bar.getBoundingClientRect(); bar.scrollLeft += r.left < bounds.left ? r.left - bounds.left : r.right > bounds.right ? r.right - bounds.right : 0; });
 }
 function renderAppliedFilters(s) {
-  const labels = { topic: ONT.topics.find((x) => x.id === s.topic)?.label || s.topic, org: ONT.orgs.find((x) => x.id === s.org)?.label || s.org, benchmark: ONT.benchmarks?.find((x) => x.id === s.benchmark)?.label || s.benchmark, person: ONT.people?.find((x) => x.id === s.person)?.label || s.person, kind: KIND[s.kind], q: s.q ? `Search: ${s.q}` : "", days: $("#days").selectedOptions[0]?.textContent, saved: "Saved stories" };
-  const items = activeFilters(s) ? Object.entries(s).filter(([,value]) => value).map(([key]) => `<button class="btn filter-chip" type="button" data-remove-filter="${key}" aria-label="Remove filter: ${esc(labels[key])}">${esc(labels[key])} <span aria-hidden="true">×</span></button>`) : [];
+  const labels = { topic: ONT.topics.find((x) => x.id === s.topic)?.label || s.topic, org: ONT.orgs.find((x) => x.id === s.org)?.label || s.org, benchmark: ONT.benchmarks?.find((x) => x.id === s.benchmark)?.label || s.benchmark, person: ONT.people?.find((x) => x.id === s.person)?.label || s.person, kind: KIND[s.kind], q: s.q ? `Search: ${s.q}` : "", days: $("#days").selectedOptions[0]?.textContent, saved: "Saved stories", checked: "Assessed on topic" };
+  const items = activeFilters(s) ? Object.entries(s).filter(([key, value]) => value && key !== "expand").map(([key]) => `<button class="btn filter-chip" type="button" data-remove-filter="${key}" aria-label="Remove filter: ${esc(labels[key])}">${esc(labels[key])} <span aria-hidden="true">×</span></button>`) : [];
   if (sort !== "new") items.push('<button class="btn filter-chip" type="button" data-remove-filter="sort" aria-label="Remove sort filter">Sort: ' + esc($(".seg-btns [aria-pressed=true]").textContent) + ' ×</button>');
   $("#appliedFilters").innerHTML = items.join(""); $("#appliedFilters").hidden = !items.length;
 }
 function removeFilter(key) {
   if (["topic", "org", "benchmark", "person"].includes(key)) params.delete(key);
-  else if (key === "q") $("#q").value = "";
+  else if (key === "q") { $("#q").value = ""; params.delete("expand"); }
   else if (key === "saved") $("#savedOnly").checked = false;
+  else if (key === "checked") $("#checkedOnly").checked = false;
   else if (key === "sort") { sort = "new"; $$(".seg-btns button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.sort === sort))); }
   else if (["kind", "days"].includes(key)) $("#" + key).value = "";
   refresh(); $("#q").focus();
@@ -192,11 +228,32 @@ $("#feedView").addEventListener("click", (e) => { const remove = e.target.closes
 function refresh(replace = false) { restoreOffset = 0; clearTimeout(tmr); header(); updateAddress(replace); load(); }
 $$(".seg-btns button").forEach((b) => b.onclick = () => { sort = b.dataset.sort; $$(".seg-btns button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); refresh(); });
 let tmr; $("#q").oninput = () => { clearTimeout(tmr); $("#more").hidden = true; feedController?.abort(); ++feedRequest; tmr = setTimeout(() => refresh(true), 250); };
-["#kind", "#days", "#savedOnly"].forEach((id) => $(id).onchange = () => refresh());
+["#kind", "#days", "#savedOnly", "#checkedOnly"].forEach((id) => $(id).onchange = () => refresh());
+// Search expansion: say which ontology topics widened the search, with a one-click way back to exact words.
+function showExpansion(s, expanded) {
+  const note = $("#expandNote");
+  if (s.q && expanded.length) note.innerHTML = `Also showing stories tagged ${expanded.map((t) => `<b>${esc(t.label)}</b>`).join(", ")}. <button class="linkish" type="button" data-expand="0">Exact words only</button>`;
+  else if (s.q && s.expand === "0") note.innerHTML = `Matching your exact words only. <button class="linkish" type="button" data-expand="1">Include related topics</button>`;
+  note.hidden = !(s.q && (expanded.length || s.expand === "0"));
+}
+$("#expandNote").addEventListener("click", (e) => { const b = e.target.closest("[data-expand]"); if (!b) return; if (b.dataset.expand === "0") params.set("expand", "0"); else params.delete("expand"); refresh(); });
+// Live feed: every minute, ask only for stories newer than the newest one shown. Never reorders what the reader sees;
+// a button offers the new ones instead. Paused while the tab is hidden.
+let newestId = 0;
+async function pollNew() {
+  if (document.hidden || !newestId || sort !== "new" || offset > 40) return;
+  try {
+    const { stories = [] } = await api("/api/stories?" + new URLSearchParams({ ...state(), sort, since: newestId }));
+    const n = stories.length; if (!n) return;
+    $("#liveNew").textContent = `${n}${n >= 40 ? "+" : ""} new ${n === 1 ? "story" : "stories"}: show`; $("#liveNew").hidden = false;
+  } catch {}
+}
+setInterval(pollNew, 60000);
+$("#liveNew").onclick = () => { $("#liveNew").hidden = true; refresh(); $("#feed").scrollIntoView({ block: "start" }); };
 $("#sortInfo").onclick = () => { const open = $("#sortInfo").getAttribute("aria-expanded") !== "true"; $("#sortInfo").setAttribute("aria-expanded", String(open)); $("#sortHelp").hidden = !open; };
 $("#feedView").addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#sortHelp").hidden) { $("#sortHelp").hidden = true; $("#sortInfo").setAttribute("aria-expanded", "false"); $("#sortInfo").focus(); } });
 $("#more").onclick = () => load(true); $("#retryFeed").onclick = () => load(failedAppend);
-function resetFilters() { for (const key of [...params.keys()]) params.delete(key); sort = "new"; $("#kind").value = ""; $("#days").value = "7"; $("#q").value = ""; $("#savedOnly").checked = false; $$(".seg-btns button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.sort === sort))); refresh(); }
+function resetFilters() { for (const key of [...params.keys()]) params.delete(key); sort = "new"; $("#kind").value = ""; $("#days").value = "7"; $("#q").value = ""; $("#savedOnly").checked = false; $("#checkedOnly").checked = false; $$(".seg-btns button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.sort === sort))); refresh(); }
 $("#showFirst").onclick = () => refresh();
 $("#clearFilters").onclick = resetFilters;
 $("#feed").addEventListener("click", (e) => { if (e.target.closest("[data-reset-filters]")) resetFilters(); });
@@ -208,8 +265,8 @@ $("#submitForm").onsubmit = async (e) => { e.preventDefault(); const button = e.
 $("#retryStartup").onclick = () => location.reload();
 (async () => {
   const authEntry = params.has("signin") || params.has("next") || params.has("mode");
-  const [{ user, demo, features: siteFeatures = [] }, earlyOntology] = await Promise.all([api("/api/me", { allow401: true }), authEntry ? Promise.resolve(null) : api("/api/ontology")]); window.SI_DISPLAY_NAME = siteFeatures.includes("display-name");
-  if (!user && (params.has("signin") || params.has("next") || params.has("mode"))) { showAccess(demo); return; }
+  const [{ user, demo, access: siteAccess = {}, features: siteFeatures = [] }, earlyOntology] = await Promise.all([api("/api/me", { allow401: true }), authEntry ? Promise.resolve(null) : api("/api/ontology")]); window.SI_DISPLAY_NAME = siteFeatures.includes("display-name");
+  if (!user && (params.has("signin") || params.has("next") || params.has("mode"))) { showAccess(demo, siteAccess); return; }
   if (!user) { $("#guestNotice").hidden = false; $("#submitBtn").hidden = true; $("#savedOnly").closest("label").hidden = true; }
   topbar(user); $("#feedView").hidden = false;
   if (demo?.accounts?.length) {

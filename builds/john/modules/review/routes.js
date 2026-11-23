@@ -8,7 +8,11 @@ const feeds = require("../../lib/feeds");
 
 const CONCEPTS = (() => { try { return JSON.parse(fs.readFileSync(path.join(__dirname, "..", "learn", "data", "concepts.json"), "utf8")).concepts; } catch { return []; } })();
 
-module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, notFound }) {
+module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, notFound, guestRead = auth, guestCache = () => (q, s, n) => n() }) {
+  // Basics are public and cheap: the review list, the map (knowledge graph), the evidence index, outlets, forecasts and
+  // aggregate metrics only read the database (no model calls); guests are rate-limited per IP and served from a cache.
+  // Agent traces (a review's full reasoning, the spot-check log), judging, saving and labelling need an account.
+  const open = (ms) => [guestRead, guestCache(ms)];
   const input = (b = {}) => {
     const x = { kind: str(b.kind, 20), title: str(b.title, 300), text: String(b.text || "").slice(0, 20000), authors: str(b.authors, 600), url: str(b.url, 500) };
     if (!x.title && !x.text.trim()) bad("Give a title or paste some text.");
@@ -39,7 +43,7 @@ module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, no
     const x = input(req.body); let out; try { out = await saveReview(db, x, req.user.id); } catch (e) { if (e.status) throw e; bad(e.message); }
     return { doc: brief(out.row), review: out.review, ...(out.existing ? { existing: true } : {}) };
   }));
-  app.get("/api/review/docs", auth, wrap(async (req) => {
+  app.get("/api/review/docs", ...open(6e4), wrap(async (req) => {
     const topic = str(req.query.topic, 60), verdict = str(req.query.verdict, 40);
     let rows;
     if (req.query.qid) rows = await db.all("SELECT * FROM review_docs WHERE qid=? LIMIT 1", str(req.query.qid, 100));
@@ -47,10 +51,11 @@ module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, no
     else rows = await db.all("SELECT * FROM review_docs ORDER BY id DESC LIMIT 100");
     return { docs: rows.filter((r) => !verdict || r.verdict === verdict).map(brief) };
   }));
+  // A single review's full trace (every guard, quote and step of the judges' reasoning) needs an account.
   app.get("/api/review/docs/:id", auth, wrap(async (req) => {
     const r = await db.get("SELECT * FROM review_docs WHERE id = ?", Number(req.params.id)); if (!r) notFound("That review");
     const edges = await db.all("SELECT rel, dst FROM knowledge_edges WHERE src = ? ORDER BY rel, dst", r.qid);
-    return { doc: { ...brief(r), authors: r.authors, url: r.url, excerpt: r.excerpt, label_note: r.label_note }, review: JSON.parse(r.result), edges };
+    return { doc: { ...brief(r), authors: r.authors, url: r.url, excerpt: r.excerpt, label_note: req.user ? r.label_note : "" }, review: JSON.parse(r.result), edges };
   }));
   // A person agrees or disagrees with the verdict. Labels are the calibration data for the judges (see /metrics).
   app.post("/api/admin/review/docs/:id/label", auth, admin, wrap(async (req) => {
@@ -62,11 +67,11 @@ module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, no
 
   // Sources and forecasts: each outlet's grades and track record, and the dated forecasts waiting to be resolved.
   const SRC = require("./sources");
-  app.get("/api/review/outlets", auth, wrap(async () => {
+  app.get("/api/review/outlets", ...open(6e5), wrap(async () => {
     const docs = await db.all("SELECT credibility, result FROM review_docs ORDER BY id DESC LIMIT 1000"), events = await db.all("SELECT outlet, status, probability FROM review_events");
     return { outlets: SRC.trackRecords(docs, events), grades: SRC.OUTLETS, minResolved: SRC.MIN_RESOLVED };
   }));
-  app.get("/api/review/events", auth, wrap(async (req) => {
+  app.get("/api/review/events", ...open(6e5), wrap(async (req) => {
     const status = ["pending", "happened", "did-not", "unclear", "annulled"].includes(req.query.status) ? req.query.status : null;
     const rows = await db.all(`SELECT e.id, e.qid, e.doc_qid, e.outlet, e.outlet_label, e.sentence, e.due, e.status, e.note, e.resolved_at, d.id AS doc_id, d.title, d.url
       FROM review_events e LEFT JOIN review_docs d ON d.qid = e.doc_qid ${status ? "WHERE e.status = ?" : ""} ORDER BY e.due ASC LIMIT 300`, ...(status ? [status] : []));
@@ -80,7 +85,7 @@ module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, no
   }));
 
   // How the judges are doing: guard fire rates, the naive-vs-guarded gap, and agreement with people.
-  app.get("/api/review/metrics", auth, wrap(async () => {
+  app.get("/api/review/metrics", ...open(6e5), wrap(async () => {
     const rows = await db.all("SELECT score, naive, credibility, verdict, needs_person, label, result FROM review_docs ORDER BY id DESC LIMIT 1000");
     const n = rows.length, fires = {}, verdicts = {};
     let gap = 0, flagged = 0;
@@ -101,14 +106,14 @@ module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, no
   const labExamples = () => { try { const L = require("../lab/lab"), pre = require("../lab/results.json").results; return L.EX.examples.filter((e) => pre[e.id]).map((e) => ({ ...e, verdict: pre[e.id].verdict })); } catch { return []; } };
   const dossierFor = async (topic) => { if (!ontology.topics.some((t) => t.id === topic)) notFound("That topic"); return D.analyse(await D.gather(db, topic), { examples: labExamples(), concepts: CONCEPTS }); };
   const site = (req) => (process.env.SITE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/$/, "");
-  app.get("/api/review/dossier/:topic", auth, wrap(async (req) => {
+  app.get("/api/review/dossier/:topic", ...open(6e5), wrap(async (req) => {
     const d = await dossierFor(str(req.params.topic, 60)), link = `${site(req)}/m/dossier#${d.topic}`;
     return { dossier: d, blog: D.blog(d, site(req)), posts: D.posts(d, link), storyboard: D.storyboard(d) };
   }));
   // The evidence index: every top-level topic's evidence rating next to its buzz, sorted so the topics where talk runs
   // furthest ahead of the evidence come first. One request instead of one dossier per topic.
   const GAP_ORDER = ["talked about far more than it has been shown", "talked about more than it has been shown", "talk and evidence roughly in step", "shown more than it is talked about"];
-  app.get("/api/review/evidence-index", auth, wrap(async () => {
+  app.get("/api/review/evidence-index", ...open(6e5), wrap(async () => {
     const roots = ontology.topics.filter((t) => !t.parent), ex = labExamples(), out = [];
     for (const t of roots) {
       const d = D.analyse(await D.gather(db, t.id), { examples: ex, concepts: CONCEPTS });
@@ -124,7 +129,7 @@ module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, no
 
   // The superintelligence map: the ontology's top-level topics, their finer topics, the Learn concepts under each, watched
   // people and organisations, with how many stories and reviewed docs touch each. Counts only: no claims about anyone.
-  app.get("/api/review/map", auth, wrap(async () => {
+  app.get("/api/review/map", ...open(6e5), wrap(async () => {
     const stories = await db.all("SELECT topics FROM stories WHERE COALESCE(in_scope, 1) = 1 AND COALESCE(hidden, 0) = 0 ORDER BY id DESC LIMIT 2000");
     const sCount = {}; for (const s of stories) for (const t of JSON.parse(s.topics || "[]")) sCount[t.id] = (sCount[t.id] || 0) + 1;
     const edges = await db.all("SELECT src, rel, dst FROM knowledge_edges WHERE src LIKE 'doc:%' LIMIT 20000");
@@ -146,5 +151,21 @@ module.exports = function mountReview(app, { db, auth, admin, wrap, str, bad, no
       orgs: (ontology.organizations || []).map((o) => ({ id: o.id, qid: `org:${o.id}`, label: o.label, docs: dCount[`org:${o.id}`] || 0 })),
       totals: { stories: stories.length, docs: new Set(edges.map((e) => e.src)).size, concepts: CONCEPTS.length },
     };
+  }));
+
+  // The final safety loop (spotcheck.js): a larger model re-reads a few reviews a day. Vercel Cron calls the run with
+  // "Authorization: Bearer $CRON_SECRET"; the log of what it found is a trace, so it needs an account.
+  const SC = require("./spotcheck");
+  app.get("/api/cron/spotcheck", wrap(async (req, res) => {
+    const secret = process.env.CRON_SECRET;
+    if (!secret || req.headers.authorization !== `Bearer ${secret}`) { res.status(401).json({ error: "Not authorized." }); return; }
+    return SC.run(db, { model: SC.modelFromEnv() });
+  }));
+  app.get("/api/review/spotchecks", auth, wrap(async () => {
+    const rows = await db.all(`SELECT c.id, c.day, c.model, c.status, c.problem, c.quotes, c.at, d.id AS doc_id, d.title, d.verdict, d.credibility
+      FROM review_spotchecks c LEFT JOIN review_docs d ON d.qid = c.doc_qid ORDER BY c.id DESC LIMIT 60`);
+    const counts = {}; for (const r of rows) counts[r.status] = (counts[r.status] || 0) + 1;
+    return { configured: !!process.env.SPOTCHECK_MODEL, dailyMax: SC.dailyMax(), counts,
+      checks: rows.map((r) => ({ ...r, quotes: (() => { try { return JSON.parse(r.quotes || "[]"); } catch { return []; } })() })) };
   }));
 };
