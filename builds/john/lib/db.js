@@ -53,6 +53,11 @@ CREATE TABLE IF NOT EXISTS admin_audit (id ${ID}, admin_id INTEGER REFERENCES us
 CREATE TABLE IF NOT EXISTS story_entities (story_id INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE, kind TEXT NOT NULL, entity TEXT NOT NULL,
   value REAL, unit TEXT, PRIMARY KEY (story_id, kind, entity));
 CREATE INDEX IF NOT EXISTS idx_entities ON story_entities(kind, entity);
+-- One current assessment per story (lib/assess.js): tier 0 rules, tier 1 small model, tier 2 larger model.
+CREATE TABLE IF NOT EXISTS assessments (story_id INTEGER PRIMARY KEY REFERENCES stories(id) ON DELETE CASCADE, rules_version TEXT NOT NULL,
+  input_hash TEXT NOT NULL, tier INTEGER NOT NULL, verdict TEXT NOT NULL, confidence REAL, topics TEXT DEFAULT '[]', checks TEXT DEFAULT '[]',
+  trail TEXT DEFAULT '[]', model TEXT, reason TEXT DEFAULT '', blob_path TEXT, created_at TEXT DEFAULT ${T});
+CREATE INDEX IF NOT EXISTS idx_assess_verdict ON assessments(verdict);
 CREATE INDEX IF NOT EXISTS idx_runs_source ON fetch_runs(source_id, id);
 CREATE INDEX IF NOT EXISTS idx_links_story ON story_links(story_id);
 CREATE INDEX IF NOT EXISTS idx_links_url ON story_links(url);

@@ -144,7 +144,7 @@ function analyze(story, ctx = {}) {
 
 // Recompute and store a story's analysis (inside a db transaction or with the db itself).
 async function rescore(t, storyId) {
-  const s = await t.get("SELECT id, title, summary, authors, ext_score, topics FROM stories WHERE id = ?", storyId);
+  const s = await t.get("SELECT id, title, url, summary, authors, ext_score, topics FROM stories WHERE id = ?", storyId);
   if (!s) return null;
   // Reader-submitted URL variants are one provenance class, not new independent sources.
   const links = await t.all("SELECT DISTINCT COALESCE(src.kind, 'submitted') AS kind, COALESCE(l.source_id, 0) AS sid FROM story_links l LEFT JOIN sources src ON src.id = l.source_id WHERE l.story_id = ?", storyId);
@@ -153,6 +153,7 @@ async function rescore(t, storyId) {
   await t.run("DELETE FROM story_entities WHERE story_id = ?", storyId);
   for (const b of a.benchmarks) await t.run("INSERT OR IGNORE INTO story_entities (story_id, kind, entity, value, unit) VALUES (?, 'benchmark', ?, ?, ?)", storyId, b.id, b.score?.value ?? null, b.score?.unit ?? null);
   for (const p of a.people) await t.run("INSERT OR IGNORE INTO story_entities (story_id, kind, entity, value, unit) VALUES (?, 'person', ?, NULL, NULL)", storyId, p.id);
+  for (const x of require("./artifacts").extract(s)) await t.run("INSERT OR IGNORE INTO story_entities (story_id, kind, entity, value, unit) VALUES (?, 'artifact', ?, NULL, ?)", storyId, x.id, x.kind);
   return a;
 }
 

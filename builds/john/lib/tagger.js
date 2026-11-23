@@ -38,4 +38,15 @@ function tag(title, summary = "") {
   return { topics, orgs: match(ORGS, text, "org") };
 }
 
-module.exports = { tag, ontology, topicIndex, topicList: () => TOPICS.map(({ id, label, parent }) => ({ id, label, parent })), orgList: () => ORGS.map(({ id, label }) => ({ id, label })) };
+// Search expansion: topics a query names, by one of their ontology terms or by label. Deterministic, at most 4,
+// so a search for "rlhf" also finds stories tagged with the topic that term belongs to.
+function expandQuery(q) {
+  const text = String(q || "").toLowerCase().trim();
+  if (text.length < 3) return [];
+  const hits = new Map();
+  for (const t of match(TOPICS, text, "topic")) hits.set(t.id, { id: t.id, label: t.label, via: t.matched[0] });
+  for (const t of TOPICS) if (!hits.has(t.id) && t.label.toLowerCase().includes(text)) hits.set(t.id, { id: t.id, label: t.label, via: t.label.toLowerCase() });
+  return [...hits.values()].slice(0, 4);
+}
+
+module.exports = { tag, expandQuery, ontology, topicIndex, topicList: () => TOPICS.map(({ id, label, parent }) => ({ id, label, parent })), orgList: () => ORGS.map(({ id, label }) => ({ id, label })) };

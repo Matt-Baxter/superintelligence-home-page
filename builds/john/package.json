@@ -59,6 +59,7 @@
   "dependencies": {
     "@json-render/core": "0.22.0",
     "@json-render/react": "0.22.0",
+    "@vercel/blob": "^2.9.0",
     "esbuild": "^0.28.2",
     "express": "4.21.2",
     "pg": "8.16.3",

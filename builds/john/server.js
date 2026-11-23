@@ -9,6 +9,8 @@ const feeds = require("./lib/feeds");
 const tagger = require("./lib/tagger");
 const audit = require("./lib/audit");
 const analysis = require("./lib/analysis");
+const score = require("./lib/score");
+const assess = require("./lib/assess");
 
 /* ---------------------------------------------------------------- modules */
 // Features beyond the core are modules (modules/<id>/module.js, enabled in modules/modules.json) that plug into
@@ -194,7 +196,7 @@ async function storyRows(where, args, uid, { sort = "top", limit = 40, offset = 
   const paperKeys = [...new Set([...papersOf.values()].flat().map((p) => p.key).filter(Boolean))];
   const local = new Map(paperKeys.length ? (await db.all(`SELECT k.key, k.story_id FROM story_keys k JOIN stories st ON st.id = k.story_id
     WHERE k.key IN (${paperKeys.map(() => "?").join(",")}) AND COALESCE(st.hidden, 0) = 0 AND COALESCE(st.in_scope, 0) = 1`, ...paperKeys)).map((x) => [x.key, x.story_id]) : []);
-  return page.map((r) => shapeStory(r, byStory.get(r.id) || [], papersOf.get(r.id).map((p) => ({ key: p.key, url: p.url, story_id: local.get(p.key) || null }))));
+  return score.attach(db, page.map((r) => shapeStory(r, byStory.get(r.id) || [], papersOf.get(r.id).map((p) => ({ key: p.key, url: p.url, story_id: local.get(p.key) || null })))));
 }
 function shapeStory(r, links, papers = []) {
   return {
@@ -212,7 +214,16 @@ app.get("/api/stories", wrap(async (req) => {
   if (topic) { w.push("s.id IN (SELECT story_id FROM story_topics WHERE topic = ?)"); a.push(topic); }
   if (kind) { w.push("s.id IN (SELECT l.story_id FROM story_links l LEFT JOIN sources src ON src.id = l.source_id WHERE COALESCE(src.kind, 'submitted') = ?)"); a.push(kind); }
   if (org) { w.push("s.orgs LIKE ?"); a.push(`%"id":"${org.replace(/[%_"]/g, "")}"%`); }
-  if (qtext) { w.push("(LOWER(s.title) LIKE ? OR LOWER(s.summary) LIKE ?)"); a.push(`%${qtext}%`, `%${qtext}%`); }
+  // Keyword search, widened to the ontology topics the words name unless ?expand=0 asks for exact words only.
+  const expanded = qtext && req.query.expand !== "0" ? tagger.expandQuery(qtext) : [];
+  if (qtext) {
+    const viaTopic = expanded.length ? ` OR s.id IN (SELECT story_id FROM story_topics WHERE topic IN (${expanded.map(() => "?").join(",")}))` : "";
+    w.push(`(LOWER(s.title) LIKE ? OR LOWER(s.summary) LIKE ?${viaTopic})`); a.push(`%${qtext}%`, `%${qtext}%`, ...expanded.map((t) => t.id));
+  }
+  // Only stories the assessment layer (lib/assess.js) judged on topic.
+  if (req.query.checked === "1") w.push("s.id IN (SELECT story_id FROM assessments WHERE verdict = 'relevant')");
+  // Live feed: only stories newer than the newest one the reader already has.
+  if (Number(req.query.since) > 0) { w.push("s.id > ?"); a.push(Math.trunc(Number(req.query.since))); }
   if (days) { w.push("COALESCE(s.published_at, s.first_seen) >= ?"); a.push(new Date(Date.now() - days * 864e5).toISOString()); }
   if (req.query.benchmark) { w.push("s.id IN (SELECT story_id FROM story_entities WHERE kind = 'benchmark' AND entity = ?)"); a.push(str(req.query.benchmark, 40)); }
   if (req.query.person) { w.push("s.id IN (SELECT story_id FROM story_entities WHERE kind = 'person' AND entity = ?)"); a.push(str(req.query.person, 60)); }
@@ -228,7 +239,7 @@ app.get("/api/stories", wrap(async (req) => {
   if (req.query.saved === "1") { w.push("s.id IN (SELECT story_id FROM saves WHERE user_id = ?)"); a.push((req.user?.id || 0)); }
   const sort = ["top", "new", "votes", "signal"].includes(req.query.sort) ? req.query.sort : "new"; // REQ-002: newest first
   const offset = Math.max(0, Number(req.query.offset) || 0);
-  return { stories: await storyRows(w.join(" AND "), a, (req.user?.id || 0), { sort, offset, limit: 40 }), sort };
+  return { stories: await storyRows(w.join(" AND "), a, (req.user?.id || 0), { sort, offset, limit: 40 }), sort, expanded };
 }));
 app.get("/api/stories/:id", wrap(async (req) => {
   const id = Number(req.params.id); const rows = await storyRows("s.id = ?", [id], (req.user?.id || 0)); if (!rows.length) notFound("That story");
@@ -335,7 +346,10 @@ app.post("/api/sources/suggest", auth, feature("suggest-sources"), limit(10, 36e
 app.get("/api/cron/fetch", wrap(async (req, res) => {
   const secret = process.env.CRON_SECRET;
   if (!secret || req.headers.authorization !== `Bearer ${secret}`) { res.status(401).json({ error: "Not authorized." }); return; }
-  return harvester.harvest({ trigger: "cron" });
+  const harvest = await harvester.harvest({ trigger: "cron" });
+  // Then assess a small batch of new stories: rules first, a model only for the unsure ones, capped per run.
+  const assessed = await assess.run(db, { limit: Number(process.env.ASSESS_PER_RUN) || 15 }).catch((e) => ({ error: String(e.message).slice(0, 200) }));
+  return { ...harvest, assessed };
 }));
 
 /* ---------------------------------------------------------------- agent log */

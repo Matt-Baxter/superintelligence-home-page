@@ -407,6 +407,25 @@ code, .mono, pre { font-family: var(--mono); }
 .story-date[open] { flex-basis: 100%; } .story-date p { padding: 8px 0; overflow-wrap: anywhere; }
 .story-date time { font-variant-numeric: tabular-nums; }
 .sort-explanation { border-left: 2px solid var(--line-strong); padding: 10px 12px; }
+/* Scorecard: two numbers kept apart, then each check with a worded mark (never color alone). */
+.scorecard { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
+.score-pair { display: flex; gap: 12px; margin: 0; }
+.score-pair > div { flex: 1; border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; background: var(--surface); }
+.score-pair dt { font-size: 13px; color: var(--muted); }
+.score-pair dd { margin: 0; font: 600 28px/1.2 var(--mono); }
+.checks { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.check { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.check .mark { font: 600 12px/1 var(--mono); min-width: 60px; padding: 3px 6px; border-radius: var(--radius); text-align: center; border: 1px solid var(--line-strong); }
+.check.pass .mark { background: var(--fg); color: var(--surface); border-color: var(--fg); }
+.check.fail .mark { background: var(--surface); color: var(--fg); border-style: solid; border-width: 2px; }
+.check.null .mark { color: var(--muted); border-style: dashed; }
+.check .muted { flex-basis: 100%; padding-left: 70px; }
+.salt { border-left: 2px solid var(--line-strong); padding: 8px 12px; background: var(--warn-soft); }
+.expand-note { border-left: 2px solid var(--line-strong); padding: 8px 12px; margin-top: 8px; }
+.check-filter { display: inline-flex; align-items: center; gap: 6px; }
+.check-filter input { width: auto; }
+.live-new { position: sticky; top: 8px; z-index: 5; display: block; margin: 8px auto; }
+@media (max-width: 520px) { .score-pair { flex-direction: column; } .check .muted { padding-left: 0; } }
 #sortInfo { min-height: 44px; } .feed-results { flex-wrap: wrap; }
 @media (max-width: 900px) {
   .topbar.guest .in { gap: 6px; padding: 10px 12px; }
@@ -563,3 +582,9 @@ h2.h3, .jr-card-title { font-size: 16px; margin: 0; }
 .sec-moved { background: color-mix(in srgb, var(--fg) 7%, transparent); }
 @media (max-width: 560px) { .sec-effect { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .sec-effect, .switch, .switch::after { transition: none; } }
+/* Evidence signal: bar pattern from affectUI Smart Recommendation, on this app's tokens */
+.signal { display: flex; align-items: center; gap: 8px; color: var(--fg); }
+.signal .bars { display: inline-flex; align-items: flex-end; gap: 2px; height: 12px; }
+.signal .bars span { width: 3px; border-radius: 1px; background: var(--line); }
+.signal .bars span:nth-child(1) { height: 5px; } .signal .bars span:nth-child(2) { height: 8px; } .signal .bars span:nth-child(3) { height: 12px; }
+.signal .bars span[data-on] { background: var(--fg); }

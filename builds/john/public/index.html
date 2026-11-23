@@ -52,6 +52,7 @@
     <select id="kind" aria-label="Source kind"><option value="">All kinds of source</option></select>
     <select id="days" aria-label="Time window"><option value="">Any time</option><option value="1">Last day</option><option value="7" selected>Last week</option><option value="30">Last month</option></select>
     <label style="display:flex;flex-direction:row;gap:6px;align-items:center;color:var(--fg)"><input type="checkbox" id="savedOnly" style="width:auto"> Saved</label>
+    <label class="check-filter"><input type="checkbox" id="checkedOnly"> Assessed on topic</label>
     </div></details>
     <input type="search" id="q" maxlength="100" placeholder="Search titles and summaries" aria-label="Search">
   </div>
@@ -68,6 +69,8 @@
   <p id="laterPage" class="small muted" hidden>You’re viewing a later results page. <button class="linkish" id="showFirst" type="button">Show first results</button></p>
   <div class="feed-results"><p id="feedStatus" class="small muted" role="status" aria-live="polite">Loading stories…</p><button class="linkish" id="sortInfo" type="button" aria-expanded="false" aria-controls="sortHelp">Explain sort</button><button class="btn" id="clearFilters" type="button" hidden>Clear filters</button></div>
   <p id="sortHelp" class="sort-explanation small" hidden></p>
+  <p id="expandNote" class="expand-note small" hidden></p>
+  <button class="btn live-new" id="liveNew" type="button" hidden aria-live="polite"></button>
   <div class="feed-error" id="feedError" role="alert" hidden><span id="feedErrorMessage"></span><button class="btn" id="retryFeed" type="button">Try again</button></div>
   <ol class="feed" id="feed" aria-label="Stories"></ol>
   <div class="actions"><button class="btn" id="more" type="button" hidden>Load more</button></div>
@@ -125,8 +128,8 @@ function showAccess(demo, access = {}) {
   }
   (demo?.accounts?.some((account) => account.role === params.get("demoRole")) ? $("#authBtn") : $("#username")).focus();
 }
-function state() { return { topic: params.get("topic") || "", org: params.get("org") || "", benchmark: params.get("benchmark") || "", person: params.get("person") || "", kind: $("#kind").value, days: $("#days").value, q: $("#q").value.trim(), saved: $("#savedOnly").checked ? "1" : "" }; }
-function activeFilters(s = state()) { return !!(s.topic || s.org || s.benchmark || s.person || s.kind || s.q || s.saved || s.days !== "7" || sort !== "new"); }
+function state() { return { topic: params.get("topic") || "", org: params.get("org") || "", benchmark: params.get("benchmark") || "", person: params.get("person") || "", kind: $("#kind").value, days: $("#days").value, q: $("#q").value.trim(), saved: $("#savedOnly").checked ? "1" : "", checked: $("#checkedOnly").checked ? "1" : "", expand: params.get("expand") === "0" && $("#q").value.trim() ? "0" : "" }; }
+function activeFilters(s = state()) { return !!(s.topic || s.org || s.benchmark || s.person || s.kind || s.q || s.saved || s.checked || s.days !== "7" || sort !== "new"); }
 function updateAddress(replace = false) {
   const s = state(), next = new URLSearchParams();
   for (const [key, value] of Object.entries(s)) if (value || key === "days") next.set(key, value);
@@ -139,7 +142,7 @@ function setControlsFromAddress() {
   const requestedOffset = Number(params.get("offset")); restoreOffset = Number.isSafeInteger(requestedOffset) && requestedOffset > 0 && requestedOffset <= 100000 ? requestedOffset : 0;
   sort = SORTS.includes(params.get("sort")) ? params.get("sort") : "new";
   $("#kind").value = params.get("kind") || ""; $("#days").value = params.has("days") ? params.get("days") : (params.get("topic") || params.get("org") || params.get("benchmark") || params.get("person") ? "" : "7");
-  $("#q").value = params.get("q") || ""; $("#savedOnly").checked = params.get("saved") === "1";
+  $("#q").value = params.get("q") || ""; $("#savedOnly").checked = params.get("saved") === "1"; $("#checkedOnly").checked = params.get("checked") === "1";
   $$(".seg-btns button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.sort === sort)));
   header(); $("#clearFilters").hidden = !activeFilters();
 }
@@ -156,8 +159,9 @@ async function load(append = false) {
   const s = state(), start = append ? offset : restoreOffset, qs = new URLSearchParams({ ...s, sort, offset: start });
   $("#feed").setAttribute("aria-busy", "true"); $("#more").disabled = true; $("#feedError").hidden = true; $("#feedStatus").textContent = $$("#feed .story").length ? "Updating stories…" : "Loading stories…";
   try {
-    const { stories } = await api("/api/stories?" + qs, { signal: feedController.signal });
+    const { stories, expanded = [] } = await api("/api/stories?" + qs, { signal: feedController.signal });
     if (request !== feedRequest) return; if (!Array.isArray(stories)) throw new Error("The story list could not be read.");
+    if (!append) { showExpansion(s, expanded); $("#liveNew").hidden = true; newestId = stories.reduce((m, x) => Math.max(m, x.id), 0); }
     const feed = $("#feed"); if (!append) feed.replaceChildren(); else feed.querySelectorAll(".empty").forEach((el) => el.remove());
     const fragment = document.createDocumentFragment();
     for (const story of stories) {
@@ -206,15 +210,16 @@ function header() {
   if (changed) requestAnimationFrame(() => { const bar = $("#topicbar"), active = bar.querySelector('[aria-current="true"]'); if (!active) return; const r = active.getBoundingClientRect(), bounds = bar.getBoundingClientRect(); bar.scrollLeft += r.left < bounds.left ? r.left - bounds.left : r.right > bounds.right ? r.right - bounds.right : 0; });
 }
 function renderAppliedFilters(s) {
-  const labels = { topic: ONT.topics.find((x) => x.id === s.topic)?.label || s.topic, org: ONT.orgs.find((x) => x.id === s.org)?.label || s.org, benchmark: ONT.benchmarks?.find((x) => x.id === s.benchmark)?.label || s.benchmark, person: ONT.people?.find((x) => x.id === s.person)?.label || s.person, kind: KIND[s.kind], q: s.q ? `Search: ${s.q}` : "", days: $("#days").selectedOptions[0]?.textContent, saved: "Saved stories" };
-  const items = activeFilters(s) ? Object.entries(s).filter(([,value]) => value).map(([key]) => `<button class="btn filter-chip" type="button" data-remove-filter="${key}" aria-label="Remove filter: ${esc(labels[key])}">${esc(labels[key])} <span aria-hidden="true">×</span></button>`) : [];
+  const labels = { topic: ONT.topics.find((x) => x.id === s.topic)?.label || s.topic, org: ONT.orgs.find((x) => x.id === s.org)?.label || s.org, benchmark: ONT.benchmarks?.find((x) => x.id === s.benchmark)?.label || s.benchmark, person: ONT.people?.find((x) => x.id === s.person)?.label || s.person, kind: KIND[s.kind], q: s.q ? `Search: ${s.q}` : "", days: $("#days").selectedOptions[0]?.textContent, saved: "Saved stories", checked: "Assessed on topic" };
+  const items = activeFilters(s) ? Object.entries(s).filter(([key, value]) => value && key !== "expand").map(([key]) => `<button class="btn filter-chip" type="button" data-remove-filter="${key}" aria-label="Remove filter: ${esc(labels[key])}">${esc(labels[key])} <span aria-hidden="true">×</span></button>`) : [];
   if (sort !== "new") items.push('<button class="btn filter-chip" type="button" data-remove-filter="sort" aria-label="Remove sort filter">Sort: ' + esc($(".seg-btns [aria-pressed=true]").textContent) + ' ×</button>');
   $("#appliedFilters").innerHTML = items.join(""); $("#appliedFilters").hidden = !items.length;
 }
 function removeFilter(key) {
   if (["topic", "org", "benchmark", "person"].includes(key)) params.delete(key);
-  else if (key === "q") $("#q").value = "";
+  else if (key === "q") { $("#q").value = ""; params.delete("expand"); }
   else if (key === "saved") $("#savedOnly").checked = false;
+  else if (key === "checked") $("#checkedOnly").checked = false;
   else if (key === "sort") { sort = "new"; $$(".seg-btns button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.sort === sort))); }
   else if (["kind", "days"].includes(key)) $("#" + key).value = "";
   refresh(); $("#q").focus();
@@ -223,11 +228,32 @@ $("#feedView").addEventListener("click", (e) => { const remove = e.target.closes
 function refresh(replace = false) { restoreOffset = 0; clearTimeout(tmr); header(); updateAddress(replace); load(); }
 $$(".seg-btns button").forEach((b) => b.onclick = () => { sort = b.dataset.sort; $$(".seg-btns button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); refresh(); });
 let tmr; $("#q").oninput = () => { clearTimeout(tmr); $("#more").hidden = true; feedController?.abort(); ++feedRequest; tmr = setTimeout(() => refresh(true), 250); };
-["#kind", "#days", "#savedOnly"].forEach((id) => $(id).onchange = () => refresh());
+["#kind", "#days", "#savedOnly", "#checkedOnly"].forEach((id) => $(id).onchange = () => refresh());
+// Search expansion: say which ontology topics widened the search, with a one-click way back to exact words.
+function showExpansion(s, expanded) {
+  const note = $("#expandNote");
+  if (s.q && expanded.length) note.innerHTML = `Also showing stories tagged ${expanded.map((t) => `<b>${esc(t.label)}</b>`).join(", ")}. <button class="linkish" type="button" data-expand="0">Exact words only</button>`;
+  else if (s.q && s.expand === "0") note.innerHTML = `Matching your exact words only. <button class="linkish" type="button" data-expand="1">Include related topics</button>`;
+  note.hidden = !(s.q && (expanded.length || s.expand === "0"));
+}
+$("#expandNote").addEventListener("click", (e) => { const b = e.target.closest("[data-expand]"); if (!b) return; if (b.dataset.expand === "0") params.set("expand", "0"); else params.delete("expand"); refresh(); });
+// Live feed: every minute, ask only for stories newer than the newest one shown. Never reorders what the reader sees;
+// a button offers the new ones instead. Paused while the tab is hidden.
+let newestId = 0;
+async function pollNew() {
+  if (document.hidden || !newestId || sort !== "new" || offset > 40) return;
+  try {
+    const { stories = [] } = await api("/api/stories?" + new URLSearchParams({ ...state(), sort, since: newestId }));
+    const n = stories.length; if (!n) return;
+    $("#liveNew").textContent = `${n}${n >= 40 ? "+" : ""} new ${n === 1 ? "story" : "stories"}: show`; $("#liveNew").hidden = false;
+  } catch {}
+}
+setInterval(pollNew, 60000);
+$("#liveNew").onclick = () => { $("#liveNew").hidden = true; refresh(); $("#feed").scrollIntoView({ block: "start" }); };
 $("#sortInfo").onclick = () => { const open = $("#sortInfo").getAttribute("aria-expanded") !== "true"; $("#sortInfo").setAttribute("aria-expanded", String(open)); $("#sortHelp").hidden = !open; };
 $("#feedView").addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#sortHelp").hidden) { $("#sortHelp").hidden = true; $("#sortInfo").setAttribute("aria-expanded", "false"); $("#sortInfo").focus(); } });
 $("#more").onclick = () => load(true); $("#retryFeed").onclick = () => load(failedAppend);
-function resetFilters() { for (const key of [...params.keys()]) params.delete(key); sort = "new"; $("#kind").value = ""; $("#days").value = "7"; $("#q").value = ""; $("#savedOnly").checked = false; $$(".seg-btns button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.sort === sort))); refresh(); }
+function resetFilters() { for (const key of [...params.keys()]) params.delete(key); sort = "new"; $("#kind").value = ""; $("#days").value = "7"; $("#q").value = ""; $("#savedOnly").checked = false; $("#checkedOnly").checked = false; $$(".seg-btns button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.sort === sort))); refresh(); }
 $("#showFirst").onclick = () => refresh();
 $("#clearFilters").onclick = resetFilters;
 $("#feed").addEventListener("click", (e) => { if (e.target.closest("[data-reset-filters]")) resetFilters(); });
