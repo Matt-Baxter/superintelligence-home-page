@@ -24,6 +24,15 @@ Add a new entry at the top of the Entries section within a day of the session. C
 
 ## Entries
 
+### 2026-11-22 · John · Build: john / v0
+
+**What the agent got wrong:**  It was not considering each of the spec types and had openspec and speckit formatting
+Decided to keep a basic auth and it does not have enough application allowance once signing in, which actually is better than too much
+**How I caught it:** Trying it
+**What I did about it:** Will add authkit with neon if approved - relational spec TBD
+
+
+
 ### 2026-11-22 · Matt · Build: Matt / Claude Code
 
 **What the agent got wrong:** There has been a lot of confusion about what sources to use and
