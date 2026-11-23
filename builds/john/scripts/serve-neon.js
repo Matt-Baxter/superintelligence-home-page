@@ -13,6 +13,12 @@ if (!process.env.DATABASE_URL && !process.env.POSTGRES_URL) {
 }
 process.env.SITE_PROFILE ||= "extended";
 
+const jrBundle = path.join(__dirname, "..", "public", "js", "jr.js");
+const adminModulePage = path.join(__dirname, "..", "public", "m", "admin.html");
+if (!fs.existsSync(jrBundle) || !fs.existsSync(adminModulePage)) {
+  require("./build-extended");
+}
+
 const { app, db, boot, harvester } = require("../server");
 const FETCH_MINUTES = Number(process.env.FETCH_MINUTES ?? 30);
 
@@ -27,17 +33,33 @@ async function harvestAndIndex(trigger) {
   }
 }
 
-boot().then(async () => {
-  const users = (await db.get("SELECT COUNT(*) AS n FROM users")).n;
-  const port = Number(process.env.PORT || 3200);
-  app.listen(port, () => {
-    console.log(`Superintelligence Homepage on http://localhost:${port} (${db.engine}, Neon)`);
-    if (!users) console.log("No accounts yet: the first account created becomes the admin.");
-  });
-  if (FETCH_MINUTES > 0) {
-    harvestAndIndex("schedule");
-    setInterval(() => harvestAndIndex("schedule"), FETCH_MINUTES * 60e3).unref();
-  } else {
-    harvestAndIndex("startup");
+const port = Number(process.env.PORT || 3200);
+const server = app.listen(port, () => {
+  console.log(`Superintelligence Homepage on http://localhost:${port} (${db.engine}, Neon)`);
+});
+server.on("error", (err) => {
+  console.error(`Failed to listen on port ${port}:`, err.message);
+  process.exit(1);
+});
+
+async function bootWithRetry(attempts = 4) {
+  for (let i = 1; i <= attempts; i++) {
+    try {
+      await boot();
+      const users = (await db.get("SELECT COUNT(*) AS n FROM users")).n;
+      if (!users) console.log("No accounts yet: the first account created becomes the admin.");
+      if (FETCH_MINUTES > 0) {
+        harvestAndIndex("schedule");
+        setInterval(() => harvestAndIndex("schedule"), FETCH_MINUTES * 60e3).unref();
+      } else {
+        harvestAndIndex("startup");
+      }
+      return;
+    } catch (e) {
+      console.error(`Boot attempt ${i}/${attempts} failed:`, e.message);
+      if (i < attempts) await new Promise((resolve) => setTimeout(resolve, i * 1500));
+    }
   }
-}).catch((e) => { console.error(e); process.exit(1); });
+}
+
+bootWithRetry();
