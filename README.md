@@ -11,6 +11,15 @@ The plan we build against (working agreement, spec, versioned contract) is in ou
 - [Agent Log](AGENT_LOG.md): what the agent got wrong and how we caught it (human-written)
 - [Initial spec](specs/001-superintelligence-homepage/spec.md): written with Spec Kit, under the [constitution](.specify/memory/constitution.md) (prompts used: [docs/speckit-prompts.md](docs/speckit-prompts.md))
 
+## The two builds
+
+| Build | Who | Folder | Live site |
+| --- | --- | --- | --- |
+| Build A | Matt (Claude Code) | [builds/matt/](builds/matt/) | https://superintelligence-home-page.vercel.app |
+| Build B | John (v0) | [builds/john/](builds/john/) | https://si-homepage-build-b.vercel.app |
+
+Build B's stack, deploy settings and status are in [builds/john/README.md](builds/john/README.md#build-information).
+
 ## What it does
 
 | Feature | Detail |

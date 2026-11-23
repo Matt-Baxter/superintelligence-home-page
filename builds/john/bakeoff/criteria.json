@@ -1,0 +1,37 @@
+{
+  "contract": "CONTRACT.md v1.0, sections 4 to 6",
+  "builds": [
+    { "id": "A", "owner": "Matt", "tool": "Claude Code + Spec Kit", "url": "https://superintelligence-home-page.vercel.app" },
+    { "id": "B", "owner": "John", "tool": "v0", "url": "https://si-homepage-build-b.vercel.app" }
+  ],
+  "acceptance": [
+    { "id": "AT-01", "feature": "F1", "expected": "Stories from all 8 sample sources appear, newest first." },
+    { "id": "AT-02", "feature": "F1", "expected": "The AI photo-editing app item does not appear." },
+    { "id": "AT-03", "feature": "F2", "expected": "The paper in three sources appears once, listing all three." },
+    { "id": "AT-04", "feature": "F3", "expected": "Shows Forecasting & timelines and the matched words \"AGI timelines\"." },
+    { "id": "AT-05", "feature": "F4", "expected": "The Twitter/X item does not appear." },
+    { "id": "AT-06", "feature": "F4", "expected": "With one source unreachable, the rest of the feed still loads." },
+    { "id": "AT-07", "feature": "F5", "expected": "Sign-up with an unused username creates the account and signs in." },
+    { "id": "AT-08", "feature": "F5", "expected": "Sign-up with a used username fails clearly; no duplicate account." },
+    { "id": "AT-09", "feature": "F5", "expected": "Still signed in after closing the browser and returning next day." },
+    { "id": "AT-10", "feature": "F6", "expected": "A's vote survives sign-out and sign-in and shows as A's." },
+    { "id": "AT-11", "feature": "F6", "expected": "A and B each see only their own saved stories." },
+    { "id": "AT-12", "feature": "F6", "expected": "A's direct request to remove B's vote is refused." },
+    { "id": "AT-13", "feature": "F7", "expected": "Alignment filter shows only Alignment stories; no sideways scroll on a phone." },
+    { "id": "AT-14", "feature": "F8", "expected": "A classmate signs up and sees the feed in under 2 minutes, unaided." }
+  ],
+  "criteria": [
+    { "id": "acceptance", "label": "Acceptance tests", "weight": 30, "measure": "Share of AT-01 to AT-14 passed on the deployed app" },
+    { "id": "relevance", "label": "Superintelligence relevance", "weight": 20, "measure": "Share of a 20-story live sample both partners judge on-topic (SC-004 wants 9 in 10)" },
+    { "id": "security", "label": "Security", "weight": 15, "measure": "Cross-test of sign-in, passwords and ownership (REQ-011, REQ-016), scored 0 to 1" },
+    { "id": "maintainability", "label": "Maintainability", "weight": 15, "measure": "One agreed small change in the other's code, scored 0 to 1" },
+    { "id": "effort", "label": "Human effort", "weight": 10, "measure": "Hours and agent corrections from each log, scored 0 to 1" },
+    { "id": "usability", "label": "Usability", "weight": 10, "measure": "Three classmates on the same task, scored 0 to 1" }
+  ],
+  "rules": {
+    "acceptanceCountsOnly": "deployed",
+    "relevanceSample": 20,
+    "relevanceTarget": 0.9,
+    "tiebreak": { "within": 5, "criterion": "relevance" }
+  }
+}

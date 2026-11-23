@@ -12,7 +12,7 @@ const openaiCompatible = (preset) => ({
   ...preset,
   make: ({ model, base, key, timeoutMs = 120000 } = {}) => {
     const url = (base || process.env[preset.baseEnv || ""] || preset.base).replace(/\/$/, "");
-    const apiKey = key ?? (preset.keyEnv ? process.env[preset.keyEnv] : "");
+    const apiKey = key ?? (preset.keyEnv ? process.env[preset.keyEnv] || (preset.fallbackKeyEnv ? process.env[preset.fallbackKeyEnv] : "") : "");
     const m = model || process.env.LLM_MODEL || preset.model;
     if (preset.keyEnv && !apiKey) throw new Error(`Set ${preset.keyEnv} to use ${preset.id}`);
     const resolvedUrl = url.replace("{account}", process.env.CLOUDFLARE_ACCOUNT_ID || "{account}");
@@ -39,7 +39,7 @@ providers.register(openaiCompatible({ id: "ollama", about: "Local Ollama (Mac mi
 providers.register(openaiCompatible({ id: "lmstudio", about: "Local LM Studio server (MLX models on Apple silicon): free", base: "http://localhost:1234/v1", baseEnv: "LMSTUDIO_BASE", model: "google/gemma-3-12b" }));
 // Free tiers and commodity APIs (each needs its own key; set a budget on the provider side).
 providers.register(openaiCompatible({ id: "openrouter", about: "OpenRouter: ':free' models (about 50 requests a day free)", base: "https://openrouter.ai/api/v1", keyEnv: "OPENROUTER_API_KEY", model: "google/gemma-3-12b-it:free", headers: { "X-Title": "Superintelligence Homepage lab" } }));
-providers.register(openaiCompatible({ id: "vercel-ai-gateway", about: "Vercel AI Gateway: free-tier models, no markup on paid tokens", base: "https://ai-gateway.vercel.sh/v1", keyEnv: "AI_GATEWAY_API_KEY", model: "google/gemma-3-12b" }));
+providers.register(openaiCompatible({ id: "vercel-ai-gateway", about: "Vercel AI Gateway: free-tier models, no markup on paid tokens", base: "https://ai-gateway.vercel.sh/v1", keyEnv: "AI_GATEWAY_API_KEY", fallbackKeyEnv: "VERCEL_OIDC_TOKEN", model: "google/gemma-3-12b" }));
 providers.register(openaiCompatible({ id: "cloudflare", about: "Cloudflare Workers AI: 10,000 Neurons a day free", base: "https://api.cloudflare.com/client/v4/accounts/{account}/ai/v1", keyEnv: "CLOUDFLARE_API_TOKEN", model: "@cf/google/gemma-3-12b-it" }));
 providers.register(openaiCompatible({ id: "groq", about: "Groq: generous free tier on small open models", base: "https://api.groq.com/openai/v1", keyEnv: "GROQ_API_KEY", model: "llama-3.1-8b-instant" }));
 

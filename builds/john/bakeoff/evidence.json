@@ -1,0 +1,439 @@
+{
+  "acceptance": [
+    {
+      "build": "A",
+      "at": "AT-05",
+      "on": "probe",
+      "date": "2026-11-23",
+      "note": "Live front page links to Twitter/X: 0. Proxy only; AT-05 uses the shared sample data."
+    },
+    {
+      "build": "A",
+      "at": "AT-13",
+      "on": "probe",
+      "date": "2026-11-23",
+      "note": "Front page at 390px: sideways overflow 0px. Proxy only; AT-13 needs the Alignment filter."
+    },
+    {
+      "build": "A",
+      "at": "AT-14",
+      "on": "probe",
+      "date": "2026-11-23",
+      "note": "Public URL answered 200 in 1.2s."
+    },
+    {
+      "build": "B",
+      "at": "AT-05",
+      "on": "probe",
+      "date": "2026-11-23",
+      "note": "Live front page links to Twitter/X: 0. Proxy only; AT-05 uses the shared sample data."
+    },
+    {
+      "build": "B",
+      "at": "AT-13",
+      "on": "probe",
+      "date": "2026-11-23",
+      "note": "Front page at 390px: sideways overflow 0px. Proxy only; AT-13 needs the Alignment filter."
+    },
+    {
+      "build": "B",
+      "at": "AT-14",
+      "on": "probe",
+      "date": "2026-11-23",
+      "note": "Public URL answered 200 in 0.9s."
+    }
+  ],
+  "relevance": {
+    "A": {
+      "sampledFrom": "https://superintelligence-home-page.vercel.app",
+      "date": "2026-11-23",
+      "stories": [
+        {
+          "title": "Research acceleration: The jagged frontier",
+          "href": "https://openai.com/index/research-acceleration-jagged-frontier",
+          "ruleTopics": [],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "Astra covertly underperforming on safety research is concerning, even though it’s unlikely to be motivated by ambitious goals",
+          "href": "https://blog.redwoodresearch.org/p/astra-covertly-underperforming-on",
+          "ruleTopics": [
+            "Safety & risk"
+          ],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "Sharing AI progress in mathematics",
+          "href": "https://openai.com/index/sharing-ai-progress-in-mathematics",
+          "ruleTopics": [
+            "Math",
+            "Reasoning",
+            "Capabilities & AGI progress"
+          ],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "Trump Signs Executive Order For AI Testing Prior To Frontier Model Releases",
+          "href": "https://thezvi.substack.com/p/trump-signs-executive-order-for-ai",
+          "ruleTopics": [
+            "Capabilities & AGI progress",
+            "Governance & policy"
+          ],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "Don't Worry About the Vase",
+          "href": "https://thezvi.substack.com/p/trump-signs-executive-order-for-ai",
+          "ruleTopics": [],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "The AI Ad-Hoc Prior Restraint Era Begins",
+          "href": "https://thezvi.substack.com/p/the-ai-ad-hoc-prior-restraint-era",
+          "ruleTopics": [],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "Reasoning models struggle to control their chains of thought, and that’s good",
+          "href": "https://openai.com/index/reasoning-models-chain-of-thought-controllability",
+          "ruleTopics": [
+            "Reasoning",
+            "Capabilities & AGI progress"
+          ],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "Detecting and reducing scheming in AI models",
+          "href": "https://openai.com/index/detecting-and-reducing-scheming-in-ai-models",
+          "ruleTopics": [
+            "Alignment",
+            "Deception & scheming",
+            "Safety & risk"
+          ],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "OpenAI and Anthropic share findings from a joint safety evaluation",
+          "href": "https://openai.com/index/openai-anthropic-safety-evaluation",
+          "ruleTopics": [
+            "Safety & risk",
+            "Evals & dangerous capabilities"
+          ],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "Toward understanding and preventing misalignment generalization",
+          "href": "https://openai.com/index/emergent-misalignment",
+          "ruleTopics": [
+            "Alignment"
+          ],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "Deliberative alignment: reasoning enables safer language models",
+          "href": "https://openai.com/index/deliberative-alignment",
+          "ruleTopics": [
+            "Alignment",
+            "Reasoning",
+            "Capabilities & AGI progress"
+          ],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "Alignment Faking in Large Language Models",
+          "href": "https://blog.redwoodresearch.org/p/alignment-faking-in-large-language",
+          "ruleTopics": [
+            "Alignment",
+            "Deception & scheming",
+            "Safety & risk"
+          ],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "Extracting Concepts from GPT-4",
+          "href": "https://openai.com/index/extracting-concepts-from-gpt-4",
+          "ruleTopics": [],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        }
+      ]
+    },
+    "B": {
+      "sampledFrom": "https://si-homepage-build-b.vercel.app",
+      "date": "2026-11-23",
+      "stories": [
+        {
+          "title": "Superintelligence Homepage",
+          "href": "/",
+          "ruleTopics": [
+            "AGI & superintelligence",
+            "Capabilities & AGI progress"
+          ],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "Read the feed without an account",
+          "href": "/",
+          "ruleTopics": [],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "292P Towards self-improving neural networks: LLM-guided evolution of medical image models",
+          "href": "https://www.semanticscholar.org/paper/0536a0c102c275bc9ab38a2a22a8d8982249909d",
+          "ruleTopics": [
+            "Recursive self improvement"
+          ],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "Recursive self improvement",
+          "href": "/?topic=recursive-self-improvement",
+          "ruleTopics": [
+            "Recursive self improvement"
+          ],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "A hybrid self-improvable meta-learning network for utterance-level Sentiment classification in scripted dialogues",
+          "href": "https://www.semanticscholar.org/paper/23799e0cc9f6a885712d00d4d3d7ea9063fb60f1",
+          "ruleTopics": [
+            "Recursive self improvement"
+          ],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "VirtualLab_CC: An LLM-augmented virtual laboratory for automated computational chemistry research",
+          "href": "https://www.semanticscholar.org/paper/3323d61574493b4871423afa406451ef42fc3f85",
+          "ruleTopics": [
+            "AI for science",
+            "Capabilities & AGI progress"
+          ],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "AI scientists & research agents",
+          "href": "/?topic=ai-scientists",
+          "ruleTopics": [
+            "Agents",
+            "Automating AI research",
+            "AI scientists & research agents",
+            "Capabilities & AGI progress"
+          ],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "What Would Count as Superintelligence?",
+          "href": "https://thefriendlyghost.nl/what-would-count-as-superintelligence",
+          "ruleTopics": [
+            "AGI & superintelligence",
+            "Capabilities & AGI progress"
+          ],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "Combatting adversarial distillation",
+          "href": "https://openai.com/index/combatting-adversarial-distillation",
+          "ruleTopics": [
+            "Scaling & training",
+            "Compute & scaling"
+          ],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "Capabilities & AGI progress",
+          "href": "/?topic=capabilities",
+          "ruleTopics": [
+            "Capabilities & AGI progress",
+            "AGI & superintelligence"
+          ],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "AI R&D-relevant model capabilities are improving rapidly and are getting harder to measure",
+          "href": "https://metr.org/blog/2026-11-20-q4-2026-capability-update/",
+          "ruleTopics": [
+            "Capabilities & AGI progress",
+            "Automating AI research"
+          ],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "SoK: Assessing the Evolution of LLM Capability in Software Vulnerability Research",
+          "href": "https://arxiv.org/abs/2611.26601",
+          "ruleTopics": [
+            "Capabilities & AGI progress"
+          ],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "Probing the \"Conscious\" Mind: Selective Access and Global Workspace in Vision-Language Models",
+          "href": "https://arxiv.org/abs/2611.26590",
+          "ruleTopics": [
+            "Multimodal",
+            "Interpretability",
+            "Capabilities & AGI progress"
+          ],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "Replication of Agentic Security Events: Audit and Investigation (ROGUE-AI)",
+          "href": "https://arxiv.org/abs/2611.26553",
+          "ruleTopics": [
+            "Agents",
+            "Capabilities & AGI progress"
+          ],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "Evals & dangerous capabilities",
+          "href": "/?topic=evals",
+          "ruleTopics": [
+            "Capabilities & AGI progress",
+            "Evals & dangerous capabilities",
+            "Safety & risk"
+          ],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "The Geometry of Lies: Knowledge and Persona Directions for Detecting Deception in Large Language Models",
+          "href": "https://arxiv.org/abs/2611.26545",
+          "ruleTopics": [],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "AURA: AUdio-dRiven streaming Avatar",
+          "href": "https://arxiv.org/abs/2611.26540",
+          "ruleTopics": [
+            "Multimodal",
+            "Capabilities & AGI progress"
+          ],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "FLUID: Flexible, Evidence-Grounded Situated Task Guidance",
+          "href": "https://arxiv.org/abs/2611.26491",
+          "ruleTopics": [],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "A CPU Inside an LLM: Zero-Gradient Compilation of Exact Circuits into Pretrained Weights",
+          "href": "https://arxiv.org/abs/2611.26450",
+          "ruleTopics": [
+            "Interpretability"
+          ],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        },
+        {
+          "title": "Mind2Act World: A Diagnostic Benchmark for Embodied Mind, Physical Action, and Mind-Action Composition in Robotic Manipulation",
+          "href": "https://arxiv.org/abs/2611.26444",
+          "ruleTopics": [
+            "Robotics & embodiment",
+            "Evals & dangerous capabilities",
+            "Capabilities & AGI progress",
+            "Safety & risk"
+          ],
+          "judges": {
+            "john": null,
+            "matt": null
+          }
+        }
+      ]
+    }
+  },
+  "manual": {}
+}
