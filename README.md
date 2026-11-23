@@ -17,7 +17,7 @@ The plan we build against (working agreement, spec, versioned contract) is in ou
 | Build | Who | Folder | Live site |
 |-------|-----|--------|-----------|
 | Build A | Matt (Claude Code) | [`builds/matt/`](builds/matt/) | https://superintelligence-home-page.vercel.app |
-| Build B | John (v0) | `builds/john/` | _not deployed yet_ |
+| Build B | John (v0) | `builds/john/` | https://si-homepage-build-b.vercel.app/ |
 
 ## What it does
 
