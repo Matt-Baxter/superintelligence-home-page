@@ -120,12 +120,15 @@ function readFormToken(token, t = Date.now()) {
 }
 // Outside local, a missing or forged token is refused, else a bot just leaves it out. That needs a secret every
 // instance shares; with a per-instance random one, a token from another instance would turn real people away.
+// GUARD_STRICT=1 enforces it on a single local instance too (the v0 preview), where its own secret is enough;
+// test servers leave it unset so their direct API sign-ups keep working.
 const SHARED_FORM_SECRET = !!(process.env.GUARD_SECRET || process.env.CRON_SECRET);
+const tokenRequired = (env, shared) => env.GUARD_STRICT === "1" || (shared && scopeOf(env) !== "local");
 function signupBotCheck(body = {}, t = Date.now(), s = current, env = process.env, shared = SHARED_FORM_SECRET) {
   const startedAt = readFormToken(body.formToken, t);
   const verdict = botCheck({ website: body.website, startedAt }, t, s);
   if (verdict) return verdict;
-  if (s.botCheck && shared && scopeOf(env) !== "local" && Number.isNaN(startedAt)) return "no-token";
+  if (s.botCheck && tokenRequired(env, shared) && Number.isNaN(startedAt)) return "no-token";
   return null;
 }
 

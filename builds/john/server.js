@@ -149,7 +149,7 @@ app.put("/api/admin/security/settings", ...SA, wrap(async (req) => {
   if (Object.keys(r.changed).length) await audit.log(req.user.id, "security.settings", guards.scopeOf(), JSON.stringify(r.changed));
   return guards.describe();
 }));
-app.post("/api/admin/security/unlock", ...SA, wrap(async (req) => {
+app.post("/api/admin/security/clear-lock", ...SA, wrap(async (req) => {
   const u = str(req.body?.username, 40); if (!u) bad("Enter the username to unlock.");
   guards.loginSucceeded(u); await audit.log(req.user.id, "security.unlock", u, "sign-in lock cleared on this instance");
   return { ok: true, username: u };

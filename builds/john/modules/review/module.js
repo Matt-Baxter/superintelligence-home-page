@@ -7,6 +7,7 @@ module.exports = {
   version: "0.1.0",
   description: "Ingest and judge papers, articles and comments (significance, rigor, hype, anti-Goodhart guards, adversarial stress test), a superintelligence map, and a catalog in the knowledge graph.",
   requires: ["knowledge"],
+  api: ["/api/cron/spotcheck"], // the daily larger-model spot check is a Vercel cron (vercel.json), so it lives under /api/cron
   setup(ctx) {
     ctx.point("db.schema").addSql(`
 CREATE TABLE IF NOT EXISTS review_docs (id \${ID}, qid TEXT NOT NULL UNIQUE, kind TEXT NOT NULL, title TEXT NOT NULL, authors TEXT DEFAULT '',

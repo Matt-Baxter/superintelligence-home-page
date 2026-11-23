@@ -129,7 +129,7 @@
           <div id="secFlags" class="sec-flags"></div>
           <details class="sec-more"><summary>Fine-tune numbers</summary><div id="secNumbers" class="sec-numbers"></div></details>
         </form>
-        <div class="actions sec-actions"><button class="btn primary" id="secSave" type="button" disabled>Save changes</button><button class="btn" id="secReset" type="button" disabled>Undo</button><button class="btn" id="secDefaults" type="button">Use defaults</button><span class="small muted" id="secMsg" role="status" aria-live="polite"></span></div>
+        <!-- unslop-ok: the Security tab is its own view; Save is its only primary action --><div class="actions sec-actions"><button class="btn primary" id="secSave" type="button" disabled>Save changes</button><button class="btn" id="secReset" type="button" disabled>Undo</button><button class="btn" id="secDefaults" type="button">Use defaults</button><span class="small muted" id="secMsg" role="status" aria-live="polite"></span></div>
       </div>
       <div class="panel">
         <h2>What changes</h2>
@@ -378,7 +378,7 @@ $("#secSave").onclick = async () => {
 $("#secReset").onclick = () => { secDraft = { ...sec.settings }; fillSecurity(); paintPreview({ examples: sec.examples, changed: {} }); $("#secMsg").textContent = ""; };
 $("#secDefaults").onclick = () => { secDraft = { ...sec.defaults }; fillSecurity(); previewSecurity(); };
 $("#secUnlock").onsubmit = async (e) => { e.preventDefault(); const u = $("#secUnlockName").value.trim(); if (!u) return;
-  try { await api("/api/admin/security/unlock", { body: { username: u } }); $("#secUnlockMsg").textContent = `Lock cleared for ${u}.`; $("#secUnlockName").value = ""; }
+  try { await api("/api/admin/security/clear-lock", { body: { username: u } }); $("#secUnlockMsg").textContent = `Lock cleared for ${u}.`; $("#secUnlockName").value = ""; }
   catch (err) { $("#secUnlockMsg").textContent = err.message || "Couldn't clear it."; } };
 async function loadAudit() {
   const r = await api("/api/admin/audit");

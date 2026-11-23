@@ -31,6 +31,9 @@ ok(G.botCheck({ startedAt: t - 400 }, t, { ...D, botCheck: false }) === null, "b
   ok(G.signupBotCheck({ formToken: tok }, t, D, prod, true) === null, "on Vercel a valid, human-paced token is accepted");
   ok(G.signupBotCheck({}, t, D, prod, false) === null, "without a shared secret a missing token falls back to the honeypot");
   ok(G.signupBotCheck({}, t, D, {}, true) === null, "locally an API sign-up without a token still works for tests");
+  ok(G.signupBotCheck({}, t, D, { GUARD_STRICT: "1" }, false) === "no-token", "GUARD_STRICT=1 refuses a tokenless sign-up locally, even without a shared secret");
+  ok(G.signupBotCheck({ formToken: `${t - 9e5}.forged` }, t, D, { GUARD_STRICT: "1" }, false) === "no-token", "GUARD_STRICT=1 refuses a forged token locally");
+  ok(G.signupBotCheck({ formToken: tok }, t, D, { GUARD_STRICT: "1" }, false) === null, "GUARD_STRICT=1 still accepts a valid, human-paced token");
   ok(G.signupBotCheck({}, t, { ...D, botCheck: false }, prod, true) === null, "switching the bot check off also drops the token rule"); }
 
 // Lockout per account (REQ-058)

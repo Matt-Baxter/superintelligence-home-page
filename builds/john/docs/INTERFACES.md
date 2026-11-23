@@ -251,9 +251,11 @@ JSON over HTTPS. Requests send `Content-Type: application/json`.
 
 | Method and path | Request | Response (200) |
 | --- | --- | --- |
-| POST /api/signup | `{username, password, displayName}` | `{user:{id, username, name, admin}}` + session cookie |
-| POST /api/login, /api/logout | `{username, password}` | `{user}` / `{ok:true}` |
-| GET /api/me | none | `{user,profile,features}`; optional local-fixture-only `demo` as logged above |
+| POST /api/signup | `{username, password, displayName, website, formToken}` (`website` is the hidden field; `formToken` comes from `/api/me`) | `{user:{id, username, name, admin}}` + session cookie; 400 when the bot check refuses, 403 when sign-up is paused |
+| POST /api/login, /api/logout | `{username, password}` | `{user}` / `{ok:true}`; 429 while the account is locked after repeated wrong passwords |
+| GET /api/me | none | `{user,profile,features}`, plus `formToken` (signed, server-timed) and `emulator`, `emulatorHours`; optional local-fixture-only `demo` as logged above |
+| POST /api/emulate (local and preview only) | `{role:"admin"\|"reader"}` | `{user}` + session cookie for a test account; 404 where the environment does not allow it |
+| `/api/admin/security*` (super admins only, 403 otherwise) | GET (settings, defaults, environment, recent events); POST `preview` `{draft}`; PUT `settings` `{settings}`; POST `clear-lock` `{username}` | `preview` returns `{cases:[{group, story, before, after, changed}]}`; writes go to `guard_settings` and `admin_audit` |
 | GET /api/stories (public; saved=1 requires session) | query: `topic, kind, org, q, days, saved=1, sort=top\|new\|votes\|signal, benchmark, person, min, offset` | `{stories:[{id, title, url, summary, topics, orgs, votes, voted, saved, notes, sources:[{name, kind, url}], nsources, significance, analysis}]}`, 40 per page |
 | GET /api/stories/:id (public) | none | `{story, notes:[…], lists:[…], inPublicLists:[…]}` |
 | POST /api/stories/:id/vote, /save | none | `{voted, votes}` / `{saved}` (toggles) |
@@ -315,3 +317,7 @@ For a choice with two candidate builds:
 - Status generation gives failing checks precedence over passes and exits nonzero on failed, uncovered or malformed evidence. A real local process-restart acceptance check covers session/vote/save persistence; it does not assert a production redeployment.
 
 - REQ-010: browser sign-in retains local query and fragment destinations. Return paths are canonicalized against the application origin; account API shapes and permissions are unchanged.
+
+## Guards and security settings (2026-11-22)
+
+- REQ-057..062: new table `guard_settings (scope TEXT PRIMARY KEY, settings TEXT NOT NULL, updated_by → users, updated_at)`, keyed by environment, one row per environment, validated by `SettingsSchema` in `lib/guards.js`; a missing row means defaults. Sign-up timing is measured on the server clock with an HMAC-signed `formToken` (`SESSION_SECRET`); production, or any instance with `GUARD_STRICT=1`, refuses a missing or invalid token. The lock-clearing route is `POST /api/admin/security/clear-lock`. The daily spot check stays at `/api/cron/spotcheck` and is declared in the review manifest's `api` list.

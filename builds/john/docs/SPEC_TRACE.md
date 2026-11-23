@@ -83,10 +83,10 @@ From the public-features survey in `docs/PARITY.md` (data `docs/market/apps.json
 
 | REQ | What | Where in the code | Checked by |
 |---|---|---|---|
-| REQ-057 | Sign-up bot check, pause sign-up | `lib/guards.js` botCheck, `server.js` /api/auth/signup | `test/guards-unit.js` |
-| REQ-058 | Per-account sign-in lock | `lib/guards.js` isLocked/loginFailed, `server.js` /api/auth/login | `test/guards-unit.js` |
+| REQ-057 | Sign-up bot check, pause sign-up | `lib/guards.js` botCheck, `server.js` /api/signup | `test/guards-unit.js` |
+| REQ-058 | Per-account sign-in lock | `lib/guards.js` isLocked/loginFailed, `server.js` /api/login | `test/guards-unit.js` |
 | REQ-059 | Per-member work budgets, no guest model or job routes | `lib/guards.js` BUDGETS/makeBudgets, `server.js` | `test/guards-unit.js`, `test/access-split-unit.js` |
-| REQ-060 | Test sign-in on local and preview only | `lib/guards.js` emulatorMode, `server.js` /api/auth/emulate, `public/index.html` | `test/guards-unit.js` |
+| REQ-060 | Test sign-in on local and preview only | `lib/guards.js` emulatorMode, `server.js` /api/emulate, `public/index.html` | `test/guards-unit.js` |
 | REQ-061 | Super-admin security settings per environment | `lib/guards.js` SettingsSchema/save/isSuperAdmin, `server.js` /api/admin/security, `modules/admin/pages/admin.html#security` | `test/guards-unit.js` |
 | REQ-062 | Live worked cases for draft settings | `lib/guards.js` simulate, `/api/admin/security/preview` | `test/guards-unit.js` |
 

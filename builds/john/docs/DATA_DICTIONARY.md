@@ -216,7 +216,7 @@ Definitions are copied from their owning registry. Empty definitions mean the re
 | `person:zvi-mowshowitz` | Zvi Mowshowitz (person) | Watchlist mention only; no claims are attributed to this person. | zvi mowshowitz | [registry](../lib/ontology.json) |
 | `term:attention` | Attention (term) | Combines value vectors using weights derived from query–key scores. | attention mechanism, scaled dot-product attention, self-attention | [registry](../modules/learn/data/glossary.json) |
 | `term:entropy` | Entropy (term) | Summarizes uncertainty in a probability distribution. | entropy, Shannon entropy | [registry](../modules/learn/data/glossary.json) |
-| `term:expectation` | Expectation 𝔼 (symbol) | A probability-weighted average of a random quantity. | expected value, expectation, 𝔼, E[X] | [registry](../modules/learn/data/glossary.json) |
+| `term:expectation` | Expectation E[X] (symbol) | A probability-weighted average of a random quantity. | expected value, expectation, 𝔼, E[X] | [registry](../modules/learn/data/glossary.json) |
 | `term:exponential` | Exponential exp (function) | The natural exponential raises the constant e to a real-valued input. | exponential function, exp( | [registry](../modules/learn/data/glossary.json) |
 | `term:gradient` | Gradient (symbol) | Collects the partial derivatives of a scalar function. | gradient, gradients, ∇ | [registry](../modules/learn/data/glossary.json) |
 | `term:intersection` | Event intersection ∩ (symbol) | The outcomes shared by two events. | set intersection, event intersection, ∩ | [registry](../modules/learn/data/glossary.json) |
@@ -241,29 +241,43 @@ Definitions are copied from their owning registry. Empty definitions mean the re
 | `term:vectors` | Vectors and matrices (term) | A vector holds indexed values; a matrix arranges indexed values in rows and columns. | vector, vectors, matrix, matrices | [registry](../modules/learn/data/glossary.json) |
 | `term:world-models` | World models (term) | A world model predicts selected aspects of an environment and its changes. It may help planning, but can be wrong when actions or situations differ from training. | world model, world models, action-conditioned prediction | [registry](../modules/learn/data/glossary.json) |
 | `topic:agents` | Agents (topic) |  | agent, agents, agentic, tool use, computer use, autonomous, multi-agent, web navigation | [registry](../lib/ontology.json) |
+| `topic:ai-control` | AI control (topic) |  | ai control, control evaluation*, untrusted model*, trusted monitoring, control protocol* | [registry](../lib/ontology.json) |
+| `topic:ai-scientists` | AI scientists & research agents (topic) |  | ai scientist*, research agent*, autonomous research, automated discovery, ml engineering agent* | [registry](../lib/ontology.json) |
 | `topic:alignment` | Alignment (topic) |  | alignment, aligned, misalign*, rlhf, constitutional ai, reward hacking, reward model*, deceptive, scheming, sycophancy, corrigib*, scalable oversight, superalignment, sandbagg*, alignment faking, power-seeking, goal misgeneralization | [registry](../lib/ontology.json) |
 | `topic:automating-ai-research` | Automating AI research (topic) |  | automated ai research, ai r&d, ai scientist*, research automation, re-bench, mle-bench, paperbench, automating ai research, automated alignment research, ai research agent*, research agent*, automating research | [registry](../lib/ontology.json) |
-| `topic:capabilities` | Capabilities & AGI progress (topic) |  | state of the art, sota, frontier model, new model, outperforms, capabilit* | [registry](../lib/ontology.json) |
+| `topic:bio-chem-risk` | Bio & chemical risk (topic) |  | biosecurity, bioweapon*, biological risk, pandemic pathogen*, chemical weapon*, cbrn, uplift study, uplift studies | [registry](../lib/ontology.json) |
+| `topic:capabilities` | Capabilities & AGI progress (topic) |  | state of the art, sota, frontier model*, new model, outperforms, capabilit* | [registry](../lib/ontology.json) |
+| `topic:chips` | Chips & hardware (topic) |  | gpu*, tpu*, h100*, b200*, gb200, accelerator*, semiconductor*, tsmc, export control*, chip* | [registry](../lib/ontology.json) |
 | `topic:coding` | Coding (topic) |  | coding, code generation, software engineering, programming, swe-bench*, terminal-bench*, codeforces, livecodebench, codebase* | [registry](../lib/ontology.json) |
 | `topic:compute` | Compute & scaling (topic) |  | compute, gpu*, tpu*, datacenter, data center, chips, semiconductor*, flops, training run, energy, power grid | [registry](../lib/ontology.json) |
+| `topic:continual-learning` | Memory & continual learning (topic) |  | continual learning, continual-learning, lifelong learning, long-term memory, test-time training, catastrophic forgetting | [registry](../lib/ontology.json) |
+| `topic:cot-monitoring` | Chain-of-thought monitoring (topic) |  | chain-of-thought monitor*, cot monitor*, faithful reasoning, reasoning faithfulness, monitorability | [registry](../lib/ontology.json) |
+| `topic:deception` | Deception & scheming (topic) |  | scheming, deceptive alignment, alignment faking, sandbagging, situational awareness, sleeper agent*, strategic deception | [registry](../lib/ontology.json) |
 | `topic:economics` | Economics & labor (topic) |  | labor market, jobs, automation, productivity, economic*, investment, revenue, valuation | [registry](../lib/ontology.json) |
+| `topic:energy` | Energy & data centers (topic) |  | data center*, datacenter*, gigawatt*, power grid, nuclear power, energy demand, stargate | [registry](../lib/ontology.json) |
 | `topic:evals` | Evals & dangerous capabilities (topic) |  | benchmark*, evaluation, evals, leaderboard, swe-bench, gpqa, arc-agi, mmlu, frontiermath, humanity's last exam, dangerous capabilit* | [registry](../lib/ontology.json) |
-| `topic:forecasting` | Forecasting & timelines (topic) |  | forecast*, timeline*, trend*, prediction, takeoff, explosion, agi timeline*, timelines to agi, ai 2027 | [registry](../lib/ontology.json) |
+| `topic:forecasting` | Forecasting & timelines (topic) |  | forecast*, timeline*, trend*, prediction, takeoff, explosion, agi timeline*, timelines to agi, ai 2027, transformative ai | [registry](../lib/ontology.json) |
 | `topic:formal-verification` | Formal verification (topic) |  | autoformaliz*, autoformalis*, proof assistant*, machine-checked, computer-checked, computer-verified, formally verified, lean proof*, lean code, lean formaliz*, lean formalis*, mathlib, isabelle/hol, coq proof*, lean 4, lean4, lean prover, lean statement*, lean theorem*, lean development*, proof in lean, proofs in lean, theorem in lean, written in lean, formalized in lean, formalised in lean, into lean, coq, isabelle, formal statement* | [registry](../lib/ontology.json) |
 | `topic:interpretability` | Interpretability (topic) |  | interpretab*, mechanistic, sparse autoencoder*, circuits, probing, feature visualization, explainab* | [registry](../lib/ontology.json) |
+| `topic:lab-safety-policies` | Lab safety frameworks (topic) |  | responsible scaling polic*, frontier safety framework, preparedness framework, safety case*, system card*, model card* | [registry](../lib/ontology.json) |
 | `topic:long-horizon` | Long-horizon autonomy (topic) |  | long-horizon, time horizon*, time-horizon*, autonomous replication, multi-day, hours-long, task length* | [registry](../lib/ontology.json) |
 | `topic:math` | Math (topic) |  | math, mathematic*, theorem prov*, olympiad, aime, frontiermath, formal proof*, lean 4, imo gold, imo problem*, international mathematical olympiad | [registry](../lib/ontology.json) |
 | `topic:multimodal` | Multimodal (topic) |  | multimodal, vision-language, video generation, image generation, speech, audio | [registry](../lib/ontology.json) |
+| `topic:national-security` | National security & geopolitics (topic) |  | national security, military, defense department, pentagon, geopolitic*, us-china, arms race, nationaliz* | [registry](../lib/ontology.json) |
 | `topic:open-models` | Open models (topic) |  | open-weight*, open weight*, open-source model*, open source model*, llama, mistral, qwen, deepseek, gemma, olmo | [registry](../lib/ontology.json) |
-| `topic:policy` | Governance & policy (topic) |  | regulation, policy, governance, legislation, executive order, export control*, eu ai act, compliance, standards, liability, licensing, ai governance, international treaty, compute governance, frontier ai policy | [registry](../lib/ontology.json) |
+| `topic:policy` | Governance & policy (topic) |  | regulation, policy, governance, legislation, executive order, export control*, eu ai act, compliance, standards, liability, licensing, ai governance, ai policies, frontier ai safety, international treaty, compute governance, frontier ai policy | [registry](../lib/ontology.json) |
 | `topic:reasoning` | Reasoning (topic) |  | reasoning, chain of thought, chain-of-thought, test-time compute, inference-time, mathematical, theorem prov*, planning | [registry](../lib/ontology.json) |
 | `topic:recursive-self-improvement` | Recursive self improvement (topic) |  | recursive self-improvement, recursive self improvement, recursively self-improv*, self-improv*, intelligence explosion, seed ai, self-modif*, improves itself, improve themselves | [registry](../lib/ontology.json) |
+| `topic:reward-hacking` | Reward hacking & specification gaming (topic) |  | reward hacking, reward hack*, specification gaming, goal misgeneralization, goodhart*, sycophan* | [registry](../lib/ontology.json) |
 | `topic:robotics` | Robotics & embodiment (topic) |  | robot*, embodied, manipulation, humanoid, world model | [registry](../lib/ontology.json) |
-| `topic:safety` | Safety & risk (topic) |  | ai safety, safety, jailbreak*, red team*, existential risk, x-risk, catastrophic risk*, loss of control | [registry](../lib/ontology.json) |
+| `topic:safety` | Safety & risk (topic) |  | ai safety, safety, jailbreak*, red team*, existential risk*, x-risk, catastrophic risk*, loss of control, deceptive alignment | [registry](../lib/ontology.json) |
+| `topic:scalable-oversight` | Scalable oversight (topic) |  | scalable oversight, weak-to-strong, debate protocol*, ai debate, recursive reward modeling, superalignment | [registry](../lib/ontology.json) |
 | `topic:scaling` | Scaling & training (topic) |  | scaling law*, scaling, pretraining, pre-training, post-training, fine-tun*, distillation, synthetic data, reinforcement learning, mixture of experts, long context | [registry](../lib/ontology.json) |
 | `topic:science` | AI for science (topic) |  | protein, drug discovery, materials, scientific discovery, biology, chemistry, automated research | [registry](../lib/ontology.json) |
 | `topic:security` | Security & misuse (topic) |  | cyber*, bioweapon*, biosecurity, misuse, model weights security, exfiltrat*, prompt injection | [registry](../lib/ontology.json) |
 | `topic:superintelligence` | AGI & superintelligence (topic) |  | agi, artificial general intelligence, superintelligen*, asi, transformative ai, human-level ai, superhuman, takeoff | [registry](../lib/ontology.json) |
+| `topic:synthetic-data` | Synthetic data & self-play (topic) |  | synthetic data, self-play, self-generated data, self-training, bootstrapp*, model collapse | [registry](../lib/ontology.json) |
+| `topic:takeoff` | Takeoff speeds (topic) |  | takeoff speed*, fast takeoff, slow takeoff, hard takeoff, soft takeoff, software intelligence explosion | [registry](../lib/ontology.json) |
 
 ## Term properties and source pointers
 
@@ -810,17 +824,31 @@ These are declarations in the static registries, not a claim that the current da
 | `term:world-models` | related | `term:attention` | [registry](../modules/learn/data/glossary.json) |
 | `term:world-models` | related | `term:transformer` | [registry](../modules/learn/data/glossary.json) |
 | `topic:agents` | part-of | `topic:capabilities` | [registry](../lib/ontology.json) |
+| `topic:ai-control` | part-of | `topic:safety` | [registry](../lib/ontology.json) |
+| `topic:ai-scientists` | part-of | `topic:automating-ai-research` | [registry](../lib/ontology.json) |
+| `topic:bio-chem-risk` | part-of | `topic:safety` | [registry](../lib/ontology.json) |
+| `topic:chips` | part-of | `topic:compute` | [registry](../lib/ontology.json) |
 | `topic:coding` | part-of | `topic:capabilities` | [registry](../lib/ontology.json) |
+| `topic:continual-learning` | part-of | `topic:capabilities` | [registry](../lib/ontology.json) |
+| `topic:cot-monitoring` | part-of | `topic:interpretability` | [registry](../lib/ontology.json) |
+| `topic:deception` | part-of | `topic:safety` | [registry](../lib/ontology.json) |
 | `topic:economics` | part-of | `topic:policy` | [registry](../lib/ontology.json) |
+| `topic:energy` | part-of | `topic:compute` | [registry](../lib/ontology.json) |
 | `topic:evals` | part-of | `topic:safety` | [registry](../lib/ontology.json) |
 | `topic:formal-verification` | part-of | `topic:math` | [registry](../lib/ontology.json) |
+| `topic:lab-safety-policies` | part-of | `topic:policy` | [registry](../lib/ontology.json) |
 | `topic:long-horizon` | part-of | `topic:agents` | [registry](../lib/ontology.json) |
 | `topic:math` | part-of | `topic:reasoning` | [registry](../lib/ontology.json) |
 | `topic:multimodal` | part-of | `topic:capabilities` | [registry](../lib/ontology.json) |
+| `topic:national-security` | part-of | `topic:policy` | [registry](../lib/ontology.json) |
 | `topic:open-models` | part-of | `topic:capabilities` | [registry](../lib/ontology.json) |
 | `topic:reasoning` | part-of | `topic:capabilities` | [registry](../lib/ontology.json) |
+| `topic:reward-hacking` | part-of | `topic:alignment` | [registry](../lib/ontology.json) |
 | `topic:robotics` | part-of | `topic:capabilities` | [registry](../lib/ontology.json) |
+| `topic:scalable-oversight` | part-of | `topic:alignment` | [registry](../lib/ontology.json) |
 | `topic:scaling` | part-of | `topic:compute` | [registry](../lib/ontology.json) |
 | `topic:science` | part-of | `topic:capabilities` | [registry](../lib/ontology.json) |
 | `topic:security` | part-of | `topic:safety` | [registry](../lib/ontology.json) |
 | `topic:superintelligence` | part-of | `topic:capabilities` | [registry](../lib/ontology.json) |
+| `topic:synthetic-data` | part-of | `topic:recursive-self-improvement` | [registry](../lib/ontology.json) |
+| `topic:takeoff` | part-of | `topic:forecasting` | [registry](../lib/ontology.json) |

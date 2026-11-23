@@ -116,7 +116,7 @@ function showAccess(demo, access = {}) {
     $("#demoAccess").hidden = false; $("#demoHelp").hidden = false;
     const fillDemo = (account) => { setAuthMode("login"); $("#username").value = account.username; $("#password").value = account.password; };
     for (const account of demo.accounts) {
-      const button = document.createElement("button"); button.type = "button"; button.className = "btn primary";
+      const button = document.createElement("button"); button.type = "button"; button.className = "btn";
       button.textContent = `Sign in as ${account.role}`;
       button.onclick = () => { fillDemo(account); $("#authForm").requestSubmit(); };
       $("#demoAccounts").append(button);
