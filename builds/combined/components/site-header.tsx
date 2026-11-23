@@ -14,10 +14,11 @@ const PRIMARY_NAV: NavItem[] = [
 
 function BrandMark() {
   return (
-    <svg viewBox="0 0 24 24" className="brand-mark" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.25">
-      <path d="M12 2.5 20.2 7.25v9.5L12 21.5 3.8 16.75v-9.5Z" />
-      <path d="M12 6.2 16.9 9.05v5.9L12 17.8 7.1 14.95v-5.9Z" />
-      <path d="M10.6 17 12 17.8 13.4 17" stroke="var(--bg)" strokeWidth="2" />
+    <svg viewBox="0 0 24 24" className="brand-mark" aria-hidden="true">
+      <rect width="24" height="24" rx="6" fill="currentColor" />
+      <rect x="6" y="6.5" width="12" height="2.5" rx="1.25" fill="var(--bg)" />
+      <rect x="6" y="10.75" width="8.5" height="2.5" rx="1.25" fill="var(--bg)" />
+      <rect x="6" y="15" width="5" height="2.5" rx="1.25" fill="var(--bg)" />
     </svg>
   );
 }

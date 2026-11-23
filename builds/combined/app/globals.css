@@ -170,8 +170,8 @@ textarea {
 
 .brand-mark {
   display: inline-flex;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.75rem;
+  height: 1.75rem;
   color: var(--text);
   flex-shrink: 0;
 }
@@ -179,9 +179,10 @@ textarea {
 .site-title {
   color: var(--text);
   text-decoration: none;
-  font-family: var(--font-display), Georgia, serif;
-  font-size: 1.125rem;
-  letter-spacing: -0.01em;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
 }
 
 .nav-row {
