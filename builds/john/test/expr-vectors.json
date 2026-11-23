@@ -1,0 +1,1172 @@
+{
+ "about": "Shared test vectors for si-expr. Every interpreter (lib/expr, interop/python, interop/rust) must give exactly these results. Generated from the Node interpreter, checked by hand; add cases by hand.",
+ "vectors": [
+  {
+   "name": "var path",
+   "rule": {
+    "var": "a.b"
+   },
+   "data": {
+    "a": {
+     "b": 3
+    }
+   },
+   "expect": 3
+  },
+  {
+   "name": "var default",
+   "rule": {
+    "var": [
+     "missing",
+     7
+    ]
+   },
+   "data": {},
+   "expect": 7
+  },
+  {
+   "name": "if chain",
+   "rule": {
+    "if": [
+     false,
+     1,
+     {
+      "==": [
+       {
+        "var": "x"
+       },
+       2
+      ]
+     },
+     "two",
+     "else"
+    ]
+   },
+   "data": {
+    "x": 2
+   },
+   "expect": "two"
+  },
+  {
+   "name": "and/or",
+   "rule": {
+    "or": [
+     {
+      "and": [
+       true,
+       0
+      ]
+     },
+     "fallback"
+    ]
+   },
+   "data": {},
+   "expect": "fallback"
+  },
+  {
+   "name": "not empty array",
+   "rule": {
+    "!": [
+     []
+    ]
+   },
+   "data": {},
+   "expect": true
+  },
+  {
+   "name": "compare",
+   "rule": {
+    "and": [
+     {
+      ">=": [
+       3,
+       2
+      ]
+     },
+     {
+      "<": [
+       1,
+       2
+      ]
+     },
+     {
+      "!=": [
+       1,
+       "1"
+      ]
+     }
+    ]
+   },
+   "data": {},
+   "expect": true
+  },
+  {
+   "name": "in array",
+   "rule": {
+    "in": [
+     "b",
+     [
+      "a",
+      "b"
+     ]
+    ]
+   },
+   "data": {},
+   "expect": true
+  },
+  {
+   "name": "in string",
+   "rule": {
+    "in": [
+     "lig",
+     "alignment"
+    ]
+   },
+   "data": {},
+   "expect": true
+  },
+  {
+   "name": "cat",
+   "rule": {
+    "cat": [
+     "a",
+     1,
+     null,
+     "b"
+    ]
+   },
+   "data": {},
+   "expect": "a1b"
+  },
+  {
+   "name": "arith",
+   "rule": {
+    "+": [
+     1,
+     2,
+     {
+      "*": [
+       2,
+       3
+      ]
+     },
+     {
+      "-": [
+       10,
+       4
+      ]
+     }
+    ]
+   },
+   "data": {},
+   "expect": 15
+  },
+  {
+   "name": "min/max",
+   "rule": [
+    {
+     "min": [
+      3,
+      1,
+      2
+     ]
+    },
+    {
+     "max": [
+      3,
+      1,
+      2
+     ]
+    }
+   ],
+   "data": {},
+   "expect": [
+    1,
+    3
+   ]
+  },
+  {
+   "name": "map",
+   "rule": {
+    "map": [
+     {
+      "var": "xs"
+     },
+     {
+      "*": [
+       {
+        "var": ""
+       },
+       2
+      ]
+     }
+    ]
+   },
+   "data": {
+    "xs": [
+     1,
+     2,
+     3
+    ]
+   },
+   "expect": [
+    2,
+    4,
+    6
+   ]
+  },
+  {
+   "name": "filter",
+   "rule": {
+    "filter": [
+     {
+      "var": "xs"
+     },
+     {
+      ">": [
+       {
+        "var": ""
+       },
+       1
+      ]
+     }
+    ]
+   },
+   "data": {
+    "xs": [
+     1,
+     2,
+     3
+    ]
+   },
+   "expect": [
+    2,
+    3
+   ]
+  },
+  {
+   "name": "some/all",
+   "rule": [
+    {
+     "some": [
+      {
+       "var": "xs"
+      },
+      {
+       ">": [
+        {
+         "var": ""
+        },
+        2
+       ]
+      }
+     ]
+    },
+    {
+     "all": [
+      {
+       "var": "xs"
+      },
+      {
+       ">": [
+        {
+         "var": ""
+        },
+        0
+       ]
+      }
+     ]
+    },
+    {
+     "all": [
+      [],
+      true
+     ]
+    }
+   ],
+   "data": {
+    "xs": [
+     1,
+     2,
+     3
+    ]
+   },
+   "expect": [
+    true,
+    true,
+    false
+   ]
+  },
+  {
+   "name": "literal object",
+   "rule": {
+    "k": 1
+   },
+   "data": {},
+   "expect": {
+    "k": 1
+   }
+  },
+  {
+   "name": "match whole word",
+   "rule": {
+    "si.match": [
+     "The AGI debate",
+     "agi"
+    ]
+   },
+   "data": {},
+   "expect": "agi"
+  },
+  {
+   "name": "match not inside word",
+   "rule": {
+    "si.match": [
+     "magic agility",
+     "agi"
+    ]
+   },
+   "data": {},
+   "expect": null
+  },
+  {
+   "name": "match prefix",
+   "rule": {
+    "si.match": [
+     "self-improving systems",
+     "self-improv*"
+    ]
+   },
+   "data": {},
+   "expect": "self-improving"
+  },
+  {
+   "name": "match prefix hyphen run",
+   "rule": {
+    "si.match": [
+     "Superintelligence-level risk",
+     "superintelligen*"
+    ]
+   },
+   "data": {},
+   "expect": "superintelligence-level"
+  },
+  {
+   "name": "match after hyphen",
+   "rule": {
+    "si.match": [
+     "pre-AGI world",
+     "agi"
+    ]
+   },
+   "data": {},
+   "expect": "agi"
+  },
+  {
+   "name": "match second occurrence",
+   "rule": {
+    "si.match": [
+     "agility then AGI",
+     "agi"
+    ]
+   },
+   "data": {},
+   "expect": "agi"
+  },
+  {
+   "name": "match phrase",
+   "rule": {
+    "si.match": [
+     "Recursive Self Improvement now",
+     "recursive self improvement"
+    ]
+   },
+   "data": {},
+   "expect": "recursive self improvement"
+  },
+  {
+   "name": "match no",
+   "rule": {
+    "si.match": [
+     "nothing here",
+     "asi"
+    ]
+   },
+   "data": {},
+   "expect": null
+  },
+  {
+   "name": "first_match order",
+   "rule": {
+    "si.first_match": [
+     {
+      "var": "t"
+     },
+     [
+      "asi",
+      "agi",
+      "alignment"
+     ]
+    ]
+   },
+   "data": {
+    "t": "alignment and AGI"
+   },
+   "expect": "agi"
+  },
+  {
+   "name": "matches unique",
+   "rule": {
+    "si.matches": [
+     "GPU gpus GPU",
+     "gpu*"
+    ]
+   },
+   "data": {},
+   "expect": [
+    "gpu"
+   ]
+  },
+  {
+   "name": "matches list",
+   "rule": {
+    "si.matches": [
+     "gpu chips and TPUs",
+     [
+      "gpu*",
+      "tpu*",
+      "fpga"
+     ]
+    ]
+   },
+   "data": {},
+   "expect": [
+    "gpu",
+    "tpus"
+   ]
+  },
+  {
+   "name": "count",
+   "rule": [
+    {
+     "si.count": {
+      "var": "xs"
+     }
+    },
+    {
+     "si.count": "abc"
+    },
+    {
+     "si.count": null
+    }
+   ],
+   "data": {
+    "xs": [
+     1,
+     2
+    ]
+   },
+   "expect": [
+    2,
+    3,
+    0
+   ]
+  },
+  {
+   "name": "unique",
+   "rule": {
+    "si.unique": [
+     [
+      1,
+      "a",
+      1,
+      {
+       "k": 1
+      },
+      {
+       "k": 1
+      }
+     ]
+    ]
+   },
+   "data": {},
+   "expect": [
+    1,
+    "a",
+    {
+     "k": 1
+    }
+   ]
+  },
+  {
+   "name": "let sequential",
+   "rule": {
+    "si.let": [
+     {
+      "a": 2,
+      "b": {
+       "*": [
+        {
+         "var": "a"
+        },
+        5
+       ]
+      }
+     },
+     {
+      "+": [
+       {
+        "var": "a"
+       },
+       {
+        "var": "b"
+       }
+      ]
+     }
+    ]
+   },
+   "data": {},
+   "expect": 12
+  },
+  {
+   "name": "obj",
+   "rule": {
+    "si.obj": {
+     "x": {
+      "var": "n"
+     },
+     "y": "lit",
+     "z": [
+      1,
+      {
+       "var": "n"
+      }
+     ]
+    }
+   },
+   "data": {
+    "n": 4
+   },
+   "expect": {
+    "x": 4,
+    "y": "lit",
+    "z": [
+     1,
+     4
+    ]
+   }
+  },
+  {
+   "name": "tpl",
+   "rule": {
+    "si.tpl": [
+     "{{who}} saw {{things}} ({{missing}})",
+     {
+      "si.obj": {
+       "who": "Ana",
+       "things": [
+        "a",
+        "b"
+       ]
+      }
+     }
+    ]
+   },
+   "data": {},
+   "expect": "Ana saw a, b ()"
+  },
+  {
+   "name": "tpl path",
+   "rule": {
+    "si.tpl": [
+     "{{a.b}}!",
+     {
+      "var": ""
+     }
+    ]
+   },
+   "data": {
+    "a": {
+     "b": "deep"
+    }
+   },
+   "expect": "deep!"
+  },
+  {
+   "name": "scope strong",
+   "rule": {
+    "si.let": [
+     {
+      "term": {
+       "si.first_match": [
+        {
+         "var": "text"
+        },
+        {
+         "var": "strong"
+        }
+       ]
+      },
+      "n": {
+       "si.count": {
+        "var": "tops"
+       }
+      }
+     },
+     {
+      "if": [
+       {
+        "var": "term"
+       },
+       {
+        "si.obj": {
+         "in": true,
+         "rule": "strong",
+         "term": {
+          "var": "term"
+         },
+         "reason": {
+          "si.tpl": [
+           "Superintelligence term: \"{{term}}\"",
+           {
+            "si.obj": {
+             "term": {
+              "var": "term"
+             }
+            }
+           }
+          ]
+         }
+        }
+       },
+       {
+        ">=": [
+         {
+          "var": "n"
+         },
+         {
+          "var": "min_topics"
+         }
+        ]
+       },
+       {
+        "si.obj": {
+         "in": true,
+         "rule": "topics",
+         "topics": {
+          "var": "tops"
+         },
+         "reason": {
+          "si.tpl": [
+           "{{n}} superintelligence topics: {{labels}}",
+           {
+            "si.obj": {
+             "n": {
+              "var": "n"
+             },
+             "labels": {
+              "var": "top_labels"
+             }
+            }
+           }
+          ]
+         }
+        }
+       },
+       {
+        "==": [
+         {
+          "var": "n"
+         },
+         1
+        ]
+       },
+       {
+        "si.obj": {
+         "in": false,
+         "rule": "none",
+         "topics": {
+          "var": "tops"
+         },
+         "reason": {
+          "si.tpl": [
+           "Only one topic ({{label}}) and no superintelligence term",
+           {
+            "si.obj": {
+             "label": {
+              "var": "top_labels"
+             }
+            }
+           }
+          ]
+         }
+        }
+       },
+       {
+        "si.obj": {
+         "in": false,
+         "rule": "none",
+         "topics": {
+          "var": "tops"
+         },
+         "reason": "No superintelligence topic matched"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "data": {
+    "text": "Updating our AGI timelines",
+    "strong": [
+     "superintelligen*",
+     "agi"
+    ],
+    "tops": [],
+    "top_labels": [],
+    "min_topics": 2
+   },
+   "expect": {
+    "in": true,
+    "rule": "strong",
+    "term": "agi",
+    "reason": "Superintelligence term: \"agi\""
+   }
+  },
+  {
+   "name": "scope topics",
+   "rule": {
+    "si.let": [
+     {
+      "term": {
+       "si.first_match": [
+        {
+         "var": "text"
+        },
+        {
+         "var": "strong"
+        }
+       ]
+      },
+      "n": {
+       "si.count": {
+        "var": "tops"
+       }
+      }
+     },
+     {
+      "if": [
+       {
+        "var": "term"
+       },
+       {
+        "si.obj": {
+         "in": true,
+         "rule": "strong",
+         "term": {
+          "var": "term"
+         },
+         "reason": {
+          "si.tpl": [
+           "Superintelligence term: \"{{term}}\"",
+           {
+            "si.obj": {
+             "term": {
+              "var": "term"
+             }
+            }
+           }
+          ]
+         }
+        }
+       },
+       {
+        ">=": [
+         {
+          "var": "n"
+         },
+         {
+          "var": "min_topics"
+         }
+        ]
+       },
+       {
+        "si.obj": {
+         "in": true,
+         "rule": "topics",
+         "topics": {
+          "var": "tops"
+         },
+         "reason": {
+          "si.tpl": [
+           "{{n}} superintelligence topics: {{labels}}",
+           {
+            "si.obj": {
+             "n": {
+              "var": "n"
+             },
+             "labels": {
+              "var": "top_labels"
+             }
+            }
+           }
+          ]
+         }
+        }
+       },
+       {
+        "==": [
+         {
+          "var": "n"
+         },
+         1
+        ]
+       },
+       {
+        "si.obj": {
+         "in": false,
+         "rule": "none",
+         "topics": {
+          "var": "tops"
+         },
+         "reason": {
+          "si.tpl": [
+           "Only one topic ({{label}}) and no superintelligence term",
+           {
+            "si.obj": {
+             "label": {
+              "var": "top_labels"
+             }
+            }
+           }
+          ]
+         }
+        }
+       },
+       {
+        "si.obj": {
+         "in": false,
+         "rule": "none",
+         "topics": {
+          "var": "tops"
+         },
+         "reason": "No superintelligence topic matched"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "data": {
+    "text": "x",
+    "strong": [
+     "agi"
+    ],
+    "tops": [
+     "alignment",
+     "compute"
+    ],
+    "top_labels": [
+     "Alignment",
+     "Compute & scaling"
+    ],
+    "min_topics": 2
+   },
+   "expect": {
+    "in": true,
+    "rule": "topics",
+    "topics": [
+     "alignment",
+     "compute"
+    ],
+    "reason": "2 superintelligence topics: Alignment, Compute & scaling"
+   }
+  },
+  {
+   "name": "scope one topic",
+   "rule": {
+    "si.let": [
+     {
+      "term": {
+       "si.first_match": [
+        {
+         "var": "text"
+        },
+        {
+         "var": "strong"
+        }
+       ]
+      },
+      "n": {
+       "si.count": {
+        "var": "tops"
+       }
+      }
+     },
+     {
+      "if": [
+       {
+        "var": "term"
+       },
+       {
+        "si.obj": {
+         "in": true,
+         "rule": "strong",
+         "term": {
+          "var": "term"
+         },
+         "reason": {
+          "si.tpl": [
+           "Superintelligence term: \"{{term}}\"",
+           {
+            "si.obj": {
+             "term": {
+              "var": "term"
+             }
+            }
+           }
+          ]
+         }
+        }
+       },
+       {
+        ">=": [
+         {
+          "var": "n"
+         },
+         {
+          "var": "min_topics"
+         }
+        ]
+       },
+       {
+        "si.obj": {
+         "in": true,
+         "rule": "topics",
+         "topics": {
+          "var": "tops"
+         },
+         "reason": {
+          "si.tpl": [
+           "{{n}} superintelligence topics: {{labels}}",
+           {
+            "si.obj": {
+             "n": {
+              "var": "n"
+             },
+             "labels": {
+              "var": "top_labels"
+             }
+            }
+           }
+          ]
+         }
+        }
+       },
+       {
+        "==": [
+         {
+          "var": "n"
+         },
+         1
+        ]
+       },
+       {
+        "si.obj": {
+         "in": false,
+         "rule": "none",
+         "topics": {
+          "var": "tops"
+         },
+         "reason": {
+          "si.tpl": [
+           "Only one topic ({{label}}) and no superintelligence term",
+           {
+            "si.obj": {
+             "label": {
+              "var": "top_labels"
+             }
+            }
+           }
+          ]
+         }
+        }
+       },
+       {
+        "si.obj": {
+         "in": false,
+         "rule": "none",
+         "topics": {
+          "var": "tops"
+         },
+         "reason": "No superintelligence topic matched"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "data": {
+    "text": "x",
+    "strong": [
+     "agi"
+    ],
+    "tops": [
+     "alignment"
+    ],
+    "top_labels": [
+     "Alignment"
+    ],
+    "min_topics": 2
+   },
+   "expect": {
+    "in": false,
+    "rule": "none",
+    "topics": [
+     "alignment"
+    ],
+    "reason": "Only one topic (Alignment) and no superintelligence term"
+   }
+  },
+  {
+   "name": "scope none",
+   "rule": {
+    "si.let": [
+     {
+      "term": {
+       "si.first_match": [
+        {
+         "var": "text"
+        },
+        {
+         "var": "strong"
+        }
+       ]
+      },
+      "n": {
+       "si.count": {
+        "var": "tops"
+       }
+      }
+     },
+     {
+      "if": [
+       {
+        "var": "term"
+       },
+       {
+        "si.obj": {
+         "in": true,
+         "rule": "strong",
+         "term": {
+          "var": "term"
+         },
+         "reason": {
+          "si.tpl": [
+           "Superintelligence term: \"{{term}}\"",
+           {
+            "si.obj": {
+             "term": {
+              "var": "term"
+             }
+            }
+           }
+          ]
+         }
+        }
+       },
+       {
+        ">=": [
+         {
+          "var": "n"
+         },
+         {
+          "var": "min_topics"
+         }
+        ]
+       },
+       {
+        "si.obj": {
+         "in": true,
+         "rule": "topics",
+         "topics": {
+          "var": "tops"
+         },
+         "reason": {
+          "si.tpl": [
+           "{{n}} superintelligence topics: {{labels}}",
+           {
+            "si.obj": {
+             "n": {
+              "var": "n"
+             },
+             "labels": {
+              "var": "top_labels"
+             }
+            }
+           }
+          ]
+         }
+        }
+       },
+       {
+        "==": [
+         {
+          "var": "n"
+         },
+         1
+        ]
+       },
+       {
+        "si.obj": {
+         "in": false,
+         "rule": "none",
+         "topics": {
+          "var": "tops"
+         },
+         "reason": {
+          "si.tpl": [
+           "Only one topic ({{label}}) and no superintelligence term",
+           {
+            "si.obj": {
+             "label": {
+              "var": "top_labels"
+             }
+            }
+           }
+          ]
+         }
+        }
+       },
+       {
+        "si.obj": {
+         "in": false,
+         "rule": "none",
+         "topics": {
+          "var": "tops"
+         },
+         "reason": "No superintelligence topic matched"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "data": {
+    "text": "a phone app",
+    "strong": [
+     "agi"
+    ],
+    "tops": [],
+    "top_labels": [],
+    "min_topics": 2
+   },
+   "expect": {
+    "in": false,
+    "rule": "none",
+    "topics": [],
+    "reason": "No superintelligence topic matched"
+   }
+  }
+ ]
+}

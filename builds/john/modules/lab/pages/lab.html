@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lab · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css">
+<style>
+  .exlist { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+  .excard { display: grid; gap: 8px; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); text-decoration: none; color: inherit; }
+  .excard:hover { border-color: var(--accent); }
+  .excard h3 { margin: 0; font-size: 16px; }
+  .vd { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: var(--radius); justify-self: start; }
+  .vd.yes { background: var(--fg); color: var(--surface); } .vd.no { background: var(--warn-soft); color: var(--fg); border: 1px dashed var(--line-strong); }
+  .chain { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; counter-reset: c; }
+  @media (max-width: 860px) { .chain { grid-template-columns: 1fr; } }
+  .step { padding: 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); display: grid; gap: 8px; align-content: start; min-width: 0; }
+  .step h3 { margin: 0; font-size: 15px; } .step .k { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .mt { width: 100%; font-size: 14px; border-collapse: collapse; } .mt td { padding: 4px 0; border-bottom: 1px solid var(--line); } .mt td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  .mt .up { color: var(--good); } .mt .down { color: var(--bad); }
+  svg.chart { width: 100%; height: auto; display: block; } svg.chart text { fill: var(--muted); font: 11px var(--font); }
+  svg.chart .base { fill: none; stroke: var(--muted); stroke-width: 2; stroke-dasharray: 5 4; } svg.chart .var { fill: none; stroke: var(--accent); stroke-width: 2.2; } svg.chart .axis { stroke: var(--line); }
+  .params { display: grid; gap: 10px; } .params label { display: grid; grid-template-columns: minmax(0, 1fr) 64px; gap: 4px 10px; align-items: center; font-size: 13px; }
+  .params input[type=range] { grid-column: 1 / -1; width: 100%; } .params output { text-align: right; font-variant-numeric: tabular-nums; }
+  pre.code { margin: 0; padding: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); overflow: auto; font: 12px/1.5 var(--mono); max-height: 320px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  #view .panel, #view .cols > * { min-width: 0; } .step p, .mt td { overflow-wrap: anywhere; }
+  .ask { display: flex; gap: 8px; } .ask input { flex: 1; }
+  .why li { font-size: 13px; color: var(--muted); }
+</style></head>
+<body>
+<main>
+  <div class="pagehead"><div><h1>Lab</h1><p class="muted">Superintelligence ideas, restated in our own words, reproduced as small deterministic experiments, then pushed with a hypothesis of ours. Toy scale and synthetic data: these test an idea's logic, not a paper's claims.</p></div></div>
+  <section class="panel enter"><h2>Ask the lab</h2>
+    <p class="small muted">A request from you or another agent goes to the decision gym's policy, a decision tree that improved itself over eight rounds. It's portable JSON, so the same tree runs in Python, Rust and WebAssembly. You get back the action, the words that decided it and a plan. Dashboards are built and validated on the spot.</p>
+    <form class="ask" id="askForm"><input id="ask" value="build a dashboard of recursive self-improvement" aria-label="Request"><button class="btn primary" type="submit">Route it</button></form>
+    <div id="answer"></div></section>
+  <div id="view"></div>
+</main>
+<script src="/js/api.js"></script>
+<script src="/js/jr.js"></script>
+<script>
+const fmt = (x) => (typeof x === "number" ? (Math.abs(x) >= 1000 ? x.toLocaleString() : String(Math.round(x * 1000) / 1000)) : String(x));
+function chart(base, variant) {
+  const sb = base.series?.[0], sv = variant.series?.[0]; if (!sb || !sv) return "";
+  const log = sb.log, W = 560, H = 200, P = 34;
+  const all = [...sb.points, ...sv.points], tx = (v) => (log ? Math.log10(Math.max(v, 1e-9)) : v);
+  const xs = all.map((p) => p[0]), ys = all.map((p) => tx(p[1]));
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys) || 1;
+  const X = (v) => P + ((v - x0) / (x1 - x0 || 1)) * (W - P - 8), Y = (v) => H - 22 - ((tx(v) - y0) / (y1 - y0 || 1)) * (H - 34);
+  const path = (s) => s.points.map((p, i) => `${i ? "L" : "M"}${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join("");
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(sb.name)}: reproduction vs our hypothesis">
+    <line class="axis" x1="${P}" y1="${H - 22}" x2="${W - 8}" y2="${H - 22}"/><line class="axis" x1="${P}" y1="8" x2="${P}" y2="${H - 22}"/>
+    <path class="base" d="${path(sb)}"/><path class="var" d="${path(sv)}"/>
+    <text x="${P}" y="${H - 6}">${fmt(x0)}</text><text x="${W - 8}" y="${H - 6}" text-anchor="end">${fmt(x1)}</text>
+    <text x="4" y="14">${esc(sb.name)}${log ? " (log)" : ""}</text>
+    <text x="${(W + P) / 2}" y="${H - 6}" text-anchor="middle">dashed: reproduction · solid: our hypothesis</text></svg>`;
+}
+function metricsTable(runner, base, variant) {
+  return `<table class="mt"><tbody>${runner.metrics.map((m) => { const b = base.metrics[m.id], v = variant.metrics[m.id]; const better = m.better === "higher" ? v > b : v < b; return `<tr><td>${esc(m.label)}</td><td>${fmt(b)} → <b class="${v === b ? "" : better ? "up" : "down"}">${fmt(v)}</b></td></tr>`; }).join("")}</tbody></table>`;
+}
+// The concept id as words ("concept:reward-hacking" -> "Reward hacking"): no machine ids in the UI.
+const fmtParams = (o) => Object.entries(o || {}).map(([k, v]) => `${k.replace(/_/g, " ")} ${v}`).join(" · ");
+const conceptName = (id) => { const w = String(id || "").replace(/^concept:/, "").replace(/-/g, " "); return w.charAt(0).toUpperCase() + w.slice(1); };
+const LAB_FILTERS = [["all", "All"], ["paper", "From a paper"], ["yes", "Supported"], ["no", "Not supported"]];
+async function list() {
+  const r = await api("/api/lab/examples"), counts = { all: r.examples.length, paper: r.examples.filter((e) => e.source).length, yes: r.examples.filter((e) => e.verdict.supported).length, no: r.examples.filter((e) => !e.verdict.supported).length };
+  const keep = (e, f) => f === "all" || (f === "paper" ? !!e.source : f === "yes" ? e.verdict.supported : !e.verdict.supported);
+  $("#view").innerHTML = `<div class="pagehead" style="margin-top:24px"><h2 style="margin:0">Examples</h2><div class="seg-btns" role="group" aria-label="Show examples">${LAB_FILTERS.map(([id, label], i) => `<button type="button" data-f="${id}" aria-pressed="${i === 0}">${label} <span class="muted">${counts[id]}</span></button>`).join("")}</div></div>
+    <div class="exlist stagger" id="exlist">${r.examples.map((e, i) => `<a class="excard" style="--i:${i}" href="#/x/${e.id}" data-paper="${e.source ? 1 : 0}" data-yes="${e.verdict.supported ? 1 : 0}"><span class="small muted">${esc(conceptName(e.concept))}${e.source ? " · from a paper" : ""}</span><h3>${esc(e.title)}</h3><p class="small" style="margin:0">${esc(e.idea)}</p><span class="vd ${e.verdict.supported ? "yes" : "no"}">${e.verdict.supported ? "Hypothesis supported" : "Hypothesis not supported"}</span></a>`).join("")}</div>`;
+  for (const b of $$("#view [data-f]")) b.onclick = () => {
+    for (const x of $$("#view [data-f]")) x.setAttribute("aria-pressed", String(x === b));
+    $$("#exlist .excard").forEach((card, i) => { card.hidden = !keep(r.examples[i], b.dataset.f); });
+  };
+}
+async function detail(id) {
+  const d = await api(`/api/lab/examples/${encodeURIComponent(id)}`);
+  const sc = d.scorecard?.totals || [];
+  $("#view").innerHTML = `<p style="margin-top:20px"><a href="#/">All examples</a></p>
+    <section class="panel enter"><span class="small muted">${esc(conceptName(d.concept))} · ${d.topics.map((t) => esc(conceptName(String(t).replace(/^topic:/, "")))).join(" · ")}</span><h2 style="font-size:22px">${esc(d.title)}</h2>
+    <div class="chain">
+      <div class="step"><span class="k">1 · The idea, in our words</span><p style="margin:0">${esc(d.idea)}</p>${d.source ? `<p class="small muted" style="margin:0">From the paper <a href="${esc(d.source.url)}" rel="noopener">${esc(d.source.title)}</a> (found by the ${esc(d.source.via)}). Toy scale: this tests the idea's logic, not the paper's numbers.</p>` : ""}</div>
+      <div class="step"><span class="k">2 · Our reproduction</span><p style="margin:0" class="small">${esc(d.expect)}</p><p class="small muted" style="margin:0">Runner <code>${esc(d.runner.id)}</code>: ${esc(d.runner.about)}. Settings: ${esc(fmtParams(d.baseline.params))}</p><p class="small" style="margin:0">${esc(d.baseline.notes[0] || "")}</p></div>
+      <div class="step"><span class="k">3 · Our hypothesis</span><p style="margin:0" class="small">${esc(d.hypothesis)}</p><p class="small muted" style="margin:0">Changes: ${esc(fmtParams(d.hypothesisParams))}</p></div>
+    </div></section>
+    <div class="cols side" style="margin-top:22px">
+      <section class="panel"><h2>Result</h2><span class="vd ${d.verdict.supported ? "yes" : "no"}">${esc(d.verdict.text)}</span>${chart(d.baseline, d.variant)}${metricsTable(d.runner, d.baseline, d.variant)}
+        <p class="small muted">${d.variant.notes.map(esc).join(" ")}</p>
+        <h3>Judged</h3><p class="small muted">The weighted judge scores the reproduction against our hypothesis on the criteria below. JEV and CLEF are decision models run outside the app: copy the judge input, run them, and record their recommendation on the Decide page.</p>
+        <table class="mt"><tbody>${sc.map((t) => `<tr><td>${esc(t.label)}</td><td>${fmt(t.total)}</td></tr>`).join("")}</tbody></table>
+        <details><summary class="small">Judge input (Decide page format)</summary><pre class="code">${esc(JSON.stringify(d.judgeInput, null, 2))}</pre><button class="btn" type="button" id="copyJudge">Copy</button></details>
+        ${d.variant.artifact ? `<details><summary class="small">The learned policy (portable si-expr) and its rounds</summary><pre class="code">${esc(JSON.stringify(d.variant.artifact.log.map(({ round, accuracy, kept, mistakes_found }) => ({ round, accuracy: Math.round(accuracy * 1000) / 1000, kept, mistakes_found }))))}\n\n${esc(JSON.stringify(d.variant.artifact.policy))}</pre></details>` : ""}
+      </section>
+      <section class="panel" style="align-content:start"><h2>Try your own hypothesis</h2><p class="small muted">Change the parameters and run. Runs are deterministic and take milliseconds.</p>
+        <form class="params" id="pform">${Object.entries(d.runner.params).map(([k, p]) => { const v = d.variant.params[k]; return `<label>${esc(k)}<output id="o_${k}">${fmt(v)}</output><input type="range" name="${k}" min="${p.min}" max="${p.max}" step="${p.step || (p.max - p.min) / 100}" value="${v}" aria-label="${esc(p.about)}"><span class="small muted" style="grid-column:1/-1">${esc(p.about)}</span></label>`; }).join("")}
+        <button class="btn primary" type="submit">Run my variant</button></form><div id="mine" role="status"></div><!-- unslop-ok: example view; the router form is on the index view -->
+        <details style="margin-top:12px"><summary class="small">The program an agent reads (autoresearch)</summary><pre class="code">${esc(d.program)}</pre><p class="small muted">Run the ratchet: <code>npm run lab -- explore ${esc(d.id)}</code>; add <code>--provider ollama</code> to let a local Gemma propose changes.</p></details>
+      </section></div>`;
+  $("#copyJudge").onclick = (e) => copy(JSON.stringify(d.judgeInput, null, 2), e.target);
+  $$("#pform input[type=range]").forEach((inp) => (inp.oninput = () => ($(`#o_${inp.name}`).textContent = fmt(Number(inp.value)))));
+  $("#pform").onsubmit = async (e) => {
+    e.preventDefault(); const params = Object.fromEntries([...new FormData(e.target)].map(([k, v]) => [k, Number(v)]));
+    const r = await api(`/api/lab/examples/${encodeURIComponent(id)}/run`, { body: { params } });
+    $("#mine").innerHTML = `<div class="enter" style="margin-top:12px"><span class="vd ${r.verdict.supported ? "yes" : "no"}">${esc(r.verdict.text)}</span>${chart(d.baseline, r.variant)}${metricsTable(d.runner, d.baseline, r.variant)}</div>`;
+  };
+}
+$("#askForm").onsubmit = async (e) => {
+  e.preventDefault(); const r = await api("/api/lab/intent", { body: { text: $("#ask").value } });
+  $("#answer").innerHTML = `<div class="enter" style="margin-top:12px"><p><b>Action:</b> <code>${esc(r.action)}</code></p><ul class="why">${r.why.map((w) => `<li>${esc(w)}</li>`).join("")}</ul><ol class="small">${r.plan.map((p) => `<li>${esc(p)}</li>`).join("")}</ol>${r.spec ? `<p class="small muted">Built and validated against the block catalog: ${r.valid ? "valid" : "invalid: " + esc(r.issues.join("; "))}.</p><div id="dash" class="panel"></div>` : ""}</div>`;
+  if (r.spec && r.valid) JR.render($("#dash"), r.spec, jrHandlers());
+};
+function route() { const h = location.hash.replace(/^#\/?/, ""); return h.startsWith("x/") ? detail(h.slice(2)) : list(); }
+requireUser().then(() => { window.onhashchange = route; route(); });
+</script>
+</body></html>

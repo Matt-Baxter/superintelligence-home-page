@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Learn · Superintelligence Homepage</title><link rel="stylesheet" href="/css/app.css">
+<link rel="alternate" type="application/rss+xml" title="Learn explainers" href="/api/learn/feed.xml">
+<style>
+  .ltabs { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
+  .ltabs a { padding: 8px 12px; text-decoration: none; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; font-size: 15px; }
+  .ltabs a[aria-current="page"] { color: var(--fg); border-bottom-color: var(--accent); font-weight: 600; }
+  .graphwrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+  .graphwrap svg { display: block; min-width: 860px; width: 100%; height: auto; }
+  .gnode rect { fill: var(--surface); stroke: var(--line); }
+  .gnode text { fill: var(--fg); font: 13px var(--font); pointer-events: none; }
+  .gnode { cursor: pointer; }
+  .gnode:hover rect, .gnode:focus-visible rect { stroke: var(--accent); }
+  .gnode.on rect { fill: var(--accent-soft); stroke: var(--accent); }
+  .gnode.dim { opacity: .35; }
+  .gedge { fill: none; stroke: var(--line); stroke-width: 1.4; }
+  .gedge.contrasts { stroke-dasharray: 4 4; }
+  .gedge.hot { stroke: var(--accent); stroke-width: 2; }
+  .gcol { fill: var(--muted); font: 600 12px var(--font); }
+  .lvl { font-size: 12px; color: var(--muted); }
+  .concept { display: grid; gap: 14px; } .concept > *, .quiz > * { min-width: 0; } .samples { flex: 0 0 auto !important; display: inline-flex; gap: 10px; align-items: center; }
+  .concept .plain { font-size: 18px; line-height: 1.5; }
+  .concept blockquote { margin: 0; padding: 10px 14px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 8px 8px 0; }
+  .crumbs { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+  .crumbs a { text-decoration: none; } .crumbs span.sep { color: var(--muted); }
+  .quiz { display: grid; gap: 6px; } .quiz button { text-align: left; justify-content: flex-start; }
+  .quiz button.right { border-color: var(--good); background: var(--good-soft); } .quiz button.wrong { border-color: var(--bad); background: var(--bad-soft); }
+  pre.lean { margin: 0; padding: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); overflow-x: auto; font: 13px/1.5 var(--mono); white-space: pre; }
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; counter-reset: st; }
+  .steps > li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+  .steps > li::before { counter-increment: st; content: counter(st); display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 14px; }
+  .steps .io { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+  @media (max-width: 700px) { .steps .io { grid-template-columns: 1fr; } }
+  .steps .box { background: var(--bg); border-radius: var(--radius); padding: 8px 10px; font-size: 13px; overflow-wrap: anywhere; }
+  .steps .box b { display: block; font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+  .jobrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .st { font-size: 12px; padding: 2px 8px; border-radius: var(--radius); background: var(--bg); border: 1px solid var(--line); white-space: nowrap; }
+  .st.done, .st.published { background: var(--fg); color: var(--surface);  }
+  .st.failed { background: var(--surface); color: var(--fg); border: 1px solid var(--fg);  }
+  .st.needs-agent, .st.running { background: var(--warn-soft); color: var(--fg); border: 1px dashed var(--line-strong);  }
+  .out { white-space: pre-wrap; font-size: 14px; background: var(--bg); border-radius: var(--radius); padding: 10px 12px; max-height: 420px; overflow: auto; }
+  .md h1 { font-size: 24px; } .md h2 { font-size: 18px; margin-top: 14px; } .md p { margin: 8px 0; }
+</style></head>
+<body>
+<main>
+  <div class="pagehead">
+    <div><h1>Learn</h1><p class="muted">The ideas behind superintelligence research in plain words, how they connect, and how this site turns a feed item into a story.</p></div>
+    <div class="actions"><a class="btn" href="/m/glossary#jepa">JEPA and recurrent-depth readings</a><a class="btn" href="/api/learn/feed.xml">RSS of explainers</a></div>
+  </div>
+  <nav class="ltabs" aria-label="Learn sections">
+    <a href="#/" data-tab="map">Concept map</a><a href="#/how" data-tab="how">How it works</a><a href="#/jobs" data-tab="jobs" id="jobsTab" hidden>Studio jobs</a>
+  </nav>
+  <div id="view"></div>
+</main>
+<script src="/js/api.js"></script>
+<script>
+let ME, G = null;
+const TOPIC_ORDER = ["capabilities", "automating-ai-research", "recursive-self-improvement", "compute", "forecasting", "alignment", "safety", "interpretability", "policy"];
+const TOPIC_LABEL = { capabilities: "Capabilities", "automating-ai-research": "Automating AI research", "recursive-self-improvement": "Self-improvement", compute: "Compute & scaling", forecasting: "Forecasting", alignment: "Alignment", safety: "Safety & risk", interpretability: "Interpretability", policy: "Governance" };
+const LEVEL = { 1: "Basics", 2: "Intermediate", 3: "Advanced" };
+
+let learnRequest=0;
+async function graph() { if (!G) G = await api("/api/learn/concepts"); return G; }
+function tab(t) { document.querySelectorAll(".ltabs a").forEach((a) => (a.dataset.tab === t ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"))); }
+
+// Lay concepts out in topic columns, basics at the top; edges are gentle curves (motion rule 7: arcs, not straight lines).
+function layout(g) {
+  const W = 150, H = 44, GX = 18, GY = 22, TOP = 34, pos = {};
+  const cols = TOPIC_ORDER.filter((t) => g.concepts.some((c) => c.topic === t));
+  cols.forEach((t, ci) => g.concepts.filter((c) => c.topic === t).sort((a, b) => a.level - b.level || a.name.localeCompare(b.name)).forEach((c, ri) => { pos[c.id] = { x: 12 + ci * (W + GX), y: TOP + ri * (H + GY), w: W, h: H }; }));
+  const height = TOP + Math.max(...Object.values(pos).map((p) => p.y + p.h)) + 12, width = 12 + cols.length * (W + GX);
+  return { pos, cols, W, width, height };
+}
+function wrapText(s, n = 20) { const w = s.split(" "), out = [""]; for (const x of w) { if ((out.at(-1) + " " + x).trim().length > n) out.push(x); else out[out.length - 1] = (out.at(-1) + " " + x).trim(); } return out.slice(0, 2); }
+
+async function showMap(focus,request=++learnRequest) {
+  tab("map"); const g = await graph(); if(request!==learnRequest)return;setPageContext("Concept map"); const L = layout(g);
+  const curve = (a, b) => { const ax = a.x + a.w / 2, ay = a.y + a.h / 2, bx = b.x + b.w / 2, by = b.y + b.h / 2, mx = (ax + bx) / 2, my = (ay + by) / 2 - Math.min(60, Math.abs(ax - bx) * 0.18 + 14); return `M${ax},${ay} Q${mx},${my} ${bx},${by}`; };
+  $("#view").innerHTML = `<section class="panel enter"><div class="row" style="align-items:center"><p class="small muted" style="flex:1 1 300px">${g.concepts.length} concepts and ${g.edges.length} links. Click a concept to read it; its links light up. Dashed lines join ideas that are opposite worries.</p>
+    <input type="search" id="find" placeholder="Find a concept" aria-label="Find a concept" style="flex:0 1 240px"></div>
+    <div class="graphwrap"><svg id="g" viewBox="0 0 ${L.width} ${L.height}" role="group" aria-label="Concept map">
+      ${L.cols.map((t, i) => `<text class="gcol" x="${12 + i * (L.W + 18)}" y="20">${esc(TOPIC_LABEL[t] || t)}</text>`).join("")}
+      ${g.edges.map((e) => `<path class="gedge ${e.kind}" data-a="${e.from}" data-b="${e.to}" d="${curve(L.pos[e.from], L.pos[e.to])}"><title>${esc(e.from)} ${esc(e.label)} ${esc(e.to)}</title></path>`).join("")}
+      ${g.concepts.map((c) => { const p = L.pos[c.id], lines = wrapText(c.name); return `<g class="gnode" data-id="${c.id}" tabindex="0" role="link" aria-label="${esc(c.name)}"><rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" rx="8"/>${lines.map((ln, i) => `<text x="${p.x + 10}" y="${p.y + (lines.length === 1 ? 27 : 19 + i * 16)}">${esc(ln)}</text>`).join("")}</g>`; }).join("")}
+    </svg></div></section>
+    <section class="panel"><h2>All concepts</h2><div class="tablewrap"><table><thead><tr><th>Concept</th><th>In plain words</th><th>Level</th></tr></thead><tbody id="clist">
+      ${g.concepts.slice().sort((a, b) => a.level - b.level || a.name.localeCompare(b.name)).map((c) => `<tr data-row="${c.id}"><td><a href="#/c/${c.id}">${esc(c.name)}</a></td><td class="small">${esc(c.plain)}</td><td class="lvl">${LEVEL[c.level]}</td></tr>`).join("")}
+    </tbody></table></div></section>`;
+  const svg = $("#g");
+  const light = (id) => { svg.querySelectorAll(".gnode").forEach((n) => { const linked = !id || n.dataset.id === id || g.edges.some((e) => (e.from === id && e.to === n.dataset.id) || (e.to === id && e.from === n.dataset.id)); n.classList.toggle("dim", !linked); n.classList.toggle("on", n.dataset.id === id); }); svg.querySelectorAll(".gedge").forEach((p) => p.classList.toggle("hot", !!id && (p.dataset.a === id || p.dataset.b === id))); };
+  svg.querySelectorAll(".gnode").forEach((n) => { n.onmouseenter = () => light(n.dataset.id); n.onmouseleave = () => light(focus || null); n.onclick = () => (location.hash = `#/c/${n.dataset.id}`); n.onkeydown = (e) => { if (e.key === "Enter") location.hash = `#/c/${n.dataset.id}`; }; });
+  $("#find").oninput = (e) => { const q = e.target.value.toLowerCase().trim(); const hit = q && g.concepts.find((c) => c.name.toLowerCase().includes(q)); light(hit ? hit.id : null); document.querySelectorAll("#clist tr").forEach((tr) => (tr.hidden = !!q && !tr.textContent.toLowerCase().includes(q))); };
+  light(focus || null);
+}
+
+async function showConcept(id,request=++learnRequest) {
+  tab("map");
+  const r = await api(`/api/learn/concepts/${encodeURIComponent(id)}`), c = r.concept;
+  if(request!==learnRequest)return;setPageContext(c.name);
+  const pre = r.path.filter((p) => p.id !== c.id);
+  $("#view").innerHTML = `<div class="cols side">
+    <section class="panel concept enter">
+      <div class="crumbs"><a href="#/">Concept map</a><span class="sep">/</span>${pre.map((p) => `<a href="#/c/${p.id}">${esc(p.name)}</a><span class="sep">→</span>`).join("")}<b>${esc(c.name)}</b></div>
+      <div><h2 style="font-size:24px">${esc(c.name)}</h2><span class="lvl">${LEVEL[c.level]} · ${esc(TOPIC_LABEL[c.topic] || c.topic)}</span></div>
+      <p class="plain">${esc(c.plain)}</p>
+      <blockquote><b>Analogy.</b> ${esc(c.analogy)}</blockquote>
+      <details><summary>A little deeper</summary><p style="margin-top:8px">${esc(c.deeper)}</p></details>
+      ${c.lean ? `<div><h3>A toy proof</h3><p class="small muted">${c.lean.proved ? "Checks with Lean 4 (no libraries)." : `Statement only; the proof is a Lean job (${esc(c.lean.needs || "")}).`}</p><pre class="lean">${esc(c.lean.statement)}</pre></div>` : ""}
+      <div class="quiz" id="quiz"><h3>Check yourself</h3><p>${esc(c.check.q)}</p>${c.check.options.map((o, i) => `<button class="btn" type="button" data-o="${i}">${esc(o)}</button>`).join("")}<p class="small muted" id="why" hidden></p></div>
+      <div class="row" style="align-items:center"><a class="btn" href="/m/explainer?c=${c.id}">Watch the explainer</a>${ME.admin ? `<button class="btn" type="button" id="mkPost">Queue a blog draft</button><button class="btn" type="button" id="mkVideo">Queue a video</button>${c.lean && !c.lean.proved ? '<button class="btn" type="button" id="mkLean">Queue the Lean proof</button>' : ""}` : ""}</div>
+      <p class="small muted" id="queued" role="status"></p>
+    </section>
+    <div style="display:grid;gap:22px;align-content:start">
+      <section class="panel"><h2>How it connects</h2>${c.links.length ? `<ul class="small" style="margin:0;padding-left:18px">${c.links.map((l) => `<li>${l.out ? `${esc(c.name)} ${esc(l.label)} <a href="#/c/${l.other}">${esc(l.otherName)}</a>` : `<a href="#/c/${l.other}">${esc(l.otherName)}</a> ${esc(l.label)} ${esc(c.name)}`}</li>`).join("")}</ul>` : '<p class="small muted">No links yet.</p>'}</section>
+      ${c.sources?.length ? `<section class="panel"><h2>Primary readings</h2><p class="small muted">Check the original methods and evaluation conditions; this explanation is not an independent reproduction.</p><ul>${c.sources.map(s=>`<li><a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.title)}</a></li>`).join("")}</ul>${c.glossary ? `<a href="/m/glossary#${encodeURIComponent(c.glossary)}">Definition and notation pointers</a>`:""}</section>` : ""}
+      <section class="panel"><h2>In the news</h2><p class="small muted">Recent feed stories that mention this idea.</p>${r.stories.length ? `<ul class="small" style="margin:0;padding-left:18px">${r.stories.map((s) => `<li><a href="/story?id=${s.id}">${esc(s.title)}</a></li>`).join("")}</ul>` : '<p class="small muted">Nothing in the feed mentions it yet.</p>'}</section>
+      ${r.posts.length ? `<section class="panel"><h2>Explainers</h2>${r.posts.map((p) => `<a href="#/post/${p.id}">Published ${esc(fmtDate(p.published_at))}</a>`).join("<br>")}</section>` : ""}
+    </div></div>`;
+  $("#quiz").onclick = (e) => { const b = e.target.closest("button[data-o]"); if (!b) return; const i = Number(b.dataset.o); $("#quiz").querySelectorAll("button[data-o]").forEach((x) => { x.classList.remove("right", "wrong", "pulse"); x.disabled = true; }); const right = $("#quiz").querySelector(`[data-o="${c.check.answer}"]`); right.classList.add("right", "pulse"); if (i !== c.check.answer) b.classList.add("wrong"); $("#why").hidden = false; $("#why").textContent = (i === c.check.answer ? "Right. " : "Not quite. ") + c.check.why; };
+  const queue = (kind) => async () => { try { const j = await api("/api/admin/learn/jobs", { body: { kind, concept_id: c.id } }); if(request===learnRequest)$("#queued").textContent = `Queued job #${j.job.id}. The worker picks it up; see Studio jobs.`; } catch(e) { if(request===learnRequest)showErr($("#queued"),e); } };
+  if ($("#mkPost")) $("#mkPost").onclick = queue("post");
+  if ($("#mkVideo")) $("#mkVideo").onclick = queue("video");
+  if ($("#mkLean")) $("#mkLean").onclick = queue("lean-proof");
+}
+
+const SAMPLES = [
+  { title: "Sample: frontier lab reports sparse autoencoder features linked to deceptive alignment in AGI-scale models", summary: "Test data. Interpretability study of superposition and alignment faking.", url: "https://example.org/sample-1", kind: "papers" },
+  { title: "Sample: scaling laws suggest compute governance thresholds need updating", summary: "Test data. Policy note on export controls and compute thresholds.", url: "https://example.org/sample-2", kind: "policy" },
+  { title: "Sample: a new phone camera app ships", summary: "Test data. Not about AI progress.", url: "https://example.org/sample-3", kind: "news" },
+];
+function box(label, v) {
+  if (v == null || (Array.isArray(v) && !v.length) || (typeof v === "object" && !Array.isArray(v) && !Object.keys(v).length)) return `<div class="box"><b>${label}</b><span class="muted">nothing</span></div>`;
+  const show = (x) => Array.isArray(x) ? x.map((y) => typeof y === "object" ? Object.entries(y).filter(([, z]) => z != null && z !== "" && !(Array.isArray(z) && !z.length)).map(([k, z]) => `${k}: ${Array.isArray(z) ? z.join(", ") : z}`).join(" · ") : y).join("<br>") : typeof x === "object" ? Object.entries(x).filter(([, z]) => z != null).map(([k, z]) => `<i>${esc(k)}</i>: ${typeof z === "object" ? (Array.isArray(z) ? (z.every((q) => typeof q !== "object") ? esc(z.join(", ")) : show(z)) : esc(JSON.stringify(z))) : esc(String(z))}`).join("<br>") : esc(String(x));
+  return `<div class="box"><b>${label}</b>${typeof v === "object" ? show(v) : esc(String(v))}</div>`;
+}
+async function showHow(request=++learnRequest) {
+  tab("how");setPageContext("How it works");
+  $("#view").innerHTML = `<section class="panel enter"><h2>How a story gets here</h2><p class="small muted">Put a story through the real pipeline, step by step, with the real values. Nothing is saved. The samples are test data.</p>
+    <div class="row"><label style="flex:2 1 320px">Title<input id="tTitle" value="${esc(SAMPLES[0].title)}"></label><label>Link<input id="tUrl" value="${esc(SAMPLES[0].url)}"></label>
+    <label style="flex:0 1 160px">Source kind<select id="tKind">${["papers", "journal", "lab", "news", "policy", "forum", "submitted"].map((k) => `<option>${k}</option>`).join("")}</select></label></div>
+    <label>Summary<textarea id="tSum" style="min-height:60px">${esc(SAMPLES[0].summary)}</textarea></label>
+    <div class="row" style="align-items:center"><button class="btn primary" id="tRun" type="button">Run it through</button><span class="samples small"><span class="muted">Try a sample:</span>${SAMPLES.map((s, i) => `<button class="linkish" type="button" data-s="${i}">${["Safety paper", "Policy note", "Off-topic"][i]}</button>`).join("")}</span></div></section>
+    <ol class="steps stagger" id="steps"></ol>`;
+  $("#tKind").value = SAMPLES[0].kind;
+  let teardownRequest=0;
+  const run = async () => {
+    const runId=++teardownRequest;
+    try { const r = await api("/api/learn/teardown", { body: { title: $("#tTitle").value, url: $("#tUrl").value, summary: $("#tSum").value, kind: $("#tKind").value } });
+    if(request!==learnRequest||runId!==teardownRequest)return;
+    $("#steps").innerHTML = r.steps.map((s, i) => `<li style="--i:${i}" data-step="${s.id}"><div style="display:grid;gap:8px;min-width:0"><div><h3>${esc(s.name)}</h3><p class="small muted">${esc(s.what)}</p></div>
+      <div class="io">${box("In", s.input)}${box("Out", s.id === "score" ? { significance: s.output.significance, type: s.output.type, evidence: s.output.evidence } : s.id === "concepts" ? s.output.concepts.map((c) => ({ concept: c.name, matched: c.matched })) : s.id === "fetch" && s.output.item ? s.output.item : s.output)}</div>
+      ${s.id === "score" ? `<table class="why"><tbody>${s.output.why.map((w) => `<tr><td>+${w.points}</td><td>${esc(w.factor)}</td><td class="muted">${esc(w.detail || "")}</td></tr>`).join("")}</tbody></table>` : ""}
+      ${s.id === "concepts" && s.output.concepts.length ? `<div class="tags">${s.output.concepts.map((c) => `<a class="tag" href="#/c/${c.id}" title="Matched: ${esc(c.matched.join(", "))}">${esc(c.name)}</a>`).join("")}</div>` : ""}</div></li>`).join("");
+    $("#steps").classList.remove("stagger"); void $("#steps").offsetWidth; $("#steps").classList.add("stagger");
+    } catch(e) { if(request===learnRequest&&runId===teardownRequest)showErr($("#steps"),e); }
+  };
+  const safeRun=run;
+  $("#tRun").onclick = safeRun;
+  document.querySelectorAll("[data-s]").forEach((b) => (b.onclick = () => { const s = SAMPLES[b.dataset.s]; $("#tTitle").value = s.title; $("#tUrl").value = s.url; $("#tSum").value = s.summary; $("#tKind").value = s.kind; safeRun(); }));
+  return run();
+}
+
+function md(s) { // tiny Markdown for drafts: headings, lists, code, links, bold
+  const out = []; let code = false, buf = [];
+  for (const ln of s.split("\n")) {
+    if (ln.startsWith("```")) { if (code) { out.push(`<pre class="lean">${esc(buf.join("\n"))}</pre>`); buf = []; } code = !code; continue; }
+    if (code) { buf.push(ln); continue; }
+    const inline = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\[(.+?)\]\((https?:[^)\s]+)\)/g, '<a href="$2" rel="noopener noreferrer">$1</a>');
+    if (/^#\s/.test(ln)) out.push(`<h1>${inline(ln.slice(2))}</h1>`); else if (/^##\s/.test(ln)) out.push(`<h2>${inline(ln.slice(3))}</h2>`);
+    else if (/^- /.test(ln)) out.push(`<li>${inline(ln.slice(2))}</li>`); else if (/^<details>/.test(ln)) out.push(`<p class="muted">${esc(ln.replace(/<[^>]+>/g, " ").trim())}</p>`);
+    else if (ln === "---") out.push("<hr class='jr-divider'>"); else if (ln.trim()) out.push(`<p>${inline(ln)}</p>`);
+  }
+  return out.join("");
+}
+async function showPost(id,request=++learnRequest) {
+  tab("map"); const { post } = await api(`/api/learn/posts/${Number(id)}`); if(request!==learnRequest)return;setPageContext("Published explainer");
+  $("#view").innerHTML = `<article class="panel md enter">${md(post.output)}</article>`;
+}
+
+async function showJobs(request=++learnRequest) {
+  tab("jobs");
+  if (!ME.admin) { $("#view").innerHTML = '<p class="muted">Admins only.</p>'; return; }
+  const [{ jobs, kinds }, g] = await Promise.all([api("/api/admin/learn/jobs"), graph()]);
+  if(request!==learnRequest)return;setPageContext("Studio jobs");
+  $("#view").innerHTML = `<div class="cols side">
+    <section class="panel"><h2>Studio jobs</h2><p class="small muted">Background work runs off the server, so the free tier never pays for it: <code>npm run learn:worker</code> does drafts, videos and Lean checks; agent jobs wait for a coding agent (the teach-a-concept skill). Nothing is posted anywhere automatically: a person publishes.</p>
+      <div id="jobs">${jobs.length ? jobs.map((j) => `<div class="jobrow" data-job="${j.id}"><div style="min-width:0"><b>#${j.id} ${esc((kinds.find((k) => k.id === j.kind) || {}).label || j.kind)}</b>${j.concept ? ` · <a href="#/c/${j.concept_id}">${esc(j.concept)}</a>` : ""}${j.note ? `<div class="small muted">${esc(j.note.slice(0, 160))}</div>` : ""}
+        ${j.error ? `<div class="small" style="color:var(--bad)">${esc(j.error.slice(0, 300))}</div>` : ""}
+        ${j.files.length ? `<div class="small muted">Files: ${j.files.map(esc).join(", ")}</div>` : ""}
+        ${j.output ? `<details><summary class="small">Output</summary><div class="out">${esc(j.output)}</div></details>` : ""}</div>
+        <div style="display:grid;gap:6px;justify-items:end;align-content:start"><span class="st ${j.status}">${esc(j.status)}</span>
+        ${j.kind === "post" && j.status === "done" ? `<button class="btn" type="button" data-pub="${j.id}">Publish to RSS</button>` : ""}
+        ${j.status === "published" ? `<a class="small" href="#/post/${j.id}">View</a>` : ""}
+        ${["failed", "needs-agent", "done"].includes(j.status) ? `<button class="linkish" type="button" data-requeue="${j.id}">Run again</button>` : ""}
+        <button class="linkish" type="button" data-del="${j.id}">Delete</button></div></div>`).join("") : '<p class="muted">No jobs yet. Queue one here or from a concept.</p>'}</div></section>
+    <section class="panel" style="align-content:start"><h2>Queue a job</h2>
+      <label>Kind<select id="jKind">${kinds.map((k) => `<option value="${k.id}">${esc(k.label)} (${esc(k.runs)})</option>`).join("")}</select></label>
+      <label>Concept<select id="jConcept"><option value="">None</option>${g.concepts.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select></label>
+      <label>Note (paper link, what to build or check)<textarea id="jNote" placeholder="e.g. arXiv link and which result to reproduce"></textarea></label>
+      <button class="btn primary" type="button" id="jAdd">Queue</button><p class="small muted" id="jMsg" role="status"></p></section></div>`; // unslop-ok: studio view; the how-it-works view has its own action
+  $("#jAdd").onclick = async () => { try { const r = await api("/api/admin/learn/jobs", { body: { kind: $("#jKind").value, concept_id: $("#jConcept").value || null, note: $("#jNote").value } }); toast(`Queued job #${r.job.id}`); if(request===learnRequest)await showJobs(); } catch (e) { if(request===learnRequest)$("#jMsg").textContent = e.message; } };
+  $("#jobs").onclick = async (e) => {
+    const t = e.target, id = t.dataset.pub || t.dataset.requeue || t.dataset.del; if (!id) return;
+    try { if (t.dataset.pub) await api(`/api/admin/learn/jobs/${id}`, { method: "PUT", body: { status: "published" } });
+    if (t.dataset.requeue) await api(`/api/admin/learn/jobs/${id}`, { method: "PUT", body: { status: "queued" } });
+    if (t.dataset.del) await api(`/api/admin/learn/jobs/${id}`, { method: "DELETE" });
+    if(request===learnRequest)await showJobs(); } catch(err) { if(request===learnRequest)toast(err.message); }
+  };
+}
+function toast(m) { const t = document.createElement("div"); t.className = "banner enter"; t.textContent = m; t.setAttribute("role", "status"); $("main").insertBefore(t, $("#view")); setTimeout(() => t.remove(), 2400); }
+
+function route() {
+  const request=++learnRequest,h=location.hash.replace(/^#\/?/,"");$("#view").setAttribute("aria-busy","true");
+  const task=h.startsWith("c/")?showConcept(h.slice(2),request):h.startsWith("post/")?showPost(h.slice(5),request):h==="how"?showHow(request):h==="jobs"?showJobs(request):showMap(undefined,request);
+  return Promise.resolve(task).catch(e=>{if(request===learnRequest){$("#view").innerHTML=`<section class="panel"><h2>Page unavailable</h2><p role="alert">${esc(e.message)}</p><a href="#/">Return to the concept map</a></section>`;setPageContext("Page unavailable");}}).finally(()=>{if(request===learnRequest)$("#view").setAttribute("aria-busy","false");});
+}
+requireUser().then((u) => { ME = u; $("#jobsTab").hidden = !u.admin; window.onhashchange = route; route(); });
+</script>
+</body></html>

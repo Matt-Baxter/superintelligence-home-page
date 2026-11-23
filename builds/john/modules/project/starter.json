@@ -1,0 +1,239 @@
+{
+  "about": "The project's open to-dos, tied to the shared spec (specs/001-superintelligence-homepage): issues carry REQ-0xx labels for the requirements they serve. Loaded once into an empty tracker from the Project page. Owners are matched to admin accounts by username or display name.",
+  "milestones": [
+    {
+      "key": "week9",
+      "name": "Week 9 homework",
+      "description": "Working agreement, initial spec and contract, submitted in Canvas and emailed to Paul.",
+      "target_date": "2026-11-11"
+    },
+    {
+      "key": "live",
+      "name": "Live site",
+      "description": "Deployed on Vercel with Neon, feeds harvesting, both of us admins. Shared with the class at least 2 weeks before the presentation."
+    },
+    {
+      "key": "bakeoff",
+      "name": "Bake-off",
+      "description": "Both versions of the homepage experience built to the contract and judged by CLEF or JEV."
+    }
+  ],
+  "issues": [
+    {
+      "title": "Settle the [confirm] items in the working agreement",
+      "description": "Chat tool, check-in days, spending cap, and both Confirmed columns in the roles table. See docs/WORKING_AGREEMENT.md.",
+      "milestone": "week9",
+      "priority": 1,
+      "labels": [
+        "docs"
+      ],
+      "due_date": "2026-11-11"
+    },
+    {
+      "title": "Write the initial spec",
+      "description": "Done with Spec Kit: specs/001-superintelligence-homepage/spec.md under .specify/memory/constitution.md.",
+      "milestone": "week9",
+      "owner": "matt",
+      "priority": 1,
+      "labels": [
+        "spec"
+      ],
+      "due_date": "2026-11-11",
+      "status": "done"
+    },
+    {
+      "title": "Clarify REQ-020: where the agent log lives",
+      "description": "Spec open question. John's build has it in the app (Agent log page with typed vs pasted tracking). Run /speckit-clarify and record the answer.",
+      "milestone": "week9",
+      "owner": "matt",
+      "priority": 2,
+      "labels": [
+        "spec",
+        "REQ-020"
+      ]
+    },
+    {
+      "title": "Clarify REQ-010: how long sessions last",
+      "description": "\"Stay signed in until they sign out\" needs a length to be testable. John's build uses 30 days.",
+      "milestone": "week9",
+      "priority": 3,
+      "labels": [
+        "spec",
+        "REQ-010"
+      ]
+    },
+    {
+      "title": "Approve CONTRACT.md v0.5 and constitution 1.2.0",
+      "description": "v0.5: one set of plan documents, build interfaces in docs/INTERFACES.md, review optional (constitution 1.2.0), proposed comparison criteria. Both tick the change log.",
+      "milestone": "week9",
+      "priority": 1,
+      "labels": [
+        "contract",
+        "spec"
+      ],
+      "due_date": "2026-11-11"
+    },
+    {
+      "title": "Reconcile the root plan files with docs/",
+      "description": "Done: one set at the root (spec, constitution, CONTRACT.md, WORKING_AGREEMENT.md); John's build interfaces in docs/INTERFACES.md.",
+      "milestone": "week9",
+      "priority": 2,
+      "labels": [
+        "docs"
+      ],
+      "status": "done"
+    },
+    {
+      "title": "Submit Week 9 homework in Canvas and by email to Paul",
+      "description": "Once the three files are merged to main: text entry with the three GitHub links, and the same links by email.",
+      "milestone": "week9",
+      "priority": 1,
+      "labels": [
+        "submission"
+      ],
+      "due_date": "2026-11-11"
+    },
+    {
+      "title": "Give the Vercel GitHub app access to the repo",
+      "description": "github.com/apps/vercel → Configure → Matt-Baxter → add superintelligence-home-page. docs/DEPLOY.md step 1.",
+      "milestone": "live",
+      "owner": "matt",
+      "priority": 2,
+      "labels": [
+        "deploy"
+      ]
+    },
+    {
+      "title": "Merge the open pull requests",
+      "description": "Setup PR first, then harvest-and-admin, then this project tracker, once Preflight is green.",
+      "milestone": "live",
+      "priority": 2,
+      "labels": [
+        "repo"
+      ]
+    },
+    {
+      "title": "Create the Vercel project and add Neon",
+      "description": "Import the repo, add Neon (free plan, US East) for all environments. docs/DEPLOY.md steps 2–3.",
+      "milestone": "live",
+      "owner": "john",
+      "priority": 2,
+      "labels": [
+        "deploy"
+      ]
+    },
+    {
+      "title": "Set CRON_SECRET and APP_TZ, then deploy",
+      "description": "docs/DEPLOY.md steps 4–5.",
+      "milestone": "live",
+      "owner": "john",
+      "priority": 2,
+      "labels": [
+        "deploy"
+      ]
+    },
+    {
+      "title": "Sign up first on the live site, harvest, and enable catalog sources",
+      "description": "Admin → Harvest all now, then Add sources → Source catalog. Fix or delete feeds that fail.",
+      "milestone": "live",
+      "owner": "john",
+      "priority": 3,
+      "labels": [
+        "sources"
+      ]
+    },
+    {
+      "title": "Ask Paul for the presentation date",
+      "description": "The live site has to be shared with the class at least 2 weeks before it.",
+      "milestone": "live",
+      "priority": 2,
+      "labels": [
+        "class"
+      ]
+    },
+    {
+      "title": "Agree on bake-off criteria and weights",
+      "description": "In CONTRACT.md → Decision point (six proposed criteria). Score on /m/decide.",
+      "milestone": "bakeoff",
+      "priority": 3,
+      "labels": [
+        "bake-off",
+        "contract"
+      ]
+    },
+    {
+      "title": "Start the v0 bake-off branch",
+      "description": "bakeoff/v0-john with the starter prompt in docs/V0.md.",
+      "milestone": "bakeoff",
+      "owner": "john",
+      "priority": 3,
+      "labels": [
+        "bake-off"
+      ],
+      "status": "backlog"
+    },
+    {
+      "title": "Start the Claude bake-off branch",
+      "description": "bakeoff/claude-matt from main.",
+      "milestone": "bakeoff",
+      "owner": "matt",
+      "priority": 3,
+      "labels": [
+        "bake-off"
+      ],
+      "status": "backlog"
+    },
+    {
+      "title": "Keep writing Agent log entries in our own words",
+      "description": "Whenever the agent gets something wrong. Written by us, not generated.",
+      "priority": 4,
+      "labels": [
+        "class"
+      ],
+      "status": "backlog"
+    },
+    {
+      "title": "Plan Matt's build with /speckit-plan and /speckit-tasks",
+      "description": "Record the stack and tasks for bakeoff/claude-matt; every task names its REQ IDs.",
+      "milestone": "bakeoff",
+      "owner": "matt",
+      "priority": 2,
+      "labels": [
+        "spec",
+        "bake-off"
+      ]
+    },
+    {
+      "title": "Plan John's v0 build against the spec",
+      "description": "Starter prompt in docs/V0.md; trace each REQ in docs/SPEC_TRACE.md.",
+      "milestone": "bakeoff",
+      "owner": "john",
+      "priority": 2,
+      "labels": [
+        "spec",
+        "bake-off"
+      ]
+    },
+    {
+      "title": "Run every acceptance scenario on both builds (SC-008)",
+      "description": "Tick each user story for both builds in CONTRACT.md → Acceptance tests.",
+      "milestone": "bakeoff",
+      "priority": 2,
+      "labels": [
+        "spec",
+        "REQ-001",
+        "REQ-020"
+      ]
+    },
+    {
+      "title": "Check the live feed stays on superintelligence (SC-004)",
+      "description": "Both judge a sample of 20 live stories; at least 18 must be about superintelligence. Admin → Moderation → Left out of the feed shows what the filter dropped.",
+      "milestone": "live",
+      "priority": 2,
+      "labels": [
+        "spec",
+        "REQ-003"
+      ]
+    }
+  ]
+}
