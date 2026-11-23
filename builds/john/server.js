@@ -34,13 +34,14 @@ const now = () => db.now();
 const bool = (v) => v === true || v === 1 || v === "1" || v === "t";
 
 function hashPassword(pw) { const salt = crypto.randomBytes(16).toString("hex"); return `${salt}:${crypto.scryptSync(pw, salt, 64).toString("hex")}`; }
-function checkPassword(pw, stored) { const [s, h] = stored.split(":"); return crypto.timingSafeEqual(crypto.scryptSync(pw, s, 64), Buffer.from(h, "hex")); }
+function checkPassword(pw, stored) { const [s, h] = String(stored || "").split(":"); if (!s || !h || h.length !== 128) return false; return crypto.timingSafeEqual(crypto.scryptSync(pw, s, 64), Buffer.from(h, "hex")); }
 const SESSION_DAYS = 30;
-async function startSession(res, uid) {
+async function startSession(res, uid, ms = SESSION_DAYS * 864e5) {
   const token = crypto.randomBytes(32).toString("hex");
-  await db.run("INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)", token, uid, Date.now() + SESSION_DAYS * 864e5);
-  res.cookie("sid", token, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production" || !!process.env.VERCEL, maxAge: SESSION_DAYS * 864e5 });
+  await db.run("INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)", token, uid, Date.now() + ms);
+  res.cookie("sid", token, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production" || !!process.env.VERCEL, maxAge: ms });
 }
+const guards = require("./lib/guards");
 const cookie = (req, n) => { const m = (req.headers.cookie || "").split(/;\s*/).find((c) => c.startsWith(n + "=")); return m ? decodeURIComponent(m.slice(n.length + 1)) : null; };
 
 /* ---------------------------------------------------------------- ingestion */
@@ -59,8 +60,10 @@ const boot = () => (bootP ||= db.ready().then(seedSources).then(() => harvester.
 /* ------------------------------------------------------------------- app */
 const app = express();
 app.set("trust proxy", 1);
+app.disable("x-powered-by");
+app.use(guards.headers());
 app.use(express.json({ limit: "256kb" }));
-app.use((req, res, next) => (req.path.startsWith("/api/") ? boot().then(() => next(), next) : next()));
+app.use((req, res, next) => (req.path.startsWith("/api/") ? boot().then(() => guards.refresh(db)).then(() => next(), next) : next()));
 app.use(async (req, res, next) => {
   const t = req.path.startsWith("/api/") && cookie(req, "sid");
   if (!t) return next();
@@ -71,6 +74,7 @@ app.use(async (req, res, next) => {
     next();
   } catch (e) { next(e); }
 });
+app.use((req, res, next) => (req.path.startsWith("/api/") ? guards.budgets(req, res, next) : next()));
 const auth = (req, res, next) => (req.user ? next() : res.status(401).json({ error: "Please sign in first." }));
 const admin = (req, res, next) => (req.user?.admin ? next() : res.status(403).json({ error: "Only an admin can do this." }));
 const hits = new Map();
@@ -97,21 +101,61 @@ app.post("/api/signup", limit(30, 6e5), wrap(async (req, res) => {
   const u = str(req.body.username, 40), pw = req.body.password || "";
   // REQ-012: only a username and password. A separate display name is an extended-version extra.
   const name = (profile.has("display-name") && str(req.body.displayName, 60)) || u;
+  const bot = guards.signupBotCheck(req.body);
+  if (bot) { guards.note(`signup:${bot}`); bad("We couldn't create the account. Wait a moment and try again."); }
   if (!/^[a-zA-Z0-9_.-]{3,40}$/.test(u)) bad("Usernames are 3–40 letters, numbers, dots, dashes or underscores.");
+  if (guards.isReservedUsername(u)) bad("That username is reserved. Choose another.");
   if (typeof pw !== "string" || pw.length < 8) bad("Passwords need at least 8 characters.");
   if (await db.get("SELECT 1 AS x FROM users WHERE LOWER(username) = LOWER(?)", u)) bad("That username is taken.");
-  const first = (await db.get("SELECT COUNT(*) AS n FROM users")).n === 0;
-  const id = await db.insert("INSERT INTO users (username, display_name, pass_hash, is_admin, created_at) VALUES (?, ?, ?, ?, ?)", u, name, hashPassword(pw), first ? 1 : 0, now());
-  await startSession(res, id); return { user: { id, username: u, name, admin: first } };
+  const first = Number((await db.get("SELECT COUNT(*) AS n FROM users WHERE LOWER(username) NOT LIKE 'emulator.%'")).n) === 0;
+  if (!first && !guards.settings().signupOpen) { guards.note("signup:paused"); forbid("New accounts are paused for now. You can still read everything without one."); }
+  const isAdmin = guards.adminOnSignup(u, first);
+  const id = await db.insert("INSERT INTO users (username, display_name, pass_hash, is_admin, created_at) VALUES (?, ?, ?, ?, ?)", u, name, hashPassword(pw), isAdmin ? 1 : 0, now());
+  await startSession(res, id); return { user: { id, username: u, name, admin: isAdmin } };
 }));
 app.post("/api/login", limit(30, 6e5), wrap(async (req, res) => {
-  const u = await db.get("SELECT * FROM users WHERE LOWER(username) = LOWER(?)", str(req.body.username, 40));
-  if (!u || !checkPassword(String(req.body.password || ""), u.pass_hash)) throw new HttpError(401, "Wrong username or password.");
+  const name = str(req.body.username, 40);
+  if (guards.isLocked(name)) { guards.note("login:locked"); throw new HttpError(429, `Too many wrong passwords for this account. Wait ${guards.settings().lockMinutes} minutes and try again.`); }
+  const u = await db.get("SELECT * FROM users WHERE LOWER(username) = LOWER(?)", name);
+  if (!u || !checkPassword(String(req.body.password || ""), u.pass_hash)) { guards.loginFailed(name); guards.note("login:failed"); throw new HttpError(401, "Wrong username or password."); }
   if (bool(u.disabled)) throw new HttpError(403, "This account has been disabled. Contact the site admin.");
+  guards.loginSucceeded(name);
   await startSession(res, u.id); return { user: { id: u.id, username: u.username, name: u.display_name, admin: bool(u.is_admin) } };
 }));
+// Preview sign-in emulator (REQ-060): one click to a test admin or test reader. lib/guards.js decides where it may run.
+app.post("/api/emulate", limit(20, 6e5), wrap(async (req, res) => {
+  if (!guards.emulatorOn()) notFound("That page");
+  const role = guards.EMULATOR_ROLES[str(req.body?.role, 10)]; if (!role) bad("Choose admin or reader.");
+  let u = await db.get("SELECT * FROM users WHERE LOWER(username) = LOWER(?)", role.username);
+  if (!u) { await db.insert("INSERT INTO users (username, display_name, pass_hash, is_admin, created_at) VALUES (?, ?, ?, ?, ?)", role.username, role.admin ? "Test admin" : "Test reader", hashPassword(crypto.randomBytes(24).toString("hex")), role.admin ? 1 : 0, now());
+    u = await db.get("SELECT * FROM users WHERE LOWER(username) = LOWER(?)", role.username); }
+  if (bool(u.disabled)) forbid("This test account has been disabled by an admin.");
+  guards.note(`emulate:${role.admin ? "admin" : "reader"}`);
+  await startSession(res, u.id, guards.EMULATOR_HOURS * 36e5);
+  return { user: { id: u.id, username: u.username, name: u.display_name, admin: bool(u.is_admin), emulated: true } };
+}));
+// Security settings (REQ-061/062): super admins only, scoped to this environment, every save in the audit log.
+const superAdmin = (req, res, next) => db.get("SELECT MIN(id) AS id FROM users WHERE is_admin = 1 AND LOWER(username) NOT LIKE 'emulator.%'")
+  .then((r) => guards.isSuperAdmin(req.user, r?.id) ? next() : res.status(403).json({ error: "Only a super admin can see or change security settings." }))
+  .catch(next);
+const SA = [auth, admin, superAdmin];
+app.get("/api/admin/security", ...SA, wrap(() => guards.describe()));
+app.post("/api/admin/security/preview", ...SA, wrap((req) => {
+  const v = guards.validate(req.body?.settings, guards.settings()); if (!v.ok) bad(v.error);
+  return { settings: v.value, changed: guards.diff(v.value, guards.settings()), examples: guards.simulate(v.value) };
+}));
+app.put("/api/admin/security/settings", ...SA, wrap(async (req) => {
+  const r = await guards.save(db, req.body?.settings, req.user.id); if (!r.ok) bad(r.error);
+  if (Object.keys(r.changed).length) await audit.log(req.user.id, "security.settings", guards.scopeOf(), JSON.stringify(r.changed));
+  return guards.describe();
+}));
+app.post("/api/admin/security/unlock", ...SA, wrap(async (req) => {
+  const u = str(req.body?.username, 40); if (!u) bad("Enter the username to unlock.");
+  guards.loginSucceeded(u); await audit.log(req.user.id, "security.unlock", u, "sign-in lock cleared on this instance");
+  return { ok: true, username: u };
+}));
 app.post("/api/logout", wrap(async (req, res) => { const t = cookie(req, "sid"); if (t) await db.run("DELETE FROM sessions WHERE token = ?", t); res.clearCookie("sid"); return { ok: true }; }));
-app.get("/api/me", wrap((req) => { const pr = profile.current(); return { user: req.user ? { ...req.user, nav: kernel.nav(req.user), profile: pr.name, features: [...pr.features] } : null, profile: pr.name, features: [...pr.features], publicNav: [...(kernel.modules.some(m=>m.id==="review") ? [{href:"/m/evidence",label:"Evidence"}] : []), ...(kernel.modules.some(m=>m.id==="editorial") ? [{href:"/m/journal",label:"Journal"}] : []), ...(kernel.modules.some(m=>m.id==="learn") ? [{href:"/m/glossary",label:"Glossary"}] : [])], ...(process.env.ALLOW_FIXTURE_FEEDS === "1" && process.env.NODE_ENV !== "production" && app.locals.demo ? { demo: app.locals.demo } : {}) }; }));
+app.get("/api/me", wrap((req) => { const pr = profile.current(); return { user: req.user ? { ...req.user, nav: kernel.nav(req.user), profile: pr.name, features: [...pr.features] } : null, profile: pr.name, features: [...pr.features], publicNav: [...(kernel.modules.some(m=>m.id==="review") ? [{href:"/m/evidence",label:"Evidence"}] : []), ...(kernel.modules.some(m=>m.id==="editorial") ? [{href:"/m/journal",label:"Journal"}] : []), ...(kernel.modules.some(m=>m.id==="learn") ? [{href:"/m/glossary",label:"Glossary"}] : [])], access: { signupOpen: guards.settings().signupOpen, ...(req.user ? {} : { formToken: guards.formToken() }), emulator: !!guards.emulatorOn(), emulatorHours: guards.EMULATOR_HOURS }, ...(process.env.ALLOW_FIXTURE_FEEDS === "1" && process.env.NODE_ENV !== "production" && app.locals.demo ? { demo: app.locals.demo } : {}) }; }));
 app.get("/api/ontology", wrap(() => ({ topics: tagger.topicList(), orgs: tagger.orgList(), about: tagger.ontology.about,
   benchmarks: (tagger.ontology.benchmarks || []).map(({ id, label, measures }) => ({ id, label, measures })), people: (tagger.ontology.people || []).map(({ id, label }) => ({ id, label })) })));
 

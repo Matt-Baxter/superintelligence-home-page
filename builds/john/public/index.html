@@ -6,12 +6,21 @@
   <div class="access-brand"><a href="/" class="access-logo">Superintelligence Homepage</a><a href="/welcome" class="small">How it works</a></div>
   <div><h1 id="authTitle">Sign in to your workspace</h1><p class="muted" id="authIntro">Read AI-progress stories, save what matters and follow the evidence.</p></div>
   <p class="access-destination small" id="returnHint" hidden></p>
+  <section id="emulatorAccess" class="demo-access emulator-access" hidden aria-labelledby="emulatorTitle"><div><h2 id="emulatorTitle">Test sign-in</h2><p class="small muted" id="emulatorNote">This is a test environment. Sign in as a test account in one click. The session ends after 2 hours.</p></div><div class="actions"><button class="btn primary" type="button" data-emulate="admin">Test admin</button><button class="btn" type="button" data-emulate="reader">Test reader</button></div><p class="err" id="emulatorErr" role="alert"></p></section>
   <section id="demoAccess" class="demo-access" hidden aria-labelledby="demoTitle"><div><h2 id="demoTitle">Try it in one click</h2><p class="small muted">Local demo with synthetic data. Pick a role and you&apos;re signed in.</p></div><div class="actions" id="demoAccounts"></div></section>
   <div class="tabs" role="group" aria-label="Account access">
     <button aria-pressed="true" data-mode="login" type="button">Sign in</button>
     <button aria-pressed="false" data-mode="signup" type="button">Create account</button>
   </div>
+  <ul class="free-perks small" id="freePerks" hidden aria-label="What a free account adds">
+    <li><b>Save and sort</b> stories into your own lists</li>
+    <li><b>Vote</b> on what matters and see the feed shift</li>
+    <li><b>Private notes</b> on any story, only you can read them</li>
+    <li><b>Submit links</b> and suggest new sources</li>
+  </ul>
+  <p class="small muted" id="signupPaused" role="status" hidden>New accounts are paused for now. Everything stays readable without one.</p>
   <form id="authForm" class="access-form">
+    <div class="hp-field" aria-hidden="true"><label>Website<input id="website" name="website" tabindex="-1" autocomplete="off"></label></div>
     <label>Username<input id="username" autocomplete="username" autocapitalize="none" spellcheck="false" required maxlength="40" aria-describedby="usernameHelp"></label>
     <p class="small muted" id="usernameHelp">Use your username, not an email address.</p>
     <label id="nameWrap" hidden>Display name <span class="muted">(optional)</span><input id="displayName" autocomplete="name" maxlength="60"></label>
@@ -76,21 +85,32 @@ function setAuthMode(nextMode) {
   $("#password").autocomplete = mode === "signup" ? "new-password" : "current-password";
   $("#username").pattern = mode === "signup" ? "[a-zA-Z0-9_.\\-]{3,40}" : ".*";
   $("#usernameHelp").textContent = mode === "signup" ? "3–40 letters, numbers, dots, dashes or underscores." : "Use your username, not an email address.";
+  const paused = mode === "signup" && ACCESS.signupOpen === false;
+  $("#freePerks").hidden = mode !== "signup" || paused; $("#signupPaused").hidden = !paused; $("#authBtn").disabled = paused;
   $("#authErr").textContent = ""; $("#authStatus").textContent = "";
 }
+let ACCESS = {};
 $$(".tabs button").forEach((b) => b.onclick = () => setAuthMode(b.dataset.mode));
 $("#showPassword").onclick = () => { const show = $("#password").type === "password"; $("#password").type = show ? "text" : "password"; $("#showPassword").textContent = show ? "Hide" : "Show"; $("#showPassword").setAttribute("aria-pressed", String(show)); $("#showPassword").setAttribute("aria-label", show ? "Hide password" : "Show password"); };
 for (const event of ["keydown", "keyup"]) $("#password").addEventListener(event, (e) => { $("#capsWarning").hidden = !e.getModifierState("CapsLock"); });
 $("#authForm").onsubmit = async (e) => {
   e.preventDefault(); if ($("#authBtn").disabled) return;
   const action = mode; $("#authBtn").disabled = true; $$(".tabs button").forEach((b) => b.disabled = true); $("#authErr").textContent = ""; $("#authStatus").textContent = action === "signup" ? "Creating your account…" : "Signing in…";
-  try { await api(action === "signup" ? "/api/signup" : "/api/login", { body: { username: $("#username").value.trim(), password: $("#password").value, displayName: $("#displayName").value }, allow401: true });
+  try { await api(action === "signup" ? "/api/signup" : "/api/login", { body: { username: $("#username").value.trim(), password: $("#password").value, displayName: $("#displayName").value, ...(action === "signup" ? { website: $("#website").value, formToken: ACCESS.formToken } : {}) }, allow401: true });
     location.href = localReturnPath(params.get("next")); }
   catch (err) { showErr($("#authErr"), err); $("#authStatus").textContent = ""; $("#password").focus(); $("#password").select(); }
   finally { $("#authBtn").disabled = false; $$(".tabs button").forEach((b) => b.disabled = false); }
 };
-function showAccess(demo) {
-  $("#auth").hidden = false; setAuthMode(params.get("mode") === "signup" ? "signup" : "login");
+function showAccess(demo, access = {}) {
+  ACCESS = access; $("#auth").hidden = false; setAuthMode(params.get("mode") === "signup" ? "signup" : "login");
+  if (access.emulator) {
+    $("#emulatorAccess").hidden = false; $("#emulatorNote").textContent = `This is a test environment. Sign in as a test account in one click. The session ends after ${access.emulatorHours || 2} hours.`;
+    $$("[data-emulate]").forEach((b) => b.onclick = async () => {
+      $$("[data-emulate]").forEach((x) => x.disabled = true); $("#emulatorErr").textContent = ""; $("#authStatus").textContent = "Signing in as a test account…";
+      try { await api("/api/emulate", { body: { role: b.dataset.emulate } }); location.href = localReturnPath(params.get("next")); }
+      catch (err) { showErr($("#emulatorErr"), err); $("#authStatus").textContent = ""; $$("[data-emulate]").forEach((x) => x.disabled = false); }
+    });
+  }
   const next = localReturnPath(params.get("next")); if (next !== "/") { $("#returnHint").hidden = false; $("#returnHint").textContent = `After signing in, you’ll return to ${next.split(/[?#]/)[0]}.`; }
   if (demo?.accounts?.length) {
     $("#demoAccess").hidden = false; $("#demoHelp").hidden = false;
@@ -219,8 +239,8 @@ $("#submitForm").onsubmit = async (e) => { e.preventDefault(); const button = e.
 $("#retryStartup").onclick = () => location.reload();
 (async () => {
   const authEntry = params.has("signin") || params.has("next") || params.has("mode");
-  const [{ user, demo, features: siteFeatures = [] }, earlyOntology] = await Promise.all([api("/api/me", { allow401: true }), authEntry ? Promise.resolve(null) : api("/api/ontology")]); window.SI_DISPLAY_NAME = siteFeatures.includes("display-name");
-  if (!user && (params.has("signin") || params.has("next") || params.has("mode"))) { showAccess(demo); return; }
+  const [{ user, demo, access: siteAccess = {}, features: siteFeatures = [] }, earlyOntology] = await Promise.all([api("/api/me", { allow401: true }), authEntry ? Promise.resolve(null) : api("/api/ontology")]); window.SI_DISPLAY_NAME = siteFeatures.includes("display-name");
+  if (!user && (params.has("signin") || params.has("next") || params.has("mode"))) { showAccess(demo, siteAccess); return; }
   if (!user) { $("#guestNotice").hidden = false; $("#submitBtn").hidden = true; $("#savedOnly").closest("label").hidden = true; }
   topbar(user); $("#feedView").hidden = false;
   if (demo?.accounts?.length) {

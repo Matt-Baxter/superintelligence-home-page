@@ -7,6 +7,7 @@
   .kpi b { display: block; font-size: 22px; } .kpi span { font-size: 13px; color: var(--muted); }
   .tabs { margin-bottom: 14px; } @media (min-width: 901px) { .tabs { flex-wrap: wrap; } }
   .tabpanel { display: grid; gap: 14px; }
+  #secBody:not([hidden]) { display: grid; gap: 14px; }
   td .btn { padding: 3px 8px; font-size: 13px; }
   td.wrap { max-width: 340px; overflow-wrap: anywhere; }
   .preview li { margin: 4px 0; } .preview .small { color: var(--muted); }
@@ -33,6 +34,7 @@
     <button role="tab" data-tab="moderation">Moderation</button>
     <button role="tab" data-tab="ontology">Ontology</button>
     <button role="tab" data-tab="audit">Audit log</button>
+    <button role="tab" data-tab="security">Security</button>
 
   </div>
 
@@ -117,6 +119,31 @@
       <div class="tablewrap"><table><thead><tr><th>Topic</th><th>Parent</th><th>Stories</th><th>Matching terms</th></tr></thead><tbody id="ontRows"></tbody></table></div></div>
   </section>
 
+  <section class="tabpanel" data-panel="security" hidden>
+    <p class="err" id="secDenied" role="alert" hidden></p>
+    <div id="secBody" hidden>
+      <div class="panel">
+        <h2>Security</h2>
+        <p class="small muted" id="secScope"></p>
+        <form id="secForm" class="sec-form">
+          <div id="secFlags" class="sec-flags"></div>
+          <details class="sec-more"><summary>Fine-tune numbers</summary><div id="secNumbers" class="sec-numbers"></div></details>
+        </form>
+        <div class="actions sec-actions"><button class="btn primary" id="secSave" type="button" disabled>Save changes</button><button class="btn" id="secReset" type="button" disabled>Undo</button><button class="btn" id="secDefaults" type="button">Use defaults</button><span class="small muted" id="secMsg" role="status" aria-live="polite"></span></div>
+      </div>
+      <div class="panel">
+        <h2>What changes</h2>
+        <p class="small muted" id="secEffectNote">Real cases, run against your draft as you edit. Nothing is saved until you press Save.</p>
+        <ul class="sec-effects" id="secExamples" aria-live="polite"></ul>
+      </div>
+      <div class="panel sec-ref">
+        <details><summary>Work limits per member</summary><p class="small muted" id="secBudgetNote"></p><div class="tablewrap"><table><thead><tr><th>Route</th><th>Limit</th><th>Window</th></tr></thead><tbody id="secBudgets"></tbody></table></div></details>
+        <details><summary>Always on</summary><ul class="small" id="secAlways"></ul></details>
+        <details id="secEventsBox"><summary>Events and locks <span class="small muted" id="secEventCount"></span></summary><p class="small muted">Counted since this server started. Each instance keeps its own count.</p><div class="tablewrap"><table><thead><tr><th>Event</th><th>Count</th></tr></thead><tbody id="secEvents"></tbody></table></div>
+          <form id="secUnlock" class="actions"><label class="small">Clear a sign-in lock <input id="secUnlockName" placeholder="username" maxlength="40" autocomplete="off"></label><button class="btn" type="submit">Clear lock</button><span class="small muted" id="secUnlockMsg" role="status"></span></form></details>
+      </div>
+    </div>
+  </section>
   <section class="tabpanel" data-panel="audit" hidden>
     <div class="panel"><div class="tablewrap"><table><thead><tr><th>When</th><th>Admin</th><th>Action</th><th>Target</th><th>Detail</th></tr></thead><tbody id="auditRows"></tbody></table></div></div>
   </section>
@@ -132,7 +159,7 @@ const statusCell = (s) => s.status !== "active" ? `<span class="status-dot pendi
 const every = (m) => m >= 1440 ? `${+(m / 1440).toFixed(1)} d` : m >= 60 ? `${+(m / 60).toFixed(1)} h` : `${m} min`;
 
 /* tabs */
-const tabs = { overview: loadOverview, sources: loadSources, add: loadAdd, runs: loadRuns, users: loadUsers, moderation: loadModeration, ontology: loadOntology, audit: loadAudit };
+const tabs = { overview: loadOverview, sources: loadSources, add: loadAdd, runs: loadRuns, users: loadUsers, moderation: loadModeration, ontology: loadOntology, audit: loadAudit, security: loadSecurity };
 function show(name) {
   if (!tabs[name]) name = "overview";
   $$("#tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.tab === name));
@@ -294,6 +321,65 @@ async function loadOntology() {
 $("#retag").onclick = async () => { $("#retag").disabled = true; try { const r = await api("/api/admin/retag", { body: {} }); flash($("#retagMsg"), `Re-tagged ${r.stories} stories.`); loadOntology(); } catch (e) { showErr($("#retagMsg"), e); } finally { $("#retag").disabled = false; } };
 
 /* audit */
+/* security (super admin only) */
+let sec = null, secDraft = null, secTimer = 0;
+const secVal = (v) => typeof v === "boolean" ? (v ? "On" : "Off") : String(v);
+async function loadSecurity() {
+  try { sec = await api("/api/admin/security"); }
+  catch (e) { $("#secBody").hidden = true; $("#secDenied").hidden = false; $("#secDenied").textContent = e.message || "Couldn't load security settings."; return; }
+  $("#secDenied").hidden = true; $("#secBody").hidden = false; secDraft = { ...sec.settings }; renderSecurity();
+}
+function renderSecurity() {
+  const saved = sec.saved.source === "saved" ? `Last saved ${ago(sec.saved.updatedAt)}${sec.saved.updatedBy ? ` by admin #${esc(sec.saved.updatedBy)}` : ""}.` : "Using defaults.";
+  $("#secScope").innerHTML = `These settings apply to the <b>${esc(sec.scope)}</b> environment only. ${saved} Test sign-in is allowed here: <b>${esc(sec.environment.emulatorAllowed)}</b>.`;
+  const help = (f) => f.help ? `<span class="small muted">${esc(f.help)}</span>` : "";
+  $("#secFlags").innerHTML = sec.fields.filter((f) => f.kind === "flag").map((f) =>
+    `<label class="sec-row sec-flag" for="sec_${f.key}"><span><span class="sec-label">${esc(f.label)}</span>${help(f)}</span><input type="checkbox" role="switch" class="switch" id="sec_${f.key}" data-key="${f.key}"></label>`).join("");
+  $("#secNumbers").innerHTML = sec.fields.filter((f) => f.kind !== "flag").map((f) =>
+    `<label class="sec-row" for="sec_${f.key}" data-needs="${esc(f.needs || "")}"><span class="sec-label">${esc(f.label)}</span><input type="number" id="sec_${f.key}" data-key="${f.key}" min="${f.min}" max="${f.max}" step="${f.step}" inputmode="decimal"></label>`).join("");
+  $$("#secForm [data-key]").forEach((el) => { el.addEventListener(el.type === "checkbox" ? "change" : "input", secChanged); });
+  $("#secAlways").innerHTML = sec.alwaysOn.map((t) => `<li>${esc(t)}</li>`).join("");
+  const ev = Object.entries(sec.events || {});
+  const total = ev.reduce((n, [, e]) => n + (Number(e.count) || 0), 0);
+  $("#secEventCount").textContent = total ? `· ${total} since start` : "· none yet";
+  $("#secEvents").innerHTML = ev.length ? ev.map(([k, e]) => `<tr><td>${esc(k)}</td><td>${Number(e.count) || 0}${e.last ? ` <span class="small muted">last ${esc(ago(e.last))}</span>` : ""}</td></tr>`).join("") : `<tr><td colspan="2" class="muted">Nothing refused yet.</td></tr>`;
+  fillSecurity(); paintPreview({ examples: sec.examples, changed: {} });
+}
+function fillSecurity() {
+  $$("#secForm [data-key]").forEach((el) => { const v = secDraft[el.dataset.key]; if (el.type === "checkbox") el.checked = !!v; else el.value = v; });
+  $$("#secForm [data-needs]").forEach((row) => { const n = row.dataset.needs; const off = n && !secDraft[n]; row.classList.toggle("is-off", !!off); row.querySelector("input").disabled = !!off; });
+  const scale = secDraft.budgetScale;
+  $("#secBudgetNote").textContent = secDraft.budgets ? `Base limits times ${scale}. Admins aren't limited.` : "Limits are off. Only the per-address limits still apply.";
+  $("#secBudgets").innerHTML = sec.budgets.map((b) => `<tr${secDraft.budgets ? "" : ' class="muted"'}><td>${esc(b.label)}</td><td>${secDraft.budgets ? Math.max(1, Math.round(b.limit * scale)) : "off"}</td><td>${every(b.windowMinutes)}</td></tr>`).join("");
+}
+function secChanged(e) {
+  const el = e.target; secDraft[el.dataset.key] = el.type === "checkbox" ? el.checked : el.value === "" ? el.value : Number(el.value);
+  fillSecurity(); clearTimeout(secTimer); secTimer = setTimeout(previewSecurity, 200);
+}
+async function previewSecurity() {
+  try { const r = await api("/api/admin/security/preview", { body: { settings: secDraft } }); $("#secMsg").textContent = ""; paintPreview(r); }
+  catch (e) { $("#secMsg").textContent = e.message || "That value isn't allowed."; $("#secSave").disabled = true; }
+}
+function paintPreview({ examples, changed }) {
+  const before = Object.fromEntries(sec.examples.map((x) => [x.id, x]));
+  let movedCount = 0;
+  $("#secExamples").innerHTML = examples.map((x) => { const was = before[x.id]; const moved = was && (was.outcome !== x.outcome); if (moved) movedCount++;
+    return `<li class="sec-effect${moved ? " sec-moved" : ""}"><span class="sec-case"><span class="small muted">${esc(x.area)}</span>${esc(x.scenario)}</span><span class="sec-out ${x.blocked ? "is-blocked" : "is-allowed"}">${x.blocked ? "Blocked" : "Allowed"}<span class="small muted">${esc(x.outcome)}</span>${moved ? `<span class="small sec-was">was: ${esc(was.outcome)}</span>` : ""}</span></li>`; }).join("");
+  $("#secEffectNote").textContent = movedCount ? `${movedCount} case${movedCount > 1 ? "s" : ""} change with your draft. Nothing is saved until you press Save.` : "Real cases, run against your draft as you edit. Nothing is saved until you press Save.";
+  const n = Object.keys(changed || {}).length;
+  $("#secSave").disabled = !n; $("#secReset").disabled = !n;
+  $("#secSave").textContent = n ? `Save ${n} change${n > 1 ? "s" : ""}` : "Save changes";
+}
+$("#secSave").onclick = async () => {
+  $("#secSave").disabled = true; $("#secMsg").textContent = "Saving…";
+  try { sec = await api("/api/admin/security/settings", { method: "PUT", body: { settings: secDraft } }); secDraft = { ...sec.settings }; renderSecurity(); $("#secMsg").textContent = "Saved. Added to the audit log."; }
+  catch (e) { $("#secMsg").textContent = e.message || "Couldn't save."; $("#secSave").disabled = false; }
+};
+$("#secReset").onclick = () => { secDraft = { ...sec.settings }; fillSecurity(); paintPreview({ examples: sec.examples, changed: {} }); $("#secMsg").textContent = ""; };
+$("#secDefaults").onclick = () => { secDraft = { ...sec.defaults }; fillSecurity(); previewSecurity(); };
+$("#secUnlock").onsubmit = async (e) => { e.preventDefault(); const u = $("#secUnlockName").value.trim(); if (!u) return;
+  try { await api("/api/admin/security/unlock", { body: { username: u } }); $("#secUnlockMsg").textContent = `Lock cleared for ${u}.`; $("#secUnlockName").value = ""; }
+  catch (err) { $("#secUnlockMsg").textContent = err.message || "Couldn't clear it."; } };
 async function loadAudit() {
   const r = await api("/api/admin/audit");
   $("#auditRows").innerHTML = r.entries.map((x) => `<tr><td>${ago(x.at)}</td><td>${esc(x.username || "")}</td><td>${esc(x.action)}</td><td class="wrap">${esc(x.target)}</td><td class="small wrap">${esc(x.detail)}</td></tr>`).join("") || `<tr><td colspan="5" class="muted">Nothing yet.</td></tr>`;

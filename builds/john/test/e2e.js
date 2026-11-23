@@ -12,6 +12,7 @@ async function account(b, u, name) {
   p.on('pageerror', e => errs.push(u + ' @ ' + p.url() + ': ' + e.message + ' ' + (e.stack||'').split('\n').slice(0,3).join(' | ')));
   p.on('console', m => m.type() === 'error' && !/40[0-9]/.test(m.text()) && errs.push(u + ': ' + m.text()));
   await p.goto(B + "/?signin=1"); await p.click('text=Create account'); await p.fill('#username', u); await p.fill('#displayName', name); await p.fill('#password', 'correct-horse-9');
+  await p.waitForTimeout(1700); // the sign-up bot check refuses forms filled faster than a person can (REQ-057)
   await p.click('#authBtn'); await p.waitForSelector('#feed .story'); return p;
 }
 const story = (p, text) => p.locator('#feed .story', { hasText: text });

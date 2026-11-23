@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS agent_log_saves (id ${ID}, entry_id INTEGER NOT NULL 
   at TEXT DEFAULT ${T}, total_chars INTEGER NOT NULL, typed_delta INTEGER DEFAULT 0, pasted_delta INTEGER DEFAULT 0, active_delta_ms BIGINT DEFAULT 0);
 CREATE TABLE IF NOT EXISTS fetch_runs (id ${ID}, source_id INTEGER REFERENCES sources(id) ON DELETE CASCADE, trigger TEXT DEFAULT 'cron',
   started_at TEXT, finished_at TEXT, status TEXT, items INTEGER DEFAULT 0, stored INTEGER DEFAULT 0, error TEXT, duration_ms INTEGER DEFAULT 0);
+CREATE TABLE IF NOT EXISTS guard_settings (scope TEXT PRIMARY KEY, settings TEXT NOT NULL, updated_by INTEGER REFERENCES users(id) ON DELETE SET NULL, updated_at TEXT DEFAULT ${T});
 CREATE TABLE IF NOT EXISTS admin_audit (id ${ID}, admin_id INTEGER REFERENCES users(id) ON DELETE SET NULL, action TEXT NOT NULL, target TEXT DEFAULT '',
   detail TEXT DEFAULT '', at TEXT DEFAULT ${T});
 CREATE TABLE IF NOT EXISTS story_entities (story_id INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE, kind TEXT NOT NULL, entity TEXT NOT NULL,
