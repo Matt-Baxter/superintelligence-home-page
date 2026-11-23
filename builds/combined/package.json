@@ -1,0 +1,33 @@
+{
+  "name": "si-home-combined",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Superintelligence Homepage — Combined Build (Best of Build A + Build B): Next.js 16, React 19, TypeScript, Zod, Hierarchical Ontology, 3-Tier AI Gateway Judge, and Neon Postgres.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "next dev --port 3300",
+    "build": "node db/migrate.mjs && next build",
+    "start": "next start --port 3300",
+    "db:migrate": "node db/migrate.mjs",
+    "db:seed": "node --import ./scripts/ts-loader.mjs --no-warnings scripts/seed-live.ts",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "node --import ./scripts/ts-loader.mjs --test --no-warnings \"tests/unit/*.test.ts\""
+  },
+  "dependencies": {
+    "ai": "^6.0.0",
+    "fast-xml-parser": "5.12.0",
+    "next": "16.4.6",
+    "postgres": "4.1.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "5.9.3"
+  }
+}
