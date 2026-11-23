@@ -1,5 +1,6 @@
 import { analyzeStory } from "./analysis";
 import { assessStory } from "./assess";
+import { readSpendSettings } from "./limits";
 import { ensureSchema, S, sql } from "./db";
 import { fetchFeed, type ParsedFeedItem } from "./feeds";
 import { tagText } from "./ontology";
@@ -200,7 +201,9 @@ export async function ingestFeedItem(
 
 // Prioritizes in-scope high-significance & high-rigor stories BEFORE mere recency so foundational pre-2023
 // papers are never starved behind low-signal daily chatter during historical archive backfill.
-export async function judgePendingStories(limit = 60): Promise<{ judged: number; failed: number }> {
+export async function judgePendingStories(
+  limit = 60,
+): Promise<{ judged: number; failed: number; queued: number }> {
   await ensureSchema();
   const rows = await sql<
     {
@@ -246,6 +249,7 @@ export async function judgePendingStories(limit = 60): Promise<{ judged: number;
 
   let judged = 0;
   let failed = 0;
+  let queued = 0;
   const concurrency = 5;
 
   for (let i = 0; i < rows.length; i += concurrency) {
@@ -275,6 +279,16 @@ export async function judgePendingStories(limit = 60): Promise<{ judged: number;
             WHERE id = ${row.id}
           `;
           judged++;
+          const reason = needsHumanReview(res, Number(row.significance_score));
+          if (reason) {
+            const inserted = await sql`
+              INSERT INTO ${S()}.review_queue (story_id, origin, reason)
+              VALUES (${row.id}, 'machine', ${reason})
+              ON CONFLICT DO NOTHING
+              RETURNING id
+            `;
+            if (inserted.length > 0) queued++;
+          }
         } catch {
           failed++;
         }
@@ -282,21 +296,49 @@ export async function judgePendingStories(limit = 60): Promise<{ judged: number;
     );
   }
 
-  return { judged, failed };
+  return { judged, failed, queued };
+}
+
+// Human-in-the-loop routing: the machine sends a story to people when it is unsure, when tiers
+// disagreed, or when the spend guard forced a deterministic fallback on a significant item.
+export function needsHumanReview(
+  res: { verdict: string; confidence: number; trail: { note?: string }[] },
+  significance: number,
+): string | null {
+  if (res.verdict === "unsure") return "Machine verdict was unsure";
+  if (res.trail.some((t) => t.note?.startsWith("Disagreed"))) return "Tier 1 and Tier 0 disagreed on topics";
+  if (res.trail.some((t) => t.note?.startsWith("Spend guard")) && significance >= 60) {
+    return "Significant story scored without AI (spend guard)";
+  }
+  if (res.verdict === "relevant" && res.confidence < 0.6) return `Low confidence (${Math.round(res.confidence * 100)}%)`;
+  return null;
 }
 
 export type FetchAllSummary = {
+  runId: string | null;
   fetched: number;
   failed: number;
   created: number;
   grouped: number;
   judged: number;
+  queued: number;
+};
+
+export type SourceRunOutcome = {
+  sourceId: string;
+  ok: boolean;
+  items: number;
+  created: number;
+  grouped: number;
+  error?: string;
 };
 
 // Fetches every configured source in parallel; one failing source never stops the others (REQ-008 / AT-06).
+// Each run is recorded in harvest_runs with per-source outcomes, and both item and judge volume are capped by spend settings.
 export async function fetchAllSources(opts?: {
   fetcher?: (url: string) => Promise<ParsedFeedItem[]>;
   judgeLimit?: number;
+  trigger?: "cron" | "manual" | "script";
 }): Promise<FetchAllSummary> {
   await ensureSchema();
   const sourceRows = await sql<{ id: string; feed_url: string }[]>`
@@ -307,13 +349,20 @@ export async function fetchAllSources(opts?: {
     return fetchAllSources(opts);
   }
 
-  const runFetch = opts?.fetcher ?? ((u: string) => fetchFeed(u, 30));
+  const spend = readSpendSettings();
+  const [run] = await sql<{ id: string }[]>`
+    INSERT INTO ${S()}.harvest_runs (trigger) VALUES (${opts?.trigger ?? "cron"}) RETURNING id
+  `;
+
+  const runFetch = opts?.fetcher ?? ((u: string) => fetchFeed(u, spend.maxItemsPerSource));
   const settled = await Promise.allSettled(sourceRows.map((s) => runFetch(s.feed_url)));
 
   let fetched = 0;
   let failed = 0;
   let created = 0;
   let grouped = 0;
+  let itemsSeen = 0;
+  const perSource: SourceRunOutcome[] = [];
 
   for (let i = 0; i < sourceRows.length; i++) {
     const source = sourceRows[i];
@@ -322,6 +371,7 @@ export async function fetchAllSources(opts?: {
     if (result.status === "rejected") {
       failed++;
       const errMsg = result.reason instanceof Error ? result.reason.message : "Source unreachable";
+      perSource.push({ sourceId: source.id, ok: false, items: 0, created: 0, grouped: 0, error: errMsg.slice(0, 160) });
       await sql`
         UPDATE ${S()}.sources
         SET last_error = ${errMsg.slice(0, 200)}
@@ -331,15 +381,22 @@ export async function fetchAllSources(opts?: {
     }
 
     fetched++;
-    for (const item of result.value) {
+    const items = result.value.slice(0, spend.maxItemsPerSource);
+    itemsSeen += items.length;
+    let sCreated = 0;
+    let sGrouped = 0;
+    for (const item of items) {
       try {
         const res = await ingestFeedItem(item, source.id);
-        if (res.outcome === "created") created++;
-        else if (res.outcome === "grouped") grouped++;
+        if (res.outcome === "created") sCreated++;
+        else if (res.outcome === "grouped") sGrouped++;
       } catch (err) {
         console.error(`Ingest item error (${source.id}):`, err);
       }
     }
+    created += sCreated;
+    grouped += sGrouped;
+    perSource.push({ sourceId: source.id, ok: true, items: items.length, created: sCreated, grouped: sGrouped });
 
     await sql`
       UPDATE ${S()}.sources
@@ -348,6 +405,22 @@ export async function fetchAllSources(opts?: {
     `;
   }
 
-  const { judged } = await judgePendingStories(opts?.judgeLimit ?? 80);
-  return { fetched, failed, created, grouped, judged };
+  const judgeLimit = Math.min(opts?.judgeLimit ?? 80, spend.maxJudgePerHarvest);
+  const { judged, queued } = await judgePendingStories(judgeLimit);
+
+  await sql`
+    UPDATE ${S()}.harvest_runs
+    SET finished_at = now(),
+        sources_ok = ${fetched},
+        sources_failed = ${failed},
+        items_seen = ${itemsSeen},
+        created = ${created},
+        grouped = ${grouped},
+        judged = ${judged},
+        queued_for_review = ${queued},
+        per_source = ${sql.json(perSource)}
+    WHERE id = ${run.id}
+  `;
+
+  return { runId: String(run.id), fetched, failed, created, grouped, judged, queued };
 }

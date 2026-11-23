@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { listSavedStories } from "@/lib/stories";
+import { consumeQuota, quotaErrorResponse } from "@/lib/usage";
 
 function csvCell(val: string | number): string {
   const s = String(val ?? "");
@@ -13,6 +14,9 @@ export async function GET(request: Request): Promise<Response> {
   if (!user) {
     return NextResponse.json({ error: "Please sign in to export your saved stories." }, { status: 401 });
   }
+
+  const quota = await consumeQuota({ actor: `u:${user.id}`, tier: user.tier, action: "export" });
+  if (!quota.ok) return quotaErrorResponse(quota);
 
   const url = new URL(request.url);
   const format = (url.searchParams.get("format") ?? "json").toLowerCase();

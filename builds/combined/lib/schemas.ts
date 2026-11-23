@@ -336,7 +336,8 @@ export const PaperRigorSummarySchema = z.object({
 export type PaperRigorSummary = z.infer<typeof PaperRigorSummarySchema>;
 
 export const AssessmentTrailStepSchema = z.object({
-  tier: z.number().int().min(0).max(2),
+  // 0 = rules, 1–2 = AI models, 3 = human reviewer consensus.
+  tier: z.number().int().min(0).max(3),
   model: z.string().nullable(),
   verdict: z.enum(["relevant", "irrelevant", "unsure", "reject"]),
   confidence: z.number().min(0).max(1),

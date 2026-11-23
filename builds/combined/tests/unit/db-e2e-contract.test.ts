@@ -253,12 +253,12 @@ describe("End-to-End Contract Acceptance Suite (AT-01..AT-15, AT-C3..AT-C4) on I
   });
 
   it("AT-07, AT-08 & AT-09: creates accounts with scrypt hashes, refuses duplicate usernames, and verifies credentials", async () => {
-    const alice = await registerUser("sample_alice", "SamplePass123!");
+    const alice = await registerUser({ username: "sample_alice", email: "sample_alice+123@example.com", password: "SamplePass123!", ipHash: "test-ip" });
     assert.equal(alice.ok, true);
     if (!alice.ok) return;
 
     // Duplicate username (even with different casing) is refused
-    const dup = await registerUser("SAMPLE_ALICE", "AnotherPass123!");
+    const dup = await registerUser({ username: "SAMPLE_ALICE", email: "alice_dup@example.com", password: "AnotherPass123!", ipHash: "test-ip" });
     assert.equal(dup.ok, false);
     if (!dup.ok) assert.equal(dup.code, "taken");
 
@@ -280,7 +280,7 @@ describe("End-to-End Contract Acceptance Suite (AT-01..AT-15, AT-C3..AT-C4) on I
   });
 
   it("AT-10, AT-11 & AT-12: persists votes/saves per user and refuses cross-user tamper attempts with 403", async () => {
-    const bob = await registerUser("sample_bob", "SamplePass456!");
+    const bob = await registerUser({ username: "sample_bob", email: "sample_bob+456@example.com", password: "SamplePass456!", ipHash: "test-ip" });
     assert.equal(bob.ok, true);
     if (!bob.ok) return;
 

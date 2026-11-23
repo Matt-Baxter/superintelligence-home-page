@@ -1,4 +1,5 @@
 import { generateText, Output } from "ai";
+import { reserveAiUnits } from "./usage";
 import { z } from "zod";
 import { analyzeStory } from "./analysis";
 import { tagText } from "./ontology";
@@ -240,6 +241,17 @@ export async function assessStory(input: {
   ];
 
   for (const [tierNum, modelId] of tierModels) {
+    const reserved = await reserveAiUnits(tierNum).catch(() => false);
+    if (!reserved) {
+      trail.push({
+        tier: tierNum,
+        model: modelId,
+        verdict: "unsure",
+        confidence: 0,
+        note: "Spend guard: AI disabled, Tier 2 off, or daily unit ceiling reached — deterministic score kept",
+      });
+      break;
+    }
     try {
       const { output } = await generateText({
         model: modelId,

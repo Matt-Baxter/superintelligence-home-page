@@ -136,3 +136,71 @@ CREATE TABLE IF NOT EXISTS "__SCHEMA__".history_progress (
   last_error text,
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+
+-- users.email: required for every new sign-up (nullable only for accounts created before the requirement).
+ALTER TABLE "__SCHEMA__".users ADD COLUMN IF NOT EXISTS email text;
+ALTER TABLE "__SCHEMA__".users ADD COLUMN IF NOT EXISTS tier text NOT NULL DEFAULT 'free';
+ALTER TABLE "__SCHEMA__".users ADD COLUMN IF NOT EXISTS signup_ip_hash text;
+CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower ON "__SCHEMA__".users (lower(email)) WHERE email IS NOT NULL;
+
+-- signup_events: every sign-up attempt keyed by a salted IP hash (raw IPs are never stored).
+CREATE TABLE IF NOT EXISTS "__SCHEMA__".signup_events (
+  id         bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  ip_hash    text NOT NULL,
+  outcome    text NOT NULL CHECK (outcome IN ('created', 'rejected', 'throttled', 'blocked', 'bot')),
+  reason     text NOT NULL DEFAULT '',
+  email_domain text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS signup_events_ip_idx ON "__SCHEMA__".signup_events (ip_hash, created_at DESC);
+CREATE INDEX IF NOT EXISTS signup_events_time_idx ON "__SCHEMA__".signup_events (created_at DESC);
+
+-- usage_events: metered actions for per-user / per-IP quotas and the global daily spend ceiling.
+CREATE TABLE IF NOT EXISTS "__SCHEMA__".usage_events (
+  id         bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  actor      text NOT NULL,
+  action     text NOT NULL,
+  cost_units integer NOT NULL DEFAULT 0 CHECK (cost_units >= 0),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS usage_events_actor_idx ON "__SCHEMA__".usage_events (actor, action, created_at DESC);
+CREATE INDEX IF NOT EXISTS usage_events_time_idx ON "__SCHEMA__".usage_events (created_at DESC);
+
+-- harvest_runs: one row per harvest with per-source outcomes so failures are inspectable.
+CREATE TABLE IF NOT EXISTS "__SCHEMA__".harvest_runs (
+  id           bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  trigger      text NOT NULL DEFAULT 'cron',
+  started_at   timestamptz NOT NULL DEFAULT now(),
+  finished_at  timestamptz,
+  sources_ok   integer NOT NULL DEFAULT 0,
+  sources_failed integer NOT NULL DEFAULT 0,
+  items_seen   integer NOT NULL DEFAULT 0,
+  created      integer NOT NULL DEFAULT 0,
+  grouped      integer NOT NULL DEFAULT 0,
+  judged       integer NOT NULL DEFAULT 0,
+  queued_for_review integer NOT NULL DEFAULT 0,
+  per_source   jsonb NOT NULL DEFAULT '[]'::jsonb
+);
+CREATE INDEX IF NOT EXISTS harvest_runs_time_idx ON "__SCHEMA__".harvest_runs (started_at DESC);
+
+-- review_queue: human-in-the-loop. Machine-uncertain stories land here; readers can also flag any story.
+CREATE TABLE IF NOT EXISTS "__SCHEMA__".review_queue (
+  id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  story_id    bigint NOT NULL REFERENCES "__SCHEMA__".stories (id) ON DELETE CASCADE,
+  origin      text NOT NULL CHECK (origin IN ('machine', 'reader')),
+  reason      text NOT NULL,
+  status      text NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'resolved')),
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS review_queue_open_story ON "__SCHEMA__".review_queue (story_id) WHERE status = 'open';
+
+-- review_verdicts: one human verdict per user per story; the consensus can override the machine rating.
+CREATE TABLE IF NOT EXISTS "__SCHEMA__".review_verdicts (
+  user_id    bigint NOT NULL REFERENCES "__SCHEMA__".users (id) ON DELETE CASCADE,
+  story_id   bigint NOT NULL REFERENCES "__SCHEMA__".stories (id) ON DELETE CASCADE,
+  verdict    text NOT NULL CHECK (verdict IN ('confirm', 'overrated', 'underrated', 'off_topic')),
+  note       text NOT NULL DEFAULT '' CHECK (char_length(note) <= 280),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, story_id)
+);
+CREATE INDEX IF NOT EXISTS review_verdicts_story_idx ON "__SCHEMA__".review_verdicts (story_id);

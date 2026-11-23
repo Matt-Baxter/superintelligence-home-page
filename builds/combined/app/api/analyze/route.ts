@@ -6,6 +6,8 @@ import { tagText } from "@/lib/ontology";
 import { parseAnalysisLabQuery, SourceKindSchema } from "@/lib/schemas";
 import { BAKEOFF_FORENSICS_ROWS, getSimOuterLoopReport, SI_BENCHMARK_CASES, runSiHarnessVariant } from "@/lib/sim-loop";
 import { computeBestStoryScore } from "@/lib/stories";
+import { getCurrentUser } from "@/lib/auth";
+import { actorFor, consumeQuota, quotaErrorResponse } from "@/lib/usage";
 
 // Machine-readable JSON twin for `/analysis` (SIM Outer-Loop + Worked Examples + Live Paper Rigor Inspector + Bake-Off Forensics).
 
@@ -120,6 +122,10 @@ export async function GET(request: Request): Promise<Response> {
 }
 
 export async function POST(request: Request): Promise<Response> {
+  const { actor, tier } = actorFor(await getCurrentUser(), request);
+  const quota = await consumeQuota({ actor, tier, action: "analyze" });
+  if (!quota.ok) return quotaErrorResponse(quota);
+
   let body: Record<string, unknown> = {};
   try {
     body = (await request.json()) as Record<string, unknown>;

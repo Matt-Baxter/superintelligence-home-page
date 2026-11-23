@@ -2,6 +2,7 @@ import { createHash, randomBytes, scrypt as scryptCb, timingSafeEqual } from "no
 import { promisify } from "node:util";
 import { ensureSchema, S, sql } from "./db";
 import { isReservedUsername } from "./guards";
+import { EmailSchema } from "./limits";
 
 // Safe Accounts & Persistent Sessions (REQ-009..REQ-012, AT-07..AT-09).
 // Adopts Build A's salted scrypt + constant-time anti-enumeration login + SHA-256 hashed session tokens,
@@ -90,6 +91,8 @@ export async function createSessionForUser(userId: string): Promise<string> {
 export type SessionUser = {
   id: string;
   username: string;
+  tier: "free" | "reviewer";
+  hasEmail: boolean;
 };
 
 export async function getCurrentUser(): Promise<SessionUser | null> {
@@ -100,14 +103,21 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
 
   await ensureSchema();
   const tokenHash = hashSessionToken(rawToken);
-  const rows = await sql<{ id: string; username: string }[]>`
-    SELECT u.id, u.username
+  const rows = await sql<{ id: string; username: string; tier: string; has_email: boolean }[]>`
+    SELECT u.id, u.username, u.tier, (u.email IS NOT NULL) AS has_email
     FROM ${S()}.sessions s
     JOIN ${S()}.users u ON u.id = s.user_id
     WHERE s.token_hash = ${tokenHash} AND s.expires_at > now()
     LIMIT 1
   `;
-  return rows.length > 0 ? { id: String(rows[0].id), username: rows[0].username } : null;
+  if (rows.length === 0) return null;
+  const r = rows[0];
+  return {
+    id: String(r.id),
+    username: r.username,
+    tier: r.tier === "reviewer" ? "reviewer" : "free",
+    hasEmail: r.has_email,
+  };
 }
 
 export async function destroyCurrentSession(): Promise<void> {
@@ -123,28 +133,41 @@ export async function destroyCurrentSession(): Promise<void> {
 
 export type RegisterResult =
   | { ok: true; userId: string; username: string }
-  | { ok: false; code: "username" | "password" | "taken"; message: string };
+  | { ok: false; code: "username" | "password" | "taken" | "email" | "email_taken"; message: string };
 
-export async function registerUser(rawUsername: string, password: string): Promise<RegisterResult> {
-  const username = rawUsername.trim();
+export async function registerUser(opts: {
+  username: string;
+  email: string;
+  password: string;
+  ipHash: string;
+}): Promise<RegisterResult> {
+  const username = opts.username.trim();
   const uErr = validateUsername(username);
   if (uErr) return { ok: false, code: "username", message: uErr };
-  const pErr = validatePassword(password);
+  const parsedEmail = EmailSchema.safeParse(opts.email);
+  if (!parsedEmail.success) {
+    return { ok: false, code: "email", message: parsedEmail.error.issues[0]?.message ?? "Enter a valid email address." };
+  }
+  const pErr = validatePassword(opts.password);
   if (pErr) return { ok: false, code: "password", message: pErr };
 
   await ensureSchema();
-  const passwordHash = await hashPassword(password);
+  const passwordHash = await hashPassword(opts.password);
 
   try {
     const [row] = await sql<{ id: string; username: string }[]>`
-      INSERT INTO ${S()}.users (username, password_hash)
-      VALUES (${username}, ${passwordHash})
+      INSERT INTO ${S()}.users (username, email, password_hash, signup_ip_hash)
+      VALUES (${username}, ${parsedEmail.data}, ${passwordHash}, ${opts.ipHash})
       RETURNING id, username
     `;
     return { ok: true, userId: String(row.id), username: row.username };
   } catch (err) {
-    if ((err as { code?: string }).code === "23505") {
-      return { ok: false, code: "taken", message: "That username is already taken. Please choose another." };
+    const e = err as { code?: string; constraint_name?: string; message?: string };
+    if (e.code === "23505") {
+      const isEmail = (e.constraint_name ?? e.message ?? "").includes("email");
+      return isEmail
+        ? { ok: false, code: "email_taken", message: "An account already uses that email. Sign in instead." }
+        : { ok: false, code: "taken", message: "That username is already taken. Please choose another." };
     }
     throw err;
   }

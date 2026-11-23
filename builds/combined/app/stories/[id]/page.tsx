@@ -92,6 +92,30 @@ export default async function StoryProvenancePage({
             </button>
           </form>
         </div>
+
+        {user ? (
+          <details className="flag-details">
+            <summary>Rating looks wrong? Send it to human review</summary>
+            <form method="post" action={`/api/stories/${story.id}/flag`} className="flag-form">
+              <input type="hidden" name="returnTo" value="/queue" />
+              <label htmlFor="flag-reason" className="label">
+                What looks wrong
+              </label>
+              <input
+                id="flag-reason"
+                name="reason"
+                type="text"
+                required
+                minLength={4}
+                maxLength={200}
+                placeholder="e.g. This is a medical imaging paper"
+              />
+              <button type="submit" className="btn-secondary btn-small">
+                Send to review queue
+              </button>
+            </form>
+          </details>
+        ) : null}
       </article>
 
       <div className="panel-grid">
