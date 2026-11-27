@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { FEED_PRESETS, serializeFeedQuery, type FeedQuery } from "@/lib/schemas";
 import { normalizeTopicFilter, type TopicCount } from "@/lib/stories";
-import { CopyLinkButton } from "./copy-link-button";
+import { ShareMenu } from "./share-menu";
 
 export function FeedToolbar({
   query,
@@ -60,13 +60,7 @@ export function FeedToolbar({
               Reset
             </Link>
           )}
-          <CopyLinkButton relativeHref={currentHref} />
-          <a href={jsonTwinHref} className="btn-secondary btn-small" title="Machine-readable JSON feed twin">
-            JSON
-          </a>
-          <a href={atomHref} className="btn-secondary btn-small" title="Atom 1.0 syndication feed">
-            Atom
-          </a>
+          <ShareMenu currentHref={currentHref} jsonHref={jsonTwinHref} atomHref={atomHref} />
         </div>
       </div>
 
@@ -106,9 +100,11 @@ export function FeedToolbar({
         </div>
 
         {/* Progressive Disclosure for Secondary Filters — never clips select options */}
-        <details className="advanced-filters-disclosure" open={hasAdvancedFilter}>
+        <details className="advanced-filters-disclosure smooth-disclosure" open={hasAdvancedFilter}>
           <summary>
-            <span>Era, Empirical Rigor &amp; Curation Gates</span>
+            <span aria-hidden="true" className="disclosure-chevron" />
+            <span>More filters</span>
+            <span className="disclosure-hint">Era, rigor &amp; curation</span>
             {activeAdvancedCount > 0 && (
               <span className="active-filter-count">{activeAdvancedCount} active</span>
             )}

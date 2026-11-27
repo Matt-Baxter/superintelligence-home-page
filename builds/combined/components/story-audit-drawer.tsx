@@ -130,10 +130,8 @@ export function StoryAuditDrawer({
         aria-expanded={open}
         aria-label={`Explain "${storyTitle}" at 3 levels and audit score`}
       >
+        <span aria-hidden="true" className="disclosure-chevron" />
         <span>{open ? "Hide explanation & score audit" : "Explain at 3 levels & audit score"}</span>
-        <span aria-hidden="true" className="audit-chevron">
-          {open ? "−" : "+"}
-        </span>
       </button>
 
       {open && (
