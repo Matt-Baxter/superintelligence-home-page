@@ -10,6 +10,7 @@ made the change. The contract also keeps its own version history in
 
 | Date | Person | Change | Commit(s) |
 |------|--------|--------|-----------|
+| 2026-11-28 | Matt (with Claude Code) | CI lab steps 4–5 (pull request 5): a contract field was renamed on purpose without updating the tests, CI failed, then the code was fixed to match the contract with the tests unchanged, and CI passed. Net change: a "Checks" section in `builds/matt/README.md`. | `c065f9a`, `afe30eb`, `c619bbd`, merged in `e8309d6` |
 | 2026-11-22 | Matt (with Claude Code) | Build A: more frontier labs (Anthropic News and Research, Meta AI, xAI, Microsoft AI; DeepMind history) and a "How stories are chosen" page (`/review`) showing every story's AI score, reason and whether it's on the feed. Fixed the history fill doing only one month on a real run. Matt's agent log entry on changing sources. | `36081a7` |
 | 2026-11-22 | Matt (with Claude Code) | Build A history fill: stories back to January 2023 from Google News, OpenAI, arXiv, the Alignment Forum, LessWrong, five newsletters and MIRI, through the same AI judge and daily cap; resumable via `/api/cron/history` and a nightly job. Fixed a flaky account test. | `8ba6b97` |
 | 2026-11-21 | Matt (with Claude Code) | Build A: AI significance scores now have one decimal place (e.g. 8.2) for finer ranking within a day. | `6104ad7` |
